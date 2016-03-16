@@ -11,6 +11,14 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
+enum gravity_model {propto_omega, propto_scale, planck_linear, planck_exponential}; //write here the different models
+
+// initial conditions for the perturbations
+enum pert_initial_conditions {single_clock, zero};
+
+// enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
+
+enum expansion_model {lcdm, wowa}; //parameterized expansion, only for non-self consistent Horndeski theories
 
 /**
  * All background parameters and evolution that other modules need to know.
@@ -79,7 +87,58 @@ struct background
 
 
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$ : curvature contribution */
-
+  
+  enum gravity_model gravity_model_smg; /** Horndeski model */
+//   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
+  enum expansion_model expansion_model_smg; /* choice of expansion rate */
+  
+  enum pert_initial_conditions pert_initial_conditions_smg; /* initial conditions for perturbations */
+  
+  short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
+  short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
+  
+  double Omega0_smg; /**< \f$ \Omega_{0_\phi} \f$ : scalar field energy fraction */
+  double Omega_smg_debug; /**< debug value when no tuning is wanted */
+  short attractor_ic_smg; /** < whether the scalar field has attractor initial conditions */  
+  
+  double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
+  
+  double phi_ini_safe_smg; /**< small \f$ d\phi(t_0)/d\tau \f$ to avoid division by zero and make kinetic energy negligible */
+  double cs2_safe_smg; /**< threshold for the speed of sound to consider it negative */
+  double D_safe_smg; /* threshold to consider the kinetic term of scalars negative in the stability check */
+  double ct2_safe_smg; /* threshold to consider the sound speed of tensors negative in the stability check */
+  double M2_safe_smg; /* threshold to consider the kinetic term of tensors (M2) negative in the stability check */
+  double kineticity_safe_smg; /**< minimum value of the kineticity, to avoid problems with the perturbations */
+  
+  double min_M2_smg; /**< minimum value of planck mass (for stability test) */
+  double min_ct2_smg; /**< minimum value of tensor speed of sound squared (for stability test) */
+  double min_D_smg; /**< minimum value of scalar kinetic term (for stability test) */
+  double min_cs2_smg; /**< minimum value of scalar speed of sound squared (for stability test) */
+  
+  int skip_stability_tests_smg; /**< specify if you want to skip the stability tests for the field perturbations */
+  
+  int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
+  int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
+  
+  
+  
+  /* Modified gravity parameters
+   * parameters_smg -> contains the primary parameters. Any param that might be varied to determine Omega_smg should be here
+   * tuning_index_smg -> which parameter is varied to obtain the right Omega_smg
+   * parameters_2_smg -> contains auxiliary parameters. These will not be varied to obtain Omega_smg
+   * for non-dynamical models: the expansion history in parameters_smg, while the alphas are in parameters_2_smg
+   */
+  double * parameters_smg;  /**< list of parameters describing the modified gravity model (must contain the shooting parameter) */
+  int parameters_size_smg;  /**< size of scf_parameters */
+  int tuning_index_smg;     /**< index in parameters_smg used for tuning */
+  double tuning_dxdy_guess_smg; /**< guess for the scale of the tuning value */
+  
+  double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
+  int parameters_2_size_smg; /**< size of parameters_smg */
+  
+  //some thermo parameters: little cheat to be able to call sigma(rs_d), etc..
+  double rs_d; //drag horizon
+  
   int N_ncdm;                            /**< Number of distinguishabe ncdm species */
   double * M_ncdm;                       /**<vector of masses of non-cold relic:
                                              dimensionless ratios m_ncdm/T_ncdm */
@@ -168,6 +227,48 @@ struct background
   int index_bg_ddV_scf;       /**< scalar field potential second derivative V'' */
   int index_bg_rho_scf;       /**< scalar field energy density */
   int index_bg_p_scf;         /**< scalar field pressure */
+  
+  int index_bg_phi_smg;       /**< scalar field value */
+  int index_bg_phi_prime_smg; /**< scalar field derivative wrt conformal time */
+  int index_bg_phi_prime_prime_smg; /**< scalar field second derivative wrt conformal time */ 
+  int index_bg_M2_smg;   /**< relative Planck mass */
+  int index_bg_rho_smg;       /**< scalar field energy density */
+  int index_bg_p_smg;         /**< scalar field pressure */
+  int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/ 
+  int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/   
+  int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/ 
+  int index_bg_mpl_running_smg; /**< scalar field relative Planck mass running*/
+  int index_bg_kineticity_prime_smg;/**< derivative of kineticity wrt tau (BS eq A.8)*/ 
+  int index_bg_braiding_prime_smg;/**< derivative of braiding wrt tau (BS eq A.9)*/    
+  int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/    
+  int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/    
+  int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
+
+  int index_bg_kinetic_D_smg;
+  int index_bg_kinetic_D_prime_smg;
+  int index_bg_lambda_1_smg;
+  int index_bg_lambda_2_smg;
+  int index_bg_lambda_3_smg;
+  int index_bg_lambda_4_smg;
+  int index_bg_lambda_5_smg;
+  int index_bg_lambda_6_smg;
+  int index_bg_lambda_7_smg;
+  int index_bg_lambda_8_smg;
+  int index_bg_gamma_1_smg;
+  int index_bg_gamma_1_prime_smg;
+  int index_bg_gamma_2_smg;
+  int index_bg_gamma_2_prime_smg;
+  int index_bg_gamma_3_smg;
+  int index_bg_gamma_3_prime_smg;
+  int index_bg_cs2num_smg;
+  int index_bg_cs2num_prime_smg;
+
+  int index_bg_rho_tot_wo_smg; /**< total density minus scalar field */
+  int index_bg_p_tot_wo_smg; /**< total pressure minus scalar field */
+  int index_bg_H_prime_prime; /**< second derivative of the hubble parameter (necessary for BS perturbations equation for h'') */
+  int index_bg_p_tot_wo_prime_smg; /**< derivative of the total pressure minus scalar field */
+  int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */ 
+  
 
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
@@ -233,6 +334,8 @@ struct background
   int index_bi_rho_dr;  /**< {B} dr density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
+  
+  int index_bi_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/  
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */
@@ -262,7 +365,10 @@ struct background
   short has_lambda;    /**< presence of cosmological constant? */
   short has_fld;       /**< presence of fluid with constant w and cs2? */
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
+  short has_smg;       /**< presence of scalar field? */    
   short has_curvature; /**< presence of global spatial curvature? */
+  
+  short smg_is_tuned; /**< is the scalar field tuned to give Omega0_smg? */ 
 
   //@}
 
@@ -436,6 +542,18 @@ extern "C" {
 				    struct background *pba,
 					int species
 				    );
+  
+  int background_gravity_functions(
+				  struct background *pba,
+				  double * pvecback_B,
+				  short return_format,
+				  double * pvecback
+				  );
+  
+  
+  int background_gravity_parameters(
+				  struct background *pba
+				  );   
 
   int background_solve(
 		       struct precision *ppr,

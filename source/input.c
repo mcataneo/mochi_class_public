@@ -217,7 +217,7 @@ int input_init(
   int target_indices[_NUM_TARGETS_];
   double *dxdF, *x_inout;
 
-  char string1[_ARGUMENT_LENGTH_MAX_];
+  char string1[_ARGUMENT_LENGTH_MAX_]; 
   FILE * param_output;
   FILE * param_unused;
   char param_output_name[_LINE_LENGTH_MAX_];
@@ -227,16 +227,19 @@ int input_init(
   /** These two arrays must contain the strings of names to be searched
       for and the coresponding new parameter */
   char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
-                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm"};
+                                       "Omega_scf","Omega_smg","Omega_ini_dcdm","omega_ini_dcdm"};
   char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
-                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr"};
+                                        "scf_shooting_parameter","shooting_parameter_smg","Omega_dcdmdr","omega_dcdmdr"};
   enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
                                         cs_background, cs_background, cs_background};
 
   int input_verbose = 0, int1, aux_flag, shooting_failed=_FALSE_;
 
   class_read_int("input_verbose",input_verbose);
-
+  
+  /* for smg: no tuned parameters yet */
+  pba->parameters_tuned_smg = _FALSE_;
+  
   /* Do we need to fix unknown parameters? */
   unknown_parameters_size = 0;
   fzw.required_computation_stage = 0;
@@ -259,7 +262,8 @@ int input_init(
                                                    errmsg),
                  errmsg, errmsg);
       if (aux_flag == _TRUE_){
-        //printf("Found target: %s\n",target_namestrings[index_target]);
+        if(input_verbose > 2)
+	  printf("Found target: %s\n",target_namestrings[index_target]);
         target_indices[unknown_parameters_size] = index_target;
         fzw.required_computation_stage = MAX(fzw.required_computation_stage,target_cs[index_target]);
         unknown_parameters_size++;
@@ -488,6 +492,9 @@ int input_init(
     }
   }
 
+  /* Now Horndeski should be tuned */
+  pba->parameters_tuned_smg = _TRUE_;
+  
   return _SUCCESS_;
 
 }
@@ -511,7 +518,7 @@ int input_read_parameters(
 
   /** - define local variables */
 
-  int flag1,flag2,flag3;
+  int flag1,flag2,flag3,flag4;
   double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
   int int1,fileentries;
@@ -519,6 +526,7 @@ int input_read_parameters(
   double fnu_factor;
   double * pointer1;
   char string1[_ARGUMENT_LENGTH_MAX_];
+  char string3[_ARGUMENT_LENGTH_MAX_];   
   double k1=0.;
   double k2=0.;
   double prr1=0.;
@@ -917,31 +925,20 @@ int input_read_parameters(
   else if (pba->K < 0.) pba->sgnK = -1;
 
   /* Omega_0_lambda (cosmological constant), Omega0_fld (dark energy fluid),
-     Omega0_scf (scalar field) */
+     Omega0_smg (scalar field) */
   class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
              errmsg,
              errmsg);
   class_call(parser_read_double(pfc,"Omega_fld",&param2,&flag2,errmsg),
              errmsg,
              errmsg);
-  class_call(parser_read_double(pfc,"Omega_scf",&param3,&flag3,errmsg),
+  class_call(parser_read_double(pfc,"Omega_smg",&param3,&flag3,errmsg),
              errmsg,
              errmsg);
 
   class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)),
              errmsg,
-             "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_scf is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
-
-  /** (flag3 == _FALSE_) || (param3 >= 0.) explained:
-      it means that either we have not read Omega_scf so we are ignoring it
-      (unlike lambda and fld!) OR we have read it, but it had a
-      positive value and should not be used for filling.
-
-      We now proceed in two steps:
-      1) set each Omega0 and add to the total for each specified component.
-      2) go through the components in order {lambda, fld, scf} and
-         fill using first unspecified component.
-  */
+             "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_smg is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
   /** Step 1 */
   if (flag1 == _TRUE_){
@@ -953,8 +950,8 @@ int input_read_parameters(
     Omega_tot += pba->Omega0_fld;
   }
   if ((flag3 == _TRUE_) && (param3 >= 0.)){
-    pba->Omega0_scf = param3;
-    Omega_tot += pba->Omega0_scf;
+    pba->Omega0_smg = param3;
+    Omega_tot += pba->Omega0_smg;
   }
   /** Step 2 */
   if (flag1 == _FALSE_) //Fill with Lambda
@@ -962,14 +959,14 @@ int input_read_parameters(
   else if (flag2 == _FALSE_)  // Fill up with fluid
     pba->Omega0_fld = 1. - pba->Omega0_k - Omega_tot;
   else if ((flag3 == _TRUE_) && (param3 < 0.)){ // Fill up with scalar field
-    pba->Omega0_scf = 1. - pba->Omega0_k - Omega_tot;
+    pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
   }
 
   /** Test that the user have not specified Omega_scf = -1 but left either
       Omega_lambda or Omega_fld unspecified:*/
   class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag3 == _TRUE_) && (param3 < 0.)),
              errmsg,
-             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field, so you have to specify both Omega_lambda and Omega_fld in the .ini file");
+             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (smg), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
 
   if (pba->Omega0_fld != 0.) {
     class_read_double("w0_fld",pba->w0_fld);
@@ -977,49 +974,200 @@ int input_read_parameters(
     class_read_double("cs2_fld",pba->cs2_fld);
   }
 
-  /* Additional SCF parameters: */
-  if (pba->Omega0_scf != 0.){
-    /** Read parameters describing scalar field potential */
-    class_call(parser_read_list_of_doubles(pfc,
-                                           "scf_parameters",
-                                           &(pba->scf_parameters_size),
-                                           &(pba->scf_parameters),
-                                           &flag1,
-                                           errmsg),
-               errmsg,errmsg);
-    class_read_int("scf_tuning_index",pba->scf_tuning_index);
-    class_test(pba->scf_tuning_index >= pba->scf_parameters_size,
-               errmsg,
-               "Tuning index scf_tuning_index = %d is larger than the number of entries %d in scf_parameters. Check your .ini file.",pba->scf_tuning_index,pba->scf_parameters_size);
-    /** Assign shooting parameter */
-    class_read_double("scf_shooting_parameter",pba->scf_parameters[pba->scf_tuning_index]);
+  
+  //TODO: move this before Omega_Lambda so that 1) it doesn't interfere with the tests 2) the code ignores smg if smg_debug has been set 3) throws a warnning and 4) perhaps add some output
+  class_read_double("Omega_smg_debug",pba->Omega_smg_debug);  //NOTE: class_read_double uses flag1!!
+  
+  if (pba->Omega_smg_debug != 0)
+    pba->Omega0_smg = pba->Omega_smg_debug;
+  
+  if (pba->Omega0_smg != 0.) {
+    
+    pba->has_smg = _TRUE_;
+        
+    /** read the model and loop over models to set several flags and variables
+     * field_evolution_smg: for self-consistent scalar tensor theories, need to evolve the background equations
+     * M_pl_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
+     * Primary and secondary parameters: The tuning is alway in terms of a value in parameters_smg, therefore
+     *  -> real models: "parameters_smg" to pba->parameters_smg
+     *  -> parameterizations: "parameters_smg" to pba->parameters_2_smg
+     *                        "expansion_smg" to pba->parameters_smg
+     * NOTE: can change class_read_list_of_doubles_or_default <-> class_read_list_of_doubles 
+     * to make it mandatory or allow for default values
+     */
+    
+    class_call(parser_read_string(pfc,"gravity_model",&string1,&flag1,errmsg),
+	       errmsg,
+	       errmsg);    
 
-    scf_lambda = pba->scf_parameters[0];
-    if ((fabs(scf_lambda) <3.)&&(pba->background_verbose>1))
-      printf("lambda = %e <3 won't be tracking (for exp quint) unless overwritten by tuning function\n",scf_lambda);
+    
+    if (flag1 == _FALSE_) {
+      printf(" gravity_model not read, default will be used \n");
+    }
+    else {
+    /** Read tuning parameter and guess for the parameter variation range
+     * These can be adjusted latter on a model basis
+     */
+    int has_tuning_index_smg, has_dxdy_guess_smg;
+    
+    class_read_int("tuning_index_smg",pba->tuning_index_smg);
+    has_tuning_index_smg = flag1;
+    
+    class_read_double("tuning_dxdy_guess_smg",pba->tuning_dxdy_guess_smg);
+    has_dxdy_guess_smg = flag1;    
+    if (has_dxdy_guess_smg == _FALSE_)
+      pba->tuning_dxdy_guess_smg = 1;
+    
+    /** Loop over the different models
+     * flag2 keeps track of whether model has been identified
+     */
+      flag2=_FALSE_;
+      
+      if (strcmp(string1,"propto_omega") == 0) {
+	pba->gravity_model_smg = propto_omega;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
+	
+      if (strcmp(string1,"propto_scale") == 0) {
+	pba->gravity_model_smg = propto_scale;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
+      
+      if (strcmp(string1,"planck_linear") == 0) {
+	pba->gravity_model_smg = planck_linear;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 1;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
 
+      if (strcmp(string1,"planck_exponential") == 0) {
+	pba->gravity_model_smg = planck_exponential;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 2;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
+	
+
+      class_test(flag2==_FALSE_,
+		 errmsg,
+		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'planck_linear', 'planck_exponential' ...");
+      
+    }// end of loop over models
+    
+    //TODO: Generalize branch choices and attractor IC
+    
+    //TODO: if self consistent evolution read the initial conditions. These might be ignored, e.g. if there are attractor initial conditions.
+    if(pba->field_evolution_smg == _TRUE_){
+      
+      class_test(pba->field_evolution_smg == _TRUE_,
+		 errmsg,
+		 "self consistent evolution not implemented in this version. You should choose a parameterization\n");
+      
+    }
+    else { //if no self-consistent evolution, need a parameterization for Omega_smg    
+      
+      class_call(parser_read_string(pfc,"expansion_model",&string1,&flag1,errmsg),
+		 errmsg,
+		 errmsg);      
+      if (flag1 == _FALSE_)
+	printf("No expansion model specified, will take default one \n");
+      
+      flag2 = _FALSE_;
+      
+      //possible expansion histories. Can make tests, etc...
+      if (strcmp(string1,"lcdm") == 0) {
+	pba->expansion_model_smg = lcdm;
+	flag2=_TRUE_;
+	pba->parameters_size_smg = 1;
+	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      }
+      //accept different names
+      if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
+	pba->expansion_model_smg = wowa;
+	flag2=_TRUE_;
+	pba->parameters_size_smg = 3;
+	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      }
+      
+      class_test(flag2==_FALSE_,
+		 errmsg,
+		 "could not identify expansion_model value, check that it is either lcdm, wowa ...");
+      
+    }
+    
+    /** Other generic specifications:
+     * - whether stability tests are skipped (skip_stability_tests_smg) or softened (cs2_safe_smg)
+     * - thresholds for approximations in the cubic Friedmann equation
+     * - add a value to have better behaved perturbations
+     * - approximations in the perturbations
+     */
+            
+    class_read_double("cs2_safe_smg",pba->cs2_safe_smg);
+    class_read_double("D_safe_smg",pba->D_safe_smg);
+    class_read_double("ct2_safe_smg",pba->ct2_safe_smg);
+    class_read_double("M2_safe_smg",pba->M2_safe_smg);
+    class_read_double("kineticity_safe_smg",pba->kineticity_safe_smg); // minimum value of the kineticity (to avoid trouble) 
+    
     class_call(parser_read_string(pfc,
-                                  "attractor_ic_scf",
-                                  &string1,
-                                  &flag1,
-                                  errmsg),
-                errmsg,
-                errmsg);
+				  "skip_stability_tests_smg",
+				  &string1,
+				  &flag1,
+				  errmsg),
+		errmsg,
+		errmsg);
 
-    if (flag1 == _TRUE_){
-      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-        pba->attractor_ic_scf = _TRUE_;
+    if (flag1 == _TRUE_){ 
+      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){ 
+	pba->skip_stability_tests_smg = _TRUE_;
       }
       else{
-        pba->attractor_ic_scf = _FALSE_;
-        class_test(pba->scf_parameters_size<2,
-               errmsg,
-               "Since you are not using attractor initial conditions, you must specify phi and its derivative phi' as the last two entries in scf_parameters. See explanatory.ini for more details.");
-        pba->phi_ini_scf = pba->scf_parameters[pba->scf_parameters_size-2];
-        pba->phi_prime_ini_scf = pba->scf_parameters[pba->scf_parameters_size-1];
+	pba->skip_stability_tests_smg = _FALSE_;
       }
     }
-  }
+    
+    //IC for perturbations
+    class_call(parser_read_string(pfc,
+				  "pert_initial_conditions_smg",
+				  &string1,
+				  &flag1,
+				  errmsg),
+		errmsg,
+		errmsg);
+    
+    if (strcmp(string1,"single_clock") == 0) {
+	pba->pert_initial_conditions_smg = single_clock;
+      }
+    if (strcmp(string1,"zero") == 0) {
+	pba->pert_initial_conditions_smg = zero;
+      }
+//     else {
+//       if (ppt->perturbations_verbose > 1)
+// 	printf(" Initial conditions for Modified gravity perturbations not specified, using default \n");
+//     }
+    
+    
+    /** re-assign shooting parameter (for no-tuning debug mode) */
+    if (pba->Omega_smg_debug == 0)
+      class_read_double("shooting_parameter_smg",pba->parameters_smg[pba->tuning_index_smg]);   
+    
+    // test that the tuning is correct
+    class_test(pba->tuning_index_smg >= pba->parameters_size_smg,
+	       errmsg,
+	       "Tuning index tuning_index_smg = %d is larger than the number of entries %d in parameters_smg. Check your .ini file.",
+	       pba->tuning_index_smg,pba->parameters_size_smg);
+  }//end of has_smg
 
   /** (b) assign values to thermodynamics cosmological parameters */
 
@@ -2597,6 +2745,38 @@ int input_default_params(
   //MZ: initial conditions are as multiplicative factors of the radiation attractor values
   pba->phi_ini_scf = 1;
   pba->phi_prime_ini_scf = 1;
+  
+  
+  pba->gravity_model_smg = propto_omega; /* gravitational model */
+  pba->expansion_model_smg = lcdm; /*expansion model (only for parameterizations*/
+  pba->Omega0_smg = 0.; /* Scalar field defaults */
+  pba->Omega_smg_debug = 0;
+  pba->field_evolution_smg = _FALSE_; /* does the model require solving the background equations? */  
+  pba->M_pl_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */  
+  pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
+  
+  pba->kineticity_safe_smg = 0; /* value added to the kineticity, useful to cure perturbations at early time in some models */
+  pba->phi_ini_safe_smg = 1e-100; /* small initial phi' to avoid division by zero and make kinetic energy negligible */
+  pba->cs2_safe_smg = 0; /* threshold to consider the sound speed of scalars negative in the stability check */
+  pba->D_safe_smg = 0; /* threshold to consider the kinetic term of scalars negative in the stability check */
+  pba->ct2_safe_smg = 0; /* threshold to consider the sound speed of tensors negative in the stability check */
+  pba->M2_safe_smg = 0; /* threshold to consider the kinetic term of tensors (M2) negative in the stability check */
+  
+  pba->pert_initial_conditions_smg = single_clock; /* default IC for perturbations in the scalar */
+
+  /*set stability quantities to nonzero values*/
+  pba->min_M2_smg = 1e10;
+  pba->min_ct2_smg = 1e10;
+  pba->min_D_smg = 1e10;
+  pba->min_cs2_smg = 1e10;
+
+  pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */  
+  pba->initial_conditions_set_smg = _FALSE_;
+  
+  pba->parameters_smg = NULL;
+  pba->parameters_size_smg = 0;
+  pba->tuning_index_smg = 0;  
+  pba->tuning_dxdy_guess_smg = 1;
 
   pba->Omega0_k = 0.;
   pba->K = 0.;
@@ -3368,6 +3548,18 @@ int input_try_unknown_parameters(double * unknown_parameter,
       output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_scf]/(ba.H0*ba.H0)
         -ba.Omega0_scf;
       break;
+    case Omega_smg:
+	//NOTE: bugged when normalizing by (ba.H0*ba.H0)!!
+      /** In case scalar field is used to fill, pba->Omega0_smg is not equal to pfzw->target_value[i].*/
+      
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+	          /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit]	      
+                  -ba.Omega0_smg;
+      if (input_verbose > 2)	  
+	printf(" Omega_smg = %e, %e \n", ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+	          /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit], ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+	          /pow(ba.H0,2));
+      break;  
     case Omega_ini_dcdm:
     case omega_ini_dcdm:
       rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
@@ -3517,6 +3709,11 @@ int input_get_guess(double *xguess,
         dxdy[index_guess] = 1.;
       }
       break;
+    case Omega_smg:
+        xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
+        dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
+//       }
+      break;  
     case Omega_ini_dcdm:
     case omega_ini_dcdm:
       /** This works since correspondence is
@@ -3644,6 +3841,7 @@ int input_auxillary_target_conditions(struct file_content * pfc,
   case Omega_dcdmdr:
   case omega_dcdmdr:
   case Omega_scf:
+  case Omega_smg:
   case Omega_ini_dcdm:
   case omega_ini_dcdm:
     /* Check that Omega's or omega's are nonzero: */
