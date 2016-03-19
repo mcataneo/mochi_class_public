@@ -707,6 +707,83 @@ int array_spline_table_lines(
   return _SUCCESS_;
  }
 
+int array_derivate_spline(
+                          double * __restrict__ x_array,
+                          int n_lines,
+                          double * __restrict__ array,
+                          double * __restrict__ array_splined,
+                          int n_columns,
+                          double x,
+                          int * __restrict__ last_index,
+                          double * __restrict__ result,
+                          int result_size, /** from 1 to n_columns */
+                          ErrorMsg errmsg) {
+
+  int inf,sup,mid,i;
+  double h,a,b;
+
+  inf=0;
+  sup=n_lines-1;
+
+  if (x_array[inf] < x_array[sup]){
+
+    if (x < x_array[inf]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,x,x_array[inf]);
+      return _FAILURE_;
+    }
+
+    if (x > x_array[sup]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[sup]);
+      return _FAILURE_;
+    }
+
+    while (sup-inf > 1) {
+
+      mid=(int)(0.5*(inf+sup));
+      if (x < x_array[mid]) {sup=mid;}
+      else {inf=mid;}
+
+    }
+
+  }
+
+  else {
+
+    if (x < x_array[sup]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e < x_min=%e",__func__,__LINE__,x,x_array[sup]);
+      return _FAILURE_;
+    }
+
+    if (x > x_array[inf]) {
+      sprintf(errmsg,"%s(L:%d) : x=%e > x_max=%e",__func__,__LINE__,x,x_array[inf]);
+      return _FAILURE_;
+    }
+
+    while (sup-inf > 1) {
+
+      mid=(int)(0.5*(inf+sup));
+      if (x > x_array[mid]) {sup=mid;}
+      else {inf=mid;}
+
+    }
+
+  }
+
+  *last_index = inf;
+
+  h = x_array[sup] - x_array[inf];
+  b = (x-x_array[inf])/h;
+  a = 1-b;
+
+  for (i=0; i<result_size; i++)
+    *(result+i) =
+      (*(array+sup*n_columns+i) - *(array+inf*n_columns+i))/h +
+      (-(3.*a*a-1.)* *(array_splined+inf*n_columns+i) +
+       (3.*b*b-1.)* *(array_splined+sup*n_columns+i))*h/6.;
+
+  return _SUCCESS_;    
+} 
+ 
 int array_logspline_table_lines(
 			     double * x, /* vector of size x_size */
 			     int x_size,
