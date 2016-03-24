@@ -3047,11 +3047,11 @@ int perturb_vector_init(
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
     class_define_index(ppv->index_pt_phi_prime_scf,pba->has_scf,index_pt,1); /* scalar field velocity */
     
-    /* scalar field: integration indices are assigned only if QS approx is off
+    /* scalar field: integration indices
      */    
 
-    class_define_index(ppv->index_pt_vx_smg,_TRUE_,index_pt,1); /* dynamical scalar field perturbation */
-    class_define_index(ppv->index_pt_vx_prime_smg,_TRUE_,index_pt,1); /* dynamical scalar field velocity */ 
+    class_define_index(ppv->index_pt_vx_smg,pba->has_smg,index_pt,1); /* dynamical scalar field perturbation */
+    class_define_index(ppv->index_pt_vx_prime_smg,pba->has_smg,index_pt,1); /* dynamical scalar field velocity */ 
         
 
     /* perturbed recombination: the indices are defined once tca is off. */
@@ -5252,9 +5252,8 @@ int perturb_einstein(
         ppw->pvecmetric[ppw->index_mt_alpha_prime] = (1. + ten)*y[ppw->pv->index_pt_eta] + (2. + run)*(-1.)*H*ppw->pvecmetric[ppw->index_mt_alpha]*a + (run + (-1.)*ten)*H*ppw->pvecmetric[ppw->index_mt_vx_smg]*a + (-9.)/2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_shear*pow(a,2);
 
     }//end if has_smg
-      
-      // Standard equations
-      else {      
+    // Standard equations
+    else {      
       
 	/* first equation involving total density fluctuation */
 	ppw->pvecmetric[ppw->index_mt_h_prime] =
@@ -5308,8 +5307,8 @@ int perturb_einstein(
 	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
 	  + y[ppw->pv->index_pt_eta]
 	  - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
-      }
-    } // end of else (if no smg) 
+      }// end of else (if no smg) 
+    } //end of syncrhonous
 
     /* transform (delta_m, theta_m) of the current gauge into
        gauge-independent variables (you could comment this out if you
