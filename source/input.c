@@ -2664,6 +2664,15 @@ int input_read_parameters(
     pop->write_primordial = _TRUE_;
 
   }
+  
+  /** readjust some precision parameters for modified gravity */  
+  if (pba->has_smg == _TRUE_){
+    
+    //otherwise problems with ISW effect
+    if (ppr->perturb_sampling_stepsize > 0.05)
+      ppr->perturb_sampling_stepsize=0.05;
+    
+  }
 
   return _SUCCESS_;
 
