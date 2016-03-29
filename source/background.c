@@ -1978,7 +1978,6 @@ int background_solve(
 		 pba->error_message);
      
      // check if any of the values becomes nan
-     // test only for the real model, otherwise the error jumps at initialization and breaks MCMCs
      int j = 0;
         while (j < pba->bg_size){
 	  class_test( isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),

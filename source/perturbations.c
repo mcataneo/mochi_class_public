@@ -5206,49 +5206,27 @@ int perturb_einstein(
         /* second equation involving total velocity */
         ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];
 
+	/* second equation involving total velocity */
+	ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
 
-      /* eventually, infer radiation streaming approximation for
-         gamma and ur (this is exactly the right place to do it
-         because the result depends on h_prime) */
+	/* third equation involving total pressure */
+	ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 2.*pow(D,-1)*pow(k,2)*l1*y[ppw->pv->index_pt_eta] + 2.*H*pow(D,-1)*l3*ppw->pvecmetric[ppw->index_mt_h_prime]*a + (-9.)*kin*pow(D,-1)*pow(M2,-1)*ppw->delta_p*pow(a,2) + 3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*pow(a,2) + (2.*H*pow(D,-1)*pow(k,2)*l5*a + 6.*pow(H,3)*pow(D,-1)*l6*pow(a,3))*ppw->pvecmetric[ppw->index_mt_vx_smg];
 
-      if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
+	/* alpha = (h'+6eta')/2k^2 */
+	ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
-        class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
-                   ppt->error_message,
-                   ppt->error_message);
-
-        /* update total theta given rsa approximation results */
-
-        ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
-
-        if (pba->has_ur == _TRUE_) {
-
-          ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
-
-        }
-      }
-
-      /* second equation involving total velocity */
-      ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
-
-      /* third equation involving total pressure */
-      ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 2.*pow(D,-1)*pow(k,2)*l1*y[ppw->pv->index_pt_eta] + 2.*H*pow(D,-1)*l3*ppw->pvecmetric[ppw->index_mt_h_prime]*a + (-9.)*kin*pow(D,-1)*pow(M2,-1)*ppw->delta_p*pow(a,2) + 3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*pow(a,2) + (2.*H*pow(D,-1)*pow(k,2)*l5*a + 6.*pow(H,3)*pow(D,-1)*l6*pow(a,3))*ppw->pvecmetric[ppw->index_mt_vx_smg];
-
-      /* alpha = (h'+6eta')/2k^2 */
-      ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
-
-      /* eventually, infer first-order tight-coupling approximation for photon
+	/* eventually, infer first-order tight-coupling approximation for photon
          shear, then correct the total shear */
-      if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
+	if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
 
-        shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+	  shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
 
-        ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
+	  ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
 
-      }
+	}
 
-      /* fourth equation involving total shear */
-      /* fourth equation involving total shear */
+	/* fourth equation involving total shear */
+	/* fourth equation involving total shear */
         ppw->pvecmetric[ppw->index_mt_alpha_prime] = (1. + ten)*y[ppw->pv->index_pt_eta] + (2. + run)*(-1.)*H*ppw->pvecmetric[ppw->index_mt_alpha]*a + (run + (-1.)*ten)*H*ppw->pvecmetric[ppw->index_mt_vx_smg]*a + (-9.)/2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_shear*pow(a,2);
 
     }//end if has_smg
