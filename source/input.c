@@ -3135,8 +3135,8 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->k_bao_center=3.;
   ppr->k_bao_width=4.;
 
-  ppr->start_small_k_at_tau_c_over_tau_h = 0.0015;  /* decrease to start earlier in time */
-  ppr->start_large_k_at_tau_h_over_tau_k = 0.07;  /* decrease to start earlier in time */
+  ppr->start_small_k_at_tau_c_over_tau_h = 1.e-4;  /* decrease to start earlier in time */
+  ppr->start_large_k_at_tau_h_over_tau_k = 1.e-4;  /* decrease to start earlier in time */
   ppr->tight_coupling_trigger_tau_c_over_tau_h=0.015; /* decrease to switch off earlier in time */
   ppr->tight_coupling_trigger_tau_c_over_tau_k=0.01; /* decrease to switch off earlier in time */
   ppr->start_sources_at_tau_c_over_tau_h = 0.008; /* decrease to start earlier in time */
@@ -3159,7 +3159,7 @@ int input_default_precision ( struct precision * ppr ) {
 
   ppr->tol_tau_approx=1.e-10;
   ppr->tol_perturb_integration=1.e-5;
-  ppr->perturb_sampling_stepsize=0.10;
+  ppr->perturb_sampling_stepsize=0.05;
 
   ppr->radiation_streaming_approximation = rsa_MD_with_reio;
   ppr->radiation_streaming_trigger_tau_over_tau_k = 45.;
@@ -3201,8 +3201,8 @@ int input_default_precision ( struct precision * ppr ) {
    * - parameter related to the transfer functions
    */
 
-  ppr->l_logstep=1.12;
-  ppr->l_linstep=40;
+  ppr->l_logstep=1.045;
+  ppr->l_linstep=50;
 
   ppr->hyper_x_min = 1.e-5;
   ppr->hyper_sampling_flat = 8.;
