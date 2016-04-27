@@ -2178,6 +2178,11 @@ int background_initial_conditions(
   if(pba->has_smg == _TRUE_){
     
     pba->initial_conditions_set_smg = _FALSE_;
+    
+    //default value, can override latter
+    if (pba->M_pl_evolution_smg ==_TRUE_){
+      pvecback_integration[pba->index_bi_M_pl_smg] = 1.;
+    }
        
     switch (pba->gravity_model_smg) {
 	
