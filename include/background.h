@@ -103,7 +103,6 @@ struct background
   
   double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
   
-  double phi_ini_safe_smg; /**< small \f$ d\phi(t_0)/d\tau \f$ to avoid division by zero and make kinetic energy negligible */
   double cs2_safe_smg; /**< threshold for the speed of sound to consider it negative */
   double D_safe_smg; /* threshold to consider the kinetic term of scalars negative in the stability check */
   double ct2_safe_smg; /* threshold to consider the sound speed of tensors negative in the stability check */

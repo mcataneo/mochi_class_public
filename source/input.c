@@ -2665,15 +2665,6 @@ int input_read_parameters(
 
   }
   
-  /** readjust some precision parameters for modified gravity */  
-  if (pba->has_smg == _TRUE_){
-    
-    //otherwise problems with ISW effect
-    if (ppr->perturb_sampling_stepsize > 0.05)
-      ppr->perturb_sampling_stepsize=0.05;
-    
-  }
-
   return _SUCCESS_;
 
 }
@@ -2765,7 +2756,6 @@ int input_default_params(
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
   
   pba->kineticity_safe_smg = 0; /* value added to the kineticity, useful to cure perturbations at early time in some models */
-  pba->phi_ini_safe_smg = 1e-100; /* small initial phi' to avoid division by zero and make kinetic energy negligible */
   pba->cs2_safe_smg = 0; /* threshold to consider the sound speed of scalars negative in the stability check */
   pba->D_safe_smg = 0; /* threshold to consider the kinetic term of scalars negative in the stability check */
   pba->ct2_safe_smg = 0; /* threshold to consider the sound speed of tensors negative in the stability check */
