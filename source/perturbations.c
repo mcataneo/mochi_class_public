@@ -5347,10 +5347,11 @@ int perturb_einstein(
     /* modified version if gravity is non-standard. Note that no curvature is allowed in this case */
     else{
       
+      double M2 = ppw->pvecback[pba->index_bg_M2_smg];
       double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
       double c_t2 = (1. + ppw->pvecback[pba->index_bg_tensor_excess_smg]);
       
-      ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -(2. + run)*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-k2*c_t2*y[ppw->pv->index_pt_gw]+ppw->gw_source;
+      ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -(2. + run)*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-k2*c_t2*y[ppw->pv->index_pt_gw]+ppw->gw_source/M2;
     }
 
   }
