@@ -1,21 +1,30 @@
-==============================================
-CLASS: Cosmic Linear Anisotropy Solving System
-==============================================
 
-:Author: Julien Lesgourgues
+==================================================================
+hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System
+==================================================================
 
-with several major inputs from other people, especially Thomas Tram,
-as well as Benjamin Audren, Simon Prunet, Jesus Torrado, Miguel
-Zumalacarregui, etc.
+:Authors: Miguel Zumalacarregui, Emilio Bellini
 
-For download and information, see http://class-code.net
+(based on the CLASS code by Julien Lesgourgues, with several major
+inputs from other people, especially Thomas Tram)
+
+hi_class can be used freely, provided that you cite the CLASS paper and
+
+    "hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System" 
+    M. Zumalacarregui, E. Bellini, I. Sawicki, J, Lesgourgues
+
+For further information please visit
+http://hiclass-code.net and http://class-code.net
+
+See also hi_class.ini for details on the available models and features
+
 
 
 Compiling CLASS and getting started
 -----------------------------------
 
-(the information below can also be found on the webpage, just below
-the download button)
+(the information below can also be found on the CLASS webpage, 
+just below the download button)
 
 After downloading the code, unpack the archive (tar -zxvf
 class_v*.tar.gz), go to the class directory (cd class_v*/) and compile
