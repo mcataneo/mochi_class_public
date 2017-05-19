@@ -2195,6 +2195,10 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
 	break;	
 
+      case eft_propto_scale:
+	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
+	break;
+
       case planck_linear:
 	//NOTE: The Planck collaboration decided to consider models with M_pl^2=1+\Omega. Here, even if we have an additional integration parameter (i.e. M_pl_ini), we decided to fix it to M_pl^2=1+a*Omega_0 in order to be coherent with the choice of the Planck collaboration.
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1+a*pba->parameters_2_smg[0];
@@ -2558,6 +2562,23 @@ int background_gravity_functions(
       pvecback[pba->index_bg_mpl_running_smg] = c_m*a;
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
+    else if (pba->gravity_model_smg == eft_propto_scale) {	
+      
+      double M_0 = pba->parameters_2_smg[0];
+      double c_k = pba->parameters_2_smg[1];
+      double c_b = pba->parameters_2_smg[2];
+      double c_t = pba->parameters_2_smg[3];      
+      double M_0_exp = pba->parameters_2_smg[4];
+      double c_k_exp = pba->parameters_2_smg[5];
+      double c_b_exp = pba->parameters_2_smg[6];
+      double c_t_exp = pba->parameters_2_smg[7];      
+      
+      pvecback[pba->index_bg_kineticity_smg] = c_k*pow(a, c_k_exp);
+      pvecback[pba->index_bg_braiding_smg] = c_b*pow(a, c_b_exp);	
+      pvecback[pba->index_bg_tensor_excess_smg] = c_t*pow(a, c_t_exp);
+      pvecback[pba->index_bg_mpl_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
+      pvecback[pba->index_bg_M2_smg] = M_pl;
+    }
     else if (pba->gravity_model_smg == planck_linear) {	
       //NOTE: With this parametrization every function it is expressed analytically. Then, it is possible to choose both to take the derivative of M_pl to obtain alpha_M or to integrate alpha_M to obtain M_pl. Even if the two results are undistinguishable, we choose the latter option, since in Class integrals are more stable numerically.
       
@@ -2643,6 +2664,13 @@ int background_gravity_parameters(
      printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
+     break;
+
+   case eft_propto_scale:
+     printf("Modified gravity: eft_propto_scale with parameters: \n");
+     printf("-> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
+	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
+	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
    case planck_linear:

@@ -11,7 +11,7 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, planck_linear, planck_exponential}; //write here the different models
+enum gravity_model {propto_omega, propto_scale, eft_propto_scale, planck_linear, planck_exponential}; //write here the different models
 
 // initial conditions for the perturbations
 enum pert_initial_conditions {single_clock, zero};
