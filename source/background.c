@@ -2206,16 +2206,6 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -1.;
 	break;
 
-      case planck_linear:
-	//NOTE: The Planck collaboration decided to consider models with M_pl^2=1+\Omega. Here, even if we have an additional integration parameter (i.e. M_pl_ini), we decided to fix it to M_pl^2=1+a*Omega_0 in order to be coherent with the choice of the Planck collaboration.
-	pvecback_integration[pba->index_bi_M_pl_smg] = 1+a*pba->parameters_2_smg[0];
-	break;
-
-      case planck_exponential:
-	//NOTE: The Planck collaboration decided to consider models with M_pl^2=1+\Omega. Here, even if we have an additional integration parameter (i.e. M_pl_ini), we decided to fix M_pl^2=exp(alpha_M0*pow(a, beta)/beta) in order to be coherent with the choice of the Planck collaboration.
-	pvecback_integration[pba->index_bi_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[1])/pba->parameters_2_smg[1]);
-	break;
-	
     }
     
       if (pba->M_pl_evolution_smg == _TRUE_)
@@ -2630,30 +2620,6 @@ int background_gravity_functions(
       pvecback[pba->index_bg_M2_smg] = M_pl;
 
     }
-    else if (pba->gravity_model_smg == planck_linear) {	
-      //NOTE: With this parametrization every function it is expressed analytically. Then, it is possible to choose both to take the derivative of M_pl to obtain alpha_M or to integrate alpha_M to obtain M_pl. Even if the two results are undistinguishable, we choose the latter option, since in Class integrals are more stable numerically.
-      
-      double Omega = a*pba->parameters_2_smg[0];
-      
-      pvecback[pba->index_bg_tensor_excess_smg] = 0.;
-      pvecback[pba->index_bg_mpl_running_smg] = Omega/(1.+Omega);
-      pvecback[pba->index_bg_braiding_smg] = -pvecback[pba->index_bg_mpl_running_smg];
-      pvecback[pba->index_bg_kineticity_smg] = 3.*((2.+3.*Omega)*(pvecback[pba->index_bg_rho_smg]+pvecback[pba->index_bg_p_smg])+Omega*(pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_p_tot_wo_smg]))/2./(1.+Omega)/rho_tot;
-      pvecback[pba->index_bg_M2_smg] = M_pl;
-    }
-    else if (pba->gravity_model_smg == planck_exponential) {	
-      //NOTE: With this parametrization every function it is expressed analytically. Then, it is possible to choose both to take the derivative of M_pl to obtain alpha_M or to integrate alpha_M to obtain M_pl. Even if the two results are undistinguishable, we choose the latter option, since in Class integrals are more stable numerically.
-      
-      double alpha_M0 = pba->parameters_2_smg[0];
-      double beta = pba->parameters_2_smg[1];
-      double Omega = exp(alpha_M0*pow(a, beta)/beta)-1;
-      
-      pvecback[pba->index_bg_tensor_excess_smg] = 0;
-      pvecback[pba->index_bg_mpl_running_smg] = alpha_M0*pow(a, beta);
-      pvecback[pba->index_bg_braiding_smg] = -pvecback[pba->index_bg_mpl_running_smg];
-      pvecback[pba->index_bg_kineticity_smg] = (1-beta-pvecback[pba->index_bg_mpl_running_smg])*pvecback[pba->index_bg_mpl_running_smg] + 3*(2+pvecback[pba->index_bg_mpl_running_smg])*(pvecback[pba->index_bg_rho_smg]+pvecback[pba->index_bg_p_smg])/2/rho_tot + 3*(pvecback[pba->index_bg_mpl_running_smg]+2*Omega/(1+Omega))*(pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_p_tot_wo_smg])/2/rho_tot;
-      pvecback[pba->index_bg_M2_smg] = M_pl;
-    }
     
     
     pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
@@ -2734,12 +2700,6 @@ int background_gravity_parameters(
      printf("Modified gravity: eft_exponential with parameters: \n");
      printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
-     break;
-
-   case planck_linear:
-     printf("Modified gravity: planck_linear with parameters: \n");
-     printf("-> Omega_0 = %g \n",
-	    pba->parameters_2_smg[0]);
      break;
 
     
