@@ -2199,6 +2199,13 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
 	break;
 
+      case eft_power_law:
+	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
+	break;
+      case eft_exponential:
+	pvecback_integration[pba->index_bi_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -1.;
+	break;
+
       case planck_linear:
 	//NOTE: The Planck collaboration decided to consider models with M_pl^2=1+\Omega. Here, even if we have an additional integration parameter (i.e. M_pl_ini), we decided to fix it to M_pl^2=1+a*Omega_0 in order to be coherent with the choice of the Planck collaboration.
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1+a*pba->parameters_2_smg[0];
@@ -2579,6 +2586,50 @@ int background_gravity_functions(
       pvecback[pba->index_bg_mpl_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
+    else if ((pba->gravity_model_smg == eft_power_law) || (pba->gravity_model_smg == eft_exponential)) {
+      
+      double Omega=0., g1=0., g2=0., g3=0., Omega_p=0., Omega_pp=0., g3_p=0.;
+      double Omega_0=0., g1_0=0., g2_0=0., g3_0=0.;
+      double Omega_exp=0., g1_exp=0., g2_exp=0., g3_exp=0.;
+      
+      Omega_0 = pba->parameters_2_smg[0];
+      g1_0 = pba->parameters_2_smg[1];
+      g2_0 = pba->parameters_2_smg[2];
+      g3_0 = pba->parameters_2_smg[3];
+      Omega_exp = pba->parameters_2_smg[4];
+      g1_exp = pba->parameters_2_smg[5];
+      g2_exp = pba->parameters_2_smg[6];
+      g3_exp = pba->parameters_2_smg[7];
+      
+      if (pba->gravity_model_smg == eft_power_law) {
+        Omega = Omega_0*pow(a,Omega_exp);
+        Omega_p = Omega_0*Omega_exp*pow(a,Omega_exp-1.); // Derivative w.r.t. the scale factor
+        Omega_pp = Omega_0*Omega_exp*(Omega_exp-1.)*pow(a,Omega_exp-2.); // Derivative w.r.t. the scale factor
+        g1 = g1_0*pow(a,g1_exp);
+        g2 = g2_0*pow(a,g2_exp);
+        g3 = g3_0*pow(a,g3_exp);
+        g3_p = g3_0*g3_exp*pow(a,g3_exp-1.); // Derivative w.r.t. the scale factor
+      }
+      else { //(pba->gravity_model_smg == eft_exponential)
+        Omega = exp(Omega_0*pow(a,Omega_exp))-1.;
+        Omega_p = Omega_0*Omega_exp*pow(a,Omega_exp-1.)*exp(Omega_0*pow(a,Omega_exp)); // Derivative w.r.t. the scale factor
+        Omega_pp = Omega_0*Omega_exp*pow(a,Omega_exp-2.)*exp(Omega_0*pow(a,Omega_exp))*(Omega_exp-1.+Omega_0*Omega_exp*pow(a,Omega_exp)); // Derivative w.r.t. the scale factor
+        g1 = exp(g1_0*pow(a,g1_exp))-1.;
+        g2 = exp(g2_0*pow(a,g2_exp))-1.;
+        g3 = exp(g3_0*pow(a,g3_exp))-1.;
+        g3_p = g3_0*g3_exp*pow(a,g3_exp-1.)*exp(g3_0*pow(a,g3_exp)); // Derivative w.r.t. the scale factor
+      }
+      
+      
+      double c_over_H2 = (-pow(a,2.)*Omega_pp + 3.*(Omega + a*Omega_p/2.)*(rho_tot + p_tot)/rho_tot + 3.*(pvecback[pba->index_bg_rho_smg]+pvecback[pba->index_bg_p_smg])/rho_tot)/2.;
+      
+      pvecback[pba->index_bg_kineticity_smg] = 2.*(2.*g1*pow(pba->H0,2.)/rho_tot + c_over_H2)/(1. + Omega + g3);
+      pvecback[pba->index_bg_braiding_smg] = -(g2*pba->H0/sqrt(rho_tot) + a*Omega_p)/(1. + Omega + g3);
+      pvecback[pba->index_bg_tensor_excess_smg] = -g3/(1. + Omega + g3);
+      pvecback[pba->index_bg_mpl_running_smg] = a*(Omega_p + g3_p)/(1. + Omega + g3);
+      pvecback[pba->index_bg_M2_smg] = M_pl;
+
+    }
     else if (pba->gravity_model_smg == planck_linear) {	
       //NOTE: With this parametrization every function it is expressed analytically. Then, it is possible to choose both to take the derivative of M_pl to obtain alpha_M or to integrate alpha_M to obtain M_pl. Even if the two results are undistinguishable, we choose the latter option, since in Class integrals are more stable numerically.
       
@@ -2671,6 +2722,18 @@ int background_gravity_parameters(
      printf("-> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
+     break;
+
+   case eft_power_law:
+     printf("Modified gravity: eft_power_law with parameters: \n");
+     printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
+	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
+     break;
+
+   case eft_exponential:
+     printf("Modified gravity: eft_exponential with parameters: \n");
+     printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
+	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
    case planck_linear:
