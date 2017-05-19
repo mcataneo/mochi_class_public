@@ -2195,14 +2195,14 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
 	break;	
 
-      case eft_propto_scale:
+      case eft_alphas_power_law:
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
 	break;
 
-      case eft_power_law:
+      case eft_gammas_power_law:
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
 	break;
-      case eft_exponential:
+      case eft_gammas_exponential:
 	pvecback_integration[pba->index_bi_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -1.;
 	break;
 
@@ -2559,7 +2559,7 @@ int background_gravity_functions(
       pvecback[pba->index_bg_mpl_running_smg] = c_m*a;
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
-    else if (pba->gravity_model_smg == eft_propto_scale) {	
+    else if (pba->gravity_model_smg == eft_alphas_power_law) {	
       
       double M_0 = pba->parameters_2_smg[0];
       double c_k = pba->parameters_2_smg[1];
@@ -2576,7 +2576,7 @@ int background_gravity_functions(
       pvecback[pba->index_bg_mpl_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
-    else if ((pba->gravity_model_smg == eft_power_law) || (pba->gravity_model_smg == eft_exponential)) {
+    else if ((pba->gravity_model_smg == eft_gammas_power_law) || (pba->gravity_model_smg == eft_gammas_exponential)) {
       
       double Omega=0., g1=0., g2=0., g3=0., Omega_p=0., Omega_pp=0., g3_p=0.;
       double Omega_0=0., g1_0=0., g2_0=0., g3_0=0.;
@@ -2591,7 +2591,7 @@ int background_gravity_functions(
       g2_exp = pba->parameters_2_smg[6];
       g3_exp = pba->parameters_2_smg[7];
       
-      if (pba->gravity_model_smg == eft_power_law) {
+      if (pba->gravity_model_smg == eft_gammas_power_law) {
         Omega = Omega_0*pow(a,Omega_exp);
         Omega_p = Omega_0*Omega_exp*pow(a,Omega_exp-1.); // Derivative w.r.t. the scale factor
         Omega_pp = Omega_0*Omega_exp*(Omega_exp-1.)*pow(a,Omega_exp-2.); // Derivative w.r.t. the scale factor
@@ -2600,7 +2600,7 @@ int background_gravity_functions(
         g3 = g3_0*pow(a,g3_exp);
         g3_p = g3_0*g3_exp*pow(a,g3_exp-1.); // Derivative w.r.t. the scale factor
       }
-      else { //(pba->gravity_model_smg == eft_exponential)
+      else { //(pba->gravity_model_smg == eft_gammas_exponential)
         Omega = exp(Omega_0*pow(a,Omega_exp))-1.;
         Omega_p = Omega_0*Omega_exp*pow(a,Omega_exp-1.)*exp(Omega_0*pow(a,Omega_exp)); // Derivative w.r.t. the scale factor
         Omega_pp = Omega_0*Omega_exp*pow(a,Omega_exp-2.)*exp(Omega_0*pow(a,Omega_exp))*(Omega_exp-1.+Omega_0*Omega_exp*pow(a,Omega_exp)); // Derivative w.r.t. the scale factor
@@ -2683,21 +2683,21 @@ int background_gravity_parameters(
 	    pba->parameters_2_smg[4]);
      break;
 
-   case eft_propto_scale:
-     printf("Modified gravity: eft_propto_scale with parameters: \n");
+   case eft_alphas_power_law:
+     printf("Modified gravity: eft_alphas_power_law with parameters: \n");
      printf("-> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
-   case eft_power_law:
-     printf("Modified gravity: eft_power_law with parameters: \n");
+   case eft_gammas_power_law:
+     printf("Modified gravity: eft_gammas_power_law with parameters: \n");
      printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
-   case eft_exponential:
-     printf("Modified gravity: eft_exponential with parameters: \n");
+   case eft_gammas_exponential:
+     printf("Modified gravity: eft_gammas_exponential with parameters: \n");
      printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
