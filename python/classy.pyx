@@ -698,7 +698,7 @@ cdef class Class:
         cdef double *pk_ic = <double*> calloc(self.sp.ic_ic_size[self.sp.index_md_scalars], sizeof(double))
         abort = True
         if 'output' in self._pars:
-            options = self._pars['output'].split()
+            options = self._pars['output'].split(',')
             for option in options:
                 if option in ['mPk', 'mTk', 'vTk']:
                     abort = False
