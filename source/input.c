@@ -1118,7 +1118,15 @@ int input_read_parameters(
     class_read_double("D_safe_smg",pba->D_safe_smg);
     class_read_double("ct2_safe_smg",pba->ct2_safe_smg);
     class_read_double("M2_safe_smg",pba->M2_safe_smg);
-    class_read_double("kineticity_safe_smg",pba->kineticity_safe_smg); // minimum value of the kineticity (to avoid trouble) 
+
+    class_read_double("pert_ic_tolerance_smg",pba->pert_ic_tolerance_smg);
+    class_read_double("pert_ic_ini_z_ref_smg",pba->pert_ic_ini_z_ref_smg);
+    class_read_double("pert_ic_regulator_smg",pba->pert_ic_regulator_smg);
+    class_read_double("a_min_stability_test_smg",pba->a_min_stability_test_smg);
+    
+    class_read_double("kineticity_safe_smg",pba->kineticity_safe_smg); // minimum value of the kineticity (to avoid trouble)
+    class_read_double("min_a_pert_smg",pba->min_a_pert_smg);
+ 
     
     class_call(parser_read_string(pfc,
 				  "skip_stability_tests_smg",
@@ -1147,11 +1155,21 @@ int input_read_parameters(
 		errmsg);
     
     if (strcmp(string1,"single_clock") == 0) {
-	pba->pert_initial_conditions_smg = single_clock;
+	    pba->pert_initial_conditions_smg = single_clock;
+      }
+    if (strcmp(string1,"gravitating_attr") == 0) {
+      pba->pert_initial_conditions_smg = gravitating_attr;
       }
     if (strcmp(string1,"zero") == 0) {
-	pba->pert_initial_conditions_smg = zero;
+	    pba->pert_initial_conditions_smg = zero;
       }
+    if (strcmp(string1,"kin_only") == 0) {
+      pba->pert_initial_conditions_smg = kin_only;
+    }
+    if (strcmp(string1,"ext_field_attr") == 0 ){//this is the default
+      pba->pert_initial_conditions_smg = ext_field_attr;
+    }
+
 //     else {
 //       if (ppt->perturbations_verbose > 1)
 // 	printf(" Initial conditions for Modified gravity perturbations not specified, using default \n");
@@ -2761,8 +2779,13 @@ int input_default_params(
   pba->ct2_safe_smg = 0; /* threshold to consider the sound speed of tensors negative in the stability check */
   pba->M2_safe_smg = 0; /* threshold to consider the kinetic term of tensors (M2) negative in the stability check */
   
-  pba->pert_initial_conditions_smg = single_clock; /* default IC for perturbations in the scalar */
+  pba->pert_ic_tolerance_smg = 2e-2; /* tolerance to deviations from n=2 for IC h~tau^n as evaluated at pert_ic_ini_z_ref_smg. Negative values override test */
+  pba->pert_ic_ini_z_ref_smg = 1e10;/* redshift at which initial IC stability test performed */
+  pba->pert_ic_regulator_smg = 1e-15; /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */ 
 
+  
+  pba->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
+ 
   /*set stability quantities to nonzero values*/
   pba->min_M2_smg = 1e10;
   pba->min_ct2_smg = 1e10;
@@ -2771,6 +2794,8 @@ int input_default_params(
 
   pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */  
   pba->initial_conditions_set_smg = _FALSE_;
+  pba->z_ref_smg = 0.;
+  pba->min_a_pert_smg = 1.;
   
   pba->parameters_smg = NULL;
   pba->parameters_size_smg = 0;
