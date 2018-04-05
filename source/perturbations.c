@@ -1926,7 +1926,9 @@ int perturb_workspace_init(
     class_define_index(ppw->index_ap_ufa,pba->has_ur,index_ap,1);
     class_define_index(ppw->index_ap_ncdmfa,pba->has_ncdm,index_ap,1);
 
-  }
+    class_define_index(ppw->index_ap_smgqs,pba->has_smg,index_ap,1);
+
+}
 
   ppw->ap_size=index_ap;
 
@@ -1946,6 +1948,9 @@ int perturb_workspace_init(
     }
     if (pba->has_ncdm == _TRUE_) {
       ppw->approx[ppw->index_ap_ncdmfa]=(int)ncdmfa_off;
+    }
+    if (pba->has_smg == _TRUE_) {
+      ppw->approx[ppw->index_ap_smgqs]=(int)smgqs_fd_0;
     }
   }
 
@@ -2092,6 +2097,9 @@ int perturb_solve(
   int * previous_approx;
 
   int n_ncdm,is_early_enough;
+
+  /* array that contains the quasi-static approximation scheme */
+  double * tau_scheme_smgqs;
 
   /* function pointer to ODE evolver and names of possible evolvers */
 
@@ -2243,6 +2251,26 @@ int perturb_solve(
 
   tau = tau_mid;
 
+  /** - find the intervals over which the approximation scheme for smgqs is constant */
+
+  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+  class_alloc(tau_scheme_smgqs,sizeof(smgqs_array)/sizeof(int)*sizeof(double),ppt->error_message);
+
+  if (pba->has_smg == _TRUE_) {
+    if ((ppt->method_smgqs == automatic) || (ppt->method_smgqs == fully_dynamic_debug) || (ppt->method_smgqs == quasi_static_debug)) {
+    class_call(perturb_find_scheme_smgqs(ppr,
+                                         pba,
+				         ppt,
+                                         ppw,
+                                         k,
+                                         tau,
+                                         ppt->tau_sampling[tau_actual_size-1],
+                                         tau_scheme_smgqs),
+               ppt->error_message,
+               ppt->error_message);
+    }
+  }
+
   /** - find the number of intervals over which approximation scheme is constant */
 
   class_alloc(interval_number_of,ppw->ap_size*sizeof(int),ppt->error_message);
@@ -2259,7 +2287,8 @@ int perturb_solve(
                                                tau,
                                                ppt->tau_sampling[tau_actual_size-1],
                                                &interval_number,
-                                               interval_number_of),
+                                               interval_number_of,
+                                               tau_scheme_smgqs),
              ppt->error_message,
              ppt->error_message);
 
@@ -2283,11 +2312,13 @@ int perturb_solve(
                                                  interval_number,
                                                  interval_number_of,
                                                  interval_limit,
-                                                 interval_approx),
+                                                 interval_approx,
+                                                 tau_scheme_smgqs),
              ppt->error_message,
              ppt->error_message);
 
   free(interval_number_of);
+  free(tau_scheme_smgqs);
 
   /** - fill the structure containing all fixed parameters, indices
       and workspaces needed by perturb_derivs */
@@ -2561,7 +2592,8 @@ int perturb_find_approximation_number(
                                       double tau_ini,
                                       double tau_end,
                                       int * interval_number,
-                                      int * interval_number_of /* interval_number_of[index_ap] (already allocated) */
+                                      int * interval_number_of, /* interval_number_of[index_ap] (already allocated) */
+                                      double * tau_scheme_smgqs
                                       ){
 
   /* index running over approximations */
@@ -2585,7 +2617,8 @@ int perturb_find_approximation_number(
                                       index_md,
                                       k,
                                       tau_ini,
-                                      ppw),
+                                      ppw,
+                                      tau_scheme_smgqs),
                ppt->error_message,
                ppt->error_message);
 
@@ -2598,7 +2631,8 @@ int perturb_find_approximation_number(
                                       index_md,
                                       k,
                                       tau_end,
-                                      ppw),
+                                      ppw,
+                                      tau_scheme_smgqs),
                ppt->error_message,
                ppt->error_message);
 
@@ -2651,7 +2685,8 @@ int perturb_find_approximation_switches(
                                         int interval_number,
                                         int * interval_number_of,
                                         double * interval_limit, /* interval_limit[index_interval] (already allocated) */
-                                        int ** interval_approx   /* interval_approx[index_interval][index_ap] (already allocated) */
+                                        int ** interval_approx,   /* interval_approx[index_interval][index_ap] (already allocated) */
+                                        double * tau_scheme_smgqs
                                         ){
 
   int index_ap;
@@ -2664,6 +2699,7 @@ int perturb_find_approximation_switches(
   double next_tau_switch;
   int flag_ini;
   int num_switching_at_given_time;
+  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
 
   /** - write in output arrays the initial time and approximation */
 
@@ -2676,7 +2712,8 @@ int perturb_find_approximation_switches(
                                     index_md,
                                     k,
                                     tau_ini,
-                                    ppw),
+                                    ppw,
+                                    tau_scheme_smgqs),
              ppt->error_message,
              ppt->error_message);
 
@@ -2726,7 +2763,8 @@ int perturb_find_approximation_switches(
                                               index_md,
                                               k,
                                               mid,
-                                              ppw),
+                                              ppw,
+                                              tau_scheme_smgqs),
                        ppt->error_message,
                        ppt->error_message);
 
@@ -2789,7 +2827,8 @@ int perturb_find_approximation_switches(
                                         index_md,
                                         k,
                                         0.5*(interval_limit[index_switch]+interval_limit[index_switch+1]),
-                                        ppw),
+                                        ppw,
+                                        tau_scheme_smgqs),
 
                  ppt->error_message,
                  ppt->error_message);
@@ -2850,6 +2889,16 @@ int perturb_find_approximation_switches(
               fprintf(stdout,"Mode k=%e: will switch on ncdm fluid approximation at tau=%e\n",k,interval_limit[index_switch]);
             }
           }
+          if (pba->has_smg == _TRUE_) {
+            if ((smgqs_array[interval_approx[index_switch-1][ppw->index_ap_smgqs]]==1) &&
+                (smgqs_array[interval_approx[index_switch][ppw->index_ap_smgqs]]==0)) {
+              fprintf(stdout,"Mode k=%e: will switch off the quasi_static approximation smg (1 -> 0) at tau=%e\n",k,interval_limit[index_switch]);
+            }
+            if ((smgqs_array[interval_approx[index_switch-1][ppw->index_ap_smgqs]]==0) &&
+                (smgqs_array[interval_approx[index_switch][ppw->index_ap_smgqs]]==1)) {
+              fprintf(stdout,"Mode k=%e: will switch on the quasi_static approximation smg (0 -> 1) at tau=%e\n",k,interval_limit[index_switch]);
+            }
+          }
         }
 
         if (_tensors_) {
@@ -2875,7 +2924,8 @@ int perturb_find_approximation_switches(
                                       index_md,
                                       k,
                                       tau_end,
-                                      ppw),
+                                      ppw,
+                                      tau_scheme_smgqs),
 
                ppt->error_message,
                ppt->error_message);
@@ -2949,6 +2999,7 @@ int perturb_vector_init(
   int l;
   int n_ncdm,index_q,ncdm_l_size;
   double rho_plus_p_ncdm,q,q2,epsilon,a,factor;
+  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
 
   /** - allocate a new perturb_vector structure to which ppw->pv will point at the end of the routine */
 
@@ -3047,12 +3098,12 @@ int perturb_vector_init(
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
     class_define_index(ppv->index_pt_phi_prime_scf,pba->has_scf,index_pt,1); /* scalar field velocity */
     
-    /* scalar field: integration indices
-     */    
+    /* scalar field: integration indices are assigned only if fd (0) */
 
-    class_define_index(ppv->index_pt_vx_smg,pba->has_smg,index_pt,1); /* dynamical scalar field perturbation */
-    class_define_index(ppv->index_pt_vx_prime_smg,pba->has_smg,index_pt,1); /* dynamical scalar field velocity */ 
-        
+    if ((pba->has_smg == _TRUE_) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
+      class_define_index(ppv->index_pt_vx_smg,_TRUE_,index_pt,1); /* dynamical scalar field perturbation */
+      class_define_index(ppv->index_pt_vx_prime_smg,_TRUE_,index_pt,1); /* dynamical scalar field velocity */
+    }        
 
     /* perturbed recombination: the indices are defined once tca is off. */
     if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
@@ -3466,11 +3517,20 @@ int perturb_vector_init(
       }
       
       if (pba->has_smg == _TRUE_) {//pass the values only if the order is correct
-	
-	ppv->y[ppv->index_pt_vx_smg] =
-	    ppw->pv->y[ppw->pv->index_pt_vx_smg];
-	ppv->y[ppv->index_pt_vx_prime_smg] =
-	    ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
+
+        // TODO: Check this. I am not sure I am passing the correct values
+        if ((smgqs_array[pa_old[ppw->index_ap_smgqs]] == 1) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
+          ppv->y[ppv->index_pt_vx_smg] =
+            ppw->pvecmetric[ppw->index_mt_vx_smg];
+          ppv->y[ppv->index_pt_vx_prime_smg] =
+            ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
+        }
+        else if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+          ppv->y[ppv->index_pt_vx_smg] =
+            ppw->pv->y[ppw->pv->index_pt_vx_smg];
+          ppv->y[ppv->index_pt_vx_prime_smg] =
+            ppw->pv->y[ppw->pv->index_pt_vx_prime_smg];
+        }
       }
 
       if (ppt->gauge == synchronous)
@@ -4025,6 +4085,8 @@ int perturb_initial_conditions(struct precision * ppr,
   double velocity_tot;
   double s2_squared;
 
+  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+
   /** - for scalars */
 
   if (_scalars_) {
@@ -4200,26 +4262,27 @@ int perturb_initial_conditions(struct precision * ppr,
        * This leads to very simple expressions:
        * v_X = delta tau = delta_cdm/a_prime_over_a and v_X_prime = 0
        */     
-      if (pba->has_smg == _TRUE_) { 
-	if (pba->pert_initial_conditions_smg == single_clock){
-	      // single_clock IC given with respect to photons (because there are always photons)
-	  ppw->pv->y[ppw->pv->index_pt_vx_smg] = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
-	      // Single clock IC => v_x^prime = 0
-	  ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ; 
-	  if(ppt->perturbations_verbose > 5)
-	    printf("Single clock IC for smg: ");
-	  }
-	  if (pba->pert_initial_conditions_smg == zero){
-	    ppw->pv->y[ppw->pv->index_pt_vx_smg] = 0.;
-	    ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
-	    
+      if (pba->has_smg == _TRUE_) {
+        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+	  if (pba->pert_initial_conditions_smg == single_clock){
+	        // single_clock IC given with respect to photons (because there are always photons)
+	    ppw->pv->y[ppw->pv->index_pt_vx_smg] = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
+	        // Single clock IC => v_x^prime = 0
+	    ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ; 
 	    if(ppt->perturbations_verbose > 5)
-	      printf("Zero IC for smg: ");
+	      printf("Single clock IC for smg: ");
+	    }
+	    if (pba->pert_initial_conditions_smg == zero){
+	      ppw->pv->y[ppw->pv->index_pt_vx_smg] = 0.;
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
+	    
+	      if(ppt->perturbations_verbose > 5)
+	        printf("Zero IC for smg: ");
 	  }
 	 
 	if(ppt->perturbations_verbose > 5)
-	  printf("Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]); 
-	
+	  printf("Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+        }
       }        
 
       /* all relativistic relics: ur, early ncdm, dr */
@@ -4449,6 +4512,12 @@ int perturb_initial_conditions(struct precision * ppr,
           (-2.*a_prime_over_a*alpha*ppw->pvecback[pba->index_bg_phi_prime_scf]
            -a*a* dV_scf(pba,ppw->pvecback[pba->index_bg_phi_scf])*alpha
            +ppw->pvecback[pba->index_bg_phi_prime_scf]*alpha_prime);
+      }
+
+      /* scalar field: TODO: add gauge transformations (when we add Newtonian gauge) */
+      if ((pba->has_smg == _TRUE_) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
+	      ppw->pv->y[ppw->pv->index_pt_vx_smg] += 0.;
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += 0.;
       }
 
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)) {
@@ -4699,7 +4768,8 @@ int perturb_approximations(
                            int index_md,
                            double k,
                            double tau,
-                           struct perturb_workspace * ppw
+                           struct perturb_workspace * ppw,
+                           double * tau_scheme_smgqs
                            ) {
   /** Summary: */
 
@@ -4818,7 +4888,49 @@ int perturb_approximations(
         ppw->approx[ppw->index_ap_ncdmfa] = (int)ncdmfa_off;
       }
     }
-  }
+
+    /* (d) quasi-static approximation
+     * the switch times are previously calculated
+     * Here it assigns the approxiamtion status to the time tau
+     */
+
+     if (pba->has_smg == _TRUE_){
+       if (ppt->method_smgqs == automatic) {
+
+         if (tau >= tau_scheme_smgqs[6]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_6;
+         }
+         else if (tau >= tau_scheme_smgqs[5]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_5;
+         }
+         else if (tau >= tau_scheme_smgqs[4]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_4;
+         }
+         else if (tau >= tau_scheme_smgqs[3]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_3;
+         }
+         else if (tau >= tau_scheme_smgqs[2]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_2;
+         }
+         else if (tau >= tau_scheme_smgqs[1]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_1;
+         }
+         else if (tau >= tau_scheme_smgqs[0]) {
+           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_0;
+         }
+       }
+       else if ((ppt->method_smgqs == quasi_static) || (ppt->method_smgqs == quasi_static_debug)) {
+         ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_1;
+       }
+       else if ((ppt->method_smgqs == fully_dynamic) || (ppt->method_smgqs == fully_dynamic_debug)) {
+         ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_0;
+       }
+       else {
+         ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_0;
+       }
+     }
+
+}
 
   /** - for tensor modes: */
 
@@ -5078,13 +5190,14 @@ int perturb_einstein(
 
   /** - define local variables */
 
-  double k2,a,a2,a_prime_over_a;
-  double s2_squared;
+  double k2=0.,a=0.,a2=0.,a_prime_over_a=0.;
+  double s2_squared=0.;
   double shear_g = 0.;
-  double D=0, cs2num=0;
-  double l1=0, l2=0, l3=0, l4=0, l5=0, l6=0, l7=0, l8=0;
-  double M2=0, kin=0, bra=0, run=0, ten=0;
-  double rho_tot=0, p_tot=0, rho_smg=0, p_smg=0, H=0;
+  double D=0, cs2num=0, cs2num_p=0.;
+  double l1=0., l2=0., l3=0., l4=0., l5=0., l6=0., l7=0., l8=0., l2_p=0., l8_p=0.;
+  double M2=0., kin=0., bra=0., run=0., ten=0., bra_p=0.;
+  double rho_tot=0., p_tot=0., rho_smg=0., p_smg=0., H=0., rho_r=0.;
+  double g1=0., g2=0., g3=0.;
 
   /** - wavenumber and scale factor related quantities */
 
@@ -5148,11 +5261,13 @@ int perturb_einstein(
 	bra = ppw->pvecback[pba->index_bg_braiding_smg];
 	run = ppw->pvecback[pba->index_bg_mpl_running_smg];
 	ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
+        bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
 	
 	rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
 	p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
 	rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
 	p_smg = ppw->pvecback[pba->index_bg_p_smg];
+        rho_r = ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_ur];
 	
 	H = ppw->pvecback[pba->index_bg_H];
 	
@@ -5164,70 +5279,107 @@ int perturb_einstein(
 	l6 = ppw->pvecback[pba->index_bg_lambda_6_smg];
 	l7 = ppw->pvecback[pba->index_bg_lambda_7_smg];
 	l8 = ppw->pvecback[pba->index_bg_lambda_8_smg];
+        l2_p = ppw->pvecback[pba->index_bg_lambda_2_prime_smg];
+        l8_p = ppw->pvecback[pba->index_bg_lambda_8_prime_smg];
 
 	cs2num = ppw->pvecback[pba->index_bg_cs2num_smg];
 	D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
-      
-	
-	/* write here the values, as taken from the integration */
-	ppw->pvecmetric[ppw->index_mt_vx_smg] = y[ppw->pv->index_pt_vx_smg];
-	  ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = y[ppw->pv->index_pt_vx_prime_smg];
-	
-	/* scalar field equation */
-	ppw->pvecmetric[ppw->index_mt_vx_prime_prime_smg] = (-2.)*pow((-2.) + bra,-1)*cs2num*pow(H,-1)*pow(D,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) + (-3.)*pow((-2.) + bra,-1)*pow(H,-1)*pow(D,-1)*l2*pow(M2,-1)*ppw->delta_rho*a + (-9.)/2.*bra*pow(H,-1)*pow(D,-1)*pow(M2,-1)*ppw->delta_p*a + 8.*pow((-2.) + bra,-1)*H*pow(D,-1)*l7*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (cs2num*pow(k,2) + (-4.)*pow(H,2)*l8*pow(a,2))*2.*pow((-2.) + bra,-1)*pow(D,-1)*ppw->pvecmetric[ppw->index_mt_vx_smg];
-	  
-	class_test(isnan(ppw->pvecmetric[ppw->index_mt_vx_prime_prime_smg]),
-		   ppt->error_message,
-	      " Isnan v_X'' at a =%e !",a);
+        cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
 
+        int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+
+        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+
+      	  /* write here the values, as taken from the integration */
+      	  ppw->pvecmetric[ppw->index_mt_vx_smg] = y[ppw->pv->index_pt_vx_smg];
+      	  ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = y[ppw->pv->index_pt_vx_prime_smg];
+
+      	}//end of fully_dynamic assignation of vx and vx'
+        else if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 1) {
+
+      	  /* scalar field equation */
+      	  ppw->pvecmetric[ppw->index_mt_vx_smg] = (4.*cs2num*pow(k,2)*M2*y[ppw->pv->index_pt_eta] + 6.*l2*ppw->delta_rho*pow(a,2) + ((-2.) + bra)*9.*bra*ppw->delta_p*pow(a,2))*1./4.*pow(H,-1)*pow(M2,-1)*pow(a,-1)*pow(cs2num*pow(k,2) + (-4.)*pow(H,2)*l8*pow(a,2),-1);
+
+      	  g1 = cs2num*pow(k/(a*H),2) -4.*l8;
+      	  
+      	  g2 = (2. - bra)*(g1 + (3.*bra + kin)*bra*rho_r*pow(H,-2)*pow(M2,-1) - bra*cs2num*pow(k/(a*H),2)/2.)/2. - 3./4.*(3.*bra + kin)*(rho_tot + p_tot)*pow(H,-2)*l2*pow(M2,-1);
+      	  
+      	  g3 = - (2.*(2. - bra)*bra*rho_r - 3.*(rho_tot + p_tot)*l2)*(18. - 18.*(rho_tot + p_tot)*pow(H,-2)*pow(M2,-1) - 15.*bra - 2.*kin + 9.*(2. - bra)*(p_tot + p_smg)*pow(H,-2) - 2.*bra*pow(k/(a*H),2))*pow(H,-2)*pow(M2,-1) + 2.*(2. - bra)*cs2num*(5. - bra - 3.*(rho_tot + p_tot)*pow(M2,-1)*pow(H,-2) + 9.*(p_tot + p_smg)*pow(H,-2))*pow(k/(a*H),2) + 4.*(2. - bra)*(pow(k/(a*H),2)*cs2num_p - 4.*l8_p)/(a*H);
+
+      	  /* scalar field derivative equation
+      	   * In order to estimate it we followed this procedure:
+      	   * - we calculated analytically the time derivative of the vx equation
+      	   * - we used delta_p' = delta_rho_r'/3 (radiation is the only component that contributes to delta_p')
+      	   * - we used the conservation equation for radiation to get rid of delta_rho_r'
+      	   * - we used the conservation equation for a generic fluid to get rid of delta_rho'
+      	   * - we used the Einstein equations to get rid of eta'
+      	   * The result is approximated when rsa is on since the velocity of radiation gets updated only after the first Einstein equations (few lines below) */
+      	  ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = 3./2.*(pow(2. - bra,2)*bra*pow(H,-2)*pow(M2,-1)*ppw->delta_rho_r + (3./2.*(2. - bra)*cs2num*(p_tot + p_smg)*pow(H,-2) - pow(H,-2)*l2*(p_tot + rho_tot)/M2 + (2. - bra)*pow(H,-1)*cs2num_p/a/3. + (2. - bra)*cs2num/2. - cs2num*g3/g1/12. + 2./3.*(2. - bra)*bra*rho_r*pow(H,-2)/M2)*pow(k/(a*H),2)*y[ppw->pv->index_pt_eta] + (2. - bra)*(cs2num - l2)*pow(M2*a,-1)*pow(H,-3)*ppw->rho_plus_p_theta/2. + 3./2.*(2. - bra)*((2. - bra)*(-7. + 2.*run)/4.*bra + 1./8.*bra*g3/g1 - l2 - 9./4.*(2. - bra)*bra*(p_tot + p_smg)*pow(H,-2) - (1. - bra)*pow(a*H,-1)*bra_p)*pow(H,-2)*pow(M2,-1)*ppw->delta_p + ((2. - bra)*bra*rho_r*pow(H,-2)*pow(M2,-1) - g3/g1*l2/8. - (6.*rho_tot/M2 - (2. - bra - 4.*run + 2.*bra*run)*pow(H,2))/4.*pow(H,-2)*l2 - 3./4.*(2./M2 - 6. + 3.*bra)*pow(H,-2)*l2*p_tot + 9./4.*(2. - bra)*pow(H,-2)*l2*p_smg + (2. - bra)/2.*pow(H,-1)*l2_p*pow(a,-1))*pow(M2,-1)*pow(H,-2)*ppw->delta_rho - pow(2. - bra,2)*bra*pow(H,-3)*pow(M2*a,-1)*ppw->rho_plus_p_theta_r/4.)*pow(g2,-1);
+
+      	}//end of quasi_static assignation of vx and vx'
+        else {
+      	  printf("scalar field equation: quasi-static approximation mode %i not recognized. should be quasi_static or fully_dynamic\n",ppw->approx[ppw->index_ap_smgqs]);
+      	  return _FAILURE_;
+        }
+      
 
         /* first equation involving total density fluctuation */
         ppw->pvecmetric[ppw->index_mt_h_prime] = (-4.)*pow((-2.) + bra,-1)*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) + (-6.)*pow((-2.) + bra,-1)*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*pow((-2.) + bra,-1)*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*pow((-2.) + bra,-1)*bra*pow(k,2) + ((-18.) + 15.*bra + 2.*kin)*pow((-2.) + bra,-1)*rho_smg*pow(a,2) + (18. + (-18.)*M2 + 15.*bra*M2 + 2.*kin*M2)*pow((-2.) + bra,-1)*rho_tot*pow(M2,-1)*pow(a,2) + (2. + (-2.)*M2 + bra*M2)*9.*pow((-2.) + bra,-1)*pow(M2,-1)*p_tot*pow(a,2) + 9.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];
 
         /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
-	if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
+        if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
+          class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
+            ppt->error_message,
+            ppt->error_message);
 
-	  class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
-		     ppt->error_message,
-		     ppt->error_message);
+	        /* update total theta given rsa approximation results */
 
-	  /* update total theta given rsa approximation results */
+	        ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
 
-	  ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
+	        if (pba->has_ur == _TRUE_) {
 
-	  if (pba->has_ur == _TRUE_) {
+	          ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
 
-	    ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
-
-	  }
+	        }
         }
 
 
         /* second equation involving total velocity */
-        ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];
+      	ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
 
-	/* second equation involving total velocity */
-	ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
 
-	/* third equation involving total pressure */
-	ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 2.*pow(D,-1)*pow(k,2)*l1*y[ppw->pv->index_pt_eta] + 2.*H*pow(D,-1)*l3*ppw->pvecmetric[ppw->index_mt_h_prime]*a + (-9.)*kin*pow(D,-1)*pow(M2,-1)*ppw->delta_p*pow(a,2) + 3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*pow(a,2) + (2.*H*pow(D,-1)*pow(k,2)*l5*a + 6.*pow(H,3)*pow(D,-1)*l6*pow(a,3))*ppw->pvecmetric[ppw->index_mt_vx_smg];
+        /* third equation involving total pressure */
+      	ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 2.*pow(D,-1)*pow(k,2)*l1*y[ppw->pv->index_pt_eta] + 2.*H*pow(D,-1)*l3*ppw->pvecmetric[ppw->index_mt_h_prime]*a + (-9.)*kin*pow(D,-1)*pow(M2,-1)*ppw->delta_p*pow(a,2) + 3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*pow(a,2) + (2.*H*pow(D,-1)*pow(k,2)*l5*a + 6.*pow(H,3)*pow(D,-1)*l6*pow(a,3))*ppw->pvecmetric[ppw->index_mt_vx_smg];
 
-	/* alpha = (h'+6eta')/2k^2 */
-	ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
-	/* eventually, infer first-order tight-coupling approximation for photon
-         shear, then correct the total shear */
-	if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
+        /* alpha = (h'+6eta')/2k^2 */ 
+        ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
-	  shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
 
-	  ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
+        /* eventually, infer first-order tight-coupling approximation for photon
+               shear, then correct the total shear */
+      	if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
 
-	}
+      	  shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
 
-	/* fourth equation involving total shear */
-	/* fourth equation involving total shear */
+      	  ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
+
+      	}
+
+      	/* fourth equation involving total shear */
         ppw->pvecmetric[ppw->index_mt_alpha_prime] = (1. + ten)*y[ppw->pv->index_pt_eta] + (2. + run)*(-1.)*H*ppw->pvecmetric[ppw->index_mt_alpha]*a + (run + (-1.)*ten)*H*ppw->pvecmetric[ppw->index_mt_vx_smg]*a + (-9.)/2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_shear*pow(a,2);
+
+
+        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+
+          /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
+          ppw->pvecmetric[ppw->index_mt_vx_prime_prime_smg] = (-2.)*pow((-2.) + bra,-1)*cs2num*pow(H,-1)*pow(D,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) + (-3.)*pow((-2.) + bra,-1)*pow(H,-1)*pow(D,-1)*l2*pow(M2,-1)*ppw->delta_rho*a + (-9.)/2.*bra*pow(H,-1)*pow(D,-1)*pow(M2,-1)*ppw->delta_p*a + 8.*pow((-2.) + bra,-1)*H*pow(D,-1)*l7*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (cs2num*pow(k,2) + (-4.)*pow(H,2)*l8*pow(a,2))*2.*pow((-2.) + bra,-1)*pow(D,-1)*ppw->pvecmetric[ppw->index_mt_vx_smg];
+
+          class_test(isnan(ppw->pvecmetric[ppw->index_mt_vx_prime_prime_smg]),
+            	ppt->error_message,
+            	" Isnan v_X'' at a =%e !",a);
+
+        }//end of fully_dynamic equation
 
     }//end if has_smg
     // Standard equations
@@ -7244,13 +7396,16 @@ int perturb_derivs(double tau,
                ppt->error_message,
                "asked for scalar field AND Newtonian gauge. Not yet implemented");
 
-	/** ---> scalar field velocity */
+	//make sure that second order equations are being used
+	if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+	  
+	  /** ---> scalar field velocity */
+	  dy[pv->index_pt_vx_smg] =  pvecmetric[ppw->index_mt_vx_prime_smg]; 
 	
-	dy[pv->index_pt_vx_smg] =  pvecmetric[ppw->index_mt_vx_prime_smg]; //y[pv->index_pt_vx_prime_smg]; 
-	
-	/** ---> Scalar field acceleration (passes the value obtained in perturb_einstein) */
-	
-	dy[pv->index_pt_vx_prime_smg] =  pvecmetric[ppw->index_mt_vx_prime_prime_smg];   
+	  /** ---> Scalar field acceleration (passes the value obtained in perturb_einstein) */
+	  dy[pv->index_pt_vx_prime_smg] =  pvecmetric[ppw->index_mt_vx_prime_prime_smg]; 
+
+	}
 
       }    
 
@@ -8192,6 +8347,571 @@ int perturb_rsa_delta_and_theta(
       }
     }
   }
+
+  return _SUCCESS_;
+
+}
+
+
+int perturb_find_scheme_smgqs(
+                              struct precision * ppr,
+                              struct background * pba,
+                              struct perturbs * ppt,
+                              struct perturb_workspace * ppw,
+                              double k,
+                              double tau_ini,
+                              double tau_end,
+			      double * tau_export
+                              ) {
+
+  int size_sample = ppr->n_max_smgqs;
+
+  double * tau_sample;
+  double * mass2_sample;
+  double * rad2_sample;
+  double * slope_sample;
+
+  class_alloc(tau_sample,size_sample*sizeof(double),ppt->error_message);
+  class_alloc(mass2_sample,size_sample*sizeof(double),ppt->error_message);
+  class_alloc(rad2_sample,size_sample*sizeof(double),ppt->error_message);
+  class_alloc(slope_sample,size_sample*sizeof(double),ppt->error_message);
+
+  /**
+   * Input: background table
+   * Output: sample of the time, mass, decaying rate of the oscillations (slope)
+   *   and radiation density.
+   **/
+  sample_mass_smgqs(
+                    ppr,
+                    pba,
+                    ppt,
+                    ppw,
+                    k,
+                    tau_ini,
+                    tau_end,
+                    tau_sample,
+                    mass2_sample,
+                    rad2_sample,
+                    slope_sample,
+                    &size_sample
+                    );
+
+
+  int * approx_sample;
+
+  class_alloc(approx_sample,size_sample*sizeof(int),ppt->error_message);
+
+  /**
+   * Input: sample of the time, mass and radiation density
+   * Output: sample of the approx scheme
+   **/
+  mass_to_approx_smgqs(
+                       ppr,
+                       pba,
+                       ppt,
+                       tau_ini,
+                       tau_end,
+                       tau_sample,
+                       mass2_sample,
+                       rad2_sample,
+                       approx_sample,
+                       size_sample
+                       );
+
+  free(mass2_sample);
+  free(rad2_sample);
+
+
+  double * tau_array;
+  double * slope_array;
+  int * approx_array;
+  int size_array = size_sample;
+
+  class_alloc(tau_array,size_array*sizeof(double),ppt->error_message);
+  class_alloc(slope_array,size_array*sizeof(double),ppt->error_message);
+  class_alloc(approx_array,size_array*sizeof(int),ppt->error_message);
+
+  /**
+   * Input: sample of the time, slope and approximation scheme
+   *   at small time interval
+   * Output: arrays containing the time, the slope and the approximation
+   * scheme only when it changes
+   **/
+  shorten_first_smgqs(
+                      tau_sample,
+                      slope_sample,
+                      approx_sample,
+                      size_sample,
+                      tau_array,
+                      slope_array,
+                      approx_array,
+                      &size_array,
+                      tau_end
+                      );
+
+  free(tau_sample);
+  free(slope_sample);
+  free(approx_sample);
+
+  /**
+   * Input: arrays with time, slope and approximation schemes
+   * Output: arrays with time and approximation scheme corrected with the slope
+   **/
+  correct_with_slope_smgqs(
+                           ppr,
+                           pba,
+                           ppt,
+                           ppw,
+                           tau_ini,
+                           tau_end,
+                           tau_array,
+                           slope_array,
+                           approx_array,
+                           size_array
+                           );
+
+  free(slope_array);
+
+  double * tau_scheme;
+  int * approx_scheme;
+  int size_scheme = size_array;
+
+  class_alloc(tau_scheme,size_scheme*sizeof(double),ppt->error_message);
+  class_alloc(approx_scheme,size_scheme*sizeof(int),ppt->error_message);
+
+  /**
+   * Input: arrays of time and approximation after correcting with the slope
+   *   (there is the possibility that the same number in approx_array is repeated)
+   * Output: shortened arrays of time and approximation
+   **/
+  shorten_second_smgqs(
+                       tau_array,
+                       approx_array,
+                       size_array,
+                       tau_scheme,
+                       approx_scheme,
+                       &size_scheme
+                       );
+
+  free(tau_array);
+  free(approx_array);
+
+  /**
+   * Input: real approx_scheme and tau_scheme
+   * Output: approx scheme (tau_export) adjusted to fit the implemented one
+   **/
+  fit_real_scheme_smgqs(
+                        tau_end,
+                        approx_scheme,
+                        tau_scheme,
+                        size_scheme,
+                        tau_export
+                        );
+
+  free(tau_scheme);
+  free(approx_scheme);
+
+//   // DEBUG: Initial and final times
+//   printf("6 - Interval tau       = {%.1e, %.1e}\n", tau_ini, tau_end);
+//   printf("7 - k mode             = {%.1e}\n", k);
+
+
+  return _SUCCESS_;
+
+}
+
+
+int sample_mass_smgqs(
+                      struct precision * ppr,
+                      struct background * pba,
+                      struct perturbs * ppt,
+                      struct perturb_workspace * ppw,
+                      double k,
+                      double tau_ini,
+                      double tau_end,
+                      double * tau_sample,
+                      double * mass2_sample,
+                      double * rad2_sample,
+                      double * slope_sample,
+                      int *size_sample) {
+
+  /* Definition of local variables */
+  double mass2, mass2_p, rad2, friction, slope;
+  double tau = tau_ini;
+  double delta_tau = (tau_end - tau_ini)/ppr->n_max_smgqs;
+  int count = 0;
+
+  /* Scan the time evolution and build several arrays containing
+   * interesting quantities for the quasi-static approximation */
+  while (tau < tau_end) {
+
+    class_call(background_at_tau(pba,
+                                 tau,
+                                 pba->normal_info,
+                                 pba->inter_normal,
+                                 &(ppw->last_index_back),
+                                 ppw->pvecback),
+               pba->error_message,
+               ppt->error_message);
+
+    double bra = ppw->pvecback[pba->index_bg_braiding_smg];
+    double bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
+
+    double rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
+    double p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
+    double rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
+    double p_smg = ppw->pvecback[pba->index_bg_p_smg];
+    double rho_ur = ppw->pvecback[pba->index_bg_rho_ur];
+    double rho_g = ppw->pvecback[pba->index_bg_rho_g];
+    double rho_crit = ppw->pvecback[pba->index_bg_rho_crit];
+
+    double a = ppw->pvecback[pba->index_bg_a];
+    double H = ppw->pvecback[pba->index_bg_H];
+
+    double l7 = ppw->pvecback[pba->index_bg_lambda_7_smg];
+    double l8 = ppw->pvecback[pba->index_bg_lambda_8_smg];
+    double l8_p = ppw->pvecback[pba->index_bg_lambda_8_prime_smg];
+
+    double cs2num = ppw->pvecback[pba->index_bg_cs2num_smg];
+    double cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
+    double D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
+    double D_p = ppw->pvecback[pba->index_bg_kinetic_D_prime_smg];
+
+    mass2 = 2.*(cs2num*pow(k/(a*H),2) - 4.*l8)/(2. - bra)/D;
+
+    mass2_p = 2.*(4.*(D_p/D - bra_p/(2. - bra))*l8 - 4.*l8_p + (cs2num_p - (D_p/D - bra_p/(2. - bra))*cs2num + (rho_tot + rho_smg + 3.*(p_tot + p_smg))*cs2num*a/H)*pow(k/(a*H),2))/(2. - bra)/D;
+
+    rad2 = 3.*mass2*pow((a*H/k)*H*H/(rho_g + rho_ur),2);
+
+    friction = 8.*pow(2.-bra,-1)*pow(D,-1)*l7;
+
+    slope = (-1. + 2.*friction - 3.*(p_tot + p_smg)/(rho_tot + rho_smg) + mass2_p/(mass2*a*H))/4.;
+
+//     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
+//     double x = (tau - tau_ini)/(tau_end - tau_ini);
+//     mass2 = 1.5 + cos(10*_PI_*x);
+//     rad2 = 1.;
+//     slope = 1.;
+
+    tau_sample[count] = tau;
+    mass2_sample[count] = mass2;
+    rad2_sample[count] = rad2;
+    slope_sample[count] = slope;
+
+    delta_tau = fabs(2.*mass2/mass2_p)/sqrt(ppr->n_min_smgqs*ppr->n_max_smgqs);
+    delta_tau = MIN(delta_tau, (tau_end - tau_ini)/ppr->n_min_smgqs);
+    delta_tau = MAX(delta_tau, (tau_end - tau_ini)/ppr->n_max_smgqs);
+
+    tau += delta_tau;
+    count += 1;
+  }
+
+  *size_sample = count;
+
+  return _SUCCESS_;
+
+}
+
+
+int mass_to_approx_smgqs(struct precision * ppr,
+                         struct background * pba,
+                         struct perturbs * ppt,
+                         double tau_ini,
+                         double tau_end,
+                         double * tau_sample,
+                         double * mass2_sample,
+                         double * rad2_sample,
+                         int * approx_sample,
+                         int size_sample
+                         ) {
+
+
+  // Convert the input parameter z_fd into the corresponding conformal time
+  double tau_fd;
+  short proposal;
+
+  class_call(background_tau_of_z(pba,
+                                 ppr->z_fd_smgqs,
+                                 &tau_fd),
+             pba->error_message,
+             ppt->error_message);
+
+  int i;
+  for (i = 0; i < size_sample; i++) {
+
+    if ((mass2_sample[i] > pow(ppr->trigger_mass_smgqs,2)) && (rad2_sample[i] > pow(ppr->trigger_rad_smgqs,2))) {
+      proposal = 1;
+    }
+    else {
+      proposal = 0;
+    }
+
+    if (tau_sample[i] <= tau_fd) {
+      approx_sample[i] = proposal;
+    }
+    else {
+      approx_sample[i] = 0;
+    }
+
+  }
+
+  return _SUCCESS_;
+
+}
+
+
+int shorten_first_smgqs(double * tau_sample,
+                        double * slope_sample,
+                        int * approx_sample,
+                        int size_sample,
+                        double * tau_array,
+                        double * slope_array,
+                        int * approx_array,
+                        int *size_array,
+                        double tau_end) {
+
+  int i, j, count = 0;
+  int last_switch = 0;
+  int this_switch = 0;
+  double slope_weighted;
+
+  tau_array[0] = tau_sample[0];
+  approx_array[0] = approx_sample[0];
+
+  for (i = 1; i < size_sample; i++) {
+    if (approx_sample[i] != approx_array[count]) {
+
+      count += 1;
+      // Shorten approximation scheme
+      approx_array[count] = approx_sample[i];
+
+      // Shorten time
+      if (approx_array[count-1] < approx_array[count]) {
+        this_switch = i;
+      }
+      else {
+        this_switch = i-1;
+      }
+      tau_array[count] = tau_sample[this_switch];
+
+      // Shorten slope
+      slope_weighted = 0.;
+      for (j = last_switch; j < this_switch; j++) {
+        slope_weighted += slope_sample[j]*(tau_sample[j+1] - tau_sample[j]);
+      }
+      slope_array[count -1] = slope_weighted/(tau_sample[this_switch] - tau_sample[last_switch]);
+      last_switch = this_switch;
+    }
+  }
+
+  // Shorten slope last element
+  slope_weighted = 0.;
+  for (i = last_switch; i < size_sample-1; i++) {
+    slope_weighted += slope_sample[i]*(tau_sample[i+1] - tau_sample[i]);
+  }
+  slope_array[count] = (slope_weighted + slope_sample[size_sample-1]*(tau_end - tau_sample[size_sample-1]))/(tau_end - tau_sample[last_switch]);
+
+  *size_array = count + 1;
+
+  return _SUCCESS_;
+
+}
+
+
+int correct_with_slope_smgqs(struct precision * ppr,
+                             struct background * pba,
+                             struct perturbs * ppt,
+                             struct perturb_workspace * ppw,
+                             double tau_ini,
+                             double tau_end,
+                             double * tau_array,
+                             double * slope_array,
+                             int * approx_array,
+                             int size_array) {
+
+
+  int i, j, count;
+  for (i = 1; i < size_array; i++) {
+    if ((approx_array[i-1] == 0) && (approx_array[i] == 1)) {
+
+      // Routine to calculate the time interval necessary to relax the oscillations
+      class_call(background_at_tau(pba,
+                                   tau_array[i],
+                                   pba->short_info,
+                                   pba->inter_normal,
+                                   &(ppw->last_index_back),
+                                   ppw->pvecback),
+             pba->error_message,
+             ppt->error_message);
+
+      double a_final = ppw->pvecback[pba->index_bg_a] * pow(ppr->eps_s_smgqs, -1./slope_array[i]);
+      double tau_final;
+
+      class_call(background_tau_of_z(pba,
+                                     1./a_final-1.,
+                                     &tau_final),
+                 pba->error_message,
+                 ppt->error_message);
+
+      double delta_tau = tau_final - tau_array[i];
+
+      // Adjust time and approx to take into account the oscillations
+      double next_tau;
+      if (i+1<size_array) {
+	next_tau = tau_array[i+1];
+      }
+      else {
+	next_tau = tau_end;
+      }
+      
+      if (tau_array[i] + delta_tau < next_tau) {
+	tau_array[i] += delta_tau;
+      }
+      else {
+	approx_array[i] = 0;
+      }
+    }
+  }
+
+  return _SUCCESS_;
+
+}
+
+
+int shorten_second_smgqs(double * tau_array,
+                         int * approx_array,
+                         int size_array,
+                         double * tau_scheme,
+                         int * approx_scheme,
+                         int *size_scheme) {
+
+  tau_scheme[0] = tau_array[0];
+  approx_scheme[0] = approx_array[0];
+  int i, j = 0;
+
+  for (i = 0; i < size_array; i++) {
+    if (approx_array[i] != approx_scheme[j]) {
+      j += 1;
+      approx_scheme[j] = approx_array[i];
+      tau_scheme[j] = tau_array[i];
+    }
+  }
+
+  *size_scheme = j + 1;
+
+  return _SUCCESS_;
+
+}
+
+
+int fit_real_scheme_smgqs(
+                          double tau_end,
+                          int * approx_scheme,
+                          double * tau_scheme,
+                          int size_scheme,
+                          double * tau_export
+                          ) {
+
+  /* Definition of local variables */
+  int implemented_scheme[] = _VALUES_SMGQS_FLAGS_;
+  int size_implemented_scheme = sizeof(implemented_scheme)/sizeof(int);
+
+  int i, j;
+  int start_position = 0;
+  short scheme_fits = _FALSE_;
+
+//   // DEBUG: print the implemented scheme
+//   int count;
+//   printf("1 - Implemented scheme = {");
+//   for (count = 0; count < size_implemented_scheme; count++) {
+//     printf("%d", implemented_scheme[count]);
+//     if (count < size_implemented_scheme - 1) {
+//       printf(", ");
+//     }
+//   }
+//   printf("}\n");
+//   // DEBUG: print the real scheme
+//   printf("2 - Real scheme        = {");
+//   for (count = 0; count < size_scheme; count++) {
+//     printf("%d", approx_scheme[count]);
+//     if (count < size_scheme - 1) {
+//       printf(", ");
+//     }
+//   }
+//   printf("}\n");
+
+
+  while (scheme_fits == _FALSE_) {
+
+    /* Check if the real approximation scheme fits the implemented one */
+    for (i = 0; i < size_implemented_scheme - size_scheme + 1; i++) {
+      j = 0;
+      while (j < size_scheme - 1) {
+        if (approx_scheme[j] == implemented_scheme[i + j]) {
+          j += 1;
+        }
+        else {
+          break;
+        }
+      }
+      if ((j == size_scheme - 1) && (approx_scheme[j] == implemented_scheme[i + j])) {
+        start_position = i;
+        scheme_fits = _TRUE_;
+        break;
+      }
+    }
+
+    /* Shorten the real approximation scheme */
+    if (scheme_fits == _FALSE_) {
+      if ((approx_scheme[size_scheme - 2]==0) && (approx_scheme[size_scheme - 1]==1)) {
+        size_scheme += -1;
+      }
+      else if ((approx_scheme[size_scheme - 3]==0) && (approx_scheme[size_scheme - 2]==1) && (approx_scheme[size_scheme - 1]==0)) {
+        size_scheme += -2;
+      }
+    }
+  }
+
+  /* Generate the vector of times at which the approximation switches */
+  for (i = 0; i < size_implemented_scheme; i++) {
+    tau_export[i] = - 1.;
+  }
+
+  for (i = 0; i < size_scheme; i++) {
+    tau_export[start_position + i] = tau_scheme[i];
+  }
+
+  for (i = start_position + size_scheme; i < size_implemented_scheme; i++) {
+    tau_export[i] = tau_end + 1.; // The +1 is here to make the final elements larger than everything else
+  }
+
+//   // DEBUG: print the fitted scheme
+//   printf("3 - Fitted scheme      = {");
+//   for (count = 0; count < size_scheme; count++) {
+//     printf("%d", approx_scheme[count]);
+//     if (count < size_scheme - 1) {
+//       printf(", ");
+//     }
+//   }
+//   printf("}\n");
+//   // DEBUG: print the real tau switches
+//   printf("4 - Real tau           = {");
+//   for (count = 0; count < size_scheme; count++) {
+//     printf("%.1e", tau_scheme[count]);
+//     if (count < size_scheme - 1) {
+//       printf(", ");
+//     }
+//   }
+//   printf("}\n");
+//   // DEBUG: print the tau switches after the fitting
+//   printf("5 - Fitted tau         = {");
+//   for (count = 0; count < size_implemented_scheme; count++) {
+//     printf("%.1e", tau_export[count]);
+//     if (count < size_implemented_scheme - 1) {
+//       printf(", ");
+//     }
+//   }
+//   printf("}\n");
 
   return _SUCCESS_;
 
