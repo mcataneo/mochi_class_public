@@ -7390,7 +7390,9 @@ int perturb_derivs(double tau,
 
     }
     
-    if (pba->has_smg == _TRUE_) { 
+    if (pba->has_smg == _TRUE_) {
+        
+        int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
        
 	class_test(ppt->gauge == newtonian,
                ppt->error_message,

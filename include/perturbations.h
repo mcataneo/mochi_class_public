@@ -517,6 +517,8 @@ struct perturb_workspace
   double gw_source;
   double vector_source_pi;
   double vector_source_v;
+  double delta_rho_r;
+  double rho_plus_p_theta_r;
 
   double tca_shear_g; /**< photon shear in tight-coupling approximation */
   double tca_slip;    /**< photon-baryon slip in tight-coupling approximation */
