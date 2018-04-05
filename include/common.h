@@ -601,6 +601,13 @@ struct precision
 
   double neglect_CMB_sources_below_visibility;
 
+  int n_min_smgqs; /**< minimum number of steps used to sample the quantities in the quasi-static approximation (smgqs) */
+  int n_max_smgqs; /**< maximum number of steps used to sample the quantities in the quasi-static approximation (smgqs) */
+  double z_fd_smgqs; /**< minimum redshift after which the user requires the full-dynamic evolution */
+  double trigger_mass_smgqs; /**< if the mass is above this trigger the quasi-static approximation is switched on */
+  double trigger_rad_smgqs; /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
+  double eps_s_smgqs; /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
+
   //@}
 
   /** @name - parameters related to the primordial spectra */
