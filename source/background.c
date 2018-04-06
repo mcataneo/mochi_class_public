@@ -418,9 +418,10 @@ int background_functions(
     p_tot += pvecback[pba->index_bg_p_smg];
     //divide relativistic & nonrelativistic (not very meaningful for oscillatory models)
     
-    // TODO: where is this used? consider removing altogether
-    rho_r += 3.*pvecback[pba->index_bg_p_smg]; //field pressure contributes radiation
-    rho_m += pvecback[pba->index_bg_rho_smg] - 3.* pvecback[pba->index_bg_p_smg]; //the rest contributes matter     
+    // TODO: need to define menainfully -> separate early universe (IC, BBN...) from late (Halofit...)
+    //TODO: maybe define a threshold early/late, or add EDE to thermodynamics, etc..
+//     rho_r += 3.*pvecback[pba->index_bg_p_smg]; //field pressure contributes radiation
+//     rho_m += pvecback[pba->index_bg_rho_smg] - 3.* pvecback[pba->index_bg_p_smg]; //the rest contributes matter     
   }
 
   /** - compute relativistic density to total density ratio */
