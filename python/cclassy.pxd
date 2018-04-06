@@ -37,14 +37,18 @@ cdef extern from "class.h":
         int index_bg_lum_distance
         int index_bg_conf_distance
         int index_bg_H
+        int index_bg_D
+        int index_bg_f
         short long_info
         short inter_normal
         double T_cmb
         double h
+        double H0
         double age
         double conformal_age
         double * m_ncdm_in_eV
         double Neff
+        double Omega0_g
         double Omega0_b
         double Omega0_cdm
         double Omega0_dcdm
@@ -54,6 +58,9 @@ cdef extern from "class.h":
         double w0_fld
         double wa_fld
         double cs2_fld
+        double Omega0_ur
+        double Omega0_dcdmdr
+        double Omega0_scf
 
         int bt_size
 
@@ -94,6 +101,7 @@ cdef extern from "class.h":
         int store_perturbations
         int k_output_values_num
         double k_output_values[_MAX_NUMBER_OF_K_FILES_]
+        double k_max_for_pk
         int index_k_output_values[_MAX_NUMBER_OF_K_FILES_]
         char scalar_titles[_MAXTITLESTRINGLENGTH_]
         char vector_titles[_MAXTITLESTRINGLENGTH_]
@@ -155,6 +163,7 @@ cdef extern from "class.h":
         int has_dd
         int has_td
         int has_ll
+        int has_dl
         int has_tl
         int l_max_tot
         int ** l_max_ct
@@ -175,8 +184,8 @@ cdef extern from "class.h":
         int index_ct_td
         int index_ct_pd
         int index_ct_ll
-        int index_ct_tl
         int index_ct_dl
+        int index_ct_tl
         int * l_size
         int index_md_scalars
         double* ln_k
@@ -210,6 +219,7 @@ cdef extern from "class.h":
         int has_dd
         int has_td
         int has_ll
+        int has_dl
         int has_tl
         int index_lt_tt
         int index_lt_te
@@ -220,6 +230,7 @@ cdef extern from "class.h":
         int index_lt_dd
         int index_lt_td
         int index_lt_ll
+        int index_lt_dl
         int index_lt_tl
         int * l_max_lt
         int lt_size
@@ -316,3 +327,11 @@ cdef extern from "class.h":
     int nonlinear_k_nl_at_z(void* pba, void* pnl, double z, double* k_nl)
 
     int spectra_firstline_and_ic_suffix(void *ppt, int index_ic, char first_line[_LINE_LENGTH_MAX_], FileName ic_suffix)
+
+    int spectra_sigma(
+                  void * pba,
+                  void * ppm,
+                  void * psp,
+                  double R,
+                  double z,
+                  double * sigma)

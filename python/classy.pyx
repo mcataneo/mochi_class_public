@@ -8,6 +8,8 @@
 This module defines a class called Class. It is used with Monte Python to
 extract cosmological parameters.
 
+# JL 14.06.2017: TODO: check whether we should free somewhere the allocated fc.filename and titles, data (4 times)
+
 """
 from math import exp,log
 import numpy as np
@@ -33,7 +35,7 @@ DEF _MAXTITLESTRINGLENGTH_ = 8000
 # MontePython to handle things differently.
 class CosmoError(Exception):
     def __init__(self, message=""):
-        self.message = message
+        self.message = message.decode() if isinstance(message,bytes) else message
 
     def __str__(self):
         return '\n\nError in Class: ' + self.message
@@ -158,9 +160,10 @@ cdef class Class:
         i = 0
         for kk in self._pars:
 
-            dumc = kk
+            dumcp = kk.encode()
+            dumc = dumcp
             sprintf(self.fc.name[i],"%s",dumc)
-            dumcp = str(self._pars[kk])
+            dumcp = str(self._pars[kk]).encode()
             dumc = dumcp
             sprintf(self.fc.value[i],"%s",dumc)
             self.fc.read[i] = _FALSE_
@@ -311,7 +314,7 @@ cdef class Class:
             for i in range(self.fc.size):
                 if self.fc.read[i] == _FALSE_:
                     problem_flag = True
-                    problematic_parameters.append(self.fc.name[i])
+                    problematic_parameters.append(self.fc.name[i].decode())
             if problem_flag:
                 raise CosmoSevereError(
                     "Class did not read input parameter(s): %s\n" % ', '.join(
@@ -464,6 +467,12 @@ cdef class Class:
         cl['ell'] = np.arange(lmax+1)
 
         free(rcl)
+        for index_md in range(self.sp.md_size):
+            free(cl_md[index_md])
+            free(cl_md_ic[index_md])
+        free(cl_md)
+        free(cl_md_ic)
+
         return cl
 
     def lensed_cl(self, lmax=-1,nofail=False):
@@ -574,6 +583,7 @@ cdef class Class:
             (self.sp.has_dd, self.sp.index_ct_dd, 'dd'),
             (self.sp.has_td, self.sp.index_ct_td, 'td'),
             (self.sp.has_ll, self.sp.index_ct_ll, 'll'),
+            (self.sp.has_dl, self.sp.index_ct_dl, 'dl'),
             (self.sp.has_tl, self.sp.index_ct_tl, 'tl')]
         spectra = []
 
@@ -594,7 +604,7 @@ cdef class Class:
         if lmax > lmaxR:
             if nofail:
                 self._pars_check("l_max_lss",lmax)
-                self._pars_check("output",'rCl')
+                self._pars_check("output",'nCl')
                 self.compute()
             else:
                 raise CosmoSevereError("Can only compute up to lmax=%d"%lmaxR)
@@ -605,7 +615,7 @@ cdef class Class:
         # computes the size, given the number of correlations needed to be computed
         size = (self.sp.d_size*(self.sp.d_size+1)-(self.sp.d_size-self.sp.non_diag)*
                 (self.sp.d_size-1-self.sp.non_diag))/2;
-        for elem in ['dd', 'll']:
+        for elem in ['dd', 'll', 'dl']:
             if elem in spectra:
                 cl[elem] = {}
                 for index in range(size):
@@ -624,6 +634,9 @@ cdef class Class:
             if 'll' in spectra:
                 for index in range(size):
                     cl['ll'][index][ell] = dcl[self.sp.index_ct_ll+index]
+            if 'dl' in spectra:
+                for index in range(size):
+                    cl['dl'][index][ell] = dcl[self.sp.index_ct_dl+index]
             if 'td' in spectra:
                 cl['td'][ell] = dcl[self.sp.index_ct_td]
             if 'tl' in spectra:
@@ -631,6 +644,12 @@ cdef class Class:
         cl['ell'] = np.arange(lmax+1)
 
         free(dcl)
+        for index_md in range(self.sp.md_size):
+            free(cl_md[index_md])
+            free(cl_md_ic[index_md])
+        free(cl_md)
+        free(cl_md_ic)
+
         return cl
 
     def z_of_r (self,z_array):
@@ -681,7 +700,7 @@ cdef class Class:
     # Gives the pk for a given (k,z)
     def pk(self,double k,double z):
         """
-        Gives the pk for a given k and z
+        Gives the pk for a given k and z (will be non linear if requested to Class, linear otherwise)
 
         .. note::
 
@@ -705,9 +724,8 @@ cdef class Class:
                     break
         if abort:
             raise CosmoSevereError(
-                "No power spectrum nor transfer function"
-                " asked: you should not ask for a power"
-                " spectrum, then")
+                "No power spectrum computed. You must add mPk to the list of outputs."
+                )
 
         if (self.nl.method == 0):
              if spectra_pk_at_k_and_z(&self.ba,&self.pm,&self.sp,k,z,&pk,pk_ic)==_FAILURE_:
@@ -715,10 +733,41 @@ cdef class Class:
         else:
              if spectra_pk_nl_at_k_and_z(&self.ba,&self.pm,&self.sp,k,z,&pk) ==_FAILURE_:
                     raise CosmoSevereError(self.sp.error_message)
+
+        free(pk_ic)
+        return pk
+
+    # Gives the linear pk for a given (k,z)
+    def pk_lin(self,double k,double z):
+        """
+        Gives the linear pk for a given k and z (even if non linear corrections were requested to Class)
+
+        .. note::
+
+            there is an additional check to verify if output contains `mPk`,
+            because otherwise a segfault will occur
+
+        """
+        cdef double pk
+        cdef double pk_velo
+        cdef double pk_cross
+        cdef int dummy
+
+        # Quantities for the isocurvature modes
+        cdef double *pk_ic = <double*> calloc(self.sp.ic_ic_size[self.sp.index_md_scalars], sizeof(double))
+        if (self.pt.has_pk_matter == _FALSE_):
+            raise CosmoSevereError(
+                "No power spectrum computed. You must add mPk to the list of outputs."
+                )
+
+        if spectra_pk_at_k_and_z(&self.ba,&self.pm,&self.sp,k,z,&pk,pk_ic)==_FAILURE_:
+            raise CosmoSevereError(self.sp.error_message)
+
+        free(pk_ic)
         return pk
 
     def get_pk(self, np.ndarray[DTYPE_t,ndim=3] k, np.ndarray[DTYPE_t,ndim=1] z, int k_size, int z_size, int mu_size):
-        """ Fast function to get a power spectrum on a k and z array """
+        """ Fast function to get the power spectrum on a k and z array """
         cdef np.ndarray[DTYPE_t, ndim=3] pk = np.zeros((k_size,z_size,mu_size),'float64')
         cdef int index_k, index_z, index_mu
 
@@ -727,6 +776,47 @@ cdef class Class:
                 for index_mu in xrange(mu_size):
                     pk[index_k,index_z,index_mu] = self.pk(k[index_k,index_z,index_mu],z[index_z])
         return pk
+
+    def get_pk_lin(self, np.ndarray[DTYPE_t,ndim=3] k, np.ndarray[DTYPE_t,ndim=1] z, int k_size, int z_size, int mu_size):
+        """ Fast function to get the linear power spectrum on a k and z array """
+        cdef np.ndarray[DTYPE_t, ndim=3] pk = np.zeros((k_size,z_size,mu_size),'float64')
+        cdef int index_k, index_z, index_mu
+
+        for index_k in xrange(k_size):
+            for index_z in xrange(z_size):
+                for index_mu in xrange(mu_size):
+                    pk[index_k,index_z,index_mu] = self.pk_lin(k[index_k,index_z,index_mu],z[index_z])
+        return pk
+
+    # Gives sigma(R,z) for a given (R,z)
+    def sigma(self,double R,double z):
+        """
+        Gives the pk for a given R and z
+        (R is the radius in units of Mpc, so if R=8/h this will be the usual sigma8(z)
+
+        .. note::
+
+            there is an additional check to verify whether output contains `mPk`,
+            and whether k_max > ...
+            because otherwise a segfault will occur
+
+        """
+        cdef double sigma
+
+        if (self.pt.has_pk_matter == _FALSE_):
+            raise CosmoSevereError(
+                "No power spectrum computed. In order to get sigma(R,z) you must add mPk to the list of outputs."
+                )
+
+        if (self.pt.k_max_for_pk < self.ba.h):
+            raise CosmoSevereError(
+                "In order to get sigma(R,z) you must set 'P_k_max_h/Mpc' to 1 or bigger, in order to have k_max > 1 h/Mpc."
+                )
+
+        if spectra_sigma(&self.ba,&self.pm,&self.sp,R,z,&sigma)==_FAILURE_:
+                 raise CosmoSevereError(self.sp.error_message)
+
+        return sigma
 
     def age(self):
         self.compute(["background"])
@@ -738,9 +828,21 @@ cdef class Class:
     def n_s(self):
         return self.pm.n_s
 
+    def tau_reio(self):
+        return self.th.tau_reio
+
     # Defined twice ?
     def Omega_m(self):
         return self.ba.Omega0_b+self.ba.Omega0_cdm+self.ba.Omega0_ncdm_tot + self.ba.Omega0_dcdm
+
+    #def Omega_r(self):
+    #    return self.ba.Omega0_g+self.ba.Omega0_ur
+
+    def Omega_Lambda(self):
+        return self.ba.Omega0_lambda
+
+    def Omega_g(self):
+        return self.ba.Omega0_g
 
     def Omega_b(self):
         return self.ba.Omega0_b
@@ -788,6 +890,66 @@ cdef class Class:
         free(pvecback)
 
         return D_A
+
+    def scale_independent_growth_factor(self, z):
+        """
+        scale_independent_growth_factor(z)
+
+        Return the scale invariant growth factor D(a) for CDM perturbations
+        (exactly, the quantity defined by Class as index_bg_D in the background module)
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        cdef double tau
+        cdef int last_index #junk
+        cdef double * pvecback
+
+        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+
+        if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        if background_at_tau(&self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        D = pvecback[self.ba.index_bg_D]
+
+        free(pvecback)
+
+        return D
+
+    def scale_independent_growth_factor_f(self, z):
+        """
+        scale_independent_growth_factor_f(z)
+
+        Return the scale invariant growth factor f(z)=d ln D / d ln a for CDM perturbations
+        (exactly, the quantity defined by Class as index_bg_f in the background module)
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        cdef double tau
+        cdef int last_index #junk
+        cdef double * pvecback
+
+        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+
+        if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        if background_at_tau(&self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        f = pvecback[self.ba.index_bg_f]
+
+        free(pvecback)
+
+        return f
 
     def Hubble(self, z):
         """
@@ -903,7 +1065,7 @@ cdef class Class:
 
     def get_background(self):
         """
-        Return the background quantities.
+        Return an array of the background quantities at all times.
 
         Parameters
         ----------
@@ -920,6 +1082,7 @@ cdef class Class:
             raise CosmoSevereError(self.ba.error_message)
 
         tmp = <bytes> titles
+        tmp = str(tmp.decode())
         names = tmp.split("\t")[:-1]
         number_of_titles = len(names)
         timesteps = self.ba.bt_size
@@ -955,6 +1118,7 @@ cdef class Class:
             raise CosmoSevereError(self.th.error_message)
 
         tmp = <bytes> titles
+        tmp = str(tmp.decode())
         names = tmp.split("\t")[:-1]
         number_of_titles = len(names)
         timesteps = self.th.tt_size
@@ -992,6 +1156,7 @@ cdef class Class:
 
         tmp = <bytes> titles
         names = tmp.split("\t")[:-1]
+        tmp = str(tmp.decode())
         number_of_titles = len(names)
         timesteps = self.pm.lnk_size
 
@@ -1039,12 +1204,13 @@ cdef class Class:
         #Scalar:
         if self.pt.has_scalars:
             tmp = <bytes> self.pt.scalar_titles
+            tmp = str(tmp.decode())
             names = tmp.split("\t")[:-1]
             number_of_titles = len(names)
             tmparray = [];
             if number_of_titles != 0:
                 for j in range(self.pt.k_output_values_num):
-                    timesteps = self.pt.size_scalar_perturbation_data[j]/number_of_titles;
+                    timesteps = self.pt.size_scalar_perturbation_data[j]//number_of_titles;
                     tmpdict={}
                     for i in range(number_of_titles):
                         tmpdict[names[i]] = np.zeros(timesteps, dtype=np.double)
@@ -1056,12 +1222,13 @@ cdef class Class:
         #Vector:
         if self.pt.has_vectors:
             tmp = <bytes> self.pt.vector_titles
+            tmp = str(tmp.decode())
             names = tmp.split("\t")[:-1]
             number_of_titles = len(names)
             tmparray = [];
             if number_of_titles != 0:
                 for j in range(self.pt.k_output_values_num):
-                    timesteps = self.pt.size_vector_perturbation_data[j]/number_of_titles;
+                    timesteps = self.pt.size_vector_perturbation_data[j]//number_of_titles;
                     tmpdict={}
                     for i in range(number_of_titles):
                         tmpdict[names[i]] = np.zeros(timesteps, dtype=np.double)
@@ -1073,12 +1240,13 @@ cdef class Class:
         #Tensor:
         if self.pt.has_tensors:
             tmp = <bytes> self.pt.tensor_titles
+            tmp = str(tmp.decode())
             names = tmp.split("\t")[:-1]
             number_of_titles = len(names)
             tmparray = [];
             if number_of_titles != 0:
                 for j in range(self.pt.k_output_values_num):
-                    timesteps = self.pt.size_tensor_perturbation_data[j]/number_of_titles;
+                    timesteps = self.pt.size_tensor_perturbation_data[j]//number_of_titles;
                     tmpdict={}
                     for i in range(number_of_titles):
                         tmpdict[names[i]] = np.zeros(timesteps, dtype=np.double)
@@ -1127,6 +1295,7 @@ cdef class Class:
             raise CosmoSevereError(self.op.error_message)
 
         tmp = <bytes> titles
+        tmp = str(tmp.decode())
         names = tmp.split("\t")[:-1]
         number_of_titles = len(names)
         timesteps = self.sp.ln_k_size
