@@ -971,11 +971,11 @@ int input_read_parameters(
              errmsg,
              "In input file, either Omega_scf or Omega_smg must be zero. It is not possible to have both scalar fields present.");
 
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)),
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)) && (flag4 == _FALSE_),
              errmsg,
              "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_scf is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && (flag3 == _FALSE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
              errmsg,
              "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_smg is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
@@ -1235,10 +1235,12 @@ int input_read_parameters(
       
       //possible expansion histories. Can make tests, etc...
       if (strcmp(string1,"lcdm") == 0) {
+        printf("pippo\n");
 	pba->expansion_model_smg = lcdm;
 	flag2=_TRUE_;
 	pba->parameters_size_smg = 1;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+//        printf("ciccio %f\n", pba->parameters_smg[0]);
       }
       //accept different names
       if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
