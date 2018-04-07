@@ -989,6 +989,15 @@ int input_read_parameters(
    *     fill using first unspecified component.
   */
 
+  /** - Test that the user have not specified Omega_scf(smg) < 0 but left either
+      Omega_lambda or Omega_fld unspecified:*/
+  class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag3 == _TRUE_) && (param3 < 0.)),
+             errmsg,
+             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (scf), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
+  class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag4 == _TRUE_) && (param4 < 0.)),
+             errmsg,
+             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (smg), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
+
   /* Step 1 */
   if (flag1 == _TRUE_){
     pba->Omega0_lambda = param1;
@@ -1003,7 +1012,7 @@ int input_read_parameters(
     Omega_tot += pba->Omega0_scf;
   }
   if ((flag4 == _TRUE_) && (param4 >= 0.)){
-    pba->Omega0_smg = param3;
+    pba->Omega0_smg = param4;
     Omega_tot += pba->Omega0_smg;
   }
   /* Step 2 */
@@ -1036,15 +1045,6 @@ int input_read_parameters(
           pba->Omega0_k,
           Omega_tot);
   */
-
-  /** - Test that the user have not specified Omega_scf(smg) < 0 but left either
-      Omega_lambda or Omega_fld unspecified:*/
-  class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag3 == _TRUE_) && (param3 < 0.)),
-             errmsg,
-             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (scf), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
-  class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag4 == _TRUE_) && (param4 < 0.)),
-             errmsg,
-             "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (smg), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
 
   if (pba->Omega0_fld != 0.) {
     class_read_double("w0_fld",pba->w0_fld);
@@ -1235,12 +1235,10 @@ int input_read_parameters(
       
       //possible expansion histories. Can make tests, etc...
       if (strcmp(string1,"lcdm") == 0) {
-        printf("pippo\n");
 	pba->expansion_model_smg = lcdm;
 	flag2=_TRUE_;
 	pba->parameters_size_smg = 1;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
-//        printf("ciccio %f\n", pba->parameters_smg[0]);
       }
       //accept different names
       if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
