@@ -6,6 +6,7 @@
 #include "thermodynamics.h"
 #include "evolver_ndf15.h"
 #include "evolver_rkck.h"
+#include "rootfinder.h"
 
 #define _scalars_ ((ppt->has_scalars == _TRUE_) && (index_md == ppt->index_md_scalars))
 #define _vectors_ ((ppt->has_vectors == _TRUE_) && (index_md == ppt->index_md_vectors))
@@ -97,6 +98,15 @@ enum selection_type {gaussian,tophat,dirac};
 
 //@}
 
+
+// /* coefficients of the Sawicki polynomial 
+//  * needed to find growing mode
+//  * NOTE: I'm trying that the code does not inline these very long computations
+//  */
+// double c3_ic_smg;
+// double c2_ic_smg;
+// double c1_ic_smg;
+// double c0_ic_smg;
 
 
 /**
@@ -844,6 +854,14 @@ extern "C" {
 
   int perturb_prepare_output(struct background * pba,
                              struct perturbs * ppt);
+ 
+  int perturb_test_ini_grav_ic_smg(struct precision * ppr,
+			  struct background * pba,
+			  struct perturbs * ppt);  
+
+  int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
+			  struct background * pba,
+			  struct perturbs * ppt);  
 
   int perturb_find_scheme_smgqs(struct precision * ppr,
                                 struct background * pba,

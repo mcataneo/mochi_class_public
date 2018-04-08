@@ -14,7 +14,7 @@ enum spatial_curvature {flat,open,closed};
 enum gravity_model {propto_omega, propto_scale, eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential}; //write here the different models
 
 // initial conditions for the perturbations
-enum pert_initial_conditions {single_clock, zero};
+enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
@@ -123,10 +123,18 @@ struct background
   double min_cs2_smg; /**< minimum value of scalar speed of sound squared (for stability test) */
   
   int skip_stability_tests_smg; /**< specify if you want to skip the stability tests for the field perturbations */
+  double a_min_stability_test_smg; /** < skip stability tests for a < a_min */
+
   
   int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
   int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
-  
+
+  double z_ref_smg; /**< Specifies redshift at which M* is input in models with running */
+  double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
+  double pert_ic_tolerance_smg; /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */
+  double pert_ic_ini_z_ref_smg; /**<Reference z to carry out test for conservation of curvature before pert evolution*/ 
+  double pert_ic_regulator_smg;  /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
+
   
   
   /* Modified gravity parameters
