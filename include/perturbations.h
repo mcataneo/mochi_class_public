@@ -17,7 +17,8 @@
  * flags for various approximation schemes
  * (tca = tight-coupling approximation,
  *  rsa = radiation streaming approximation,
- *  ufa = massless neutrinos / ultra-relativistic relics fluid approximation)
+ *  ufa = massless neutrinos / ultra-relativistic relics fluid approximation
+ *  smgqs = quasi-static scalar field approximation)
  *
  * CAUTION: must be listed below in chronological order, and cannot be
  * reversible. When integrating equations for a given mode, it is only
@@ -30,6 +31,14 @@ enum tca_flags {tca_on, tca_off};
 enum rsa_flags {rsa_off, rsa_on};
 enum ufa_flags {ufa_off, ufa_on};
 enum ncdmfa_flags {ncdmfa_off, ncdmfa_on};
+
+/**
+ * implemented quasi-static approximation scheme (smgqs).
+ * Check that "smgqs_flags" and "_VALUES_SMGQS_FLAGS_" agree each other
+ */
+enum smgqs_flags {smgqs_fd_0, smgqs_qs_1, smgqs_fd_2, smgqs_qs_3, smgqs_fd_4, smgqs_qs_5, smgqs_fd_6};
+
+#define _VALUES_SMGQS_FLAGS_ {0, 1, 0, 1, 0, 1, 0} // values associated to the quasi-static approximation scheme. FD = 0, QS = 1.
 
 //@}
 
@@ -44,6 +53,14 @@ enum rsa_method {rsa_null,rsa_MD,rsa_MD_with_reio,rsa_none};
 enum ufa_method {ufa_mb,ufa_hu,ufa_CLASS,ufa_none};
 enum ncdmfa_method {ncdmfa_mb,ncdmfa_hu,ncdmfa_CLASS,ncdmfa_none};
 enum tensor_methods {tm_photons_only,tm_massless_approximation,tm_exact};
+
+enum possible_methods_smgqs {
+  automatic, /**< uses the approximation scheme implemented */
+  fully_dynamic, /**< forces the fully-dynamic evolution of the perturbations at all times */
+  quasi_static, /**< forces the quasi-static evolution of the perturbations at all times */
+  fully_dynamic_debug, /**< forces the fully-dynamic evolution but evaluates the approximation scheme */
+  quasi_static_debug /**< forces the quasi-static evolution but evaluates the approximation scheme */
+};
 
 //@}
 
@@ -380,6 +397,15 @@ struct perturbs
 
   //@}
 
+  /** @name - different options for the quasi-static approximation scheme */
+
+  //@{
+
+  enum possible_methods_smgqs method_smgqs;
+
+  //@}
+
+
 };
 
 /**
@@ -505,6 +531,8 @@ struct perturb_workspace
   double gw_source;		    /**< stress-energy source term in Einstein's tensor equations (gives Tij[tensor]) */
   double vector_source_pi;	/**< first stress-energy source term in Einstein's vector equations */
   double vector_source_v;	/**< second stress-energy source term in Einstein's vector equations */
+  double delta_rho_r;
+  double rho_plus_p_theta_r;
 
   double tca_shear_g;  /**< photon shear in tight-coupling approximation */
   double tca_slip;     /**< photon-baryon slip in tight-coupling approximation */
@@ -549,6 +577,7 @@ struct perturb_workspace
   int index_ap_rsa; /**< index for radiation streaming approximation */
   int index_ap_ufa; /**< index for ur fluid approximation */
   int index_ap_ncdmfa; /**< index for ncdm fluid approximation */
+  int index_ap_smgqs; /**< index for smg quasi-static approximation */
   int ap_size;      /**< number of relevant approximations for a given mode */
 
   int * approx;     /**< array of approximation flags holding at a given time: approx[index_ap] */
@@ -672,7 +701,8 @@ extern "C" {
                                         double tau_ini,
                                         double tau_end,
                                         int * interval_number,
-                                        int * interval_number_of
+                                        int * interval_number_of,
+                                        double * tau_scheme_smgqs
                                         );
 
   int perturb_find_approximation_switches(
@@ -689,7 +719,8 @@ extern "C" {
                                           int interval_number,
                                           int * interval_number_of,
                                           double * interval_limit,
-                                          int ** interval_approx
+                                          int ** interval_approx,
+                                          double * tau_scheme_smgqs
                                           );
 
   int perturb_vector_init(
@@ -728,7 +759,8 @@ extern "C" {
                              int index_md,
                              double k,
                              double tau,
-                             struct perturb_workspace * ppw
+                             struct perturb_workspace * ppw,
+                             double * tau_scheme_smgqs
                              );
 
   int perturb_timescale(
@@ -812,6 +844,73 @@ extern "C" {
 
   int perturb_prepare_output(struct background * pba,
                              struct perturbs * ppt);
+
+  int perturb_find_scheme_smgqs(struct precision * ppr,
+                                struct background * pba,
+                                struct perturbs * ppt,
+                                struct perturb_workspace * ppw,
+                                double k,
+                                double tau_ini,
+                                double tau_end,
+                                double * tau_scheme_smgqs);
+
+  int sample_mass_smgqs(struct precision * ppr,
+                        struct background * pba,
+                        struct perturbs * ppt,
+                        struct perturb_workspace * ppw,
+                        double k,
+                        double tau_ini,
+                        double tau_end,
+                        double * tau_sample,
+                        double * mass_sample,
+                        double * rad_sample,
+                        double * slope_sample,
+                        int *size_sample);
+
+  int mass_to_approx_smgqs(struct precision * ppr,
+                           struct background * pba,
+                           struct perturbs * ppt,
+                           double tau_ini,
+                           double tau_end,
+                           double * tau_sample,
+                           double * mass_sample,
+                           double * rad_sample,
+                           int * approx_sample,
+                           int size_sample);
+
+  int shorten_first_smgqs(double * tau_sample,
+                          double * slope_sample,
+                          int * approx_sample,
+                          int size_sample,
+                          double * tau_array,
+                          double * slope_array,
+                          int * approx_array,
+                          int *size_array,
+                          double tau_end);
+
+  int correct_with_slope_smgqs(struct precision * ppr,
+                               struct background * pba,
+                               struct perturbs * ppt,
+                               struct perturb_workspace * ppw,
+                               double tau_ini,
+                               double tau_end,
+                               double * tau_array,
+                               double * slope_array,
+                               int * approx_array,
+                               int size_array);
+
+  int shorten_second_smgqs(double * tau_array,
+                           int * approx_array,
+                           int size_array,
+                           double * tau_scheme,
+                           int * approx_scheme,
+                           int *size_scheme);
+
+  int fit_real_scheme_smgqs(double tau_end,
+                            int * approx_scheme,
+                            double * tau_scheme,
+                            int size_scheme,
+                            double * tau_export);
 
 #ifdef __cplusplus
 }

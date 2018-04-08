@@ -604,6 +604,36 @@ int input_read_parameters(
     }
   }
 
+  /** Main flag for the quasi-static approximation scheme */
+
+  class_call(parser_read_string(pfc,"method_smgqs",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+
+  if (flag1 == _TRUE_) {
+
+    if ((strstr(string1,"automatic") != NULL) || (strstr(string1,"a") != NULL) || (strstr(string1,"A") != NULL)) {
+      ppt->method_smgqs = automatic;
+    }
+
+    if ((strstr(string1,"fully_dynamic") != NULL) || (strstr(string1,"fd") != NULL) || (strstr(string1,"FD") != NULL)) {
+      ppt->method_smgqs = fully_dynamic;
+    }
+
+    if ((strstr(string1,"quasi_static") != NULL) || (strstr(string1,"qs") != NULL) || (strstr(string1,"QS") != NULL)) {
+      ppt->method_smgqs = quasi_static;
+    }
+
+    if ((strstr(string1,"fully_dynamic_debug") != NULL) || (strstr(string1,"fdd") != NULL) || (strstr(string1,"FDD") != NULL)) {
+      ppt->method_smgqs = fully_dynamic_debug;
+    }
+
+    if ((strstr(string1,"quasi_static_debug") != NULL) || (strstr(string1,"qsd") != NULL) || (strstr(string1,"QSD") != NULL)) {
+      ppt->method_smgqs = quasi_static_debug;
+    }
+  }
+
+
   /** (a) background parameters */
 
   /** - scale factor today (arbitrary) */
@@ -2979,11 +3009,21 @@ int input_read_parameters(
     class_read_int("num_mu_minus_lmax",ppr->num_mu_minus_lmax);
     class_read_int("tol_gauss_legendre",ppr->tol_gauss_legendre);
   }
+
+  /** h.8. parameter related to the quasi-static approximation scheme (smgqs) */
+
+  class_read_double("n_min_smgqs",ppr->n_min_smgqs);
+  class_read_double("n_max_smgqs",ppr->n_max_smgqs);
+  class_read_double("z_fd_smgqs",ppr->z_fd_smgqs);
+  class_read_double("trigger_mass_smgqs",ppr->trigger_mass_smgqs);
+  class_read_double("trigger_rad_smgqs",ppr->trigger_rad_smgqs);
+  class_read_double("eps_s_smgqs",ppr->eps_s_smgqs);
+
   /** (i) Write values in file */
   if (ple->has_lensed_cls == _TRUE_)
     ppt->l_scalar_max+=ppr->delta_l_max;
 
-  /** - (i.1.) shall we write background quantities in a file? */
+  /** (i.1) shall we write background quantitites in a file? */
 
   class_call(parser_read_string(pfc,"write background",&string1,&flag1,errmsg),
              errmsg,
@@ -3259,6 +3299,8 @@ int input_default_params(
   ppt->k_max_for_pk=1.;
 
   ppt->gauge=synchronous;
+
+  ppt->method_smgqs=fully_dynamic;
 
   ppt->k_output_values_num=0;
   ppt->store_perturbations = _FALSE_;
@@ -3561,6 +3603,17 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->ncdm_fluid_trigger_tau_over_tau_k = 31.;
 
   ppr->neglect_CMB_sources_below_visibility = 1.e-3;
+
+  /**
+   * - parameter related to the quasi-static approximation scheme (smgqs)
+   */
+
+  ppr->n_min_smgqs = 1e2;
+  ppr->n_max_smgqs = 1e4;
+  ppr->z_fd_smgqs = 10.;
+  ppr->trigger_mass_smgqs = 1.e3;
+  ppr->trigger_rad_smgqs = 1.e3;
+  ppr->eps_s_smgqs = 0.01;
 
   /**
    * - parameter related to the primordial spectra

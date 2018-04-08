@@ -868,6 +868,7 @@ int background_indices(
   
   class_define_index(pba->index_bg_cs2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_cs2num_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_cs2num_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_1_smg,pba->has_smg,index_bg,1);
@@ -878,6 +879,8 @@ int background_indices(
   class_define_index(pba->index_bg_lambda_6_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_7_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_2_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_8_prime_smg,pba->has_smg,index_bg,1);
 
   class_define_index(pba->index_bg_rho_tot_wo_smg,pba->has_smg,index_bg,1);  
   class_define_index(pba->index_bg_p_tot_wo_smg,pba->has_smg,index_bg,1);   
@@ -2110,6 +2113,50 @@ int background_solve(
    */
   for (i=0; i < pba->bt_size; i++) {
       
+    if (pba->has_smg == _TRUE_){
+      
+      
+      //write the derivatives in the structure
+      class_call(array_derivate_spline(pba->tau_table, // x_array 
+				       pba->bt_size, // int n_lines
+				       pba->background_table, // array
+				       pba->d2background_dtau2_table, // double * array_splined
+				       pba->bg_size, // n_columns
+				       pba->tau_table[i], // double x -> tau
+				       &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
+				       pvecback_derivs, // double * result 
+				       pba->bg_size, //result_size, from 1 to n_columns
+				       pba->error_message),
+		  pba->error_message,
+		  pba->error_message);
+    
+      //cs2num'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
+			      &pvecback_derivs[pba->index_bg_cs2num_smg],
+			      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
+               pba->error_message,
+               "cannot copy data back to pba->background_table");
+      
+      //lambda_2'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
+      	      &pvecback_derivs[pba->index_bg_lambda_2_smg],
+      	      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
+             pba->error_message,
+             "cannot copy data back to pba->background_table");
+
+      //lambda_8'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
+            &pvecback_derivs[pba->index_bg_lambda_8_smg],
+            1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
+            pba->error_message,
+           "cannot copy data back to pba->background_table");
+
+    }
+
+
      class_call(background_at_tau(pba,
 				   pba->tau_table[i],
 				   pba->long_info,
@@ -2834,6 +2881,7 @@ int background_gravity_functions(
   pvecback[pba->index_bg_cs2_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_prime_smg] = 0.;
   pvecback[pba->index_bg_cs2num_smg] = 0.;
+  pvecback[pba->index_bg_cs2num_prime_smg] = 0.;
   pvecback[pba->index_bg_lambda_1_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_smg] = 0.;
   pvecback[pba->index_bg_lambda_3_smg] = 0.;
@@ -2842,6 +2890,8 @@ int background_gravity_functions(
   pvecback[pba->index_bg_lambda_6_smg] = 0.;
   pvecback[pba->index_bg_lambda_7_smg] = 0.;
   pvecback[pba->index_bg_lambda_8_smg] = 0.;
+  pvecback[pba->index_bg_lambda_2_prime_smg] = 0.;
+  pvecback[pba->index_bg_lambda_8_prime_smg] = 0.;
   if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
     pvecback[pba->index_bg_mpl_running_smg] = 0.;
   }
