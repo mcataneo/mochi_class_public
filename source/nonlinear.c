@@ -432,8 +432,14 @@ int nonlinear_halofit(
              pba->error_message,
              pnl->error_message);
 
+  //TODO: adapt w0 to smg
+  //TODO: add warning message -> halofit not correct for modified gravity
   Omega_m = pvecback[pba->index_bg_Omega_m];
   Omega_v = 1.-pvecback[pba->index_bg_Omega_m]-pvecback[pba->index_bg_Omega_r];
+  w0 = pba->w0_fld;
+  
+//   if (tau == pba->tau_table[pba->bt_size-1])
+//     printf("Halofit: tau=%g, Omega_m = %g, Omega_r = %g, Omega_v = %g, w0 = %g \n",tau, Omega_m, pvecback[pba->index_bg_Omega_r], Omega_v,w0);
 
   // for debugging:
   //printf("Call Halofit at z=%e\n",pba->a_today/pvecback[pba->index_bg_a]-1.);
