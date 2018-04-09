@@ -1268,6 +1268,7 @@ int input_read_parameters(
 	pba->expansion_model_smg = lcdm;
 	flag2=_TRUE_;
 	pba->parameters_size_smg = 1;
+        pba->rho_evolution_smg=_FALSE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
       //accept different names
@@ -1275,12 +1276,20 @@ int input_read_parameters(
 	pba->expansion_model_smg = wowa;
 	flag2=_TRUE_;
 	pba->parameters_size_smg = 3;
+        pba->rho_evolution_smg=_FALSE_;
+	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      }
+      if (strcmp(string1,"wowa_w") == 0 || strcmp(string1,"w0wa_w") == 0 || strcmp(string1,"cpl_w") == 0 ) {
+	pba->expansion_model_smg = wowa_w;
+	flag2=_TRUE_;
+	pba->parameters_size_smg = 3;
+        pba->rho_evolution_smg=_TRUE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
       
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify expansion_model value, check that it is either lcdm, wowa ...");
+		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w ...");
       
     }
     
@@ -3199,6 +3208,7 @@ int input_default_params(
   pba->field_evolution_smg = _FALSE_; /* does the model require solving the background equations? */  
   pba->M_pl_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */  
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
+  pba->rho_evolution_smg = _FALSE_; /*does the model require to evolve the background energy density? (only for parameterizations)*/
   
   pba->kineticity_safe_smg = 0; /* value added to the kineticity, useful to cure perturbations at early time in some models */
   pba->cs2_safe_smg = 0; /* threshold to consider the sound speed of scalars negative in the stability check */

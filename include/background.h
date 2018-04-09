@@ -18,7 +18,7 @@ enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ex
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
-enum expansion_model {lcdm, wowa}; //parameterized expansion, only for non-self consistent Horndeski theories
+enum expansion_model {lcdm, wowa, wowa_w}; //parameterized expansion, only for non-self consistent Horndeski theories
 
 /**
  * All background parameters and evolution that other modules need to know.
@@ -128,6 +128,7 @@ struct background
   
   int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
   int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
+  int rho_evolution_smg; /**< does the model require integrating the energy density? */
 
   double z_ref_smg; /**< Specifies redshift at which M* is input in models with running */
   double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
@@ -244,6 +245,7 @@ struct background
   int index_bg_M2_smg;   /**< relative Planck mass */
   int index_bg_rho_smg;       /**< scalar field energy density */
   int index_bg_p_smg;         /**< scalar field pressure */
+  int index_bg_rho_prime_smg;       /**< derivative of the scalar field energy density */
   int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/ 
   int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/   
   int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/ 
@@ -280,6 +282,7 @@ struct background
   int index_bg_H_prime_prime; /**< second derivative of the hubble parameter (necessary for BS perturbations equation for h'') */
   int index_bg_p_tot_wo_prime_smg; /**< derivative of the total pressure minus scalar field */
   int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */ 
+  int index_bg_w_smg; /**< equation of state of the scalar field */
   
 
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
@@ -349,6 +352,7 @@ struct background
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
   
   int index_bi_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/  
+  int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */

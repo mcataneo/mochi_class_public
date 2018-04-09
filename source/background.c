@@ -435,7 +435,13 @@ int background_functions(
     //TODO: maybe define a threshold early/late, or add EDE to thermodynamics, etc..
 //     rho_r += 3.*pvecback[pba->index_bg_p_smg]; //field pressure contributes radiation
 //     rho_m += pvecback[pba->index_bg_rho_smg] - 3.* pvecback[pba->index_bg_p_smg]; //the rest contributes matter     
-  }
+
+    /** - compute w_smg */
+    if (pba->rho_evolution_smg == _FALSE_) {
+      pvecback[pba->index_bg_w_smg] = pvecback[pba->index_bg_p_smg] / pvecback[pba->index_bg_rho_smg];
+    }
+
+}
 
   /** - compute relativistic density to total density ratio */
   pvecback[pba->index_bg_Omega_r] = rho_r / rho_tot;
@@ -855,6 +861,8 @@ int background_indices(
 
   class_define_index(pba->index_bg_rho_smg,pba->has_smg,index_bg,1);   
   class_define_index(pba->index_bg_p_smg,pba->has_smg,index_bg,1);  
+  class_define_index(pba->index_bg_rho_prime_smg,pba->has_smg && pba->rho_evolution_smg,index_bg,1);
+  class_define_index(pba->index_bg_w_smg,pba->has_smg,index_bg,1);
   
   class_define_index(pba->index_bg_kineticity_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_braiding_smg,pba->has_smg,index_bg,1);  
@@ -968,7 +976,12 @@ int background_indices(
     //if model needs to integrate M_pl from alpha_M, declare an index
     class_define_index(pba->index_bi_M_pl_smg,
 		       pba->M_pl_evolution_smg,index_bi,1);
-  }  
+
+    /* index for the smg energy density */
+    class_define_index(pba->index_bi_rho_smg,
+           pba->rho_evolution_smg,index_bi,1);
+
+}  
 
   /* -> energy density in fluid */
   class_define_index(pba->index_bi_rho_fld,pba->has_fld,index_bi,1);
@@ -2375,7 +2388,12 @@ int background_initial_conditions(
     
       if (pba->M_pl_evolution_smg == _TRUE_)
 	if (pba->background_verbose>3) 
-	  printf(" -> Initial conditions: M_pl = %e \n",pvecback_integration[pba->index_bi_M_pl_smg]);    
+	  printf(" -> Initial conditions: M_pl = %e \n",pvecback_integration[pba->index_bi_M_pl_smg]);
+    
+      if (pba->rho_evolution_smg == _TRUE_){
+        pvecback_integration[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_smg];
+      }
+
   }
 
   if (pba->has_fld == _TRUE_){
@@ -2640,6 +2658,11 @@ int background_derivs(
   /** - calculate \f$ t' = a \f$ */
   dy[pba->index_bi_time] = y[pba->index_bi_a];
 
+  /** - calculate /f$ \rho'= -3aH (1+w) \rho /f$ */
+  if (pba->rho_evolution_smg == _TRUE_){
+    dy[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_prime_smg];
+  }
+
   class_test(pvecback[pba->index_bg_rho_g] <= 0.,
              error_message,
              "rho_g = %e instead of strictly positive",pvecback[pba->index_bg_rho_g]);
@@ -2759,6 +2782,29 @@ int background_gravity_functions(
       pvecback[pba->index_bg_rho_smg] = Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1. + w0 + wa)) * exp(3.*wa*(a-1.));
       pvecback[pba->index_bg_p_smg] = (w0+(1-a)*wa) * Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1.+w0+wa)) * exp(3.*wa*(a-1.));
     }
+    if (pba->expansion_model_smg == wowa_w){
+
+      double Omega_const_smg = pba->parameters_smg[0];
+      double w0 = pba->parameters_smg[1];
+      double wa = pba->parameters_smg[2];
+
+      pvecback[pba->index_bg_w_smg] = w0+(1-a)*wa;
+
+      if (pba->initial_conditions_set_smg == _FALSE_) {
+        // Here we provide wi wf from w= (1-a)*wi+a*wf.
+        // This is useful to set the initial conditions  for the energy density.
+        // The value inferred here is just a guess, since then the shooting will modify it.
+        double wi = w0+wa;
+        double wf = w0;
+
+        pvecback[pba->index_bg_rho_smg] = Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1. + wi)) * exp(3.*(wi-wf)*(a-1.));
+      }
+      else {
+        pvecback[pba->index_bg_rho_smg] = pvecback_B[pba->index_bi_rho_smg];
+      }
+      pvecback[pba->index_bg_p_smg] = pvecback[pba->index_bg_w_smg] * pvecback[pba->index_bg_rho_smg];
+
+    }
 
     rho_tot += pvecback[pba->index_bg_rho_smg];
     p_tot += pvecback[pba->index_bg_p_smg];    
@@ -2860,7 +2906,12 @@ int background_gravity_functions(
     /** - compute derivative of H with respect to conformal time */
     pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
 
-  }//end of parameterized mode  
+    // Compute time derivative of rho_smg
+    if (pba->rho_evolution_smg == _TRUE_){
+        pvecback[pba->index_bg_rho_prime_smg] = -3.*a*pvecback[pba->index_bg_H]*(1.+pvecback[pba->index_bg_w_smg])*pvecback[pba->index_bg_rho_smg];
+    }
+
+}//end of parameterized mode  
     
   // add a value to the kineticity to avoid problems with perturbations in certain models.
   // NOTE: this needs to be done here to avoid interfering with the equations
@@ -2955,6 +3006,13 @@ int background_gravity_parameters(
       printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
 	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
+
+      case wowa_w:
+      printf("Parameterized model with CPL expansion \n");
+      printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
+	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
+      break;
+
     }
     
   }
