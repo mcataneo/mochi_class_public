@@ -3447,7 +3447,7 @@ int input_default_params(
   pba->a_min_stability_test_smg = 0; /** < skip stability tests for a < a_min */
   
   pba->hubble_evolution = _TRUE_; /** dynamical evolution of Friedmann eq. */
-  pba->hubble_friction = 3; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
+  pba->hubble_friction = 3.; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
   
   pba->kineticity_safe_smg = 0; /* value added to the kineticity, useful to cure perturbations at early time in some models */
   pba->cs2_safe_smg = 0; /* threshold to consider the sound speed of scalars negative in the stability check */

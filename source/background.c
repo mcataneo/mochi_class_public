@@ -2559,6 +2559,26 @@ int background_initial_conditions(
   class_call(background_functions(pba, pvecback_integration, pba->long_info, pvecback),
 	     pba->error_message,
 	     pba->error_message);
+  
+  //TODO: for normal models, rewrite for MG
+  // H_ini = sqrt(pvecback[pba->index_bg_rho_crit]);
+  
+  if(pba->has_smg == _TRUE_){ 
+//     pba->H_first_smg = pvecback[pba->index_bg_H]; //set the value to pick up the right ones when writting background table
+//     pba->H_last_smg = pvecback[pba->index_bg_H]; //set the value of H to ensure continuity
+//      H_ini = pvecback[pba->index_bg_H];
+    pba->initial_conditions_set_smg = _TRUE_;
+    if (pba->hubble_evolution == _TRUE_){
+      pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];
+    }
+  }
+  if(pba->has_smg ==_FALSE_ && pba->hubble_evolution == _TRUE_){ // update for normal models
+    pvecback[pba->index_bg_H] =  pvecback[pba->index_bg_H];
+    pvecback_integration[pba->index_bi_H] =  pvecback[pba->index_bg_H];
+  }
+  //set the ICs
+  
+//   printf("H_ini = %.2e, %.2e\n",H_ini,pvecback[pba->index_bg_H]);
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
