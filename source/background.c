@@ -435,13 +435,16 @@ int background_functions(
     //divide relativistic & nonrelativistic (not very meaningful for oscillatory models)
     
     // TODO: need to define menainfully -> separate early universe (IC, BBN...) from late (Halofit...)
-    //TODO: maybe define a threshold early/late, or add EDE to thermodynamics, etc..
-//     rho_r += 3.*pvecback[pba->index_bg_p_smg]; //field pressure contributes radiation
-//     rho_m += pvecback[pba->index_bg_rho_smg] - 3.* pvecback[pba->index_bg_p_smg]; //the rest contributes matter     
+    //BUG: causes problem with halofit!
+    rho_r += 3.*pvecback[pba->index_bg_p_smg]; //field pressure contributes radiation
+    rho_m += pvecback[pba->index_bg_rho_smg] - 3.* pvecback[pba->index_bg_p_smg]; //the rest contributes matter     
   }
 
   /** - compute relativistic density to total density ratio */
   pvecback[pba->index_bg_Omega_r] = rho_r / rho_tot;
+  
+  if (a == 1e-14)
+  printf("Omega_r-1 = %e \n", rho_r / rho_tot-1.);
 
   /** - compute other quantities in the exhaustive, redundant format */
   if (return_format == pba->long_info) {
@@ -2882,8 +2885,10 @@ int background_gravity_functions(
   
     //declare variables
     double a, phi, phi_prime, H;
+    double x,f,df;
+    int n, n_max=100;
     double X,rho_tot,p_tot;
-    double E_0,E_1,E_2,E_3,B,A,R,M,F,P;
+    double E0,E1,E2,E3,B,A,R,M,F,P;
     double G2=0, G2_X=0, G2_XX=0, G2_phi=0, G2_Xphi=0;
     double G3_X=0, G3_XX=0, G3_phi=0, G3_phiphi=0, G3_Xphi=0;
     double G4, G4_smg=0;
@@ -2967,16 +2972,31 @@ int background_gravity_functions(
       * NOTE: added rho_smg, p_smg separately
       */
                 
-    E_0 = (3.*rho_tot + (-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3.;
-    E_1 = ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*phi_prime*pow(a,-1);
-    E_2 = (G4 + (4.*G4_X + (-3.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*2.*X)*(-1.)*X)*2.;
-    E_3 = (5.*G5_X + 2.*X*G5_XX)*2./3.*phi_prime*pow(a,-1)*X;
+    E0 = (3.*rho_tot + (-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3.;
+    E1 = ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*phi_prime*pow(a,-1);
+    E2 = (G4 + (4.*G4_X + (-3.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*2.*X)*(-1.)*X)*2.;
+    E3 = (5.*G5_X + 2.*X*G5_XX)*2./3.*phi_prime*pow(a,-1)*X;
     
     // Rewrite if ICs not set or no evolution
-    //TODO: check if this is necessary!
     if (pba->initial_conditions_set_smg == _FALSE_ || pba->hubble_evolution == _FALSE_){
-      H = sqrt(rho_tot);
+      class_test(E3*pow(E0,1./2.) > 1e-10,
+		  pba->error_message,
+	           " E3=%e is large in Friedmann constraint when setting ICs ",  E3);
+      //Use Newton's method
+      x = sqrt(E0);   
+      f = E3*x*x*x -E2*x*x + E1*x + E0;
+      n = 0;
+      while (fabs(f/E0)> 1e-8 && n < 100){
+	df = 3.*E3*x*x - 2.*E2*x + E1;
+	x -= f/df;
+	//update f after df!
+	f = E3*x*x*x - E2*x*x + E1*x + E0;
+	n++;
+      }
+      H=x;
+      printf(" H= %e, sqrt(rho) = %e, ratio = %e, n=%i \n", H, sqrt(rho_tot),sqrt(rho_tot)/H,n);
     }
+      
 //     if (H<0)
 //       printf("H = %e ",H);
     
@@ -2988,7 +3008,7 @@ int background_gravity_functions(
     class_test(isnan(pvecback[pba->index_bg_H]),
 	       pba->error_message,
                " H=%e is not a number at a = %e. phi = %e, phi_prime = %e, E0=%e, E1=%e, E2=%e, E3=%e, M_*^2 = %e ",
-	       pvecback[pba->index_bg_H],a,phi,phi_prime,E_0,E_1,E_2,E_3,pvecback[pba->index_bg_M2_smg]);     
+	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3,pvecback[pba->index_bg_M2_smg]);     
     
     
     // alpha_k and alpha_b are needed in the equation and do not depend on phi''
@@ -3024,16 +3044,16 @@ int background_gravity_functions(
 	       pba->error_message,
                "scalar field mixing with metric has degenerate denominator at a = %e, phi = %e, phi_prime = %e \n with A = %e, M =%e, B=%e, F=%e, \n H=%e, E0=%e, E1=%e, E2=%e, E3=%e \n M_*^2 = %e Kineticity = %e, Braiding = %e",
 	       a,phi,phi_prime, A, M, B, F,
-	       pvecback[pba->index_bg_H],E_0,E_1,E_2,E_3,
+	       pvecback[pba->index_bg_H],E0,E1,E2,E3,
 	       pvecback[pba->index_bg_M2_smg], pvecback[pba->index_bg_kineticity_smg],pvecback[pba->index_bg_braiding_smg]);   
     
     // Friedmann space-space equation with friction added
     pvecback[pba->index_bg_H_prime] = ((-1.)*B*P + M*R)*pow(B*F + (-1.)*A*M,-1);
     // choose sign for friction depending on the derivative
-    if ((2.*E_2*H - E_1 - 3*E_3*H*H)>=0)
-      pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(E_2*H*H - E_0 - E_1*H - E_3*H*H*H);
+    if ((2.*E2*H - E1 - 3*E3*H*H)>=0)
+      pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(E2*H*H - E0 - E1*H - E3*H*H*H);
     else{
-      pvecback[pba->index_bg_H_prime] += a*pba->hubble_friction*(E_2*H*H - E_0 - E_1*H - E_3*H*H*H);
+      pvecback[pba->index_bg_H_prime] += a*pba->hubble_friction*(E2*H*H - E0 - E1*H - E3*H*H*H);
     }
     
     // Field equation 

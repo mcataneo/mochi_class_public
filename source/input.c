@@ -1157,6 +1157,8 @@ int input_read_parameters(
   
   if (pba->Omega0_smg != 0.) {
     
+    pba->has_smg = _TRUE_;  //default is _FALSE_
+        
     /** read the model and loop over models to set several flags and variables
      * field_evolution_smg: for self-consistent scalar tensor theories, need to evolve the background equations
      * M_pl_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
