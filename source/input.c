@@ -228,11 +228,11 @@ int input_init(
    * These two arrays must contain the strings of names to be searched
    *  for and the corresponding new parameter */
   char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
-                                       "Omega_scf","Omega_smg","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
+                                       "Omega_scf","Omega_smg","M_pl_today_smg","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
   char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
-                                        "scf_shooting_parameter","shooting_parameter_smg","Omega_dcdmdr","omega_dcdmdr","A_s"};
+                                        "scf_shooting_parameter","shooting_parameter_smg","param_shoot_M_pl_smg","Omega_dcdmdr","omega_dcdmdr","A_s"};
   enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
-                                        cs_background, cs_background, cs_background, cs_spectra};
+                                        cs_background, cs_background, cs_background, cs_background, cs_spectra};
 
   int input_verbose = 0, int1, aux_flag, shooting_failed=_FALSE_;
 
@@ -272,7 +272,6 @@ int input_init(
       }
     }
   }
-
   /** - case with unknown parameters */
   if (unknown_parameters_size > 0) {
 
@@ -1067,6 +1066,17 @@ int input_read_parameters(
     if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_smg = %e\n",pba->Omega0_smg);
   }
 
+  if (flag3 == _FALSE_){
+    class_call(parser_read_double(pfc,"Omega_smg_debug",&param3,&flag3,errmsg),
+             errmsg,
+             errmsg);
+    //rewrite before doing the test
+    if (flag3 == _TRUE_){
+      pba->Omega_smg_debug = param3;
+//       pba->Omega0_smg = pba->Omega_smg_debug; \\TODO: check if this is needed (it wasn't in hi_class devel)
+    }
+  }
+  
   /*
   fprintf(stderr,"%e %e %e %e %e\n",
           pba->Omega0_lambda,
@@ -1144,15 +1154,11 @@ int input_read_parameters(
       }
     }
   }
-
-  //TODO: move this before Omega_Lambda so that 1) it doesn't interfere with the tests 2) the code ignores smg if smg_debug has been set 3) throws a warnning and 4) perhaps add some output
-  class_read_double("Omega_smg_debug",pba->Omega_smg_debug);  //NOTE: class_read_double uses flag1!!
-  
-  if (pba->Omega_smg_debug != 0)
-    pba->Omega0_smg = pba->Omega_smg_debug;
   
   if (pba->Omega0_smg != 0.) {
     
+    pba->has_smg = _TRUE_;  //default is _FALSE_
+        
     /** read the model and loop over models to set several flags and variables
      * field_evolution_smg: for self-consistent scalar tensor theories, need to evolve the background equations
      * M_pl_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
@@ -1235,6 +1241,190 @@ int input_read_parameters(
 	pba->parameters_2_size_smg = 8;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
+      
+      if (strcmp(string1,"quintessence_monomial") == 0) {
+	pba->gravity_model_smg = quintessence_monomial;
+	pba->field_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 4;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+
+	/* Guess for the parameter variation range. Copied from galileons.
+     *
+     * For the initial parameter one can use:
+	 * 
+	 * 	rho_smg = 1/2*a_ini^-2*phi_prime_ini^2 + V0*3*H0^2/h^2*phi_ini^N
+	 * 
+	 * However, for the range of variation it is better to use
+	 * 
+	 * 	Omega = rho_smg/(rho_smg + rho_m)
+	 * 
+	 * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
+	 * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
+	 * where we use rho_m ~ H_0^2
+     *
+     * drho_smg/dV0 = 10^-7*phi_ini^N
+	 */
+
+    double N = pba->parameters_smg[0];
+    double V0 = pba->parameters_smg[1];
+    double phi_prime_ini_smg = pba->parameters_smg[2];
+    double phi_ini_smg =  pba->parameters_smg[3];
+
+    double P_ini = pow(phi_ini_smg, N);  // V=cte*P(phi)
+
+	if (has_tuning_index_smg == _FALSE_)
+	  pba->tuning_index_smg = 1; //use V0 for default tuning
+	
+	if (has_dxdy_guess_smg == _FALSE_){ 
+	  if(pba->tuning_index_smg == 1){
+	    if(phi_ini_smg != 0){
+	      V0 = pba->Omega0_smg/pow(phi_ini_smg,N); 
+	      pba->tuning_dxdy_guess_smg = 1./pow(phi_ini_smg,N); // fabs(pow(1. + rho_H2, 2)*pow(pba->h,2)/(3.*P_ini));
+	      pba->parameters_smg[1] = V0;
+	    }
+	    else{
+	      V0 = pba->Omega0_smg/pow(1.e-40,N); 
+	      pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N); // fabs(pow(1. + rho_H2, 2)*pow(pba->h,2)/(3.*P_ini));
+	      pba->parameters_smg[1] = V0;
+
+	    }
+	  }
+
+	  if(pba->tuning_index_smg == 3){	   
+       phi_ini_smg = pow(pba->Omega0_smg/V0, 1./N);
+       pba->parameters_smg[3] = phi_ini_smg;
+       pba->tuning_dxdy_guess_smg = phi_ini_smg/(pba->Omega0_smg)/N; //pow(rho_Omega0/V0,1./N-1)/N;
+	  }
+	}//end of no has_dxdy_guess_smg
+      }
+      
+      if (strcmp(string1,"galileon") == 0) {
+	pba->gravity_model_smg = galileon;
+	pba->field_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 7;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+	
+	double xi = pba->parameters_smg[0];
+	double c2 = pba->parameters_smg[2];
+	double c3 = pba->parameters_smg[3];
+	double c4 = pba->parameters_smg[4];
+	double c5 = pba->parameters_smg[5];
+	
+	/* Galileon dynamics pulls towards the shift-symmetry attractor n = 0 with
+	 * 
+	 * n/H0 = xi(c2 - 6c3 xi + 18c4 xi^2 + 5c5 xi^4)
+	 * 
+	 * and xi = \dot\phi H /H0^2
+	 * 
+	 * If attractor_ic_smg => n=0 is set in background_initial_conditions
+	*/
+	
+	
+	/* Guess for the parameter variation range. For the initial parameter one can use
+	 * 
+	 * 	rho_smg*H^2/H_0^4 = c2 xi^2/6 - 2 c3 xi^3 + 15/2 c4 xi^4 + 7/3 c5 xi^5
+	 * 
+	 * (Barreira+ '14 2.22 for z\neq 0), which equals Omega_smg at z=0 only if tuned.
+	 * 
+	 * There are three modes:
+	 * 	1) rogue mode: user sets all (if Omega_smg_debug or NO attractor_ic_smg)
+	 * 	2) cubic attractor: c3, xi set for attractor
+	 * 	3) quartic/quintic attractor: c3, c4 set xi for attractor
+	 */
+	
+	//rho/H0^2 for each Horndeski term
+	double rho_H2;
+	
+	/* 1) ROGUE mode: user provides BOTH tuning index and guess
+	 *    otherwise ignore complain loudly
+	 */
+	if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+	  pba->tuning_index_smg = 3; //use c3 for default tuning
+	}
+	//TODO: write guess
+	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
+		 errmsg,
+		 "Galileon: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+	
+	if (pba->Omega_smg_debug == 0 && pba->attractor_ic_smg == _TRUE_){
+	  if(pba->tuning_index_smg == 3){	    
+	    
+	    /*2) cubic Galileon
+	     * in this case Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
+	     */
+	    if (c4 == 0 && c5 == 0) {
+	      
+	      
+	      //NOTE: maybe make this error in other module
+	      class_test(c2>0,
+			 errmsg,
+		         "Galileon: cubic case (c4=c5=0) only has Omega_smg >0 if c2<0 (current c2=%e)",
+			 c2);
+	      
+	      c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
+	      xi = c2/6./c3;
+	      
+	      pba->parameters_smg[3] = c3;
+	      pba->parameters_smg[0] = xi;
+	      pba->tuning_dxdy_guess_smg = -0.5*c3/pba->Omega0_smg;
+// 	      printf("dxdy_guess = %e \n",pba->tuning_dxdy_guess_smg);
+	    }//end of cubic
+	    //quartic Galileon
+	    //TODO: should allow for non-attractor
+	    else if (c5 == 0){
+	   	     
+	      c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
+	      c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
+		    //-(c2-6.*c3*xi+5.*c5*pow(xi,3))/(18.*pow(xi,2));//without solving for c3, would be an attempt to get c3 in the loop when its varied
+	      
+	      pba->parameters_smg[3] = c3;
+	      pba->parameters_smg[4] = c4;
+	      pba->tuning_dxdy_guess_smg = 2./pow(xi,3);
+	      
+// 	      printf("quartic read_params: xi = %e,  c3 = %e, c4 = %e, c5 = %e \n", xi, c3,c4,c5);
+// 	      printf("read_params:c3 = %e, c4 = %e, c5 = %e, xi=%e \n", pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0]);
+	    
+// 	    //Quartic theories might not have an attractor: start always in the region for which there is one!
+// 	    //but we choose c3 so this doesn't happen!
+// 	    if (c5 == 0 && c3*c3 < c2*c4/18.)
+// 	      c3 = c2*c4/18;
+// 	    
+// 	    	    rho_H2 = c2*pow(xi,2)/6. - 2.*c3*pow(xi,3) + 15./2.*c4*pow(xi,4) + 7./3.*c5*pow(xi,5);
+// 	    pba->tuning_dxdy_guess_smg = fabs(pow(1. + rho_H2, 2)/(-2.*pow(xi,3))); //absolute value to consider scale of variation ??
+// 	    
+// 	    pba->parameters_smg[3] = c3;
+	    
+	    }//end of quartic
+	    else{//Quintic case   
+	      
+// 	      printf("quintic read_params: xi = %e,  c3 = %e, c4 = %e, c5 = %e \n", xi, c3,c4,c5);
+	      
+	      c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
+	      c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
+	      
+	      pba->parameters_smg[4] = c4;
+	      pba->parameters_smg[5] = c5;
+	      pba->tuning_dxdy_guess_smg = 2./pow(xi,3);
+	    
+	    }//end of quintic	    
+	  }//end of tuning_index=3
+	}//end of no Omega_smg_debug
+      }//end of Galileon
+      if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
+	pba->gravity_model_smg = brans_dicke;
+	pba->field_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 4;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+	pba->parameters_smg[0] = 2*pba->Omega0_smg;
+	pba->tuning_dxdy_guess_smg = 0.5;
+	pba->tuning_index_2_smg = 2;
+      }
 
 
       class_test(flag2==_FALSE_,
@@ -1248,9 +1438,7 @@ int input_read_parameters(
     //TODO: if self consistent evolution read the initial conditions. These might be ignored, e.g. if there are attractor initial conditions.
     if(pba->field_evolution_smg == _TRUE_){
       
-      class_test(pba->field_evolution_smg == _TRUE_,
-		 errmsg,
-		 "self consistent evolution not implemented in this version. You should choose a parameterization\n");
+      //TODO: include generic stuff for covariant theories
       
     }
     else { //if no self-consistent evolution, need a parameterization for Omega_smg    
@@ -1371,7 +1559,47 @@ int input_read_parameters(
 	       errmsg,
 	       "Tuning index tuning_index_smg = %d is larger than the number of entries %d in parameters_smg. Check your .ini file.",
 	       pba->tuning_index_smg,pba->parameters_size_smg);
+    
+    /** Read the desired Planck mass and check that the necessary information is provided. 
+     *  if needed re-assign shooting parameter for the Planck mass 
+     */
+    flag1==_FALSE_;
+    class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
+    if (flag1==_TRUE_){
+      
+      class_test(pba->gravity_model_smg!=brans_dicke,
+		 errmsg,
+		 "You asked to tune M_pl(today) to %e but currently this is only allowed for Brans-Dicke\n",
+		 pba->M_pl_today_smg);
+// 		 
+      
+      class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]); 
+//       printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
+    }
+    
   }//end of has_smg
+  
+  /* Hubble dynamics
+   * TODO: consider making this part of smg only 
+   */
+  class_call(parser_read_string(pfc,
+                                  "hubble_evolution",
+                                  &string1,
+                                  &flag1,
+                                  errmsg),
+                errmsg,
+                errmsg);
+
+    if (flag1 == _TRUE_){
+      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+        pba->hubble_evolution = _TRUE_;
+	class_read_double("hubble_friction",pba->hubble_friction); 
+      }
+      else{
+        pba->hubble_evolution = _FALSE_;
+      }
+    }
+     
 
   /** (b) assign values to thermodynamics cosmological parameters */
 
@@ -3116,6 +3344,23 @@ int input_read_parameters(
 
   }
   
+
+  /** (i.5) shall we write sigma(z) in a file? */
+
+  class_call(parser_read_string(pfc,"write sigma",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  
+  /** readjust some precision parameters for modified gravity */  
+  if (pba->has_smg == _TRUE_){
+    
+    //otherwise problems with ISW effect
+    if (ppr->perturb_sampling_stepsize > 0.05)
+      ppr->perturb_sampling_stepsize=0.05;
+    
+  }
+    
+
   return _SUCCESS_;
 
 }
@@ -3204,10 +3449,16 @@ int input_default_params(
   pba->gravity_model_smg = propto_omega; /* gravitational model */
   pba->expansion_model_smg = lcdm; /*expansion model (only for parameterizations*/
   pba->Omega0_smg = 0.; /* Scalar field defaults */
+  pba->M_pl_today_smg = 1.; //*Planck mass today*/
+  pba->M_pl_tuning_smg = _FALSE_; //* Tune Planck mass?*/
   pba->Omega_smg_debug = 0;
   pba->field_evolution_smg = _FALSE_; /* does the model require solving the background equations? */  
   pba->M_pl_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */  
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
+  pba->a_min_stability_test_smg = 0; /** < skip stability tests for a < a_min */
+  
+  pba->hubble_evolution = _TRUE_; /** dynamical evolution of Friedmann eq. */
+  pba->hubble_friction = 3.; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
   pba->rho_evolution_smg = _FALSE_; /*does the model require to evolve the background energy density? (only for parameterizations)*/
   
   pba->kineticity_safe_smg = 0; /* value added to the kineticity, useful to cure perturbations at early time in some models */
@@ -3251,6 +3502,8 @@ int input_default_params(
   pba->use_ppf = _TRUE_;
   pba->c_gamma_over_c_fld = 0.4;
 
+  pba->has_smg= _FALSE_;
+  pba->parameters_tuned_smg = _FALSE_;
   pba->shooting_failed = _FALSE_;
 
   /** - thermodynamics structure */
@@ -4067,16 +4320,29 @@ int input_try_unknown_parameters(double * unknown_parameter,
     case Omega_smg:
 	//NOTE: bugged when normalizing by (ba.H0*ba.H0)!!
       /** In case scalar field is used to fill, pba->Omega0_smg is not equal to pfzw->target_value[i].*/
-      
-      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
-	          /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit]	      
-                  -ba.Omega0_smg;
+      //NOTE: galileon model benefits from this normalization (see 1406.0485 eq 2.22 generalized to z\neq 0)
+      if (ba.gravity_model_smg == galileon)
+	output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
+		    -ba.Omega0_smg;
+      else
+	output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+		    /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit]
+		    -ba.Omega0_smg;
       if (input_verbose > 2)	  
-	printf(" Omega_smg = %e, %e \n", ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+	printf(" param[%i] = %e, Omega_smg = %.3e, %.3e, target = %.2e \n",ba.tuning_index_smg, ba.parameters_smg[ba.tuning_index_smg],
+	       ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
 	          /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit], ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
-	          /pow(ba.H0,2));
-      break;  
-    case Omega_ini_dcdm:
+	          /pow(ba.H0,2),output[i]);
+      break;
+    case M_pl_today_smg:      
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg]	
+                  -ba.M_pl_today_smg;
+      printf("M_pl = %e, want %e, param=%e\n",
+	     ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg],
+	     ba.M_pl_today_smg,
+	     ba.parameters_smg[ba.tuning_index_2_smg]
+	    );
+      break;
     case omega_ini_dcdm:
       rho_dcdm_today = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_dcdm];
       if (ba.has_dr == _TRUE_)
@@ -4235,6 +4501,11 @@ int input_get_guess(double *xguess,
         xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
         dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
       break;
+      //TODO CONTINUE HERE
+    case M_pl_today_smg:
+        xguess[index_guess] = ba.parameters_smg[ba.tuning_index_2_smg];
+        dxdy[index_guess] = 1;
+      break;  
     case omega_ini_dcdm:
       Omega0_dcdmdr = 1./(ba.h*ba.h);
     case Omega_ini_dcdm:
@@ -4298,6 +4569,14 @@ int input_find_root(double *xzero,
   //printf("x1= %g, f1= %g\n",x1,f1);
 
   dx = 1.5*f1*dxdy;
+  
+  //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
+  // if f1<target precision then update the value
+  if (fabs(f1)<1e-5)
+    dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
+  //     return _SUCCESS_;
+  
+//    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
 
   /** - Do linear hunt for boundaries */
   for (iter=1; iter<=15; iter++){
@@ -4377,6 +4656,7 @@ int input_auxillary_target_conditions(struct file_content * pfc,
   case omega_dcdmdr:
   case Omega_scf:
   case Omega_smg:
+  case M_pl_today_smg:
   case Omega_ini_dcdm:
   case omega_ini_dcdm:
     /* Check that Omega's or omega's are nonzero: */

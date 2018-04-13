@@ -11,7 +11,10 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential}; //write here the different models
+enum gravity_model {propto_omega, propto_scale, 
+  eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
+  galileon, brans_dicke, quintessence_monomial
+}; //write here the different models
 
 // initial conditions for the perturbations
 enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
@@ -94,8 +97,12 @@ struct background
   //double scf_B; /**< \f$ \alpha \f$ : Albrecht-Skordis field shift */
   //double scf_A; /**< \f$ \alpha \f$ : Albrecht-Skordis offset */
 
-  double Omega0_k; /**< \f$ \Omega_{0_k} \f$: curvature contribution */
-
+  double Omega0_k; /**< \f$ \Omega_{0_k} \f$ : curvature contribution */
+  
+  double hubble_friction; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
+  int hubble_evolution; /** whether to evolve H' from the equation */
+  
+  
   enum gravity_model gravity_model_smg; /** Horndeski model */
 //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
   enum expansion_model expansion_model_smg; /* choice of expansion rate */
@@ -152,8 +159,15 @@ struct background
   double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
   int parameters_2_size_smg; /**< size of parameters_smg */
   
-  int N_ncdm;                            /**< Number of distinguishable ncdm species */
-  double * M_ncdm;                       /**< vector of masses of non-cold relic:
+  int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
+  int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
+  double M_pl_today_smg;
+  
+  //some thermo parameters: little cheat to be able to call sigma(rs_d), etc..
+  double rs_d; //drag horizon
+  
+  int N_ncdm;                            /**< Number of distinguishabe ncdm species */
+  double * M_ncdm;                       /**<vector of masses of non-cold relic:
                                              dimensionless ratios m_ncdm/T_ncdm */
   double * Omega0_ncdm, Omega0_ncdm_tot; /**< Omega0_ncdm for each species and for the total Omega0_ncdm */
   double * deg_ncdm, deg_ncdm_default;   /**< vector of degeneracy parameters in factor
@@ -284,7 +298,6 @@ struct background
   int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */ 
   int index_bg_w_smg; /**< equation of state of the scalar field */
   
-
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
   int index_bg_pseudo_p_ncdm1;/**< another statistical momentum useful in ncdma approximation */
@@ -345,12 +358,15 @@ struct background
   //@{
 
   int index_bi_a;       /**< {B} scale factor */
+  int index_bi_H;       /**< {B} Hubble rate factor */
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
   int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
   
+  int index_bi_phi_smg;   /**< scalar field */  
+  int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/    
   int index_bi_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/  
   int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
 
