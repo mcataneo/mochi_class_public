@@ -11,10 +11,13 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, planck_linear, planck_exponential}; //write here the different models
+enum gravity_model {propto_omega, propto_scale, 
+  eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
+  galileon, brans_dicke, quintessence_monomial
+}; //write here the different models
 
 // initial conditions for the perturbations
-enum pert_initial_conditions {single_clock, zero};
+enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
@@ -24,7 +27,7 @@ enum expansion_model {lcdm, wowa}; //parameterized expansion, only for non-self 
  * All background parameters and evolution that other modules need to know.
  *
  * Once initialized by the backgound_init(), contains all necessary
- * information on the background evolution (excepted thermodynamics),
+ * information on the background evolution (except thermodynamics),
  * and in particular, a table of all background quantities as a
  * function of time and scale factor, used for interpolation in other
  * modules.
@@ -33,7 +36,7 @@ enum expansion_model {lcdm, wowa}; //parameterized expansion, only for non-self 
 struct background
 {
   /** @name - input parameters initialized by user in input module
-   *  (all other quantitites are computed in this module, given these parameters
+   *  (all other quantities are computed in this module, given these parameters
    *   and the content of the 'precision' structure)
    *
    * The background cosmological parameters listed here form a parameter
@@ -45,38 +48,47 @@ struct background
 
   //@{
 
-  double H0; /**< \f$ H_0 \f$ : Hubble parameter (in fact, [H_0/c]) in \f$ Mpc^{-1} \f$ */
+  double H0; /**< \f$ H_0 \f$: Hubble parameter (in fact, [\f$H_0/c\f$]) in \f$ Mpc^{-1} \f$ */
 
-  double Omega0_g; /**< \f$ \Omega_{0 \gamma} \f$ : photons */
+  double Omega0_g; /**< \f$ \Omega_{0 \gamma} \f$: photons */
 
-  double T_cmb; /**< \f$ T_{cmb} \f$ : current CMB temperature in Kelvins */
+  double T_cmb; /**< \f$ T_{cmb} \f$: current CMB temperature in Kelvins */
 
-  double Omega0_b; /**< \f$ \Omega_{0 b} \f$ : baryons */
+  double Omega0_b; /**< \f$ \Omega_{0 b} \f$: baryons */
 
-  double Omega0_cdm; /**< \f$ \Omega_{0 cdm} \f$ : cold dark matter */
+  double Omega0_cdm; /**< \f$ \Omega_{0 cdm} \f$: cold dark matter */
 
-  double Omega0_lambda; /**< \f$ \Omega_{0_\Lambda} \f$ : cosmological constant */
+  double Omega0_lambda; /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */
 
-  double Omega0_fld; /**< \f$ \Omega_{0 de} \f$ : fluid with constant
-			\f$ w \f$ and \f$ c_s^2 \f$ */
-  double w0_fld; /**< \f$ w0_{DE} \f$ : current fluid equation of state parameter */
-  double wa_fld; /**< \f$ wa_{DE} \f$ : fluid equation of state parameter derivative */
+  double Omega0_fld; /**< \f$ \Omega_{0 de} \f$: fluid */
+  double w0_fld; /**< \f$ w0_{DE} \f$: current fluid equation of state parameter */
+  double wa_fld; /**< \f$ wa_{DE} \f$: fluid equation of state parameter derivative */
 
-  double cs2_fld; /**< \f$ c^2_{s~DE} \f$ : sound speed of the fluid
+  double cs2_fld; /**< \f$ c^2_{s~DE} \f$: sound speed of the fluid
 		     in the frame comoving with the fluid (so, this is
 		     not [delta p/delta rho] in the synchronous or
 		     newtonian gauge!!!) */
 
-  double Omega0_ur; /**< \f$ \Omega_{0 \nu r} \f$ : ultra-relativistic neutrinos */
+  short use_ppf; /**< flag switching on PPF perturbation equations
+                    instead of true fluid equations for
+                    perturbations. It could have been defined inside
+                    perturbation structure, but we leave it here in
+                    such way to have all fld parameters grouped. */
 
-  double Omega0_dcdmdr; /**< \f$ \Omega_{0 dcdm}+\Omega_{0 dr} \f$ : dcdm decaying to dr */
+  double c_gamma_over_c_fld; /**< ppf parameter defined in eq. (16) of 0808.3125 [astro-ph] */
 
-  double Gamma_dcdm; /**< \f$ \Gamma_{dcdm} \f$ : decay constant for decaying cold dark matter */
+  double Omega0_ur; /**< \f$ \Omega_{0 \nu r} \f$: ultra-relativistic neutrinos */
 
-  double Omega0_scf;        /**< \f$ \Omega_{0 scf} \f$ : scalar field */
-  short attractor_ic_scf;   /** < whether the scalar field has attractor initial conditions */
-  double phi_ini_scf;       /**< \f$ \phi(t_0) \f$ : scalar field initial value */
-  double phi_prime_ini_scf; /**< \f$ d\phi(t_0)/d\tau \f$ : scalar field initial derivative wrt conformal time */
+  double Omega0_dcdmdr; /**< \f$ \Omega_{0 dcdm}+\Omega_{0 dr} \f$: decaying cold dark matter (dcdm) decaying to dark radiation (dr) */
+
+  double Gamma_dcdm; /**< \f$ \Gamma_{dcdm} \f$: decay constant for decaying cold dark matter */
+
+  double Omega_ini_dcdm;    /**< \f$ \Omega_{ini,dcdm} \f$: rescaled initial value for dcdm density (see 1407.2418 for definitions) */
+
+  double Omega0_scf;        /**< \f$ \Omega_{0 scf} \f$: scalar field */
+  short attractor_ic_scf;   /**< whether the scalar field has attractor initial conditions */
+  double phi_ini_scf;       /**< \f$ \phi(t_0) \f$: scalar field initial value */
+  double phi_prime_ini_scf; /**< \f$ d\phi(t_0)/d\tau \f$: scalar field initial derivative wrt conformal time */
   double * scf_parameters;  /**< list of parameters describing the scalar field potential */
   int scf_parameters_size;  /**< size of scf_parameters */
   int scf_tuning_index;     /**< index in scf_parameters used for tuning */
@@ -85,8 +97,11 @@ struct background
   //double scf_B; /**< \f$ \alpha \f$ : Albrecht-Skordis field shift */
   //double scf_A; /**< \f$ \alpha \f$ : Albrecht-Skordis offset */
 
-
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$ : curvature contribution */
+  
+  double hubble_friction; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
+  int hubble_evolution; /** whether to evolve H' from the equation */
+  
   
   enum gravity_model gravity_model_smg; /** Horndeski model */
 //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
@@ -115,10 +130,18 @@ struct background
   double min_cs2_smg; /**< minimum value of scalar speed of sound squared (for stability test) */
   
   int skip_stability_tests_smg; /**< specify if you want to skip the stability tests for the field perturbations */
+  double a_min_stability_test_smg; /** < skip stability tests for a < a_min */
+
   
   int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
   int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
-  
+
+  double z_ref_smg; /**< Specifies redshift at which M* is input in models with running */
+  double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
+  double pert_ic_tolerance_smg; /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */
+  double pert_ic_ini_z_ref_smg; /**<Reference z to carry out test for conservation of curvature before pert evolution*/ 
+  double pert_ic_regulator_smg;  /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
+
   
   
   /* Modified gravity parameters
@@ -135,14 +158,18 @@ struct background
   double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
   int parameters_2_size_smg; /**< size of parameters_smg */
   
+  int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
+  int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
+  double M_pl_today_smg;
+  
   //some thermo parameters: little cheat to be able to call sigma(rs_d), etc..
   double rs_d; //drag horizon
   
   int N_ncdm;                            /**< Number of distinguishabe ncdm species */
   double * M_ncdm;                       /**<vector of masses of non-cold relic:
                                              dimensionless ratios m_ncdm/T_ncdm */
-  double * Omega0_ncdm, Omega0_ncdm_tot; /**<Omega0_ncdm for each species and for the total Omega0_ncdm */
-  double * deg_ncdm, deg_ncdm_default;   /**<vector of degeneracy parameters in factor
+  double * Omega0_ncdm, Omega0_ncdm_tot; /**< Omega0_ncdm for each species and for the total Omega0_ncdm */
+  double * deg_ncdm, deg_ncdm_default;   /**< vector of degeneracy parameters in factor
                                              of p-s-d: 1 for one family of neutrinos
                                              (= one neutrino plus its anti-neutrino,
                                              total g*=1+1=2, so deg = 0.5 g*); and its
@@ -160,7 +187,7 @@ struct background
 					     ksi_ncdm1/T_ncdm1; and its
 					     default value */
   double * ncdm_psd_parameters;         /**< list of parameters for specifying/modifying
-                                             ncdm p.s.d.'s, to be cutomized for given model
+                                             ncdm p.s.d.'s, to be customized for given model
                                              (could be e.g. mixing angles) */
   /* end of parameters for analytical ncdm p-s-d */
 
@@ -170,24 +197,21 @@ struct background
   char * ncdm_psd_files;                /**< list of filenames for tabulated p-s-d */
   /* end of parameters for tabulated ncdm p-s-d */
 
-  /* rescaled initial value for dcdm density. */
-  double Omega_ini_dcdm;
-
   //@}
 
   /** @name - related parameters */
 
   //@{
 
-  double h; /** reduced Hubble parameter */
+  double h; /**< reduced Hubble parameter */
   double age; /**< age in Gyears */
   double conformal_age; /**< conformal age in Mpc */
-  double K; /**< \f$ K \f$ : Curvature parameter K=-Omega0_k*a_today^2*H_0^2; */
+  double K; /**< \f$ K \f$: Curvature parameter \f$ K=-\Omega0_k*a_{today}^2*H_0^2\f$; */
   int sgnK; /**< K/|K|: -1, 0 or 1 */
-  double * m_ncdm_in_eV; /**< list of ncdm masses in eV (infered from M_ncdm and other parameters above) */
+  double * m_ncdm_in_eV; /**< list of ncdm masses in eV (inferred from M_ncdm and other parameters above) */
   double Neff; /**< so-called "effective neutrino number", computed at earliest time in interpolation table */
-  double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$ : decaying cold dark matter */
-  double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$ : decay radiation */
+  double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$: decaying cold dark matter */
+  double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$: decay radiation */
 
 
   //@}
@@ -196,7 +220,7 @@ struct background
 
   //@{
 
-  double a_today; /** scale factor today (arbitrary and irrelevant for most purposes) */
+  double a_today; /**< scale factor today (arbitrary and irrelevant for most purposes) */
 
   //@}
 
@@ -205,16 +229,17 @@ struct background
   //@{
 
   int index_bg_a;             /**< scale factor */
-  int index_bg_H;             /**< Hubble parameter in Mpc^{-1} */
+  int index_bg_H;             /**< Hubble parameter in \f$Mpc^{-1}\f$ */
   int index_bg_H_prime;       /**< its derivative w.r.t. conformal time */
 
-  /* end of vector in short format, now quantitites in normal format */
+  /* end of vector in short format, now quantities in normal format */
 
   int index_bg_rho_g;         /**< photon density */
   int index_bg_rho_b;         /**< baryon density */
   int index_bg_rho_cdm;       /**< cdm density */
   int index_bg_rho_lambda;    /**< cosmological constant density */
-  int index_bg_rho_fld;       /**< fluid with constant w density */
+  int index_bg_rho_fld;       /**< fluid density */
+  int index_bg_w_fld;         /**< fluid equation of state */
   int index_bg_rho_ur;        /**< relativistic neutrinos/relics density */
   int index_bg_rho_dcdm;      /**< dcdm density */
   int index_bg_rho_dr;        /**< dr density */
@@ -253,6 +278,8 @@ struct background
   int index_bg_lambda_6_smg;
   int index_bg_lambda_7_smg;
   int index_bg_lambda_8_smg;
+  int index_bg_lambda_2_prime_smg;
+  int index_bg_lambda_8_prime_smg;
   int index_bg_gamma_1_smg;
   int index_bg_gamma_1_prime_smg;
   int index_bg_gamma_2_smg;
@@ -268,14 +295,13 @@ struct background
   int index_bg_p_tot_wo_prime_smg; /**< derivative of the total pressure minus scalar field */
   int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */ 
   
-
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
   int index_bg_pseudo_p_ncdm1;/**< another statistical momentum useful in ncdma approximation */
 
   int index_bg_Omega_r;       /**< relativistic density fraction (\f$ \Omega_{\gamma} + \Omega_{\nu r} \f$) */
 
-  /* end of vector in normal format, now quantitites in long format */
+  /* end of vector in normal format, now quantities in long format */
 
   int index_bg_rho_crit;      /**< critical density */
   int index_bg_Omega_m;       /**< non-relativistic density fraction (\f$ \Omega_b + \Omega_cdm + \Omega_{\nu nr} \f$) */
@@ -285,8 +311,8 @@ struct background
   int index_bg_time;          /**< proper (cosmological) time in Mpc */
   int index_bg_rs;            /**< comoving sound horizon in Mpc */
 
-  int index_bg_D;             /**< density growth factor in dust universe, D = H \int [da/(aH)^3] (arbitrary normalization) */
-  int index_bg_f;             /**< velocity growth factor in dust universe, [dlnD]/[dln a] */
+  int index_bg_D;             /**< scale independent growth factor D(a) for CDM perturbations */
+  int index_bg_f;             /**< corresponding velocity growth factor [dlnD]/[dln a] */
 
   int bg_size_short;  /**< size of background vector in the "short format" */
   int bg_size_normal; /**< size of background vector in the "normal format" */
@@ -329,17 +355,22 @@ struct background
   //@{
 
   int index_bi_a;       /**< {B} scale factor */
+  int index_bi_H;       /**< {B} Hubble rate factor */
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
+  int index_bi_rho_fld; /**< {B} fluid density */
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
   
+  int index_bi_phi_smg;   /**< scalar field */  
+  int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/    
   int index_bi_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/  
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */
   int index_bi_tau;     /**< {C} conformal time in Mpc */
-  int index_bi_growth;  /**< {C} integral over [da/(aH)^3]=[dtau/(aH^2)], useful for growth factor */
+  int index_bi_D;       /**< {C} scale independent growth factor D(a) for CDM perturbations. */
+  int index_bi_D_prime; /**< {C} D satisfies \f$ [D''(\tau)=-aHD'(\tau)+3/2 a^2 \rho_M D(\tau) \f$ */
 
   int bi_B_size;        /**< Number of {B} parameters */
   int bi_size;          /**< Number of {B}+{C} parameters */
@@ -377,15 +408,17 @@ struct background
 
 
   //@{
-
-  double ** q_ncdm_bg;  /* Pointers to vectors of background sampling in q */
-  double ** w_ncdm_bg;  /* Pointers to vectors of corresponding quadrature weights w */
-  double ** q_ncdm;     /* Pointers to vectors of perturbation sampling in q */
-  double ** w_ncdm;     /* Pointers to vectors of corresponding quadrature weights w */
-  double ** dlnf0_dlnq_ncdm; /* Pointers to vectors of logarithmic derivatives of p-s-d */
-  int * q_size_ncdm_bg; /* Size of the q_ncdm_bg arrays */
-  int * q_size_ncdm;    /* Size of the q_ncdm arrays */
-  double * factor_ncdm; /* List of normalization factors for calculating energy density etc.*/
+  int * ncdm_quadrature_strategy; /**< Vector of integers according to quadrature strategy. */
+  int * ncdm_input_q_size; /**< Vector of numbers of q bins */
+  double * ncdm_qmax;   /**< Vector of maximum value of q */
+  double ** q_ncdm_bg;  /**< Pointers to vectors of background sampling in q */
+  double ** w_ncdm_bg;  /**< Pointers to vectors of corresponding quadrature weights w */
+  double ** q_ncdm;     /**< Pointers to vectors of perturbation sampling in q */
+  double ** w_ncdm;     /**< Pointers to vectors of corresponding quadrature weights w */
+  double ** dlnf0_dlnq_ncdm; /**< Pointers to vectors of logarithmic derivatives of p-s-d */
+  int * q_size_ncdm_bg; /**< Size of the q_ncdm_bg arrays */
+  int * q_size_ncdm;    /**< Size of the q_ncdm arrays */
+  double * factor_ncdm; /**< List of normalization factors for calculating energy density etc.*/
 
   //@}
 
@@ -457,7 +490,7 @@ struct background_parameters_for_distributions {
 };
 
 /**************************************************************/
-
+/* @cond INCLUDE_WITH_DOXYGEN */
 /*
  * Boilerplate for C++
  */
@@ -474,6 +507,12 @@ extern "C" {
 			double * pvecback
 			);
 
+  int background_tau_of_z(
+                          struct background *pba,
+                          double z,
+                          double * tau
+                          );
+
   int background_functions(
 			   struct background *pba,
 			   double * pvecback_B,
@@ -481,11 +520,12 @@ extern "C" {
 			   double * pvecback
 			   );
 
-  int background_tau_of_z(
-			  struct background *pba,
-			  double z,
-			  double * tau
-			  );
+  int background_w_fld(
+                       struct background * pba,
+                       double a,
+                       double * w_fld,
+                       double * dw_over_da_fld,
+                       double * integral_fld);
 
   int background_init(
 		      struct precision *ppr,
@@ -658,7 +698,7 @@ extern "C" {
 
 //@{
 
-#define _SCALE_BACK_ 0.1  /**< logsrithmic step used when searching
+#define _SCALE_BACK_ 0.1  /**< logarithmic step used when searching
 			     for an initial scale factor at which ncdm
 			     are still relativistic */
 
@@ -672,3 +712,4 @@ extern "C" {
 
 
 #endif
+/* @endcond */
