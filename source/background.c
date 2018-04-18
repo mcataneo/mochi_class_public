@@ -2310,7 +2310,7 @@ int background_initial_conditions(
   /* scale factor */
   double a;
 
-  double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0.;
+  double rho_ncdm, p_ncdm, rho_ncdm_rel_tot=0., H_ini;
   double f,Omega_rad, rho_rad;
   int counter,is_early_enough,n_ncdm;
   double scf_lambda;
@@ -2583,6 +2583,9 @@ int background_initial_conditions(
 	     pba->error_message);
   
   //TODO: for normal models, rewrite for MG
+   H_ini = sqrt(pvecback[pba->index_bg_rho_crit]);
+  
+  //TODO: for normal models, rewrite for MG
   // H_ini = sqrt(pvecback[pba->index_bg_rho_crit]);
   
   if(pba->has_smg == _TRUE_){ 
@@ -2595,8 +2598,8 @@ int background_initial_conditions(
     }
   }
   if(pba->has_smg ==_FALSE_ && pba->hubble_evolution == _TRUE_){ // update for normal models
-    pvecback[pba->index_bg_H] =  pvecback[pba->index_bg_H];
-    pvecback_integration[pba->index_bi_H] =  pvecback[pba->index_bg_H];
+    pvecback[pba->index_bg_H] = H_ini;
+    pvecback_integration[pba->index_bi_H] = H_ini;
   }
   //set the ICs
   
