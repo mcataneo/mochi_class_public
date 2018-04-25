@@ -300,6 +300,8 @@ struct background
   int index_bg_pseudo_p_ncdm1;/**< another statistical momentum useful in ncdma approximation */
 
   int index_bg_Omega_r;       /**< relativistic density fraction (\f$ \Omega_{\gamma} + \Omega_{\nu r} \f$) */
+  
+  int index_bg_Omega_de;       /**< dark energy density fraction (\f$ \Omega_{\Lambda} + \Omega_{\rm quint} + + \Omega_{\rm fld} + + \Omega_{\rm smg} \f$) */
 
   /* end of vector in normal format, now quantities in long format */
 
