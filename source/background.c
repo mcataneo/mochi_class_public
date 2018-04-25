@@ -2521,6 +2521,10 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
 	break;	
 
+      case constant_alphas:
+	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
+	break;	
+
       case eft_alphas_power_law:
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
 	break;
@@ -3209,6 +3213,19 @@ int background_gravity_functions(
       pvecback[pba->index_bg_mpl_running_smg] = c_m*a;
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
+    else if (pba->gravity_model_smg == constant_alphas) {	
+      
+      double c_k = pba->parameters_2_smg[0];
+      double c_b = pba->parameters_2_smg[1];
+      double c_m = pba->parameters_2_smg[2];
+      double c_t = pba->parameters_2_smg[3];      
+      
+      pvecback[pba->index_bg_kineticity_smg] = c_k;
+      pvecback[pba->index_bg_braiding_smg] = c_b;
+      pvecback[pba->index_bg_tensor_excess_smg] = c_t;
+      pvecback[pba->index_bg_mpl_running_smg] = c_m;
+      pvecback[pba->index_bg_M2_smg] = M_pl;
+    }
     else if (pba->gravity_model_smg == eft_alphas_power_law) {	
       
       double M_0 = pba->parameters_2_smg[0];
@@ -3362,6 +3379,13 @@ int background_gravity_parameters(
      
    case propto_scale:
      printf("Modified gravity: propto_scale with parameters: \n");
+     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
+	    pba->parameters_2_smg[4]);
+     break;
+
+   case constant_alphas:
+     printf("Modified gravity: constant_alphas with parameters: \n");
      printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);

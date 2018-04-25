@@ -4833,7 +4833,7 @@ int perturb_initial_conditions(struct precision * ppr,
                   (4.*(-2 + bra)*Dd*(1 + DelM2)*(kin + l1));
               
 	      // Build up B3 numerator and denom separately, and add each order in alpha separately, to avoid cancellations. 
-        // Exact for both propto_omega and constant alphas (provided they are very small).
+        // Exact for both propto_omega and constant_alphas (provided they are very small).
 
         B3num_smg = - 6.*(1 + wx) -(2.*(bra + dbra + 4.*DelM2 + 4.*run - 4.*ten))/Omx;
         B3num_smg += -((2.*dbra*DelM2 + 2*pow(run,2) + dbra*ten - 4*DelM2*ten - 2*run*(-4*DelM2 + ten) + 

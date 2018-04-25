@@ -1215,6 +1215,15 @@ int input_read_parameters(
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
       
+      if (strcmp(string1,"constant_alphas") == 0) {
+	pba->gravity_model_smg = constant_alphas;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
+
       if (strcmp(string1,"eft_alphas_power_law") == 0) {
 	pba->gravity_model_smg = eft_alphas_power_law;
 	pba->field_evolution_smg = _FALSE_;
@@ -1429,7 +1438,7 @@ int input_read_parameters(
 
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential' ...");
+		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential' ...");
       
     }// end of loop over models
     

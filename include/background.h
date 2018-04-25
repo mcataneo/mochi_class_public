@@ -11,7 +11,7 @@
 #include "parser.h"
 
 enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, 
+enum gravity_model {propto_omega, propto_scale, constant_alphas,
   eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
   galileon, brans_dicke, quintessence_monomial
 }; //write here the different models
