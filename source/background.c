@@ -260,6 +260,8 @@ int background_functions(
   double rho_r;
   /* total non-relativistic density */
   double rho_m;
+  /* total dark energy density */
+  double rho_de;
   /* scale factor relative to scale factor today */
   double a_rel;
   /* background ncdm quantities */
@@ -279,6 +281,7 @@ int background_functions(
   p_tot = 0.;
   rho_r=0.;
   rho_m=0.;
+  rho_de = 0.;
   a_rel = a / pba->a_today;
 
   class_test(a_rel <= 0.,
@@ -326,8 +329,8 @@ int background_functions(
     rho_tot += pvecback[pba->index_bg_rho_dr];
     p_tot += (1./3.)*pvecback[pba->index_bg_rho_dr];
     rho_r += pvecback[pba->index_bg_rho_dr];
-  }
-
+  }  
+  
   /* ncdm */
   if (pba->has_ncdm == _TRUE_) {
 
@@ -371,6 +374,7 @@ int background_functions(
     pvecback[pba->index_bg_rho_lambda] = pba->Omega0_lambda * pow(pba->H0,2);
     rho_tot += pvecback[pba->index_bg_rho_lambda];
     p_tot -= pvecback[pba->index_bg_rho_lambda];
+    rho_de += pvecback[pba->index_bg_rho_lambda];
   }
 
   /* fluid with w(a) and constant cs2 */
@@ -389,6 +393,25 @@ int background_functions(
 
     rho_tot += pvecback[pba->index_bg_rho_fld];
     p_tot += w_fld * pvecback[pba->index_bg_rho_fld];
+    rho_de += pvecback[pba->index_bg_rho_lambda];
+  }
+  
+  /* Quintessence */
+  if (pba->has_scf == _TRUE_) {
+    phi = pvecback_B[pba->index_bi_phi_scf];
+    phi_prime = pvecback_B[pba->index_bi_phi_prime_scf];
+    pvecback[pba->index_bg_phi_scf] = phi; // value of the scalar field phi
+    pvecback[pba->index_bg_phi_prime_scf] = phi_prime; // value of the scalar field phi derivative wrt conformal time
+    pvecback[pba->index_bg_V_scf] = V_scf(pba,phi); //V_scf(pba,phi); //write here potential as function of phi
+    pvecback[pba->index_bg_dV_scf] = dV_scf(pba,phi); // dV_scf(pba,phi); //potential' as function of phi
+    pvecback[pba->index_bg_ddV_scf] = ddV_scf(pba,phi); // ddV_scf(pba,phi); //potential'' as function of phi
+    pvecback[pba->index_bg_rho_scf] = (phi_prime*phi_prime/(2*a*a) + V_scf(pba,phi))/3.; // energy of the scalar field. The field units are set automatically by setting the initial conditions
+    pvecback[pba->index_bg_p_scf] =(phi_prime*phi_prime/(2*a*a) - V_scf(pba,phi))/3.; // pressure of the scalar field
+    rho_tot += pvecback[pba->index_bg_rho_scf];
+    p_tot += pvecback[pba->index_bg_p_scf];
+    //no contribution to radiation
+    rho_de += pvecback[pba->index_bg_rho_scf];
+    //printf(" a= %e, Omega_scf = %f, \n ",a_rel, pvecback[pba->index_bg_rho_scf]/rho_tot );
   }
 
   /* relativistic neutrinos (and all relativistic relics) */
@@ -436,8 +459,7 @@ int background_functions(
     
     //TODO: need to define menaingfully -> separate early universe (IC, BBN...) from late (Halofit...)
     //BUG: causes problem with halofit!, if not, causes bug with Brans-Dicke
-    rho_r += 3.*pvecback[pba->index_bg_p_smg]; //field pressure contributes radiation
-    rho_m += pvecback[pba->index_bg_rho_smg] - 3.* pvecback[pba->index_bg_p_smg]; //the rest contributes matter     
+    rho_de += pvecback[pba->index_bg_rho_smg];
 
     /** - compute w_smg */
     if (pba->rho_evolution_smg == _FALSE_) {
@@ -449,8 +471,8 @@ int background_functions(
   /** - compute relativistic density to total density ratio */
   pvecback[pba->index_bg_Omega_r] = rho_r / rho_tot;
   
-//   if (a == 1e-14)
-//   printf("Omega_r-1 = %e \n", rho_r / rho_tot-1.);
+  /** - compute dark energy density to total density ratio */
+  pvecback[pba->index_bg_Omega_de] = rho_de / rho_tot;
 
   /** - compute other quantities in the exhaustive, redundant format */
   if (return_format == pba->long_info) {
@@ -919,6 +941,9 @@ int background_indices(
 
   /* - index for Omega_r (relativistic density fraction) */
   class_define_index(pba->index_bg_Omega_r,_TRUE_,index_bg,1);
+  
+  /* - index for Omega_de (dark energy density fraction) */
+  class_define_index(pba->index_bg_Omega_de,_TRUE_,index_bg,1);
 
   /* - put here additional ingredients that you want to appear in the
      normal vector */
@@ -2599,10 +2624,10 @@ int background_initial_conditions(
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
-  class_test(fabs(pvecback[pba->index_bg_Omega_r]-1.) > ppr->tol_initial_Omega_r,
+  class_test(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
 	     pba->error_message,
-	     "Omega_r = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
-	     pvecback[pba->index_bg_Omega_r]);
+	     "Omega_r = %e, Omega_de = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
+	     pvecback[pba->index_bg_Omega_r],pvecback[pba->index_bg_Omega_de]);
 
   /** - compute initial proper time, assuming radiation-dominated
       universe since Big Bang and therefore \f$ t=1/(2H) \f$ (good
