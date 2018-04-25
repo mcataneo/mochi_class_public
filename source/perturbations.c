@@ -1969,6 +1969,7 @@ int perturb_workspace_init(
       class_define_index(ppw->index_mt_vx_smg,pba->has_smg,index_mt,1);   /* vx_smg (can be dynamical or not) */
       class_define_index(ppw->index_mt_vx_prime_smg,pba->has_smg,index_mt,1);   /* vx_smg' (can be dynamical or not) */
       class_define_index(ppw->index_mt_vx_prime_prime_smg,pba->has_smg,index_mt,1);   /* vx_smg'' (passed to integrator) */
+      class_define_index(ppw->index_mt_rsa_p_smg,pba->has_smg,index_mt,1);   /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
     }
 
   }
@@ -5929,6 +5930,9 @@ int perturb_einstein(
 	          ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
 
 	        }
+	        
+	        /* correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times */
+	        ppw->pvecmetric[ppw->index_mt_rsa_p_smg] = (kin/(D*M2) - 1.)*ppw->delta_p - 1./3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg] + 2./9.*(1. - l1/D)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-2) - 2./9.*(1. + l3/D)*H*ppw->pvecmetric[ppw->index_mt_h_prime]*pow(a,-1) - 2./9.*(H*pow(D,-1)*pow(k,2)*l5*pow(a,-1) + 3.*pow(H,3)*pow(D,-1)*l6*a)*ppw->pvecmetric[ppw->index_mt_vx_smg];
         }
 
 
@@ -9021,6 +9025,10 @@ int perturb_rsa_delta_and_theta(
   double k2;
 
   k2 = k*k;
+  
+  double a2;
+  
+  a2 = pow(ppw->pvecback[pba->index_bg_a],2.);
 
   // formulas below TBC for curvaturema
 
@@ -9078,18 +9086,44 @@ int perturb_rsa_delta_and_theta(
       }
       else {
 
-        ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+        /* If smg correct gamma density */
+        if (pba->has_smg == _TRUE_) {
+          ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                                     -k2*y[ppw->pv->index_pt_eta]
+                                    +9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
+        }
+        else {
+          ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
                                   -k2*y[ppw->pv->index_pt_eta]);
+        }
+        
         ppw->rsa_theta_g = -0.5*ppw->pvecmetric[ppw->index_mt_h_prime];
-      }
+
+    }
 
       if (ppr->radiation_streaming_approximation == rsa_MD_with_reio) {
 
         ppw->rsa_delta_g +=
           -4./k2*ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_b]+0.5*ppw->pvecmetric[ppw->index_mt_h_prime]);
 
-        ppw->rsa_theta_g +=
-          3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
+        /* If smg correct gamma theta */
+        if (pba->has_smg == _TRUE_) {
+
+          ppw->rsa_theta_g +=
+            3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
+                 (y[ppw->pv->index_pt_theta_b]
+                  +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
+                 +ppw->pvecthermo[pth->index_th_dkappa]*
+                 (-a_prime_over_a*y[ppw->pv->index_pt_theta_b]
+                  + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
+                  -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                  +k2*y[ppw->pv->index_pt_eta]
+                  -9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]));
+        }
+        else {
+
+          ppw->rsa_theta_g +=
+            3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
                  (y[ppw->pv->index_pt_theta_b]
                   +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
                  +ppw->pvecthermo[pth->index_th_dkappa]*
@@ -9097,7 +9131,9 @@ int perturb_rsa_delta_and_theta(
                   + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
                   -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
                   +k2*y[ppw->pv->index_pt_eta]));
-      }
+        }
+
+    }
 
       if (pba->has_ur == _TRUE_) {
 
@@ -9109,6 +9145,13 @@ int perturb_rsa_delta_and_theta(
           ppw->rsa_delta_ur = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
                                      -k2*y[ppw->pv->index_pt_eta]);
           ppw->rsa_theta_ur = -0.5*ppw->pvecmetric[ppw->index_mt_h_prime];
+
+          /* If smg correct ur density */
+          if (pba->has_smg == _TRUE_) {
+            ppw->rsa_delta_ur = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                                     -k2*y[ppw->pv->index_pt_eta]
+                                    +9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
+          }
         }
       }
     }

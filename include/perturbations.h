@@ -516,7 +516,8 @@ struct perturb_workspace
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
   int index_mt_vx_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_vx_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
-  int index_mt_vx_smg; /**< scalar field perturbation */  
+  int index_mt_vx_smg;       /**< scalar field perturbation */  
+  int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
   int mt_size;                /**< size of metric perturbation vector */
 
   //@}
@@ -550,7 +551,7 @@ struct perturb_workspace
   double rsa_theta_g;  /**< photon velocity in radiation streaming approximation */
   double rsa_delta_ur; /**< photon density in radiation streaming approximation */
   double rsa_theta_ur; /**< photon velocity in radiation streaming approximation */
-
+  
   double * delta_ncdm;	/**< relative density perturbation of each ncdm species */
   double * theta_ncdm;	/**< velocity divergence theta of each ncdm species */
   double * shear_ncdm;	/**< shear for each ncdm species */
