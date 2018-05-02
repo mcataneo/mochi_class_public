@@ -210,18 +210,18 @@ int perturb_init(
                "Non-adiabatic initial conditions not coded in presence of decaying dark matter");
 
   }
-  
+
   if (pba->has_smg == _TRUE_) {
-    
+
     class_test(ppt->gauge == newtonian,
                ppt->error_message,
                "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
     // TODO think of some suitable tests for the scalar field
 
     // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
-    // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and 
-    // the initial amplitude supplied to hi_class. 
- 
+    // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and
+    // the initial amplitude supplied to hi_class.
+
     if( pba->pert_initial_conditions_smg == gravitating_attr){
 
       class_call(perturb_test_ini_grav_ic_smg(ppr,
@@ -233,7 +233,7 @@ int perturb_init(
 
     //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
     // If have it, fail, because we can't set the ICs properly
- 
+
     if( pba->pert_initial_conditions_smg == ext_field_attr){
 
       class_call(perturb_test_ini_extfld_ic_smg(ppr,
@@ -243,7 +243,7 @@ int perturb_init(
 	       ppt->error_message);
     }
   }
-  
+
   class_test(ppt->has_vectors == _TRUE_,
              ppt->error_message,
              "Vectors not coded yet");
@@ -612,7 +612,7 @@ int perturb_indices_of_perturbs(
   ppt->has_source_delta_dcdm = _FALSE_;
   ppt->has_source_delta_fld = _FALSE_;
   ppt->has_source_delta_scf = _FALSE_;
-  ppt->has_source_phi_smg = _FALSE_;  //scalar field    
+  ppt->has_source_phi_smg = _FALSE_;  //scalar field
   ppt->has_source_delta_dr = _FALSE_;
   ppt->has_source_delta_ur = _FALSE_;
   ppt->has_source_delta_ncdm = _FALSE_;
@@ -623,7 +623,7 @@ int perturb_indices_of_perturbs(
   ppt->has_source_theta_dcdm = _FALSE_;
   ppt->has_source_theta_fld = _FALSE_;
   ppt->has_source_theta_scf = _FALSE_;
-  ppt->has_source_phi_prime_smg = _FALSE_;  //scalar field  
+  ppt->has_source_phi_prime_smg = _FALSE_;  //scalar field
   ppt->has_source_theta_dr = _FALSE_;
   ppt->has_source_theta_ur = _FALSE_;
   ppt->has_source_theta_ncdm = _FALSE_;
@@ -709,7 +709,7 @@ int perturb_indices_of_perturbs(
         if (pba->has_ur == _TRUE_)
           ppt->has_source_delta_ur = _TRUE_;
 	if (pba->has_smg == _TRUE_)
-	  ppt->has_source_phi_smg = _TRUE_;	
+	  ppt->has_source_phi_smg = _TRUE_;
         if (pba->has_dr == _TRUE_)
           ppt->has_source_delta_dr = _TRUE_;
         if (pba->has_ncdm == _TRUE_)
@@ -735,7 +735,7 @@ int perturb_indices_of_perturbs(
         if (pba->has_scf == _TRUE_)
           ppt->has_source_theta_scf = _TRUE_;
 	if (pba->has_smg == _TRUE_)
-          ppt->has_source_phi_prime_smg = _TRUE_;	
+          ppt->has_source_phi_prime_smg = _TRUE_;
         if (pba->has_ur == _TRUE_)
           ppt->has_source_theta_ur = _TRUE_;
         if (pba->has_dr == _TRUE_)
@@ -787,7 +787,7 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_delta_dcdm, ppt->has_source_delta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_delta_fld,  ppt->has_source_delta_fld, index_type,1);
       class_define_index(ppt->index_tp_delta_scf,  ppt->has_source_delta_scf, index_type,1);
-      class_define_index(ppt->index_tp_phi_smg,    ppt->has_source_phi_smg,   index_type,1);       
+      class_define_index(ppt->index_tp_phi_smg,    ppt->has_source_phi_smg,   index_type,1);
       class_define_index(ppt->index_tp_delta_dr,   ppt->has_source_delta_dr, index_type,1);
       class_define_index(ppt->index_tp_delta_ur,   ppt->has_source_delta_ur,  index_type,1);
       class_define_index(ppt->index_tp_delta_ncdm1,ppt->has_source_delta_ncdm,index_type,pba->N_ncdm);
@@ -798,7 +798,7 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_theta_dcdm, ppt->has_source_theta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_theta_fld,  ppt->has_source_theta_fld, index_type,1);
       class_define_index(ppt->index_tp_theta_scf,  ppt->has_source_theta_scf, index_type,1);
-      class_define_index(ppt->index_tp_phi_prime_smg,  ppt->has_source_phi_prime_smg, index_type,1);      
+      class_define_index(ppt->index_tp_phi_prime_smg,  ppt->has_source_phi_prime_smg, index_type,1);
       class_define_index(ppt->index_tp_theta_dr,   ppt->has_source_theta_dr,  index_type,1);
       class_define_index(ppt->index_tp_theta_ur,   ppt->has_source_theta_ur,  index_type,1);
       class_define_index(ppt->index_tp_theta_ncdm1,ppt->has_source_theta_ncdm,index_type,pba->N_ncdm);
@@ -2611,7 +2611,7 @@ int perturb_prepare_output(struct background * pba,
       /* Scalar field smg */
       class_store_columntitle(ppt->scalar_titles, "V_x_smg", pba->has_smg);
       class_store_columntitle(ppt->scalar_titles, "V_x_prime_smg", pba->has_smg);
-      
+
       ppt->number_of_scalar_titles =
         get_number_of_titles(ppt->scalar_titles);
     }
@@ -3199,13 +3199,13 @@ int perturb_vector_init(
 
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
     class_define_index(ppv->index_pt_phi_prime_scf,pba->has_scf,index_pt,1); /* scalar field velocity */
-    
+
     /* scalar field: integration indices are assigned only if fd (0) */
 
     if ((pba->has_smg == _TRUE_) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
       class_define_index(ppv->index_pt_vx_smg,_TRUE_,index_pt,1); /* dynamical scalar field perturbation */
       class_define_index(ppv->index_pt_vx_prime_smg,_TRUE_,index_pt,1); /* dynamical scalar field velocity */
-    }        
+    }
 
     /* perturbed recombination: the indices are defined once tca is off. */
     if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
@@ -3630,7 +3630,7 @@ int perturb_vector_init(
         ppv->y[ppv->index_pt_phi_prime_scf] =
           ppw->pv->y[ppw->pv->index_pt_phi_prime_scf];
       }
-      
+
       if (pba->has_smg == _TRUE_) {//pass the values only if the order is correct
 
         // TODO: Check this. I am not sure I am passing the correct values
@@ -4378,36 +4378,36 @@ int perturb_initial_conditions(struct precision * ppr,
         /* delta_fld expression * rho_scf with the w = 1/3, c_s = 1
             a*a/ppw->pvecback[pba->index_bg_phi_prime_scf]*( - ktau_two/4.*(1.+1./3.)*(4.-3.*1.)/(4.-6.*(1/3.)+3.*1.)*ppw->pvecback[pba->index_bg_rho_scf] - ppw->pvecback[pba->index_bg_dV_scf]*ppw->pv->y[ppw->pv->index_pt_phi_scf])* ppr->curvature_ini * s2_squared; */
       }
-      
+
       /* Initial conditions for the scalar field
-       * 
+       *
        * 1) gravitating_attr: Self-consistent Gravitating Attractor
        *    We allow the scalar to contribute the gravitational field during RD (can happen if Omx or alphas large at early times)
        *    and solve radiation-scalar system together.
        *    We make the assumption that  wx=1/3 and OmX is constant and constant alphas.
-       *    Parameters smaller c.f. others can change in time.  
-       *    Scalar field can give rise to mode faster than standard adiabatic, which we test for and reject.   
-       *    Note that the scalar affects the gravitational potentials here, 
+       *    Parameters smaller c.f. others can change in time.
+       *    Scalar field can give rise to mode faster than standard adiabatic, which we test for and reject.
+       *    Note that the scalar affects the gravitational potentials here,
        *    so we recompute eta and the velocities of the UR matter
-       * 
+       *
        * 2) Single clock
          * v_X = delta_phi/phi_dot
        * phi(t,x) = phi(tau+delta tau(x))
        * This leads to very simple expressions:
        * v_X = delta tau = delta_cdm/a_prime_over_a and v_X_prime = 0
-       *        
+       *
        * 3) kineticity only IC: Vx = (k tau)^2
        * from Vx'' = 2 (a H)^2 Vx
-       * 
-       * 4) zero IC: Vx = 0, Vx'= 0. Good for checking the relevance of ICs. 
+       *
+       * 4) zero IC: Vx = 0, Vx'= 0. Good for checking the relevance of ICs.
        *
        * 5) ext_field_attr: External-field Attractor
-       *    This assumes that OmX and all the alphas are small initially, 
-       *    so we are allowed arbitrary w. The scalar does not influence 
-       *    the gravitational potentials early on (i.e. evolves in an external field), so we only need to set the 
+       *    This assumes that OmX and all the alphas are small initially,
+       *    so we are allowed arbitrary w. The scalar does not influence
+       *    the gravitational potentials early on (i.e. evolves in an external field), so we only need to set the
        *    initial condition for Vx but not the other fields.
        *    Appropriate for usual MG with no contribution at early times.
-       */   
+       */
 
       double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
       double n_nosource_smg, n_fastest_smg, dnv, dnh, dn, eps_smg;
@@ -4415,15 +4415,15 @@ int perturb_initial_conditions(struct precision * ppr,
       double sols[3];
       double den1,den2, ic_regulator_smg;
       int     complex,i;
-   
-      if (pba->has_smg == _TRUE_) { 
+
+      if (pba->has_smg == _TRUE_) {
         if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
-                  
-          // Read in the initial values of all background params: alphas, Omx, w 
-	  
+
+          // Read in the initial values of all background params: alphas, Omx, w
+
           //perturbation to time variable
 	        dt = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
-          
+
           // alphas and their combinations
           wx = ppw->pvecback[pba->index_bg_p_smg]/ppw->pvecback[pba->index_bg_rho_smg];
 	        Omx = ppw->pvecback[pba->index_bg_rho_smg]/pow(ppw->pvecback[pba->index_bg_H],2);
@@ -4445,16 +4445,16 @@ int perturb_initial_conditions(struct precision * ppr,
           DelM2 = ppw->pvecback[pba->index_bg_M2_smg]-1;
 
           if (pba->pert_initial_conditions_smg == gravitating_attr){
-            /*  ICs in case of large alphas in RD, when the scalar field affects the gravitational field. 
+            /*  ICs in case of large alphas in RD, when the scalar field affects the gravitational field.
              *  Exact for constant alpha models. We are allowed large Omx provided w=1/3 (tracker).
              *  In principle, can use for general alpha/Omx, but the expressions miss contributions from w!=1/3,
-             *  so the amplitude will be somewhat off.  
+             *  so the amplitude will be somewhat off.
              *  Large alphas => large fifth forces, which can backreact on gravitiational potential.
-             *  General soluton has 
-             
+             *  General soluton has
+
                      h = (k tau)^(2+dnh);  Vx = amplitude * (k tau)^2 tau^dnv
-             
-             *  If run=0, there is a solution with dnh = dnv = 0, but there may be faster-growing modes, 
+
+             *  If run=0, there is a solution with dnh = dnv = 0, but there may be faster-growing modes,
              *  which will end up dominating and do not conserve curvature superhorizon.
              *  We have already checked for their presence at some fiducial z_ref (line ~210) and failed
              *  if this is the case.
@@ -4463,46 +4463,46 @@ int perturb_initial_conditions(struct precision * ppr,
              *  have apeared as a rusult of evolving alphas after the z_ref test above.
              *  We recompute the power law in case the values of alphas have changed.
              *
-             *  If run!=0, no conservation of zeta (at best approximate) or polynomial attractor. 
+             *  If run!=0, no conservation of zeta (at best approximate) or polynomial attractor.
              *  For small enough run, dnh!=dnv!=0 and we can find an approximate solution.
              *  Note that zeta is not conserved when Planck mass evolves!
              */
 
-              //  Calculate the coefficients of polynomial for exponent of the h and Vx evolution:  
+              //  Calculate the coefficients of polynomial for exponent of the h and Vx evolution:
               //  These parts are common to the coefficients coming from both the Vx and h equations.
-              
+
               // Note: The denominators in the expressions below can be zero. We try to trap this and regulate.
               // We assume that M*^2>0 and D>0 which are tested for in the background routine.
               // Doing this gives wrong ICs, but it's better than segmentation faults.
-              
-              
+
+
               ic_regulator_smg =  pba->pert_ic_regulator_smg; //read in the minimum size that will get regulated
               ic_regulator_smg *= fabs(kin)+fabs(bra)+fabs(ten); //scale it to be proportional to the alphas
 
               c3  =   1.;
 
               c2  =   5. + 2.*run;
-              
+
               den1 = (3*bra*ten + kin*(2 + ten));
               if(ic_regulator_smg>0 && (fabs(den1)<ic_regulator_smg)){
                 den1 = copysign(ic_regulator_smg,den1);
               }
 
-              c1  =   (9*pow(bra,3)*pow(1 + DelM2,2)*(6 + 5*run)*ten + 3*pow(bra,2)*(1 + DelM2)*(-12*(-1 + Omx)*(-3 + run)*ten + 
+              c1  =   (9*pow(bra,3)*pow(1 + DelM2,2)*(6 + 5*run)*ten + 3*pow(bra,2)*(1 + DelM2)*(-12*(-1 + Omx)*(-3 + run)*ten +
                       (1 + DelM2)*kin*(6 + 5*run)*(2 + ten)) + 6*bra*(-24*(-1 + Omx)*(DelM2 + Omx)*ten + (1 + DelM2)*kin*
                       (12*(-1 + Omx) + (-2 + 6*DelM2 + 8*Omx + 5*(1 + DelM2)*run)*ten)) + 2*kin*((1 + DelM2)*kin*
                       (2*(2 + 3*DelM2 + Omx) + 5*(1 + DelM2)*run)*(2 + ten) - 12*(-1 + Omx)*((1 + DelM2)*run*ten + 2*(DelM2 + Omx)
-                      *(2 + ten))))/ (pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1); 
+                      *(2 + ten))))/ (pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1);
 
-              c0  =   (24*(-1 + Omx)*run*(4*kin*Omx - 3*pow(bra,2)*(-2 + ten) - DelM2*(3*pow(bra,2) + 2*kin)*(-2 + ten) + 
+              c0  =   (24*(-1 + Omx)*run*(4*kin*Omx - 3*pow(bra,2)*(-2 + ten) - DelM2*(3*pow(bra,2) + 2*kin)*(-2 + ten) +
                       2*kin*(-2 + Omx)*ten + 6*bra*(-1 + Omx)*ten))/(pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1);
-              
-       
-              // When run!=0, h and Vx do not evolve with the same power law. There are O(run) differences to the 
+
+
+              // When run!=0, h and Vx do not evolve with the same power law. There are O(run) differences to the
               // coefficients when the smg + radiation system at k->0 is expressed purely as an ODE for Vx vs the ODE for h.
               // The corrections to the above are below.
 
-              den2 =   ((-6*bra*(1 + DelM2) + pow(bra,2)*(1 + DelM2) + 8*(DelM2 + Omx))*(4*(DelM2 + Omx) - 2*(2 + DelM2 - Omx)*ten + 
+              den2 =   ((-6*bra*(1 + DelM2) + pow(bra,2)*(1 + DelM2) + 8*(DelM2 + Omx))*(4*(DelM2 + Omx) - 2*(2 + DelM2 - Omx)*ten +
                       bra*(1 + DelM2)*(1 + ten)));
               if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
                 den2 = copysign(ic_regulator_smg,den2);
@@ -4511,20 +4511,20 @@ int perturb_initial_conditions(struct precision * ppr,
               c2vp  = (2*(-1 + Omx)*run*(32*(DelM2 + Omx) + 16*(-1 + Omx)*ten + pow(bra,2)*(1 + DelM2)*(2 + ten) - 2*bra*(1 + DelM2)*(4 + ten)))/
                       den2;
 
-              c1vp  = (2*(-1 + Omx)*run*(3*pow(bra,3)*pow(1 + DelM2,2)*ten*(14 + 9*ten) + 16*(-6*(DelM2 + Omx)*ten*(-2*(DelM2 + Omx) + 
-                      (2 + DelM2 - Omx)*ten) + (1 + DelM2)*kin*(2 + ten)*(6*(DelM2 + Omx) + (-1 + 2*DelM2 + 3*Omx)*ten)) - 
-                      2*bra*(1 + DelM2)*(kin*(2 + ten)*(4*(7 + 6*DelM2 - Omx) + (17 + 15*DelM2 - 2*Omx)*ten) - 12*ten*(8*(DelM2 + Omx) + 
+              c1vp  = (2*(-1 + Omx)*run*(3*pow(bra,3)*pow(1 + DelM2,2)*ten*(14 + 9*ten) + 16*(-6*(DelM2 + Omx)*ten*(-2*(DelM2 + Omx) +
+                      (2 + DelM2 - Omx)*ten) + (1 + DelM2)*kin*(2 + ten)*(6*(DelM2 + Omx) + (-1 + 2*DelM2 + 3*Omx)*ten)) -
+                      2*bra*(1 + DelM2)*(kin*(2 + ten)*(4*(7 + 6*DelM2 - Omx) + (17 + 15*DelM2 - 2*Omx)*ten) - 12*ten*(8*(DelM2 + Omx) +
                       (4 + 9*DelM2 + 5*Omx)*ten)) + pow(bra,2)*(1 + DelM2)*(-6*ten*(34 + 26*DelM2 - 8*Omx + (27 + 23*DelM2 - 4*Omx)*ten) +
                       (1 + DelM2)*kin*(24 + 26*ten + 7*pow(ten,2)))))/(den1*den2);
 
-              den2  = (bra + 4*Omx - 4*ten + bra*ten + 2*Omx*ten + DelM2*(4 + bra - 2*ten + bra*ten));            
+              den2  = (bra + 4*Omx - 4*ten + bra*ten + 2*Omx*ten + DelM2*(4 + bra - 2*ten + bra*ten));
               if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
                 den2 = copysign(ic_regulator_smg,den2);
               }
               c0vp  = (4*(-1 + Omx)*(3*pow(bra,2) + 8*kin - bra*kin + DelM2*(3*pow(bra,2) - bra*(-12 + kin) + 8*kin) + 12*bra*Omx)*run*
                       (-6*(-2 + ten)*ten + kin*(2 + 3*ten + pow(ten,2)) + 3*bra*(-4 + ten + 2*pow(ten,2))))/((1 + DelM2)*(3*pow(bra,2) + 2*kin)*
                       den1*den2);
-              
+
               den2  = 4.*(9.*bra*(1. + DelM2) + (1. + DelM2)*kin - 12.*(DelM2 + Omx))*(3.*pow(bra,2.)*
                       (1. + DelM2) + 2.*kin*(DelM2 + Omx))*(-6.*(DelM2 + Omx)*(-2. + ten) + 9.*bra*(1. + DelM2)*(-1. + ten) + 2.*(1. + DelM2)*
                       kin*(1. + ten));
@@ -4533,50 +4533,50 @@ int perturb_initial_conditions(struct precision * ppr,
               }
 
               c2hp  =  ((-1. + Omx)*run*(27.*pow(bra,4)*pow(1. + DelM2,2.)*ten*(432. - 373.*ten + 6.*pow(ten,2.)) + 9.*pow(bra,3.)*(1. + DelM2)*
-                      (864.*(DelM2 + Omx)*(-2. + ten)*ten + (1. + DelM2)*kin*(864. - 698.*ten - 329.*pow(ten,2.) + 6.*pow(ten,3.))) - 
+                      (864.*(DelM2 + Omx)*(-2. + ten)*ten + (1. + DelM2)*kin*(864. - 698.*ten - 329.*pow(ten,2.) + 6.*pow(ten,3.))) -
                       3.*pow(bra,2.)*(1. + DelM2)*kin*(3456.*(DelM2 + Omx) - 4320.*(DelM2 + Omx)*ten + 6.*(1. + 446.*DelM2 + 445.*Omx)*
                       pow(ten,2.) - 36.*(DelM2 + Omx)*pow(ten,3.) + (1. + DelM2)*kin*(768. + 227.*ten - 259.*pow(ten,2.) + 12.*pow(ten,3.))) -
                       2.*pow(kin,2.)*(-6.*(DelM2 + Omx)*(-768.*(DelM2 + Omx) + (-1. + 191.*DelM2 + 192.*Omx)*pow(ten,2.)) + pow(1. + DelM2,2.)*
-                      pow(kin,2.)*(-14. - 19.*ten - 4.*pow(ten,2.) + pow(ten,3.)) - (1. + DelM2)*kin*(-384.*(DelM2 + Omx) + 
-                      (1. - 851.*DelM2 - 852.*Omx)*ten + (1. - 317.*DelM2 - 318.*Omx)*pow(ten,2.) + 6.*(DelM2 + Omx)*pow(ten,3.))) - 
+                      pow(kin,2.)*(-14. - 19.*ten - 4.*pow(ten,2.) + pow(ten,3.)) - (1. + DelM2)*kin*(-384.*(DelM2 + Omx) +
+                      (1. - 851.*DelM2 - 852.*Omx)*ten + (1. - 317.*DelM2 - 318.*Omx)*pow(ten,2.) + 6.*(DelM2 + Omx)*pow(ten,3.))) -
                       6.*bra*kin*(-1152.*pow(DelM2 + Omx,2.)*(-2. + ten)*ten + pow(1. + DelM2,2.)*pow(kin,2.)*(-32. - 99.*ten - 40.*pow(ten,2.) +
                       3.*pow(ten,3.)) - (1. + DelM2)*kin*(1440.*(DelM2 + Omx) - 2.*(1. + 325.*DelM2 + 324.*Omx)*ten + (1. - 905.*DelM2 - 906.*Omx)*
                       pow(ten,2.) + 12.*(DelM2 + Omx)*pow(ten,3.)))))/(den2*den1);
-            
+
               c1hp  = ((-1 + Omx)*run*(135*pow(bra,4)*pow(1 + DelM2,3)*ten*(288 - 229*ten + 6*pow(ten,2)) + 9*pow(bra,3)*
-                      pow(1 + DelM2,2)*(2880*(DelM2 + Omx)*(-2 + ten)*ten + (1 + DelM2)*kin*(3744 - 1780*ten - 1855*pow(ten,2) + 
-                      66*pow(ten,3))) + 2*kin*(3456*pow(DelM2 + Omx,3)*(-2 + ten)*ten + 6*(1 + DelM2)*kin*(DelM2 + Omx)*(-2112*(DelM2 + Omx) - 
+                      pow(1 + DelM2,2)*(2880*(DelM2 + Omx)*(-2 + ten)*ten + (1 + DelM2)*kin*(3744 - 1780*ten - 1855*pow(ten,2) +
+                      66*pow(ten,3))) + 2*kin*(3456*pow(DelM2 + Omx,3)*(-2 + ten)*ten + 6*(1 + DelM2)*kin*(DelM2 + Omx)*(-2112*(DelM2 + Omx) -
                       4*(1 + 25*DelM2 + 24*Omx)*ten + 3*(-1 + 95*DelM2 + 96*Omx)*pow(ten,2)) - pow(1 + DelM2,3)*pow(kin,3)*
-                      (-14 - 19*ten - 4*pow(ten,2) + pow(ten,3)) + pow(1 + DelM2,2)*pow(kin,2)*(-528*(DelM2 + Omx) + 
-                      (1 - 1523*DelM2 - 1524*Omx)*ten + (1 - 545*DelM2 - 546*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) + 
-                      3*pow(bra,2)*pow(1 + DelM2,2)*kin*((1 + DelM2)*kin*(-1296 - 2087*ten - 449*pow(ten,2) + 36*pow(ten,3)) + 
-                      6*(-3072*(DelM2 + Omx) + 1532*(DelM2 + Omx)*ten + (-5 + 28*DelM2 + 33*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) - 
-                      6*bra*(1 + DelM2)*kin*(576*pow(DelM2 + Omx,2)*(-4 + 5*ten) + pow(1 + DelM2,2)*pow(kin,2)*(-4 - 61*ten - 32*pow(ten,2) + 
+                      (-14 - 19*ten - 4*pow(ten,2) + pow(ten,3)) + pow(1 + DelM2,2)*pow(kin,2)*(-528*(DelM2 + Omx) +
+                      (1 - 1523*DelM2 - 1524*Omx)*ten + (1 - 545*DelM2 - 546*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) +
+                      3*pow(bra,2)*pow(1 + DelM2,2)*kin*((1 + DelM2)*kin*(-1296 - 2087*ten - 449*pow(ten,2) + 36*pow(ten,3)) +
+                      6*(-3072*(DelM2 + Omx) + 1532*(DelM2 + Omx)*ten + (-5 + 28*DelM2 + 33*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) -
+                      6*bra*(1 + DelM2)*kin*(576*pow(DelM2 + Omx,2)*(-4 + 5*ten) + pow(1 + DelM2,2)*pow(kin,2)*(-4 - 61*ten - 32*pow(ten,2) +
                       pow(ten,3)) - (1 + DelM2)*kin*(3552*(DelM2 + Omx) - 4*(1 + 121*DelM2 + 120*Omx)*ten - (1 + 1279*DelM2 + 1278*Omx)*
                       pow(ten,2) + 36*(DelM2 + Omx)*pow(ten,3)))))/(den2*(1 + DelM2)*den1);
 
-              den2  = (9*bra*(-1 + ten) + 2*(kin + 6*Omx + kin*ten - 3*Omx*ten) + DelM2*(9*bra*(-1 + ten) + 
+              den2  = (9*bra*(-1 + ten) + 2*(kin + 6*Omx + kin*ten - 3*Omx*ten) + DelM2*(9*bra*(-1 + ten) +
                       2*(6 + kin - 3*ten + kin*ten)));
               if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
                 den2 = copysign(ic_regulator_smg,den2);
               }
 
               c0hp  =  -((-1 + Omx)*run*(9*pow(bra,3)*(-288 + 98*ten + 119*pow(ten,2) + 6*pow(ten,3)) + 6*bra*(288*Omx*(-2 + ten)*
-                      ten + pow(kin,2)*(16 + 85*ten + 48*pow(ten,2) + 3*pow(ten,3)) + kin*(288*Omx + (314 - 216*Omx)*ten - 
+                      ten + pow(kin,2)*(16 + 85*ten + 48*pow(ten,2) + 3*pow(ten,3)) + kin*(288*Omx + (314 - 216*Omx)*ten -
                       (163 + 246*Omx)*pow(ten,2) - 12*(-1 + Omx)*pow(ten,3))) + 3*pow(bra,2)*(kin*(-480 + 335*ten + 383*pow(ten,2) +
-                      18*pow(ten,3)) - 6*(-192*Omx + 48*(-3 + Omx)*ten + (85 + 83*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) + 
-                      2*kin*(6*ten*(-192*Omx + (-1 + 97*Omx)*ten) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3)) - 
-                      kin*(192*Omx + (-107 + 300*Omx)*ten + (31 + 114*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) + 
-                      DelM2*(9*pow(bra,3)*(-288 + 98*ten + 119*pow(ten,2) + 6*pow(ten,3)) + 2*kin*(576*(-2 + ten)*ten - 
-                      kin*(192 + 193*ten + 145*pow(ten,2)) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3))) + 
-                      6*bra*(288*(-2 + ten)*ten + kin*(288 + 98*ten - 409*pow(ten,2)) + pow(kin,2)*(16 + 85*ten + 
-                      48*pow(ten,2) + 3*pow(ten,3))) + 3*pow(bra,2)*(-144*(-8 - 4*ten + 7*pow(ten,2)) + kin*(-480 + 335*ten + 
+                      18*pow(ten,3)) - 6*(-192*Omx + 48*(-3 + Omx)*ten + (85 + 83*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) +
+                      2*kin*(6*ten*(-192*Omx + (-1 + 97*Omx)*ten) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3)) -
+                      kin*(192*Omx + (-107 + 300*Omx)*ten + (31 + 114*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) +
+                      DelM2*(9*pow(bra,3)*(-288 + 98*ten + 119*pow(ten,2) + 6*pow(ten,3)) + 2*kin*(576*(-2 + ten)*ten -
+                      kin*(192 + 193*ten + 145*pow(ten,2)) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3))) +
+                      6*bra*(288*(-2 + ten)*ten + kin*(288 + 98*ten - 409*pow(ten,2)) + pow(kin,2)*(16 + 85*ten +
+                      48*pow(ten,2) + 3*pow(ten,3))) + 3*pow(bra,2)*(-144*(-8 - 4*ten + 7*pow(ten,2)) + kin*(-480 + 335*ten +
                       383*pow(ten,2) + 18*pow(ten,3))))))/(2.*(1 + DelM2)*(3*pow(bra,2) + 2*kin)*den1*den2);
 
 
               // Solve cubic to find exponents for h and Vx. Find mode closest to adiabatic.
               // Ignore any new faster modes, since they will have appeared at some point since
-              // the inital test and therefore we should accept the slow leakage into them 
+              // the inital test and therefore we should accept the slow leakage into them
               // as part of the actual solution.
 
               rf_solve_poly_3(c3,c2+c2hp,c1+c1hp,c0+c0hp,sols,&complex);
@@ -4587,9 +4587,9 @@ int perturb_initial_conditions(struct precision * ppr,
                   dnh = sols[i];
                 }
               }
-              
+
               rf_solve_poly_3(c3,c2+c2vp,c1+c1vp,c0+c0vp,sols,&complex);
-              
+
               dnv = sols[0];    //want closest to zero
               for (i=0; i<3;i+=1){
                 if (fabs(sols[i]) < fabs(dnh)){
@@ -4600,63 +4600,63 @@ int perturb_initial_conditions(struct precision * ppr,
 
             if (ppt->perturbations_verbose > 6)
                 printf("\nICs: Vx for mode k=%e grows with tau^3+nv with approx. nv=%f (%f), while h -- with nh=%f (%f) at a=%e. dM=%f\n",k,dnv,-(c0+c0vp)/(c1+c1vp),dnh,-(c0+c0hp)/(c1+c1hp),a,DelM2);
-                
+
             // Now we can set the initial ratio of amplitudes for Vx and h.The expression is left with dnh/dnv terms implicit.
 
-            //  The amplitude of Vx and other field seems to be better approximated by using a weighed average 
+            //  The amplitude of Vx and other field seems to be better approximated by using a weighed average
             //  between dnh and dnv, instead of the initial estimate. Store the dnv in dn for setting V_prime.
-            //  Note that this is totally empirical. 
-            
+            //  Note that this is totally empirical.
+
             dn=dnv;
             dnv=(2*dnv+3*dnh)/5.;
-            
+
             den2 = (2.*(3*pow(bra,3)*(2*(2 + run)*
-                          (3 + 2*run - 3*ten) + pow(dnv,3)*(2 + ten) + pow(dnv,2)*(16 + 7*ten + run*(3 + ten)) + 
-                          dnv*(36 + pow(run,2) + 10*ten + run*(16 + 3*ten))) + pow(bra,2)*(6*pow(dnv,3)*(run - ten) - 
-                          dnv*kin*(2 + run)*(1 + ten) + 6*pow(dnv,2)*(-4*Omx + pow(run,2) - run*(-5 + ten) - (5 + 2*Omx)*ten) + 
-                          6*dnv*(-12 + 2*(-5 + Omx)*run + pow(run,2) + (-3 + 2*Omx)*run*ten - 2*Omx*(8 + 3*ten)) - 
-                          4*(54 + 12*Omx + 21*pow(run,2) - 6*(9 + Omx)*ten + kin*(2 + run)*(1 + ten) - 
-                          3*run*(-29 + 4*Omx + (6 + 4*Omx)*ten))) + 2*bra*((4 + dnv)*kin*(3*(2 + run)*(1 + ten) + 
+                          (3 + 2*run - 3*ten) + pow(dnv,3)*(2 + ten) + pow(dnv,2)*(16 + 7*ten + run*(3 + ten)) +
+                          dnv*(36 + pow(run,2) + 10*ten + run*(16 + 3*ten))) + pow(bra,2)*(6*pow(dnv,3)*(run - ten) -
+                          dnv*kin*(2 + run)*(1 + ten) + 6*pow(dnv,2)*(-4*Omx + pow(run,2) - run*(-5 + ten) - (5 + 2*Omx)*ten) +
+                          6*dnv*(-12 + 2*(-5 + Omx)*run + pow(run,2) + (-3 + 2*Omx)*run*ten - 2*Omx*(8 + 3*ten)) -
+                          4*(54 + 12*Omx + 21*pow(run,2) - 6*(9 + Omx)*ten + kin*(2 + run)*(1 + ten) -
+                          3*run*(-29 + 4*Omx + (6 + 4*Omx)*ten))) + 2*bra*((4 + dnv)*kin*(3*(2 + run)*(1 + ten) +
                           pow(dnv,2)*(2 + ten) + dnv*(8 + 3*ten + run*(3 + ten))) + 12*((-1 + 8*Omx + dnv*(-1 + 2*Omx))*
-                          pow(run,2) + 6*Omx*(4 - 3*ten) + dnv*(4*Omx + 3*ten - 5*Omx*ten) + run*(4 + 22*Omx + 3*ten - 
-                          12*Omx*ten + dnv*(-3 + 7*Omx + ten - 2*Omx*ten)))) + 4*(pow(dnv,3)*kin*(run - ten) + 
+                          pow(run,2) + 6*Omx*(4 - 3*ten) + dnv*(4*Omx + 3*ten - 5*Omx*ten) + run*(4 + 22*Omx + 3*ten -
+                          12*Omx*ten + dnv*(-3 + 7*Omx + ten - 2*Omx*ten)))) + 4*(pow(dnv,3)*kin*(run - ten) +
                           pow(dnv,2)*kin*(-4*Omx + pow(run,2) - run*(-5 + ten) - 5*ten - 2*Omx*ten) - 8*(Omx*(kin + 12*Omx)*run +
-                          (-3 + 6*Omx)*pow(run,2) + (3 + (-6 + kin)*Omx)*run*ten + 2*Omx*(kin + 6*Omx + kin*ten - 3*Omx*ten)) + 
-                          2*dnv*(-12*(-1 + Omx)*Omx*(run - ten) + kin*(2*pow(run,2) - 2*(5*Omx + ten + 3*Omx*ten) - 
-                          run*(-2 + Omx + (2 + Omx)*ten)))) + pow(DelM2,2)*(-96*(2 + run)*(2 + run - ten) + 
-                          4*(4 + dnv)*kin*(pow(dnv,2)*(run - ten) - 2*(2 + run)*(1 + ten) + dnv*(-4 + run + pow(run,2) - 3*ten - 
-                          run*ten)) + 3*pow(bra,3)*(2*(2 + run)*(3 + 2*run - 3*ten) + pow(dnv,3)*(2 + ten) + 
-                          pow(dnv,2)*(16 + 7*ten + run*(3 + ten)) + dnv*(36 + pow(run,2) + 10*ten + run*(16 + 3*ten))) + 
-                          2*bra*(pow(dnv,3)*kin*(2 + ten) + 12*(2 + run)*(12 + kin + 7*run - 9*ten + kin*ten) + 
-                          pow(dnv,2)*kin*(16 + 7*ten + run*(3 + ten)) + dnv*(12*(2 + run)*(2 + run - ten) + 
-                          kin*(38 + 15*run + 18*ten + 7*run*ten))) + pow(bra,2)*(6*pow(dnv,2)*(-4 + pow(run,2) - 
-                          run*(-5 + ten) - 7*ten) + 6*pow(dnv,3)*(run - ten) - 4*(2 + run)*(33 + kin + 21*run - 30*ten + kin*ten) - 
+                          (-3 + 6*Omx)*pow(run,2) + (3 + (-6 + kin)*Omx)*run*ten + 2*Omx*(kin + 6*Omx + kin*ten - 3*Omx*ten)) +
+                          2*dnv*(-12*(-1 + Omx)*Omx*(run - ten) + kin*(2*pow(run,2) - 2*(5*Omx + ten + 3*Omx*ten) -
+                          run*(-2 + Omx + (2 + Omx)*ten)))) + pow(DelM2,2)*(-96*(2 + run)*(2 + run - ten) +
+                          4*(4 + dnv)*kin*(pow(dnv,2)*(run - ten) - 2*(2 + run)*(1 + ten) + dnv*(-4 + run + pow(run,2) - 3*ten -
+                          run*ten)) + 3*pow(bra,3)*(2*(2 + run)*(3 + 2*run - 3*ten) + pow(dnv,3)*(2 + ten) +
+                          pow(dnv,2)*(16 + 7*ten + run*(3 + ten)) + dnv*(36 + pow(run,2) + 10*ten + run*(16 + 3*ten))) +
+                          2*bra*(pow(dnv,3)*kin*(2 + ten) + 12*(2 + run)*(12 + kin + 7*run - 9*ten + kin*ten) +
+                          pow(dnv,2)*kin*(16 + 7*ten + run*(3 + ten)) + dnv*(12*(2 + run)*(2 + run - ten) +
+                          kin*(38 + 15*run + 18*ten + 7*run*ten))) + pow(bra,2)*(6*pow(dnv,2)*(-4 + pow(run,2) -
+                          run*(-5 + ten) - 7*ten) + 6*pow(dnv,3)*(run - ten) - 4*(2 + run)*(33 + kin + 21*run - 30*ten + kin*ten) -
                           dnv*(kin*(2 + run)*(1 + ten) + 6*(28 - pow(run,2) + 6*ten + run*(8 + ten))))) + 2*DelM2*(-48*(dnv*(-1 + Omx)*
                           (run - ten) + 2*Omx*(2 + run)*(2 + run - ten)) + 4*(4 + dnv)*kin*(pow(dnv,2)*(run - ten) - (1 + Omx)*(2 + run)*
                           (1 + ten) + dnv*(-2*(1 + Omx) + run + pow(run,2) - (2 + Omx)*ten - run*ten)) + 3*pow(bra,3)*(2*(2 + run)*
-                          (3 + 2*run - 3*ten) + pow(dnv,3)*(2 + ten) + pow(dnv,2)*(16 + 7*ten + run*(3 + ten)) + dnv*(36 + pow(run,2) + 
-                          10*ten + run*(16 + 3*ten))) + pow(bra,2)*(6*pow(dnv,3)*(run - ten) - dnv*kin*(2 + run)*(1 + ten) + 
-                          6*pow(dnv,2)*(-2*(1 + Omx) + pow(run,2) - run*(-5 + ten) - (6 + Omx)*ten) + 6*dnv*(-4*(5 + 2*Omx) + pow(run,2) - 
-                          3*(1 + Omx)*ten + run*(-9 + Omx + (-2 + Omx)*ten)) - 4*(60 + 6*Omx + 21*pow(run,2) - 57*ten - 3*Omx*ten + 
-                          kin*(2 + run)*(1 + ten) - 3*run*(-27 + 2*Omx + 2*(4 + Omx)*ten))) + 2*bra*(pow(dnv,3)*kin*(2 + ten) + 
-                          pow(dnv,2)*kin*(16 + 7*ten + run*(3 + ten)) + 12*((3 + 4*Omx)*pow(run,2) + kin*(2 + run)*(1 + ten) - 
-                          3*(1 + Omx)*(-4 + 3*ten) + run*(15 + 11*Omx - 3*ten - 6*Omx*ten)) + dnv*(6*(4 + 4*Omx + run + 
+                          (3 + 2*run - 3*ten) + pow(dnv,3)*(2 + ten) + pow(dnv,2)*(16 + 7*ten + run*(3 + ten)) + dnv*(36 + pow(run,2) +
+                          10*ten + run*(16 + 3*ten))) + pow(bra,2)*(6*pow(dnv,3)*(run - ten) - dnv*kin*(2 + run)*(1 + ten) +
+                          6*pow(dnv,2)*(-2*(1 + Omx) + pow(run,2) - run*(-5 + ten) - (6 + Omx)*ten) + 6*dnv*(-4*(5 + 2*Omx) + pow(run,2) -
+                          3*(1 + Omx)*ten + run*(-9 + Omx + (-2 + Omx)*ten)) - 4*(60 + 6*Omx + 21*pow(run,2) - 57*ten - 3*Omx*ten +
+                          kin*(2 + run)*(1 + ten) - 3*run*(-27 + 2*Omx + 2*(4 + Omx)*ten))) + 2*bra*(pow(dnv,3)*kin*(2 + ten) +
+                          pow(dnv,2)*kin*(16 + 7*ten + run*(3 + ten)) + 12*((3 + 4*Omx)*pow(run,2) + kin*(2 + run)*(1 + ten) -
+                          3*(1 + Omx)*(-4 + 3*ten) + run*(15 + 11*Omx - 3*ten - 6*Omx*ten)) + dnv*(6*(4 + 4*Omx + run +
                           2*Omx*pow(run,2) + Omx*run*(7 - 2*ten) + ten - 5*Omx*ten) + kin*(38 + 18*ten + run*(15 + 7*ten)))))));
-            
+
             if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
                 den2 = copysign(ic_regulator_smg,den2);
-            }              
+            }
 
             amplitude  =  -((2 + dnv)*(pow(bra,3)*(2 + run)*(1 + ten) + (8 - 6*bra + pow(bra,2))*pow(DelM2,2)*(2 + run)*
-                          (4 + bra + 2*run - 2*ten + bra*ten) + 2*pow(bra,2)*(-6 + 4*Omx + run + pow(run,2) + 
-                          2*(-5 + Omx)*ten - 4*run*ten) + 16*((-1 + 2*Omx)*pow(run,2) + 2*Omx*(2*Omx + (-2 + Omx)*ten) + 
-                          run*(4*Omx + ten - 2*Omx*ten)) - 4*bra*(8*Omx + 3*pow(run,2) + 2*(-6 + Omx)*ten - 
-                          run*(-16 + 6*Omx + ten + 4*Omx*ten)) + 2*DelM2*(pow(bra,3)*(2 + run)*(1 + ten) + 
-                          2*pow(bra,2)*(-4 + 2*Omx + run + pow(run,2) - 9*ten + Omx*ten - 4*run*ten) + 
+                          (4 + bra + 2*run - 2*ten + bra*ten) + 2*pow(bra,2)*(-6 + 4*Omx + run + pow(run,2) +
+                          2*(-5 + Omx)*ten - 4*run*ten) + 16*((-1 + 2*Omx)*pow(run,2) + 2*Omx*(2*Omx + (-2 + Omx)*ten) +
+                          run*(4*Omx + ten - 2*Omx*ten)) - 4*bra*(8*Omx + 3*pow(run,2) + 2*(-6 + Omx)*ten -
+                          run*(-16 + 6*Omx + ten + 4*Omx*ten)) + 2*DelM2*(pow(bra,3)*(2 + run)*(1 + ten) +
+                          2*pow(bra,2)*(-4 + 2*Omx + run + pow(run,2) - 9*ten + Omx*ten - 4*run*ten) +
                           16*(4*Omx + Omx*pow(run,2) - 2*ten + run*(2 + 2*Omx - Omx*ten)) - 4*bra*(4 + 4*Omx + 3*pow(run,2) -
                           11*ten + Omx*ten - run*(-13 + 3*Omx + 3*ten + 2*Omx*ten)))))/den2;
-             
-              
+
+
             // Now we use the above result to calculate the initial conditions for the all fields
 
             /* eta (grav. potential) = curvature perturbation on super-horizon scales.
@@ -4664,7 +4664,7 @@ int perturb_initial_conditions(struct precision * ppr,
             * eta = 2C(A1_eta_smg + A2_eta_smg*(k tau)^2)tau^dnh since the Vx perturbation gravitates
             * We are going to redefine the amplitude of h and all the other species by dividing
             * by A1_eta_smg to keep eta equal to thecurvature perturbation at large scales, curv,
-            * to avoid degeneracy betwen early modified gravity and A_S. 
+            * to avoid degeneracy betwen early modified gravity and A_S.
             * So we have
             *  eta = curv ( 1 + A2_eta_smg/A1_eta_smg * (k tau)^2)
             *
@@ -4672,7 +4672,7 @@ int perturb_initial_conditions(struct precision * ppr,
             * (with modifications for Omx and DelM2 and dnh) plus a new term which is amplitude calculated
             * above times a coefficients of order bra, Omx, i.e. irrelevant when no early MG
             */
-            
+
             den1 = (kin*(2 + ten) + 3*bra*(-run + ten));
             if(ic_regulator_smg>0 && (fabs(den1)<ic_regulator_smg)){
                 den1 = copysign(ic_regulator_smg,den1);
@@ -4681,18 +4681,18 @@ int perturb_initial_conditions(struct precision * ppr,
             if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
                 den2 = copysign(ic_regulator_smg,den2);
             }
-            
 
-            A1_eta_smg  =   ((2 + dnh)*(-(bra*(1 + DelM2)*kin) + 12*bra*(DelM2 + Omx) + 3*pow(bra,2)*(1 + DelM2)*(1 + dnh + run) + 
-                            2*(1 + DelM2)*kin*(4 + dnh + run)))/(8.*(1 + DelM2)*den1) + 
-                            (amplitude*((1 + DelM2)*pow(kin,2)*(4 + dnv) + 3*bra*(1 + DelM2)*kin*(14 + 3*dnv) - 
-                            72*bra*(DelM2 + Omx) - 18*pow(bra,2)*(1 + DelM2)*(-3 + run) - 12*kin*((4 + dnv)*(DelM2 + Omx) + 
+
+            A1_eta_smg  =   ((2 + dnh)*(-(bra*(1 + DelM2)*kin) + 12*bra*(DelM2 + Omx) + 3*pow(bra,2)*(1 + DelM2)*(1 + dnh + run) +
+                            2*(1 + DelM2)*kin*(4 + dnh + run)))/(8.*(1 + DelM2)*den1) +
+                            (amplitude*((1 + DelM2)*pow(kin,2)*(4 + dnv) + 3*bra*(1 + DelM2)*kin*(14 + 3*dnv) -
+                            72*bra*(DelM2 + Omx) - 18*pow(bra,2)*(1 + DelM2)*(-3 + run) - 12*kin*((4 + dnv)*(DelM2 + Omx) +
                             (1 + DelM2)*run)))/(4.*(1 + DelM2)*den1);
 
-            A2_eta_smg  =   ((5 + 4*fracnu)*(-1 + Omx))/(6.*(30*(1 + DelM2) + 5*(1 + DelM2)*dnh*(5 + dnh) - 
-                            8*fracnu*(-1 + Omx))) + (5*amplitude*(3 + dnv)*(bra*(1 + DelM2)*(4 + dnv) - 
+            A2_eta_smg  =   ((5 + 4*fracnu)*(-1 + Omx))/(6.*(30*(1 + DelM2) + 5*(1 + DelM2)*dnh*(5 + dnh) -
+                            8*fracnu*(-1 + Omx))) + (5*amplitude*(3 + dnv)*(bra*(1 + DelM2)*(4 + dnv) -
                             4*(DelM2 + Omx)))/den2;
-            
+
             eta = ppr->curvature_ini * (1. + A2_eta_smg/A1_eta_smg*ktau_two);
 
             if(ppt->perturbations_verbose > 6)
@@ -4705,7 +4705,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
             ppw->pv->y[ppw->pv->index_pt_vx_smg]  = 0.5*amplitude*ktau_two*tau*(ppr->curvature_ini)/A1_eta_smg;
 	          ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (3+dn)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
- 
+
 
             // Correct all shear-free species by reducing amplitude by A1_eta_smg and  the velocities for dn
 
@@ -4715,7 +4715,7 @@ int perturb_initial_conditions(struct precision * ppr,
             ppw->pv->y[ppw->pv->index_pt_theta_b] /= A1_eta_smg/3*(3+dnh);
             if (pba->has_cdm == _TRUE_)
             ppw->pv->y[ppw->pv->index_pt_delta_cdm] /= A1_eta_smg;
-            if (pba->has_dcdm == _TRUE_) 
+            if (pba->has_dcdm == _TRUE_)
               ppw->pv->y[ppw->pv->index_pt_delta_dcdm] /= A1_eta_smg;
             if (pba->has_fld == _TRUE_) {
               ppw->pv->y[ppw->pv->index_pt_delta_fld] /= A1_eta_smg;
@@ -4725,24 +4725,24 @@ int perturb_initial_conditions(struct precision * ppr,
               ppw->pv->y[ppw->pv->index_pt_phi_scf] /= A1_eta_smg;
               ppw->pv->y[ppw->pv->index_pt_phi_prime_scf] /= A1_eta_smg/3*(3+dnh);
             }
-              
+
             if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)) {
             // Species with shear have a corrected initial condition
 
-              A_v_nu_smg  =   (amplitude*(-(bra*(1 + DelM2)*(4 + dnv)) + 4*(DelM2 + Omx)))/(30*(1 + DelM2) + 
-                              5*(1 + DelM2)*dnv*(5 + dnv) - 8*fracnu*(-1 + Omx)) + (-9*(1 + DelM2)*dnh*(5 + dnh) + 
-                              8*fracnu*(-1 + Omx) - 2*(23 + 27*DelM2 + 4*Omx))/(12.*(3 + dnh)*(30*(1 + DelM2) + 
+              A_v_nu_smg  =   (amplitude*(-(bra*(1 + DelM2)*(4 + dnv)) + 4*(DelM2 + Omx)))/(30*(1 + DelM2) +
+                              5*(1 + DelM2)*dnv*(5 + dnv) - 8*fracnu*(-1 + Omx)) + (-9*(1 + DelM2)*dnh*(5 + dnh) +
+                              8*fracnu*(-1 + Omx) - 2*(23 + 27*DelM2 + 4*Omx))/(12.*(3 + dnh)*(30*(1 + DelM2) +
                               5*(1 + DelM2)*dnh*(5 + dnh) - 8*fracnu*(-1 + Omx)));
 
-              A_sigma_nu_smg =  (amplitude*(3 + dnv)*(bra*(1 + DelM2)*(4 + dnv) - 4*(DelM2 + Omx)))/(30*(1 + DelM2) + 
-                                5*(1 + DelM2)*dnv*(5 + dnv) - 8*fracnu*(-1 + Omx)) + ((1 + DelM2)*dnh*(5 + dnh) + 
-                                2*(2 + 3*DelM2 + Omx))/(3.*(30*(1 + DelM2) + 5*(1 + DelM2)*dnh*(5 + dnh) - 
+              A_sigma_nu_smg =  (amplitude*(3 + dnv)*(bra*(1 + DelM2)*(4 + dnv) - 4*(DelM2 + Omx)))/(30*(1 + DelM2) +
+                                5*(1 + DelM2)*dnv*(5 + dnv) - 8*fracnu*(-1 + Omx)) + ((1 + DelM2)*dnh*(5 + dnh) +
+                                2*(2 + 3*DelM2 + Omx))/(3.*(30*(1 + DelM2) + 5*(1 + DelM2)*dnh*(5 + dnh) -
                                 8*fracnu*(-1 + Omx)));
-                                  
+
 
 
               delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* has already been rescaled above! */
-                
+
               theta_ur =  A_v_nu_smg/A1_eta_smg* k*ktau_three* ppr->curvature_ini;
               // /36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; /* velocity of ultra-relativistic neutrinos/relics, modified */ //TBC
 
@@ -4751,7 +4751,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
               //TODO: needs to be modified?
               l3_ur = ktau_three/A1_eta_smg*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
-                
+
               if(ppt->perturbations_verbose > 6)
                   printf("       fracnu = %e, A_v_nu = %e (%e), A_sigma_nu = %e (%e), th_ur/th_g = %e, Vx/vm = %e\n", fracnu, A_v_nu_smg,
                            -1./36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om),
@@ -4762,23 +4762,23 @@ int perturb_initial_conditions(struct precision * ppr,
               }// end neutrino part
               if(ppt->perturbations_verbose > 5)
                 printf("Mode k = %e. Gravitating_attr IC for early smg: ",k);
-	    
+
             } //end of gravitation_attr ICs
-	 
-   
+
+
             if (pba->pert_initial_conditions_smg == kin_only){
 	              ppw->pv->y[ppw->pv->index_pt_vx_smg] = ktau_two*dt;
-	              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 2*k*k*tau*dt; 
+	              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 2*k*k*tau*dt;
 	          if(ppt->perturbations_verbose > 5)
 		            printf("Mode k = %e. Kin_only IC for smg: ",k);
-	          }  
-	 
-   
+	          }
+
+
 	if (pba->pert_initial_conditions_smg == single_clock){
 	      // single_clock IC given with respect to photons (because there are always photons)
 	  ppw->pv->y[ppw->pv->index_pt_vx_smg] = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
 	      // Single clock IC => v_x^prime = 0
-	  ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ; 
+	  ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
 	  if(ppt->perturbations_verbose > 5)
 		  printf("Mode k = %e. Single clock IC for smg: ",k);
 	  }
@@ -4788,23 +4788,23 @@ int perturb_initial_conditions(struct precision * ppr,
 	  if (pba->pert_initial_conditions_smg == zero){
 	    ppw->pv->y[ppw->pv->index_pt_vx_smg] = 0.;
 	    ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
-	    
+
 	    if(ppt->perturbations_verbose > 5)
-        printf("Mode k = %e. Zero IC for smg: ",k); 
+        printf("Mode k = %e. Zero IC for smg: ",k);
 	  	  }
 
 
 
 
     if (pba->pert_initial_conditions_smg == ext_field_attr){
-	      
+
 	      /* Solutions assuming the alphas are small, i.e. Vx does not gravitate but moves
          * on an attractor provided bycollapsing radiation. (w!=1/3 terms included properly here!)
         // We have already tested for an RD tachyon at z=pert_ic_ini_z_ref_smg and it wasn't there.
          * We can thus assume that h has the standard tau^2 solution and solve the Vx e.o.m. assuming C1=C2=0.
          *
 	       *   Vx = C1 tau^n1 + C2 tau^n2 + A k^2 tau^3
-         * 
+         *
          * This requires that if the tachyon has appeared at some later time, the system will be moving into it slowly.
          *
          * We do not correct any other fields, since it woudl be inconsistent to include them
@@ -4814,10 +4814,10 @@ int perturb_initial_conditions(struct precision * ppr,
          * The on-attractor solution for the scalar velocity Vx is Vx = amplitude * k^2 tau^3 * ppr->curvature_ini
          * with amplitude = -B3/(6 + 3*B1 + B2).
          */
-        
-        B1_smg =  (3*pow(bra,3)*l1 + 2*cs2num*(3*bra*kin + pow(kin,2) - 3*l4) + 
-                  pow(bra,2)*((-6 + kin)*l1 + 3*l4) - 
-                  2*bra*(kin*l1 - 3*l1*l2 + 3*l4) + 
+
+        B1_smg =  (3*pow(bra,3)*l1 + 2*cs2num*(3*bra*kin + pow(kin,2) - 3*l4) +
+                  pow(bra,2)*((-6 + kin)*l1 + 3*l4) -
+                  2*bra*(kin*l1 - 3*l1*l2 + 3*l4) +
                   2*(3*l2*l4 + kin*(l1*l2 - 8*l7) - 8*l1*l7))/
                   (2.*(-2 + bra)*Dd*(kin + l1));
 
@@ -4825,50 +4825,50 @@ int perturb_initial_conditions(struct precision * ppr,
                   l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))))+
                   2*pow(bra,2)*(6*(1 + DelM2)*l6 + l1*(12 - 12*Omx +
                   (1 + DelM2)*(-30 + kin + 6*Omx*(1 - 3*wx)))) +
-                  3*pow(bra,3)*(1 + DelM2)*l1*(6 + Omx*(-1 + 3*wx)) + 
+                  3*pow(bra,3)*(1 + DelM2)*l1*(6 + Omx*(-1 + 3*wx)) +
                   2*cs2num*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 +
                   3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) +
-                  bra*(6 + Omx*(-1 + 3*wx))))) - 2*bra*(12*(1 + DelM2)*l6 + 
+                  bra*(6 + Omx*(-1 + 3*wx))))) - 2*bra*(12*(1 + DelM2)*l6 +
                   l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) +
                   l2*(6 + Omx*(-1 + 3*wx)))))))/
                   (4.*(-2 + bra)*Dd*(1 + DelM2)*(kin + l1));
-              
-	      // Build up B3 numerator and denom separately, and add each order in alpha separately, to avoid cancellations. 
+
+	      // Build up B3 numerator and denom separately, and add each order in alpha separately, to avoid cancellations.
         // Exact for both propto_omega and constant_alphas (provided they are very small).
 
         B3num_smg = - 6.*(1 + wx) -(2.*(bra + dbra + 4.*DelM2 + 4.*run - 4.*ten))/Omx;
-        B3num_smg += -((2.*dbra*DelM2 + 2*pow(run,2) + dbra*ten - 4*DelM2*ten - 2*run*(-4*DelM2 + ten) + 
-                      bra*(run + 2.*(DelM2 + ten)))/Omx) + (-(bra*(2. - 6.*wx)) - 
+        B3num_smg += -((2.*dbra*DelM2 + 2*pow(run,2) + dbra*ten - 4*DelM2*ten - 2*run*(-4*DelM2 + ten) +
+                      bra*(run + 2.*(DelM2 + ten)))/Omx) + (-(bra*(2. - 6.*wx)) -
                       6.*ten*(1. + wx) - 4.*DelM2*(-1. + 3.*wx))/2.;
         B3num_smg += -((DelM2*(2.*pow(run,2) + dbra*ten - 2.*run*ten) + bra*(2.*DelM2*ten + run*(DelM2 + ten)))/Omx) +
                       ((-2.*DelM2*ten + bra*(2.*DelM2 + ten))*(-1. + 3.*wx))/2.;
         B3num_smg +=  -((bra*DelM2*run*ten)/Omx) + (bra*DelM2*ten*(-1. + 3.*wx))/2.;
-        
+
         B3denom_smg = (4*kin)/Omx;
         B3denom_smg += (-6*bra*(run - ten) + 2*kin*(2*DelM2 + ten))/Omx;
         B3denom_smg += (2*DelM2*(-3*bra*(run - ten) + kin*ten))/Omx;
 
         B3_smg = B3num_smg/B3denom_smg;
 
-        
+
         amplitude = -B3_smg/(6. + 3.*B1_smg + B2_smg);
 
         ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*ktau_two*tau*(ppr->curvature_ini);
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 3.*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
- 
-        
+
+
         if(ppt->perturbations_verbose > 5)
           printf("Mode k = %e. Ext_field_attr IC for smg: ",k);
-      
-      
-      }// End external-field attractor ICs 
-	 
-   
+
+
+      }// End external-field attractor ICs
+
+
       //print the scalar's IC values, whatever the ICs
-      if(ppt->perturbations_verbose > 5)	 
-	    printf("Vx = %e, Vx'= %e \n", ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]); 
-    }	
-  }// end SMG adiabatic ICs        
+      if(ppt->perturbations_verbose > 5)
+	    printf("Vx = %e, Vx'= %e \n", ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+    }
+  }// end SMG adiabatic ICs
 
       /* all relativistic relics: ur, early ncdm, dr */
 
@@ -5844,35 +5844,35 @@ int perturb_einstein(
     if (ppt->gauge == synchronous) {
 
       if (pba->has_smg == _TRUE_) {
-	
-	M2 = ppw->pvecback[pba->index_bg_M2_smg];
-	kin = ppw->pvecback[pba->index_bg_kineticity_smg]; 
-	bra = ppw->pvecback[pba->index_bg_braiding_smg];
-	run = ppw->pvecback[pba->index_bg_mpl_running_smg];
-	ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
+
+        M2 = ppw->pvecback[pba->index_bg_M2_smg];
+	      kin = ppw->pvecback[pba->index_bg_kineticity_smg];
+	      bra = ppw->pvecback[pba->index_bg_braiding_smg];
+	      run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+	      ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
         bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
-	
-	rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
-	p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
-	rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
-	p_smg = ppw->pvecback[pba->index_bg_p_smg];
+
+	      rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
+	      p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
+	      rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
+	      p_smg = ppw->pvecback[pba->index_bg_p_smg];
         rho_r = ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_ur];
-	
-	H = ppw->pvecback[pba->index_bg_H];
-	
-	l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
-	l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
-	l3 = ppw->pvecback[pba->index_bg_lambda_3_smg];
-	l4 = ppw->pvecback[pba->index_bg_lambda_4_smg];
-	l5 = ppw->pvecback[pba->index_bg_lambda_5_smg];
-	l6 = ppw->pvecback[pba->index_bg_lambda_6_smg];
-	l7 = ppw->pvecback[pba->index_bg_lambda_7_smg];
-	l8 = ppw->pvecback[pba->index_bg_lambda_8_smg];
+
+	      H = ppw->pvecback[pba->index_bg_H];
+
+	      l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
+	      l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
+	      l3 = ppw->pvecback[pba->index_bg_lambda_3_smg];
+	      l4 = ppw->pvecback[pba->index_bg_lambda_4_smg];
+	      l5 = ppw->pvecback[pba->index_bg_lambda_5_smg];
+	      l6 = ppw->pvecback[pba->index_bg_lambda_6_smg];
+	      l7 = ppw->pvecback[pba->index_bg_lambda_7_smg];
+	      l8 = ppw->pvecback[pba->index_bg_lambda_8_smg];
         l2_p = ppw->pvecback[pba->index_bg_lambda_2_prime_smg];
         l8_p = ppw->pvecback[pba->index_bg_lambda_8_prime_smg];
 
-	cs2num = ppw->pvecback[pba->index_bg_cs2num_smg];
-	D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
+	      cs2num = ppw->pvecback[pba->index_bg_cs2num_smg];
+	      D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
         cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
 
         int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
@@ -5890,9 +5890,9 @@ int perturb_einstein(
       	  ppw->pvecmetric[ppw->index_mt_vx_smg] = (4.*cs2num*pow(k,2)*M2*y[ppw->pv->index_pt_eta] + 6.*l2*ppw->delta_rho*pow(a,2) + ((-2.) + bra)*9.*bra*ppw->delta_p*pow(a,2))*1./4.*pow(H,-1)*pow(M2,-1)*pow(a,-1)*pow(cs2num*pow(k,2) + (-4.)*pow(H,2)*l8*pow(a,2),-1);
 
       	  g1 = cs2num*pow(k/(a*H),2) -4.*l8;
-      	  
+
       	  g2 = (2. - bra)*(g1 + (3.*bra + kin)*bra*rho_r*pow(H,-2)*pow(M2,-1) - bra*cs2num*pow(k/(a*H),2)/2.)/2. - 3./4.*(3.*bra + kin)*(rho_tot + p_tot)*pow(H,-2)*l2*pow(M2,-1);
-      	  
+
       	  g3 = - (2.*(2. - bra)*bra*rho_r - 3.*(rho_tot + p_tot)*l2)*(18. - 18.*(rho_tot + p_tot)*pow(H,-2)*pow(M2,-1) - 15.*bra - 2.*kin + 9.*(2. - bra)*(p_tot + p_smg)*pow(H,-2) - 2.*bra*pow(k/(a*H),2))*pow(H,-2)*pow(M2,-1) + 2.*(2. - bra)*cs2num*(5. - bra - 3.*(rho_tot + p_tot)*pow(M2,-1)*pow(H,-2) + 9.*(p_tot + p_smg)*pow(H,-2))*pow(k/(a*H),2) + 4.*(2. - bra)*(pow(k/(a*H),2)*cs2num_p - 4.*l8_p)/(a*H);
 
       	  /* scalar field derivative equation
@@ -5910,7 +5910,7 @@ int perturb_einstein(
       	  printf("scalar field equation: quasi-static approximation mode %i not recognized. should be quasi_static or fully_dynamic\n",ppw->approx[ppw->index_ap_smgqs]);
       	  return _FAILURE_;
         }
-      
+
 
         /* first equation involving total density fluctuation */
         ppw->pvecmetric[ppw->index_mt_h_prime] = (-4.)*pow((-2.) + bra,-1)*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) + (-6.)*pow((-2.) + bra,-1)*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*pow((-2.) + bra,-1)*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*pow((-2.) + bra,-1)*bra*pow(k,2) + ((-18.) + 15.*bra + 2.*kin)*pow((-2.) + bra,-1)*rho_smg*pow(a,2) + (18. + (-18.)*M2 + 15.*bra*M2 + 2.*kin*M2)*pow((-2.) + bra,-1)*rho_tot*pow(M2,-1)*pow(a,2) + (2. + (-2.)*M2 + bra*M2)*9.*pow((-2.) + bra,-1)*pow(M2,-1)*p_tot*pow(a,2) + 9.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];
@@ -5930,7 +5930,7 @@ int perturb_einstein(
 	          ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
 
 	        }
-	        
+
 	        /* correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times */
 	        ppw->pvecmetric[ppw->index_mt_rsa_p_smg] = (kin/(D*M2) - 1.)*ppw->delta_p - 1./3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg] + 2./9.*(1. - l1/D)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-2) - 2./9.*(1. + l3/D)*H*ppw->pvecmetric[ppw->index_mt_h_prime]*pow(a,-1) - 2./9.*(H*pow(D,-1)*pow(k,2)*l5*pow(a,-1) + 3.*pow(H,3)*pow(D,-1)*l6*a)*ppw->pvecmetric[ppw->index_mt_vx_smg];
         }
@@ -5944,7 +5944,7 @@ int perturb_einstein(
       	ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 2.*pow(D,-1)*pow(k,2)*l1*y[ppw->pv->index_pt_eta] + 2.*H*pow(D,-1)*l3*ppw->pvecmetric[ppw->index_mt_h_prime]*a + (-9.)*kin*pow(D,-1)*pow(M2,-1)*ppw->delta_p*pow(a,2) + 3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*pow(a,2) + (2.*H*pow(D,-1)*pow(k,2)*l5*a + 6.*pow(H,3)*pow(D,-1)*l6*pow(a,3))*ppw->pvecmetric[ppw->index_mt_vx_smg];
 
 
-        /* alpha = (h'+6eta')/2k^2 */ 
+        /* alpha = (h'+6eta')/2k^2 */
         ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
 
 
@@ -5975,8 +5975,8 @@ int perturb_einstein(
 
     }//end if has_smg
     // Standard equations
-    else {      
-      
+    else {
+
 	/* first equation involving total density fluctuation */
 	ppw->pvecmetric[ppw->index_mt_h_prime] =
 	  ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
@@ -6029,7 +6029,7 @@ int perturb_einstein(
 	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
 	  + y[ppw->pv->index_pt_eta]
 	  - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
-      } // end of else (if no smg) 
+      } // end of else (if no smg)
     } // end of synchronous
 
     /* transform (delta_m, theta_m) of the current gauge into
@@ -6087,17 +6087,17 @@ int perturb_einstein(
 
   if (_tensors_) {
 
-    /* single einstein equation for tensor perturbations */   
+    /* single einstein equation for tensor perturbations */
     if (pba->has_smg == _FALSE_) {
       ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -2.*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-(k2+2.*pba->K)*y[ppw->pv->index_pt_gw]+ppw->gw_source;
     }
     /* modified version if gravity is non-standard. Note that no curvature is allowed in this case */
     else{
-      
+
       double M2 = ppw->pvecback[pba->index_bg_M2_smg];
       double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
       double c_t2 = (1. + ppw->pvecback[pba->index_bg_tensor_excess_smg]);
-      
+
       ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -(2. + run)*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-k2*c_t2*y[ppw->pv->index_pt_gw]+ppw->gw_source/M2;
     }
 
@@ -6238,6 +6238,8 @@ int perturb_total_stress_energy(
     ppw->delta_p = 1./3.*ppw->pvecback[pba->index_bg_rho_g]*delta_g
       + ppw->pvecthermo[pth->index_th_cb2]*ppw->pvecback[pba->index_bg_rho_b]*y[ppw->pv->index_pt_delta_b];
     rho_plus_p_tot = 4./3. * ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_b];
+    ppw->delta_rho_r = ppw->pvecback[pba->index_bg_rho_g]*delta_g;
+    ppw->rho_plus_p_theta_r = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*theta_g;
 
     /* cdm contribution */
     if (pba->has_cdm == _TRUE_) {
@@ -6278,6 +6280,8 @@ int perturb_total_stress_energy(
       ppw->rho_plus_p_shear = ppw->rho_plus_p_shear + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*shear_ur;
       ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
       rho_plus_p_tot += 4./3. * ppw->pvecback[pba->index_bg_rho_ur];
+      ppw->delta_rho_r = ppw->delta_rho_r + ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
+      ppw->rho_plus_p_theta_r = ppw->rho_plus_p_theta_r + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*theta_ur;
     }
 
     /* non-cold dark matter contribution */
@@ -6962,11 +6966,11 @@ int perturb_sources(
       }
       _set_source_(ppt->index_tp_delta_scf) = delta_rho_scf/pvecback[pba->index_bg_rho_scf];
     }
-    
+
     /* phi_smg TODO: either change the name of the source or write delta_phi_dot */
     if (ppt->has_source_phi_smg == _TRUE_) {
-      _set_source_(ppt->index_tp_phi_smg) = pvecmetric[ppw->index_mt_vx_smg]; 
-    }         
+      _set_source_(ppt->index_tp_phi_smg) = pvecmetric[ppw->index_mt_vx_smg];
+    }
 
     /* delta_dr */
     if (ppt->has_source_delta_dr == _TRUE_) {
@@ -7374,9 +7378,9 @@ int perturb_print_variables(double tau,
       theta_scf = rho_plus_p_theta_scf/(pvecback[pba->index_bg_rho_scf]+pvecback[pba->index_bg_p_scf]);
 
     }
-    
+
     if (pba->has_smg == _TRUE_){
-     //TODO: write here the perturbation variables 
+     //TODO: write here the perturbation variables
       V_x_smg = ppw->pvecmetric[ppw->index_mt_vx_smg];
       V_x_prime_smg = ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
     }
@@ -7487,7 +7491,7 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, theta_scf, pba->has_scf, storeidx);
     /* Scalar field smg*/
     class_store_double(dataptr, V_x_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, V_x_prime_smg, pba->has_smg, storeidx);  
+    class_store_double(dataptr, V_x_prime_smg, pba->has_smg, storeidx);
 
   }
   /** - for tensor modes: */
@@ -8147,27 +8151,27 @@ int perturb_derivs(double tau,
         - (k2 + a2*pvecback[pba->index_bg_ddV_scf])*y[pv->index_pt_phi_scf]; //checked
 
     }
-    
+
     if (pba->has_smg == _TRUE_) {
-        
+
         int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
-       
+
 	class_test(ppt->gauge == newtonian,
                ppt->error_message,
                "asked for scalar field AND Newtonian gauge. Not yet implemented");
 
 	//make sure that second order equations are being used
 	if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
-	  
+
 	  /** ---> scalar field velocity */
-	  dy[pv->index_pt_vx_smg] =  pvecmetric[ppw->index_mt_vx_prime_smg]; 
-	
+	  dy[pv->index_pt_vx_smg] =  pvecmetric[ppw->index_mt_vx_prime_smg];
+
 	  /** ---> Scalar field acceleration (passes the value obtained in perturb_einstein) */
-	  dy[pv->index_pt_vx_prime_smg] =  pvecmetric[ppw->index_mt_vx_prime_prime_smg]; 
+	  dy[pv->index_pt_vx_prime_smg] =  pvecmetric[ppw->index_mt_vx_prime_prime_smg];
 
 	}
 
-      }    
+      }
 
     /** - ---> ultra-relativistic neutrino/relics (ur) */
 
@@ -9025,9 +9029,9 @@ int perturb_rsa_delta_and_theta(
   double k2;
 
   k2 = k*k;
-  
+
   double a2;
-  
+
   a2 = pow(ppw->pvecback[pba->index_bg_a],2.);
 
   // formulas below TBC for curvaturema
@@ -9096,7 +9100,7 @@ int perturb_rsa_delta_and_theta(
           ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
                                   -k2*y[ppw->pv->index_pt_eta]);
         }
-        
+
         ppw->rsa_theta_g = -0.5*ppw->pvecmetric[ppw->index_mt_h_prime];
 
     }
@@ -9572,7 +9576,7 @@ int correct_with_slope_smgqs(struct precision * ppr,
       else {
 	next_tau = tau_end;
       }
-      
+
       if (tau_array[i] + delta_tau < next_tau) {
 	tau_array[i] += delta_tau;
       }
@@ -9726,16 +9730,16 @@ int fit_real_scheme_smgqs(
 }
 
 /*
- * Test for stability of solutions in RD before initialisation of 
+ * Test for stability of solutions in RD before initialisation of
  * perturbations: if standard solution not stable, cannot set ICs properly.
  */
 int perturb_test_ini_grav_ic_smg(struct precision * ppr,
 			struct background * pba,
 			struct perturbs * ppt){
-// test stability of gravitating_attr ICs  
-  
+// test stability of gravitating_attr ICs
+
   double kin, bra, run, ten, DelM2, Omx, wx;
-  double c3, c2, c1,c0, den1, den2, ic_regulator_smg;  
+  double c3, c2, c1,c0, den1, den2, ic_regulator_smg;
   double tau_ini, z_ref;
   int i;
   double fastest_growth, wouldbe_adiab;
@@ -9743,15 +9747,15 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   int first_index_back;
   double sols[3];
   int complex;
-  
+
   class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
-  
+
   z_ref = pba->pert_ic_ini_z_ref_smg;
-  
+
   class_call(background_tau_of_z(pba, z_ref,&tau_ini),
              pba->error_message,
              ppt->error_message);
-  
+
   class_call(background_at_tau(pba,
                                  tau_ini,
                                  pba->long_info,
@@ -9760,7 +9764,7 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
                                  pvecback),
                pba->error_message,
                ppt->error_message);
-  
+
   // define alphas
   wx = pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg];
   Omx = pvecback[pba->index_bg_rho_smg]/pow(pvecback[pba->index_bg_H],2);
@@ -9769,15 +9773,15 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   run = pvecback[pba->index_bg_mpl_running_smg];
   ten = pvecback[pba->index_bg_tensor_excess_smg];
   DelM2 = pvecback[pba->index_bg_M2_smg]-1.;
-    
+
   /* Determine the solutions
-   * 
+   *
    *   h = C * tau^2+x
-   * 
-   * where n is the solution of 
+   *
+   * where n is the solution of
    *
    *   c3 x^3 + c2 x^2 + c1 x + c0 = 0
-   * 
+   *
    * Note: if complex solutions then take the real part for the test
    * These solutions are exact when run=0. If not, then they are approximate.
    * These coefficients were obtain by solving the radiation+smg system
@@ -9785,11 +9789,11 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
    * a cubic with three solutions relevant in the k->0 limit.
    * Note that we approximate the ci to O(run).
    */
-  
+
   // Note: The denominators in the expressions below can be zero. We try to trap this and regulate.
   // We assume that M*^2>0 and D>0 which are tested for in the background routine.
   // Doing this gives wrong ICs, but it's better than segmentation faults.
-              
+
   ic_regulator_smg =  pba->pert_ic_regulator_smg;     //  read in the minimum size that will get regulated
   ic_regulator_smg *= fabs(kin)+fabs(bra)+fabs(ten);  //  scale it relative to the alphas
 
@@ -9798,11 +9802,11 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   c2  =   5. + 2.*run;
 
   den1 = (3.*bra*ten + kin*(2. + ten));
-  
+
   if(ic_regulator_smg>0 &&(fabs(den1)<ic_regulator_smg)){
     den1 = copysign(ic_regulator_smg,den1);
   }
-  
+
   den2 =  4.*(9.*bra*(1. + DelM2) + (1. + DelM2)*kin - 12.*(DelM2 + Omx))*(3.*pow(bra,2.)*
           (1. + DelM2) + 2.*kin*(DelM2 + Omx))*(-6.*(DelM2 + Omx)*(-2. + ten) + 9.*bra*(1. + DelM2)*(-1. + ten) + 2.*(1. + DelM2)*
           kin*(1. + ten));
@@ -9810,50 +9814,50 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   if(ic_regulator_smg>0 &&(fabs(den2)<ic_regulator_smg)){
     den2 = copysign(ic_regulator_smg,den2);
   }
-  
+
   c2  +=  ((-1. + Omx)*run*(27.*pow(bra,4)*pow(1. + DelM2,2.)*ten*(432. - 373.*ten + 6.*pow(ten,2.)) + 9.*pow(bra,3.)*(1. + DelM2)*
-          (864.*(DelM2 + Omx)*(-2. + ten)*ten + (1. + DelM2)*kin*(864. - 698.*ten - 329.*pow(ten,2.) + 6.*pow(ten,3.))) - 
+          (864.*(DelM2 + Omx)*(-2. + ten)*ten + (1. + DelM2)*kin*(864. - 698.*ten - 329.*pow(ten,2.) + 6.*pow(ten,3.))) -
           3.*pow(bra,2.)*(1. + DelM2)*kin*(3456.*(DelM2 + Omx) - 4320.*(DelM2 + Omx)*ten + 6.*(1. + 446.*DelM2 + 445.*Omx)*
           pow(ten,2.) - 36.*(DelM2 + Omx)*pow(ten,3.) + (1. + DelM2)*kin*(768. + 227.*ten - 259.*pow(ten,2.) + 12.*pow(ten,3.))) -
           2.*pow(kin,2.)*(-6.*(DelM2 + Omx)*(-768.*(DelM2 + Omx) + (-1. + 191.*DelM2 + 192.*Omx)*pow(ten,2.)) + pow(1. + DelM2,2.)*
-          pow(kin,2.)*(-14. - 19.*ten - 4.*pow(ten,2.) + pow(ten,3.)) - (1. + DelM2)*kin*(-384.*(DelM2 + Omx) + 
-          (1. - 851.*DelM2 - 852.*Omx)*ten + (1. - 317.*DelM2 - 318.*Omx)*pow(ten,2.) + 6.*(DelM2 + Omx)*pow(ten,3.))) - 
+          pow(kin,2.)*(-14. - 19.*ten - 4.*pow(ten,2.) + pow(ten,3.)) - (1. + DelM2)*kin*(-384.*(DelM2 + Omx) +
+          (1. - 851.*DelM2 - 852.*Omx)*ten + (1. - 317.*DelM2 - 318.*Omx)*pow(ten,2.) + 6.*(DelM2 + Omx)*pow(ten,3.))) -
           6.*bra*kin*(-1152.*pow(DelM2 + Omx,2.)*(-2. + ten)*ten + pow(1. + DelM2,2.)*pow(kin,2.)*(-32. - 99.*ten - 40.*pow(ten,2.) +
           3.*pow(ten,3.)) - (1. + DelM2)*kin*(1440.*(DelM2 + Omx) - 2.*(1. + 325.*DelM2 + 324.*Omx)*ten + (1. - 905.*DelM2 - 906.*Omx)*
           pow(ten,2.) + 12.*(DelM2 + Omx)*pow(ten,3.)))))/(den2*den1);
-  
-  c1  =   (9*pow(bra,3)*pow(1 + DelM2,2)*(6 + 5*run)*ten + 3*pow(bra,2)*(1 + DelM2)*(-12*(-1 + Omx)*(-3 + run)*ten + 
+
+  c1  =   (9*pow(bra,3)*pow(1 + DelM2,2)*(6 + 5*run)*ten + 3*pow(bra,2)*(1 + DelM2)*(-12*(-1 + Omx)*(-3 + run)*ten +
           (1 + DelM2)*kin*(6 + 5*run)*(2 + ten)) + 6*bra*(-24*(-1 + Omx)*(DelM2 + Omx)*ten + (1 + DelM2)*kin*
           (12*(-1 + Omx) + (-2 + 6*DelM2 + 8*Omx + 5*(1 + DelM2)*run)*ten)) + 2*kin*((1 + DelM2)*kin*
           (2*(2 + 3*DelM2 + Omx) + 5*(1 + DelM2)*run)*(2 + ten) - 12*(-1 + Omx)*((1 + DelM2)*run*ten + 2*(DelM2 + Omx)
-          *(2 + ten))))/(pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1); 
+          *(2 + ten))))/(pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1);
 
   den2 = 4.*(1 + DelM2)*(9*bra*(1 + DelM2) + (1 + DelM2)*kin - 12*(DelM2 + Omx))*
-          (3*pow(bra,2)*(1 + DelM2) + 2*kin*(DelM2 + Omx))*(-6*(DelM2 + Omx)*(-2 + ten) + 9*bra*(1 + DelM2)*(-1 + ten) + 
+          (3*pow(bra,2)*(1 + DelM2) + 2*kin*(DelM2 + Omx))*(-6*(DelM2 + Omx)*(-2 + ten) + 9*bra*(1 + DelM2)*(-1 + ten) +
           2*(1 + DelM2)*kin*(1 + ten));
-  
+
   if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
     den2 = copysign(ic_regulator_smg,den2);
   }
-  
+
 
   c1  +=  ((-1 + Omx)*run*(135*pow(bra,4)*pow(1 + DelM2,3)*ten*(288 - 229*ten + 6*pow(ten,2)) + 9*pow(bra,3)*
-          pow(1 + DelM2,2)*(2880*(DelM2 + Omx)*(-2 + ten)*ten + (1 + DelM2)*kin*(3744 - 1780*ten - 1855*pow(ten,2) + 
-          66*pow(ten,3))) + 2*kin*(3456*pow(DelM2 + Omx,3)*(-2 + ten)*ten + 6*(1 + DelM2)*kin*(DelM2 + Omx)*(-2112*(DelM2 + Omx) - 
+          pow(1 + DelM2,2)*(2880*(DelM2 + Omx)*(-2 + ten)*ten + (1 + DelM2)*kin*(3744 - 1780*ten - 1855*pow(ten,2) +
+          66*pow(ten,3))) + 2*kin*(3456*pow(DelM2 + Omx,3)*(-2 + ten)*ten + 6*(1 + DelM2)*kin*(DelM2 + Omx)*(-2112*(DelM2 + Omx) -
           4*(1 + 25*DelM2 + 24*Omx)*ten + 3*(-1 + 95*DelM2 + 96*Omx)*pow(ten,2)) - pow(1 + DelM2,3)*pow(kin,3)*
-          (-14 - 19*ten - 4*pow(ten,2) + pow(ten,3)) + pow(1 + DelM2,2)*pow(kin,2)*(-528*(DelM2 + Omx) + 
-          (1 - 1523*DelM2 - 1524*Omx)*ten + (1 - 545*DelM2 - 546*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) + 
-          3*pow(bra,2)*pow(1 + DelM2,2)*kin*((1 + DelM2)*kin*(-1296 - 2087*ten - 449*pow(ten,2) + 36*pow(ten,3)) + 
-          6*(-3072*(DelM2 + Omx) + 1532*(DelM2 + Omx)*ten + (-5 + 28*DelM2 + 33*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) - 
-          6*bra*(1 + DelM2)*kin*(576*pow(DelM2 + Omx,2)*(-4 + 5*ten) + pow(1 + DelM2,2)*pow(kin,2)*(-4 - 61*ten - 32*pow(ten,2) + 
+          (-14 - 19*ten - 4*pow(ten,2) + pow(ten,3)) + pow(1 + DelM2,2)*pow(kin,2)*(-528*(DelM2 + Omx) +
+          (1 - 1523*DelM2 - 1524*Omx)*ten + (1 - 545*DelM2 - 546*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) +
+          3*pow(bra,2)*pow(1 + DelM2,2)*kin*((1 + DelM2)*kin*(-1296 - 2087*ten - 449*pow(ten,2) + 36*pow(ten,3)) +
+          6*(-3072*(DelM2 + Omx) + 1532*(DelM2 + Omx)*ten + (-5 + 28*DelM2 + 33*Omx)*pow(ten,2) + 18*(DelM2 + Omx)*pow(ten,3))) -
+          6*bra*(1 + DelM2)*kin*(576*pow(DelM2 + Omx,2)*(-4 + 5*ten) + pow(1 + DelM2,2)*pow(kin,2)*(-4 - 61*ten - 32*pow(ten,2) +
           pow(ten,3)) - (1 + DelM2)*kin*(3552*(DelM2 + Omx) - 4*(1 + 121*DelM2 + 120*Omx)*ten - (1 + 1279*DelM2 + 1278*Omx)*
           pow(ten,2) + 36*(DelM2 + Omx)*pow(ten,3)))))/(den2*den1);
-  
 
-  c0  =   (24*(-1 + Omx)*run*(4*kin*Omx - 3*pow(bra,2)*(-2 + ten) - DelM2*(3*pow(bra,2) + 2*kin)*(-2 + ten) + 
+
+  c0  =   (24*(-1 + Omx)*run*(4*kin*Omx - 3*pow(bra,2)*(-2 + ten) - DelM2*(3*pow(bra,2) + 2*kin)*(-2 + ten) +
           2*kin*(-2 + Omx)*ten + 6*bra*(-1 + Omx)*ten))/(pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1);
-  
-  den2 = (9*bra*(-1 + ten) + 2*(kin + 6*Omx + kin*ten - 3*Omx*ten) + DelM2*(9*bra*(-1 + ten) + 
+
+  den2 = (9*bra*(-1 + ten) + 2*(kin + 6*Omx + kin*ten - 3*Omx*ten) + DelM2*(9*bra*(-1 + ten) +
           2*(6 + kin - 3*ten + kin*ten)));
 
   if(ic_regulator_smg>0 && (fabs(den2)<ic_regulator_smg)){
@@ -9861,17 +9865,17 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   }
 
   c0  +=  -((-1 + Omx)*run*(9*pow(bra,3)*(-288 + 98*ten + 119*pow(ten,2) + 6*pow(ten,3)) + 6*bra*(288*Omx*(-2 + ten)*
-          ten + pow(kin,2)*(16 + 85*ten + 48*pow(ten,2) + 3*pow(ten,3)) + kin*(288*Omx + (314 - 216*Omx)*ten - 
+          ten + pow(kin,2)*(16 + 85*ten + 48*pow(ten,2) + 3*pow(ten,3)) + kin*(288*Omx + (314 - 216*Omx)*ten -
           (163 + 246*Omx)*pow(ten,2) - 12*(-1 + Omx)*pow(ten,3))) + 3*pow(bra,2)*(kin*(-480 + 335*ten + 383*pow(ten,2) +
-          18*pow(ten,3)) - 6*(-192*Omx + 48*(-3 + Omx)*ten + (85 + 83*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) + 
-          2*kin*(6*ten*(-192*Omx + (-1 + 97*Omx)*ten) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3)) - 
-          kin*(192*Omx + (-107 + 300*Omx)*ten + (31 + 114*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) + 
-          DelM2*(9*pow(bra,3)*(-288 + 98*ten + 119*pow(ten,2) + 6*pow(ten,3)) + 2*kin*(576*(-2 + ten)*ten - 
-          kin*(192 + 193*ten + 145*pow(ten,2)) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3))) + 
-          6*bra*(288*(-2 + ten)*ten + kin*(288 + 98*ten - 409*pow(ten,2)) + pow(kin,2)*(16 + 85*ten + 
-          48*pow(ten,2) + 3*pow(ten,3))) + 3*pow(bra,2)*(-144*(-8 - 4*ten + 7*pow(ten,2)) + kin*(-480 + 335*ten + 
+          18*pow(ten,3)) - 6*(-192*Omx + 48*(-3 + Omx)*ten + (85 + 83*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) +
+          2*kin*(6*ten*(-192*Omx + (-1 + 97*Omx)*ten) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3)) -
+          kin*(192*Omx + (-107 + 300*Omx)*ten + (31 + 114*Omx)*pow(ten,2) + 6*(-1 + Omx)*pow(ten,3))) +
+          DelM2*(9*pow(bra,3)*(-288 + 98*ten + 119*pow(ten,2) + 6*pow(ten,3)) + 2*kin*(576*(-2 + ten)*ten -
+          kin*(192 + 193*ten + 145*pow(ten,2)) + pow(kin,2)*(18 + 29*ten + 12*pow(ten,2) + pow(ten,3))) +
+          6*bra*(288*(-2 + ten)*ten + kin*(288 + 98*ten - 409*pow(ten,2)) + pow(kin,2)*(16 + 85*ten +
+          48*pow(ten,2) + 3*pow(ten,3))) + 3*pow(bra,2)*(-144*(-8 - 4*ten + 7*pow(ten,2)) + kin*(-480 + 335*ten +
           383*pow(ten,2) + 18*pow(ten,3))))))/(2.*(1 + DelM2)*(3*pow(bra,2) + 2*kin)*den1*den2);
-  
+
 
   // Solve cubic to find the three solutions
     rf_solve_poly_3(c3,c2,c1,c0,sols,&complex);
@@ -9903,8 +9907,8 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   // Check that would-be adiabatic mode is (i) close enough to standard and (ii) actually the fastest mode, otherwise
   // the would-be adiabatic attractor destabilises to the fastest mode, i.e. we cannot assume that the curvature was
   // conserved between inflation and the beginning of hi_class and therefore there is no
-  // relation between the inflational amplitude A_S and the parameter we use for normalisation of curvature. 
-  
+  // relation between the inflational amplitude A_S and the parameter we use for normalisation of curvature.
+
   class_test(pba->pert_ic_tolerance_smg>0 && (fabs(wouldbe_adiab) > pba->pert_ic_tolerance_smg),
           ppt->error_message,
           "\n   Cannot set initial conditions for early_smg: adiabatic mode h ~ tau^2 lost, h ~ tau^n with n = %f",2+wouldbe_adiab);
@@ -9914,17 +9918,17 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
           ppt->error_message,
           "\n   Cannot set initial conditions for early_smg:\n    There exists a mode where curvature is (nearly) conserved n=%f, but solution destabilises to a faster-growing non-conserving mode with n=%f.",2+wouldbe_adiab,2+fastest_growth);
   }
-  
+
   free(pvecback);
-  
+
   // If we get here, then initialise modes and evolve them!
-  
+
   return _SUCCESS_;
-  
+
 }
 
 /*
- * Test for tachyonic instability of Vx in RD before initialisation of 
+ * Test for tachyonic instability of Vx in RD before initialisation of
  * perturbations: if not stable, cannot set ICs properly.
  */
 int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
@@ -9934,7 +9938,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
 
   double kin, bra, run, ten, DelM2, Omx, wx;
   double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
-  double B1_smg, B2_smg; 
+  double B1_smg, B2_smg;
   double tau_ini, z_ref;
   double vx_growth;
   double * pvecback;
@@ -9943,11 +9947,11 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
 
   z_ref = pba->pert_ic_ini_z_ref_smg;
-  
+
   class_call(background_tau_of_z(pba, z_ref,&tau_ini),
              pba->error_message,
              ppt->error_message);
-  
+
   class_call(background_at_tau(pba,
                                  tau_ini,
                                  pba->long_info,
@@ -9956,7 +9960,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
                                  pvecback),
                pba->error_message,
                ppt->error_message);
-  
+
   // look up alphas etc. at z_ref
   wx = pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg];
   Omx = pvecback[pba->index_bg_rho_smg]/pow(pvecback[pba->index_bg_H],2);
@@ -9975,10 +9979,10 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   l8 = pvecback[pba->index_bg_lambda_8_smg];
   cs2num = pvecback[pba->index_bg_cs2num_smg];
   Dd = pvecback[pba->index_bg_kinetic_D_smg];
-    
-  B1_smg =  (3*pow(bra,3)*l1 + 2*cs2num*(3*bra*kin + pow(kin,2) - 3*l4) + 
-            pow(bra,2)*((-6 + kin)*l1 + 3*l4) - 
-            2*bra*(kin*l1 - 3*l1*l2 + 3*l4) + 
+
+  B1_smg =  (3*pow(bra,3)*l1 + 2*cs2num*(3*bra*kin + pow(kin,2) - 3*l4) +
+            pow(bra,2)*((-6 + kin)*l1 + 3*l4) -
+            2*bra*(kin*l1 - 3*l1*l2 + 3*l4) +
             2*(3*l2*l4 + kin*(l1*l2 - 8*l7) - 8*l1*l7))/
             (2.*(-2 + bra)*Dd*(kin + l1));
 
@@ -9986,14 +9990,14 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
             l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))))+
             2*pow(bra,2)*(6*(1 + DelM2)*l6 + l1*(12 - 12*Omx +
             (1 + DelM2)*(-30 + kin + 6*Omx*(1 - 3*wx)))) +
-            3*pow(bra,3)*(1 + DelM2)*l1*(6 + Omx*(-1 + 3*wx)) + 
+            3*pow(bra,3)*(1 + DelM2)*l1*(6 + Omx*(-1 + 3*wx)) +
             2*cs2num*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 +
             3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) +
-            bra*(6 + Omx*(-1 + 3*wx))))) - 2*bra*(12*(1 + DelM2)*l6 + 
+            bra*(6 + Omx*(-1 + 3*wx))))) - 2*bra*(12*(1 + DelM2)*l6 +
             l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) +
             l2*(6 + Omx*(-1 + 3*wx)))))))/
             (4.*(-2 + bra)*Dd*(1 + DelM2)*(kin + l1));
-        
+
   //compute exponent ignoring any imaginary part
   vx_growth = 0.5*(1.-B1_smg);
   if (1.-2.*B1_smg + B1_smg*B1_smg -4.*B2_smg >=0){
@@ -10008,17 +10012,16 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
     else{
       printf("  tachyonic instability in smg dominates, Vx = k^2 tau^n with n=%f.\n",vx_growth);
       printf("  smg is sensitive to its initial conditions at end of inflation.\n");
-    } 
+    }
   }
-    
+
   class_test(pba->pert_ic_tolerance_smg>0 && (vx_growth > 3.+pba->pert_ic_tolerance_smg),
           ppt->error_message,
           "\n   Cannot set initial conditions for smg: tachyonic instability dominates attractor.\n");
-  
+
   free(pvecback);
-  
+
   // If we get here, then initialise modes and evolve them!
-  
+
   return _SUCCESS_;
 }
-
