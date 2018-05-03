@@ -4381,13 +4381,7 @@ int perturb_initial_conditions(struct precision * ppr,
       
       
 
-      double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
-      double n_nosource_smg, n_fastest_smg, dnv, dnh, dn, eps_smg;
-      double c0, c1, c2, c3, c0hp, c1hp, c2hp, c0vp, c1vp, c2vp;
-      double sols[3];
-      double den1,den2, ic_regulator_smg;
-      int     complex,i;
-   
+     
       if (pba->has_smg == _TRUE_) { 
         if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
       /* Initial conditions for the *dynamical* scalar field
@@ -4420,7 +4414,13 @@ int perturb_initial_conditions(struct precision * ppr,
        *    Appropriate for usual MG with no contribution at early times.
        */   
 
-
+       double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
+       double n_nosource_smg, n_fastest_smg, dnv, dnh, dn, eps_smg;
+       double c0, c1, c2, c3, c0hp, c1hp, c2hp, c0vp, c1vp, c2vp;
+       double sols[3];
+       double den1,den2, ic_regulator_smg;
+       int     complex,i;
+   
 
 
 
@@ -4465,7 +4465,7 @@ int perturb_initial_conditions(struct precision * ppr,
              *  We have already checked for their presence at some fiducial z_ref (line ~210) and failed
              *  if this is the case.
              *
-             *  If wehave got this far, then we let perturbations run, since any instability would
+             *  If we have got this far, then we let perturbations run, since any instability would
              *  have apeared as a rusult of evolving alphas after the z_ref test above.
              *  We recompute the power law in case the values of alphas have changed.
              *
