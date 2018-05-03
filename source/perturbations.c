@@ -4379,7 +4379,18 @@ int perturb_initial_conditions(struct precision * ppr,
             a*a/ppw->pvecback[pba->index_bg_phi_prime_scf]*( - ktau_two/4.*(1.+1./3.)*(4.-3.*1.)/(4.-6.*(1/3.)+3.*1.)*ppw->pvecback[pba->index_bg_rho_scf] - ppw->pvecback[pba->index_bg_dV_scf]*ppw->pv->y[ppw->pv->index_pt_phi_scf])* ppr->curvature_ini * s2_squared; */
       }
       
-      /* Initial conditions for the scalar field
+      
+
+      double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
+      double n_nosource_smg, n_fastest_smg, dnv, dnh, dn, eps_smg;
+      double c0, c1, c2, c3, c0hp, c1hp, c2hp, c0vp, c1vp, c2vp;
+      double sols[3];
+      double den1,den2, ic_regulator_smg;
+      int     complex,i;
+   
+      if (pba->has_smg == _TRUE_) { 
+        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+      /* Initial conditions for the *dynamical* scalar field
        * 
        * 1) gravitating_attr: Self-consistent Gravitating Attractor
        *    We allow the scalar to contribute the gravitational field during RD (can happen if Omx or alphas large at early times)
@@ -4409,16 +4420,11 @@ int perturb_initial_conditions(struct precision * ppr,
        *    Appropriate for usual MG with no contribution at early times.
        */   
 
-      double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
-      double n_nosource_smg, n_fastest_smg, dnv, dnh, dn, eps_smg;
-      double c0, c1, c2, c3, c0hp, c1hp, c2hp, c0vp, c1vp, c2vp;
-      double sols[3];
-      double den1,den2, ic_regulator_smg;
-      int     complex,i;
-   
-      if (pba->has_smg == _TRUE_) { 
-        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
-                  
+
+
+
+
+
           // Read in the initial values of all background params: alphas, Omx, w 
 	  
           //perturbation to time variable
