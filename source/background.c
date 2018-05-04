@@ -3020,9 +3020,10 @@ int background_gravity_functions(
     pvecback[pba->index_bg_phi_prime_smg] = phi_prime; // value of the scalar field phi derivative wrt conformal time     
 
     /** - Modified time-time Friedmann equation 
-      * NOTE: H is NOT the curly H!!
-      * NOTE: added rho_smg, p_smg separately
-      */
+     * E0 + E1 H + E3 H^3 = E2 H^2
+     * NOTE: H is NOT the curly H!!
+     * NOTE: added rho_smg, p_smg separately
+     */
                 
     E0 = (3.*rho_tot + (-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3.;
     E1 = ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*phi_prime*pow(a,-1);
