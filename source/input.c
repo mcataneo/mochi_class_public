@@ -1312,16 +1312,8 @@ int input_read_parameters(
       if (strcmp(string1,"galileon") == 0) {
 	pba->gravity_model_smg = galileon;
 	pba->field_evolution_smg = _TRUE_;
-	flag2=_TRUE_;
-	
 	pba->parameters_size_smg = 7;
-	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-	
-	double xi = pba->parameters_smg[0];
-	double c2 = pba->parameters_smg[2];
-	double c3 = pba->parameters_smg[3];
-	double c4 = pba->parameters_smg[4];
-	double c5 = pba->parameters_smg[5];
+	flag2=_TRUE_;
 	
 	/* Galileon dynamics pulls towards the shift-symmetry attractor n = 0 with
 	 * 
@@ -1339,89 +1331,91 @@ int input_read_parameters(
 	 * 
 	 * (Barreira+ '14 2.22 for z\neq 0), which equals Omega_smg at z=0 only if tuned.
 	 * 
-	 * There are three modes:
+	 * There are three submodels (taken on tracker):
 	 * 	1) rogue mode: user sets all (if Omega_smg_debug or NO attractor_ic_smg)
 	 * 	2) cubic attractor: c3, xi set for attractor
 	 * 	3) quartic/quintic attractor: c3, c4 set xi for attractor
 	 */
 	
-	//rho/H0^2 for each Horndeski term
-	double rho_H2;
 	
-	/* 1) ROGUE mode: user provides BOTH tuning index and guess
-	 *    otherwise ignore complain loudly
-	 */
-	if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+	// read submodel: remember flag2 used for test over gravity models
+	class_call(parser_read_string(pfc,"gravity_submodel",&string2,&flag3,errmsg),
+	       errmsg,
+	       errmsg);
+	
+	/*1) base galileon, user specifies everything!  */
+	if (flag3==_FALSE_){ 
+	  
+	  class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+	  
+	}
+	else {//a submodel is given
+	  
+	  /*  temporary allocation, will be rewritten latter
+	   *  order is xi, phi, c2, c3, c4, c5  */
+	  class_alloc(pba->parameters_smg, sizeof(double*)*7,pba->error_message);
+	  double * input_params_gal; //dummy allocation vector
+	  
+	  double xi, c2, c3, c4, c5;
+	  double phi0 = 0;
+	  
+	  /*2) cubic Galileon in the attractor
+	    * Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
+	    */
+	  if (strcmp(string2,"cubic") == 0) {
+	    
+	    c2 = -1.;
+	    c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
+	    xi = c2/6./c3;
+	    c4 = 0;
+	    c5 = 0;
+
+	  }//end of cubic
+	   /* 3) quartic Galileon on the attractor
+	    */
+	  else if (strcmp(string2,"quartic") == 0) {
+		    
+	    class_read_list_of_doubles("parameters_smg",input_params_gal,1);
+	    xi = input_params_gal[0];
+	    c2 = -1;
+	    c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
+	    c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
+	    c5 = 0;
+	  
+	  }/* 4) quartic Galileon on the attractor
+	    */
+	  else if (strcmp(string2,"quintic") == 0) {//Quintic case   
+	    
+	    class_read_list_of_doubles("parameters_smg",input_params_gal,2);
+	    xi = input_params_gal[0];
+	    c2 = -1;
+	    c3 = input_params_gal[1];
+	    c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
+	    c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
+	    
+	  }//end of quintic
+	  
+	  /* Set parameters for submodels */
+	  pba->parameters_smg[0] = xi;
+	  pba->parameters_smg[1] = phi0;
+	  pba->parameters_smg[2] = c2;
+	  pba->parameters_smg[3] = c3;
+	  pba->parameters_smg[4] = c4;
+	  pba->parameters_smg[5] = c5;
+	  
+	}//end of submodels
+	
+	/* default tuning index is 3 */
+	if (has_tuning_index_smg == _FALSE_){
 	  pba->tuning_index_smg = 3; //use c3 for default tuning
+	  pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3
 	}
 	//TODO: write guess
 	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
 		 errmsg,
 		 "Galileon: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
 	
-	if (pba->Omega_smg_debug == 0 && pba->attractor_ic_smg == _TRUE_){
-	  if(pba->tuning_index_smg == 3){	    
-	    
-	    /*2) cubic Galileon
-	     * in this case Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
-	     */
-	    if (c4 == 0 && c5 == 0) {
-	      
-	      
-	      //NOTE: maybe make this error in other module
-	      class_test(c2>0,
-			 errmsg,
-		         "Galileon: cubic case (c4=c5=0) only has Omega_smg >0 if c2<0 (current c2=%e)",
-			 c2);
-	      
-	      c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
-	      xi = c2/6./c3;
-	      
-	      pba->parameters_smg[3] = c3;
-	      pba->parameters_smg[0] = xi;
-	      pba->tuning_dxdy_guess_smg = -0.5*c3/pba->Omega0_smg;
-// 	      printf("dxdy_guess = %e \n",pba->tuning_dxdy_guess_smg);
-	    }//end of cubic
-	    //quartic Galileon
-	    //TODO: should allow for non-attractor
-	    else if (c5 == 0){
-	   	     
-	      c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
-	      c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
-		    //-(c2-6.*c3*xi+5.*c5*pow(xi,3))/(18.*pow(xi,2));//without solving for c3, would be an attempt to get c3 in the loop when its varied
-	      
-	      pba->parameters_smg[3] = c3;
-	      pba->parameters_smg[4] = c4;
-	      pba->tuning_dxdy_guess_smg = 2./pow(xi,3);
-	      
-// 	      printf("quartic read_params: xi = %e,  c3 = %e, c4 = %e, c5 = %e \n", xi, c3,c4,c5);
-// 	      printf("read_params:c3 = %e, c4 = %e, c5 = %e, xi=%e \n", pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0]);
-	    
-// 	    //Quartic theories might not have an attractor: start always in the region for which there is one!
-// 	    //but we choose c3 so this doesn't happen!
-// 	    if (c5 == 0 && c3*c3 < c2*c4/18.)
-// 	      c3 = c2*c4/18;
-// 	    
-// 	    	    rho_H2 = c2*pow(xi,2)/6. - 2.*c3*pow(xi,3) + 15./2.*c4*pow(xi,4) + 7./3.*c5*pow(xi,5);
-// 	    pba->tuning_dxdy_guess_smg = fabs(pow(1. + rho_H2, 2)/(-2.*pow(xi,3))); //absolute value to consider scale of variation ??
-// 	    
-// 	    pba->parameters_smg[3] = c3;
-	    
-	    }//end of quartic
-	    else{//Quintic case   
-	      
-// 	      printf("quintic read_params: xi = %e,  c3 = %e, c4 = %e, c5 = %e \n", xi, c3,c4,c5);
-	      
-	      c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
-	      c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
-	      
-	      pba->parameters_smg[4] = c4;
-	      pba->parameters_smg[5] = c5;
-	      pba->tuning_dxdy_guess_smg = 2./pow(xi,3);
-	    
-	    }//end of quintic	    
-	  }//end of tuning_index=3
-	}//end of no Omega_smg_debug
+	
       }//end of Galileon
       if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
 	pba->gravity_model_smg = brans_dicke;
@@ -1441,10 +1435,7 @@ int input_read_parameters(
 		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential' ...");
       
     }// end of loop over models
-    
-    //TODO: Generalize branch choices and attractor IC
-    
-    //TODO: if self consistent evolution read the initial conditions. These might be ignored, e.g. if there are attractor initial conditions.
+
     if(pba->field_evolution_smg == _TRUE_){
       
       //TODO: include generic stuff for covariant theories
