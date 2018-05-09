@@ -4323,16 +4323,8 @@ int input_try_unknown_parameters(double * unknown_parameter,
         -ba.Omega0_scf;
       break;
     case Omega_smg:
-	//NOTE: bugged when normalizing by (ba.H0*ba.H0)!!
-      /** In case scalar field is used to fill, pba->Omega0_smg is not equal to pfzw->target_value[i].*/
-      //NOTE: galileon model benefits from this normalization (see 1406.0485 eq 2.22 generalized to z\neq 0)
-      if (ba.gravity_model_smg == galileon)
-	output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
-		    -ba.Omega0_smg;
-      else
-	output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
-		    /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit]
-		    -ba.Omega0_smg;
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
+		  -ba.Omega0_smg;
       if (input_verbose > 2)	  
 	printf(" param[%i] = %e, Omega_smg = %.3e, %.3e, target = %.2e \n",ba.tuning_index_smg, ba.parameters_smg[ba.tuning_index_smg],
 	       ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
