@@ -3367,6 +3367,9 @@ int input_read_parameters(
     if (ppr->perturb_sampling_stepsize > 0.05)
       ppr->perturb_sampling_stepsize=0.05;
     
+    //how much info on background.dat?
+    class_read_double("output_background_smg",pba->output_background_smg);
+    
   }
     
 
@@ -3498,6 +3501,8 @@ int input_default_params(
   pba->parameters_size_smg = 0;
   pba->tuning_index_smg = 0;  
   pba->tuning_dxdy_guess_smg = 1;
+  
+  pba->output_background_smg = 1; /**< amount of information printed onbackground.dat output */
 
   pba->Omega0_k = 0.;
   pba->K = 0.;

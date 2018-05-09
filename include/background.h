@@ -163,6 +163,8 @@ struct background
   int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
   double M_pl_today_smg;
   
+  short output_background_smg; /**< flag regulating the amount of information printed onbackground.dat output */
+  
   //some thermo parameters: little cheat to be able to call sigma(rs_d), etc..
   double rs_d; //drag horizon
   

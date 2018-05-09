@@ -2711,22 +2711,25 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"(.)rho_smg",pba->has_smg);   
   class_store_columntitle(titles,"(.)p_smg",pba->has_smg);   
 
-  class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg); 
-  class_store_columntitle(titles,"phi'",pba->field_evolution_smg); 
-  class_store_columntitle(titles,"phi''",pba->field_evolution_smg);
-  class_store_columntitle(titles,"M*^2_smg",pba->has_smg);       
-  class_store_columntitle(titles,"kineticity_smg",pba->has_smg);   
-  class_store_columntitle(titles,"braiding_smg",pba->has_smg);
-  class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);   
-  class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);       
-  class_store_columntitle(titles,"c_s^2",pba->has_smg);        
-  class_store_columntitle(titles,"kin (D)",pba->has_smg);    
+  if (pba->output_background_smg >= 1){
+    class_store_columntitle(titles,"M*^2_smg",pba->has_smg);       
+    class_store_columntitle(titles,"kineticity_smg",pba->has_smg);   
+    class_store_columntitle(titles,"braiding_smg",pba->has_smg);
+    class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);   
+    class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);       
+    class_store_columntitle(titles,"c_s^2",pba->has_smg);        
+    class_store_columntitle(titles,"kin (D)",pba->has_smg);
+  }
   
-  //TODO: add parameter to regulate output
-  class_store_columntitle(titles,"E0",pba->field_evolution_smg); 
-  class_store_columntitle(titles,"E1",pba->field_evolution_smg);
-  class_store_columntitle(titles,"E2",pba->field_evolution_smg); 
-  class_store_columntitle(titles,"E3",pba->field_evolution_smg);
+  if (pba->output_background_smg >= 2){
+    class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"phi'",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"phi''",pba->field_evolution_smg);
+    class_store_columntitle(titles,"E0",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"E1",pba->field_evolution_smg);
+    class_store_columntitle(titles,"E2",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"E3",pba->field_evolution_smg);
+  }
 
   return _SUCCESS_;
 }
@@ -2775,22 +2778,25 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],pba->has_smg,storeidx);  
     class_store_double(dataptr,pvecback[pba->index_bg_p_smg],pba->has_smg,storeidx);
 
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);  
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx); 
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx);   
-    class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx); 
-    class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);   
-    class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);   
-    class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);     
-    class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
+    if (pba->output_background_smg >= 1){  
+      class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx); 
+      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);   
+      class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);   
+      class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);     
+      class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
+    }
     
-    class_store_double(dataptr,pvecback[pba->index_bg_E0_smg],pba->field_evolution_smg,storeidx);  
-    class_store_double(dataptr,pvecback[pba->index_bg_E1_smg],pba->field_evolution_smg,storeidx);  
-    class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);  
-    class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);  
-    
+    if (pba->output_background_smg >= 2){
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx); 
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx); 
+      class_store_double(dataptr,pvecback[pba->index_bg_E0_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_E1_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);  
+    }
   }
 
   return _SUCCESS_;
