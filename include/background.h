@@ -269,6 +269,11 @@ struct background
   int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/    
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/    
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
+  
+  int index_bg_E0_smg; /**< Hubble equation */
+  int index_bg_E1_smg; /**< Hubble equation */
+  int index_bg_E2_smg; /**< Hubble equation */
+  int index_bg_E3_smg; /**< Hubble equation */
 
   int index_bg_kinetic_D_smg;
   int index_bg_kinetic_D_prime_smg;
