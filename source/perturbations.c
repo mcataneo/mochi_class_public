@@ -4999,7 +4999,7 @@ int perturb_initial_conditions(struct precision * ppr,
     if (ppt->perturbations_verbose > 6){
       printf("\nQuasi-static initial conditions for smg for mode k=%e.\n  SMG provides a %e fractional correction to source of evolution of zeta at superhorizon scales.\n",k,contribratio);
     }
-    class_test(pba->pert_qs_ic_tolerance_test_smg>0 && (contribratio>pert_qs_ic_tolerance_test_smg),
+    class_test(pba->pert_qs_ic_tolerance_test_smg>0 && (contribratio>pba->pert_qs_ic_tolerance_test_smg),
         ppt->error_message,
         "\n     Cannot set initial conditions for smg pertubations: quasi-static configuration with large correction of gravity required superhorizon.\n");
     // If contribratio small enough, don't fail and start evolving pertuarbations
