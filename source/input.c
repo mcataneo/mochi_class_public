@@ -1505,6 +1505,8 @@ int input_read_parameters(
     class_read_double("pert_ic_tolerance_smg",pba->pert_ic_tolerance_smg);
     class_read_double("pert_ic_ini_z_ref_smg",pba->pert_ic_ini_z_ref_smg);
     class_read_double("pert_ic_regulator_smg",pba->pert_ic_regulator_smg);
+    class_read_double("pert_qs_ic_tolerance_test_smg",pba->pert_qs_ic_tolerance_test_smg);
+  
     class_read_double("a_min_stability_test_smg",pba->a_min_stability_test_smg);
     
     class_read_double("kineticity_safe_smg",pba->kineticity_safe_smg); // minimum value of the kineticity (to avoid trouble)
@@ -3479,7 +3481,8 @@ int input_default_params(
   pba->pert_ic_tolerance_smg = 2e-2; /* tolerance to deviations from n=2 for IC h~tau^n as evaluated at pert_ic_ini_z_ref_smg. Negative values override test */
   pba->pert_ic_ini_z_ref_smg = 1e10;/* redshift at which initial IC stability test performed */
   pba->pert_ic_regulator_smg = 1e-15; /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */ 
-
+  pba->pert_qs_ic_tolerance_test_smg = 10.; /* Maximal contribution to zeta non-conservation source from QS SMG in (0i) Einstein equation*/
+  
   
   pba->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
  
