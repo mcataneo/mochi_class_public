@@ -78,6 +78,11 @@ enum possible_gauges {
 
 //@}
 
+
+// list of possible initial conditions for the perturbations
+enum pert_possible_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
+
+
 //@{
 
 /**
@@ -412,6 +417,14 @@ struct perturbs
   //@{
 
   enum possible_methods_smgqs method_smgqs;
+
+  //@}
+
+  //@{
+
+    /** enumerator defining type of dynamical initial conditions */
+  
+  enum pert_possible_initial_conditions pert_initial_conditions_smg;  
 
   //@}
 

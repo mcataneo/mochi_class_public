@@ -16,9 +16,6 @@ enum gravity_model {propto_omega, propto_scale, constant_alphas,
   galileon, brans_dicke, quintessence_monomial
 }; //write here the different models
 
-// initial conditions for the perturbations
-enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
-
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
 enum expansion_model {lcdm, wowa, wowa_w}; //parameterized expansion, only for non-self consistent Horndeski theories
@@ -107,8 +104,6 @@ struct background
 //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
   enum expansion_model expansion_model_smg; /* choice of expansion rate */
   
-  enum pert_initial_conditions pert_initial_conditions_smg; /* initial conditions for perturbations */
-  
   short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
   short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
   
@@ -137,15 +132,7 @@ struct background
   int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
   int rho_evolution_smg; /**< does the model require integrating the energy density? */
 
-  double z_ref_smg; /**< Specifies redshift at which M* is input in models with running */
-  double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
-  double pert_ic_tolerance_smg; /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */
-  double pert_ic_ini_z_ref_smg; /**<Reference z to carry out test for conservation of curvature before pert evolution*/ 
-  double pert_ic_regulator_smg;  /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
-  double pert_qs_ic_tolerance_test_smg; /* maximal fractional contribution to (0i) equation of SMG terms in QS initial condition */
-  
-  
-  /* Modified gravity parameters
+   /* Modified gravity parameters
    * parameters_smg -> contains the primary parameters. Any param that might be varied to determine Omega_smg should be here
    * tuning_index_smg -> which parameter is varied to obtain the right Omega_smg
    * parameters_2_smg -> contains auxiliary parameters. These will not be varied to obtain Omega_smg

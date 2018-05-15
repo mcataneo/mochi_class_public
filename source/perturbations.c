@@ -222,7 +222,7 @@ int perturb_init(
     // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and 
     // the initial amplitude supplied to hi_class. 
  
-    if( pba->pert_initial_conditions_smg == gravitating_attr){
+    if( ppt->pert_initial_conditions_smg == gravitating_attr){
 
       class_call(perturb_test_ini_grav_ic_smg(ppr,
 				   pba,
@@ -234,7 +234,7 @@ int perturb_init(
     //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
     // If have it, fail, because we can't set the ICs properly
  
-    if( pba->pert_initial_conditions_smg == ext_field_attr){
+    if( ppt->pert_initial_conditions_smg == ext_field_attr){
 
       class_call(perturb_test_ini_extfld_ic_smg(ppr,
 				   pba,
@@ -4291,7 +4291,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
     // But if have a tracker dark energy wth w=1/3 (gravitating attractor ICs), then include smg in radiation
     if (pba->has_smg == _TRUE_) { 
-        if (pba->pert_initial_conditions_smg == gravitating_attr){
+        if (ppt->pert_initial_conditions_smg == gravitating_attr){
            rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
         }
     }
@@ -4501,7 +4501,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
          
 
-          if (pba->pert_initial_conditions_smg == gravitating_attr){
+          if (ppt->pert_initial_conditions_smg == gravitating_attr){
             /*  ICs in case of large alphas in RD, when the scalar field affects the gravitational field. 
              *  Exact for constant alpha models. We are allowed large Omx provided w=1/3 (tracker).
              *  In principle, can use for general alpha/Omx, but the expressions miss contributions from w!=1/3,
@@ -4533,7 +4533,7 @@ int perturb_initial_conditions(struct precision * ppr,
               // Doing this gives wrong ICs, but it's better than segmentation faults.
               
               
-              ic_regulator_smg =  pba->pert_ic_regulator_smg; //read in the minimum size that will get regulated
+              ic_regulator_smg =  ppr->pert_ic_regulator_smg; //read in the minimum size that will get regulated
               ic_regulator_smg *= fabs(kin)+fabs(bra)+fabs(ten); //scale it to be proportional to the alphas
 
               c3  =   1.;
@@ -4823,7 +4823,7 @@ int perturb_initial_conditions(struct precision * ppr,
             } //end of gravitation_attr ICs
 	 
    
-            if (pba->pert_initial_conditions_smg == kin_only){
+            if (ppt->pert_initial_conditions_smg == kin_only){
 	              ppw->pv->y[ppw->pv->index_pt_vx_smg] = ktau_two*dt;
 	              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 2*k*k*tau*dt; 
 	          if(ppt->perturbations_verbose > 5)
@@ -4831,7 +4831,7 @@ int perturb_initial_conditions(struct precision * ppr,
 	          }  
 	 
    
-	if (pba->pert_initial_conditions_smg == single_clock){
+	if (ppt->pert_initial_conditions_smg == single_clock){
 	      // single_clock IC given with respect to photons (because there are always photons)
 	  ppw->pv->y[ppw->pv->index_pt_vx_smg] = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
 	      // Single clock IC => v_x^prime = 0
@@ -4842,7 +4842,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
 
 
-	  if (pba->pert_initial_conditions_smg == zero){
+	  if (ppt->pert_initial_conditions_smg == zero){
 	    ppw->pv->y[ppw->pv->index_pt_vx_smg] = 0.;
 	    ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
 	    
@@ -4853,7 +4853,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
 
 
-    if (pba->pert_initial_conditions_smg == ext_field_attr){
+    if (ppt->pert_initial_conditions_smg == ext_field_attr){
 	      
 	      /* Solutions assuming the alphas are small, i.e. Vx does not gravitate but moves
          * on an attractor provided bycollapsing radiation. (w!=1/3 terms included properly here!)
@@ -4999,7 +4999,7 @@ int perturb_initial_conditions(struct precision * ppr,
     if (ppt->perturbations_verbose > 6){
       printf("\nQuasi-static initial conditions for smg for mode k=%e.\n  SMG provides a %e fractional correction to source of evolution of zeta at superhorizon scales.\n",k,contribratio);
     }
-    class_test(pba->pert_qs_ic_tolerance_test_smg>0 && (contribratio>pba->pert_qs_ic_tolerance_test_smg),
+    class_test(ppr->pert_qs_ic_tolerance_test_smg>0 && (contribratio>ppr->pert_qs_ic_tolerance_test_smg),
         ppt->error_message,
         "\n     Cannot set initial conditions for smg pertubations: quasi-static configuration with large correction of gravity required superhorizon.\n");
     // If contribratio small enough, don't fail and start evolving pertuarbations
@@ -9872,7 +9872,7 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   
   class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
   
-  z_ref = pba->pert_ic_ini_z_ref_smg;
+  z_ref = ppr->pert_ic_ini_z_ref_smg;
   
   class_call(background_tau_of_z(pba, z_ref,&tau_ini),
              pba->error_message,
@@ -9916,7 +9916,7 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   // We assume that M*^2>0 and D>0 which are tested for in the background routine.
   // Doing this gives wrong ICs, but it's better than segmentation faults.
               
-  ic_regulator_smg =  pba->pert_ic_regulator_smg;     //  read in the minimum size that will get regulated
+  ic_regulator_smg =  ppr->pert_ic_regulator_smg;     //  read in the minimum size that will get regulated
   ic_regulator_smg *= fabs(kin)+fabs(bra)+fabs(ten);  //  scale it relative to the alphas
 
   c3  =   1.;
@@ -10031,12 +10031,12 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   // conserved between inflation and the beginning of hi_class and therefore there is no
   // relation between the inflational amplitude A_S and the parameter we use for normalisation of curvature. 
   
-  class_test(pba->pert_ic_tolerance_smg>0 && (fabs(wouldbe_adiab) > pba->pert_ic_tolerance_smg),
+  class_test(ppr->pert_ic_tolerance_smg>0 && (fabs(wouldbe_adiab) > ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           "\n   Cannot set initial conditions for early_smg: adiabatic mode h ~ tau^2 lost, h ~ tau^n with n = %f",2+wouldbe_adiab);
 
   if (fabs(fastest_growth)>fabs(wouldbe_adiab)){
-    class_test(pba->pert_ic_tolerance_smg>0 && (fabs(fastest_growth) > pba->pert_ic_tolerance_smg),
+    class_test(ppr->pert_ic_tolerance_smg>0 && (fabs(fastest_growth) > ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           "\n   Cannot set initial conditions for early_smg:\n    There exists a mode where curvature is (nearly) conserved n=%f, but solution destabilises to a faster-growing non-conserving mode with n=%f.",2+wouldbe_adiab,2+fastest_growth);
   }
@@ -10068,7 +10068,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
 
   class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
 
-  z_ref = pba->pert_ic_ini_z_ref_smg;
+  z_ref = ppr->pert_ic_ini_z_ref_smg;
   
   class_call(background_tau_of_z(pba, z_ref,&tau_ini),
              pba->error_message,
@@ -10137,7 +10137,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
     } 
   }
     
-  class_test(pba->pert_ic_tolerance_smg>0 && (vx_growth > 3.+pba->pert_ic_tolerance_smg),
+  class_test(ppr->pert_ic_tolerance_smg>0 && (vx_growth > 3.+ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           "\n   Cannot set initial conditions for smg: tachyonic instability dominates attractor.\n");
   
