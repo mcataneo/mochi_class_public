@@ -218,32 +218,36 @@ int perturb_init(
                "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
     // TODO: think of some suitable tests for the scalar field
 
-    // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
-    // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and 
-    // the initial amplitude supplied to hi_class. 
- 
-    if( ppt->pert_initial_conditions_smg == gravitating_attr){
+  //TODO: Emilio test for healthy dynamic IC only if no Quasi-Static
+  // Emilio, there needs to be some flag here which tells the code it is QS
+  // the array smgqs_array[ppw->approx[ppw->index_ap_smgqs]] is not yet loaded
+  // Replace this fake test below
+    double test=0;
+    if (test==0.) {
+      printf("Missing test for QS ics\n");
+      if( ppt->pert_initial_conditions_smg == gravitating_attr){
+      // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
+      // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and 
+      // the initial amplitude supplied to hi_class. 
+        class_call(perturb_test_ini_grav_ic_smg(ppr,
+            pba,
+            ppt),
+          ppt->error_message,
+          ppt->error_message);
+      }
 
-      class_call(perturb_test_ini_grav_ic_smg(ppr,
-				   pba,
-				   ppt),
-	       ppt->error_message,
-	       ppt->error_message);
-    }
-
-    //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
-    // If have it, fail, because we can't set the ICs properly
- 
-    if( ppt->pert_initial_conditions_smg == ext_field_attr){
-
-      class_call(perturb_test_ini_extfld_ic_smg(ppr,
-				   pba,
-				   ppt),
-	       ppt->error_message,
-	       ppt->error_message);
+      if( ppt->pert_initial_conditions_smg == ext_field_attr){
+      //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
+      // If have it, fail, because we can't set the ICs properly
+        
+        class_call(perturb_test_ini_extfld_ic_smg(ppr,
+            pba,
+            ppt),
+          ppt->error_message,
+          ppt->error_message);
+      }
     }
   }
-  
   class_test(ppt->has_vectors == _TRUE_,
              ppt->error_message,
              "Vectors not coded yet");
@@ -4415,7 +4419,7 @@ int perturb_initial_conditions(struct precision * ppr,
           double dt=0., Omx=0., wx=0., kin=0., bra=0., bra_p=0., dbra=0., ten=0., run=0., M2=0.,DelM2=0.;
           double Dd=0., cs2num=0., cs2num_p=0.;
           double l1=0.,l2=0., l3=0., l4=0.,l5=0.,l6=0.,l7=0.,l8=0.,l2_p=0., l8_p=0.;
-          double rho_tot=0., p_tot=0., p_smg=0., H=0.,Hprime=0., rho_r=0.;
+          double rho_tot=0., p_tot=0., p_smg=0., H=0.,Hprime=0;
           double g1=0., g2=0., g3=0.;
 
           
@@ -4993,8 +4997,12 @@ int perturb_initial_conditions(struct precision * ppr,
           // If fail -> quit
 
           contribfromvx = a*H/2.*bra*vxp_smg_qs + (a*Hprime + pow(a_prime_over_a,2)/2.*bra+ 3.*a*a/(2.*M2) *4./3.*rho_r) * vx_smg_qs;
-          contribfromtheta = 3.*rho_plus_p_theta/2./k2/M2;
+          contribfromtheta = 3.*a*a*rho_plus_p_theta/(2.*k*k*M2);
           contribratio = fabs(contribfromvx/contribfromtheta);
+      
+      
+          printf("Vars in QS perturbs for k=%e: vxin0i=%e, thetain0i=%e, ratio=%e.\n",k,contribfromvx, contribfromtheta, contribratio);
+
 
     if (ppt->perturbations_verbose > 6){
       printf("\nQuasi-static initial conditions for smg for mode k=%e.\n  SMG provides a %e fractional correction to source of evolution of zeta at superhorizon scales.\n",k,contribratio);
@@ -6027,7 +6035,7 @@ int perturb_einstein(
       	   * The result is approximated when rsa is on since the velocity of radiation gets updated only after the first Einstein equations (few lines below) */
       	  ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = 3./2.*(pow(2. - bra,2)*bra*pow(H,-2)*pow(M2,-1)*ppw->delta_rho_r + (3./2.*(2. - bra)*cs2num*(p_tot + p_smg)*pow(H,-2) - pow(H,-2)*l2*(p_tot + rho_tot)/M2 + (2. - bra)*pow(H,-1)*cs2num_p/a/3. + (2. - bra)*cs2num/2. - cs2num*g3/g1/12. + 2./3.*(2. - bra)*bra*rho_r*pow(H,-2)/M2)*pow(k/(a*H),2)*y[ppw->pv->index_pt_eta] + (2. - bra)*(cs2num - l2)*pow(M2*a,-1)*pow(H,-3)*ppw->rho_plus_p_theta/2. + 3./2.*(2. - bra)*((2. - bra)*(-7. + 2.*run)/4.*bra + 1./8.*bra*g3/g1 - l2 - 9./4.*(2. - bra)*bra*(p_tot + p_smg)*pow(H,-2) - (1. - bra)*pow(a*H,-1)*bra_p)*pow(H,-2)*pow(M2,-1)*ppw->delta_p + ((2. - bra)*bra*rho_r*pow(H,-2)*pow(M2,-1) - g3/g1*l2/8. - (6.*rho_tot/M2 - (2. - bra - 4.*run + 2.*bra*run)*pow(H,2))/4.*pow(H,-2)*l2 - 3./4.*(2./M2 - 6. + 3.*bra)*pow(H,-2)*l2*p_tot + 9./4.*(2. - bra)*pow(H,-2)*l2*p_smg + (2. - bra)/2.*pow(H,-1)*l2_p*pow(a,-1))*pow(M2,-1)*pow(H,-2)*ppw->delta_rho - pow(2. - bra,2)*bra*pow(H,-3)*pow(M2*a,-1)*ppw->rho_plus_p_theta_r/4.)*pow(g2,-1);
 
-      	}//end of quasi_static assignation of vx and vx'
+              	}//end of quasi_static assignation of vx and vx'
         else {
       	  printf("scalar field equation: quasi-static approximation mode %i not recognized. should be quasi_static or fully_dynamic\n",ppw->approx[ppw->index_ap_smgqs]);
       	  return _FAILURE_;
