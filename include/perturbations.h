@@ -417,6 +417,7 @@ struct perturbs
   //@{
 
   enum possible_methods_smgqs method_smgqs;
+  short initial_approx_smgqs; /**< flag regulating the initial state of smgqs */
 
   //@}
 
@@ -877,10 +878,23 @@ extern "C" {
 			  struct background * pba,
 			  struct perturbs * ppt);  
 
+  int perturb_test_at_k_smgqs(struct precision * ppr,
+                              struct background * pba,
+                              struct perturbs * ppt,
+                              double k,
+                              double tau,
+                              int *approx);
+
+  int perturb_test_ini_smgqs(struct precision * ppr,
+                             struct background * pba,
+                             struct perturbs * ppt,
+                             double k_min,
+                             double k_max,
+                             double a_ini);
+
   int perturb_find_scheme_smgqs(struct precision * ppr,
                                 struct background * pba,
                                 struct perturbs * ppt,
-                                struct perturb_workspace * ppw,
                                 double k,
                                 double tau_ini,
                                 double tau_end,
@@ -889,7 +903,6 @@ extern "C" {
   int sample_mass_smgqs(struct precision * ppr,
                         struct background * pba,
                         struct perturbs * ppt,
-                        struct perturb_workspace * ppw,
                         double k,
                         double tau_ini,
                         double tau_end,
@@ -923,7 +936,6 @@ extern "C" {
   int correct_with_slope_smgqs(struct precision * ppr,
                                struct background * pba,
                                struct perturbs * ppt,
-                               struct perturb_workspace * ppw,
                                double tau_ini,
                                double tau_end,
                                double * tau_array,

@@ -211,43 +211,6 @@ int perturb_init(
 
   }
   
-  if (pba->has_smg == _TRUE_) {
-    
-    class_test(ppt->gauge == newtonian,
-               ppt->error_message,
-               "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
-    // TODO: think of some suitable tests for the scalar field
-
-  //TODO: Emilio test for healthy dynamic IC only if no Quasi-Static
-  // Emilio, there needs to be some flag here which tells the code it is QS
-  // the array smgqs_array[ppw->approx[ppw->index_ap_smgqs]] is not yet loaded
-  // Replace this fake test below
-    double test=0;
-    if (test==0.) {
-      printf("Missing test for QS ics\n");
-      if( ppt->pert_initial_conditions_smg == gravitating_attr){
-      // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
-      // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and 
-      // the initial amplitude supplied to hi_class. 
-        class_call(perturb_test_ini_grav_ic_smg(ppr,
-            pba,
-            ppt),
-          ppt->error_message,
-          ppt->error_message);
-      }
-
-      if( ppt->pert_initial_conditions_smg == ext_field_attr){
-      //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
-      // If have it, fail, because we can't set the ICs properly
-        
-        class_call(perturb_test_ini_extfld_ic_smg(ppr,
-            pba,
-            ppt),
-          ppt->error_message,
-          ppt->error_message);
-      }
-    }
-  }
   class_test(ppt->has_vectors == _TRUE_,
              ppt->error_message,
              "Vectors not coded yet");
@@ -289,6 +252,52 @@ int perturb_init(
              ppt->error_message,
              ppt->error_message);
 
+
+  //Here we do the smg tests. It is important to have them after perturb_indices_of_perturbs because we need
+  //quantities as k_min and k_max.
+  if (pba->has_smg == _TRUE_) {
+    
+    class_test(ppt->gauge == newtonian,
+               ppt->error_message,
+               "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
+    // TODO: think of some suitable tests for the scalar field
+
+    if (ppt->method_smgqs == automatic) {
+      //Check if at the initial time all the k modes start with the same kind of smgqs approximation
+      class_call(perturb_test_ini_smgqs(ppr,
+                                        pba,
+                                        ppt,
+                                        ppt->k[ppt->index_md_scalars][0],
+                                        ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
+                                        ppr->a_ini_over_a_today_default),
+                 ppt->error_message,
+                 ppt->error_message);
+    }
+
+    if (((ppt->method_smgqs == automatic) && (ppt->initial_approx_smgqs==0)) || (ppt->method_smgqs == fully_dynamic) || (ppt->method_smgqs == fully_dynamic_debug)) {
+      if( ppt->pert_initial_conditions_smg == gravitating_attr){
+      // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
+      // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and 
+      // the initial amplitude supplied to hi_class. 
+        class_call(perturb_test_ini_grav_ic_smg(ppr,
+            pba,
+            ppt),
+          ppt->error_message,
+          ppt->error_message);
+      }
+
+      if( ppt->pert_initial_conditions_smg == ext_field_attr){
+      //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
+      // If have it, fail, because we can't set the ICs properly
+        
+        class_call(perturb_test_ini_extfld_ic_smg(ppr,
+            pba,
+            ppt),
+          ppt->error_message,
+          ppt->error_message);
+      }
+    }
+  }
 
   if (ppt->z_max_pk > pth->z_rec) {
 
@@ -381,7 +390,7 @@ int perturb_init(
 
     for (index_ic = 0; index_ic < ppt->ic_size[index_md]; index_ic++) {
 
-      if (ppt->perturbations_verbose > 1) {
+     if (ppt->perturbations_verbose > 1) {
         printf("Evolving ic %d/%d\n",index_ic+1,ppt->ic_size[index_md]);
         printf("evolving %d wavenumbers\n",ppt->k_size[index_md]);
       }
@@ -2356,7 +2365,6 @@ int perturb_solve(
     class_call(perturb_find_scheme_smgqs(ppr,
                                          pba,
 				         ppt,
-                                         ppw,
                                          k,
                                          tau,
                                          ppt->tau_sampling[tau_actual_size-1],
@@ -9292,12 +9300,124 @@ int perturb_rsa_delta_and_theta(
 
 }
 
+int perturb_test_at_k_smgqs(struct precision * ppr,
+                            struct background * pba,
+                            struct perturbs * ppt,
+                            double k,
+                            double tau,
+                            int *approx) {
+
+  //Define local variables
+  double * pvecback;
+  int first_index_back;
+
+  class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
+  class_call(background_at_tau(pba,
+                               tau,
+                               pba->normal_info,
+                               pba->inter_normal,
+                               &first_index_back,
+                               pvecback),
+             pba->error_message,
+             ppt->error_message);
+
+  double bra = pvecback[pba->index_bg_braiding_smg];
+  double rho_ur = pvecback[pba->index_bg_rho_ur];
+  double rho_g = pvecback[pba->index_bg_rho_g];
+  double a = pvecback[pba->index_bg_a];
+  double H = pvecback[pba->index_bg_H];
+  double l8 = pvecback[pba->index_bg_lambda_8_smg];
+  double cs2num = pvecback[pba->index_bg_cs2num_smg];
+  double D = pvecback[pba->index_bg_kinetic_D_smg];
+
+  //Get mass2 and rad2
+  double mass2 = 2.*(cs2num*pow(k/(a*H),2) - 4.*l8)/(2. - bra)/D;
+  double rad2 = 3.*mass2*pow((a*H/k)*H*H/(rho_g + rho_ur),2);
+
+  double tau_fd;
+  short proposal;
+
+  class_call(background_tau_of_z(pba,
+                                 ppr->z_fd_smgqs,
+                                 &tau_fd),
+             pba->error_message,
+             ppt->error_message);
+  //Approximation
+  if ((mass2 > pow(ppr->trigger_mass_smgqs,2)) && (rad2 > pow(ppr->trigger_rad_smgqs,2))) {
+    proposal = 1;
+  }
+  else {
+    proposal = 0;
+  }
+  if (tau <= tau_fd) {
+    *approx = proposal;
+  }
+  else {
+    *approx = 0;
+  }
+
+  free(pvecback);
+
+  return _SUCCESS_;
+
+}
+
+int perturb_test_ini_smgqs(
+                           struct precision * ppr,
+                           struct background * pba,
+                           struct perturbs * ppt,
+                           double k_min,
+                           double k_max,
+                           double a_ini) {
+  //Define local variables
+  double * pvecback;
+  int first_index_back;
+  double tau;
+  int approx_k_min, approx_k_max;
+
+  //Get background quantities at a_ini
+  class_call(background_tau_of_z(pba,
+                                 1./a_ini-1.,
+                                 &tau),
+             pba->error_message,
+             ppt->error_message);
+
+  //Approximation for k_min
+  perturb_test_at_k_smgqs(
+                          ppr,
+                          pba,
+                          ppt,
+                          k_min,
+                          tau,
+                          &approx_k_min
+                         );
+
+  //Approximation for k_max
+  perturb_test_at_k_smgqs(
+                          ppr,
+                          pba,
+                          ppt,
+                          k_max,
+                          tau,
+                          &approx_k_max
+                         );
+
+  class_test(approx_k_min != approx_k_max,
+        ppt->error_message,
+        "\n All the k modes should start evolving with the same type of initial conditions (either fully_dynamic or quasi_static).\n This is not the case at a = %e. Try to decrease a_ini_over_a_today_default.\n", ppr->a_ini_over_a_today_default);
+  
+  ppt->initial_approx_smgqs = approx_k_min;
+
+  free(pvecback);
+
+  return _SUCCESS_;
+
+}
 
 int perturb_find_scheme_smgqs(
                               struct precision * ppr,
                               struct background * pba,
                               struct perturbs * ppt,
-                              struct perturb_workspace * ppw,
                               double k,
                               double tau_ini,
                               double tau_end,
@@ -9325,7 +9445,6 @@ int perturb_find_scheme_smgqs(
                     ppr,
                     pba,
                     ppt,
-                    ppw,
                     k,
                     tau_ini,
                     tau_end,
@@ -9401,7 +9520,6 @@ int perturb_find_scheme_smgqs(
                            ppr,
                            pba,
                            ppt,
-                           ppw,
                            tau_ini,
                            tau_end,
                            tau_array,
@@ -9465,7 +9583,6 @@ int sample_mass_smgqs(
                       struct precision * ppr,
                       struct background * pba,
                       struct perturbs * ppt,
-                      struct perturb_workspace * ppw,
                       double k,
                       double tau_ini,
                       double tau_end,
@@ -9479,43 +9596,46 @@ int sample_mass_smgqs(
   double mass2, mass2_p, rad2, friction, slope;
   double tau = tau_ini;
   double delta_tau = (tau_end - tau_ini)/ppr->n_max_smgqs;
+  double * pvecback;
+  int first_index_back;
   int count = 0;
+
 
   /* Scan the time evolution and build several arrays containing
    * interesting quantities for the quasi-static approximation */
   while (tau < tau_end) {
 
+    class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
     class_call(background_at_tau(pba,
                                  tau,
                                  pba->normal_info,
                                  pba->inter_normal,
-                                 &(ppw->last_index_back),
-                                 ppw->pvecback),
+                                 &first_index_back,
+                                 pvecback),
                pba->error_message,
                ppt->error_message);
 
-    double bra = ppw->pvecback[pba->index_bg_braiding_smg];
-    double bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
+    double bra = pvecback[pba->index_bg_braiding_smg];
+    double bra_p = pvecback[pba->index_bg_braiding_prime_smg];
 
-    double rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
-    double p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
-    double rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
-    double p_smg = ppw->pvecback[pba->index_bg_p_smg];
-    double rho_ur = ppw->pvecback[pba->index_bg_rho_ur];
-    double rho_g = ppw->pvecback[pba->index_bg_rho_g];
-    double rho_crit = ppw->pvecback[pba->index_bg_rho_crit];
+    double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
+    double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
+    double rho_smg = pvecback[pba->index_bg_rho_smg];
+    double p_smg = pvecback[pba->index_bg_p_smg];
+    double rho_ur = pvecback[pba->index_bg_rho_ur];
+    double rho_g = pvecback[pba->index_bg_rho_g];
 
-    double a = ppw->pvecback[pba->index_bg_a];
-    double H = ppw->pvecback[pba->index_bg_H];
+    double a = pvecback[pba->index_bg_a];
+    double H = pvecback[pba->index_bg_H];
 
-    double l7 = ppw->pvecback[pba->index_bg_lambda_7_smg];
-    double l8 = ppw->pvecback[pba->index_bg_lambda_8_smg];
-    double l8_p = ppw->pvecback[pba->index_bg_lambda_8_prime_smg];
+    double l7 = pvecback[pba->index_bg_lambda_7_smg];
+    double l8 = pvecback[pba->index_bg_lambda_8_smg];
+    double l8_p = pvecback[pba->index_bg_lambda_8_prime_smg];
 
-    double cs2num = ppw->pvecback[pba->index_bg_cs2num_smg];
-    double cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
-    double D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
-    double D_p = ppw->pvecback[pba->index_bg_kinetic_D_prime_smg];
+    double cs2num = pvecback[pba->index_bg_cs2num_smg];
+    double cs2num_p = pvecback[pba->index_bg_cs2num_prime_smg];
+    double D = pvecback[pba->index_bg_kinetic_D_smg];
+    double D_p = pvecback[pba->index_bg_kinetic_D_prime_smg];
 
     mass2 = 2.*(cs2num*pow(k/(a*H),2) - 4.*l8)/(2. - bra)/D;
 
@@ -9544,7 +9664,10 @@ int sample_mass_smgqs(
 
     tau += delta_tau;
     count += 1;
-  }
+
+    free(pvecback);
+
+}
 
   *size_sample = count;
 
@@ -9661,7 +9784,6 @@ int shorten_first_smgqs(double * tau_sample,
 int correct_with_slope_smgqs(struct precision * ppr,
                              struct background * pba,
                              struct perturbs * ppt,
-                             struct perturb_workspace * ppw,
                              double tau_ini,
                              double tau_end,
                              double * tau_array,
@@ -9670,21 +9792,24 @@ int correct_with_slope_smgqs(struct precision * ppr,
                              int size_array) {
 
 
+  double * pvecback;
+  int first_index_back;
   int i, j, count;
   for (i = 1; i < size_array; i++) {
     if ((approx_array[i-1] == 0) && (approx_array[i] == 1)) {
 
       // Routine to calculate the time interval necessary to relax the oscillations
+      class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
       class_call(background_at_tau(pba,
                                    tau_array[i],
                                    pba->short_info,
                                    pba->inter_normal,
-                                   &(ppw->last_index_back),
-                                   ppw->pvecback),
+                                   &first_index_back,
+                                   pvecback),
              pba->error_message,
              ppt->error_message);
 
-      double a_final = ppw->pvecback[pba->index_bg_a] * pow(ppr->eps_s_smgqs, -1./slope_array[i]);
+      double a_final = pvecback[pba->index_bg_a] * pow(ppr->eps_s_smgqs, -1./slope_array[i]);
       double tau_final;
 
       class_call(background_tau_of_z(pba,
@@ -9710,6 +9835,8 @@ int correct_with_slope_smgqs(struct precision * ppr,
       else {
 	approx_array[i] = 0;
       }
+      
+      free(pvecback);
     }
   }
 
