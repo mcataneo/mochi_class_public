@@ -2299,7 +2299,6 @@ int perturb_solve(
 
   /* start bisection */
   tau_mid = 0.5*(tau_lower + tau_upper);
-  // printf("Ciccio! k= %e, tau_min= %e, tau_mid= %e, tau_max= %e\n", k, tau_lower, tau_mid, tau_upper);
 
   while ((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) {
 
@@ -2319,27 +2318,6 @@ int perturb_solve(
       for (n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++) {
         if (fabs(ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm]/ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm]-1./3.) > ppr->tol_ncdm_initial_w)
           is_early_enough = _FALSE_;
-      }
-    }
-
-    /* if there is smg, check that k starts with the same approximation scheme determined initially */
-    if (pba->has_smg == _TRUE_) {
-      if (ppt->method_smgqs == automatic) {
-        int approx;
-        perturb_test_at_k_smgqs(ppr,
-                                pba,
-                                ppt,
-                                k,
-                                tau_mid,
-                                &approx);
-        if (approx != ppt->initial_approx_smgqs) {
-          is_early_enough = _FALSE_;
-          // printf("Ciccio! k= %e, tau= %e, early= %d, approx= %d, %d\n", k, tau_mid, is_early_enough, ppt->initial_approx_smgqs, approx);
-        }
-        // else {
-        //   printf("Pippo! k= %e, tau= %e, early= %d, approx= %d, %d\n", k, tau_mid, is_early_enough, ppt->initial_approx_smgqs, approx);
-        // }
-        // printf("Ciccio! k=%e, tau=%e, approx=%d, %d\n", k, tau_mid, ppt->initial_approx_smgqs, approx);
       }
     }
 
@@ -2375,17 +2353,34 @@ int perturb_solve(
 
   }
 
-  tau = tau_mid*(1.-0.*ppr->tol_tau_approx);
+  tau = tau_mid;
 
-  int approx=7.;
-  //TODO:improve the previous bisection
-  perturb_test_at_k_smgqs(ppr,
-                          pba,
-                          ppt,
-                          k,
-                          tau,
-                          &approx);
-  printf("Ciccio! k= %e, tau= %e, approx= %d, %d, early= %d\n", k, tau, ppt->initial_approx_smgqs, approx, is_early_enough);
+  /* A second loop starts here to anticipate the initial time if the smgqs
+     state is different from ppt->initial_approx_smgqs. */
+  if (pba->has_smg == _TRUE_) {
+    if (ppt->method_smgqs == automatic) {
+      tau_upper = tau;
+      tau_lower = pba->tau_table[0];
+      is_early_enough = _FALSE_;
+      while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
+        int approx;
+        perturb_test_at_k_smgqs(ppr,
+                                pba,
+                                ppt,
+                                k,
+                                tau_upper,
+                                &approx);
+        if (approx == ppt->initial_approx_smgqs) {
+          is_early_enough = _TRUE_;
+        }
+        else {
+          tau_upper = 0.5*(tau_lower + tau_upper);
+        }
+      }
+      tau = tau_upper;
+    }
+  }
+
   /** - find the intervals over which the approximation scheme for smgqs is constant */
 
   int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
