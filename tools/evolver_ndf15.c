@@ -243,7 +243,7 @@ int evolver_ndf15(
   stepstat[2] += nfenj;
   Jcurrent = _TRUE_; /* True */
 
-  hmin = 16.0*eps*fabs(t);
+  hmin = 16.0*eps*MAX(fabs(t),fabs(tfinal));
   /*Calculate initial step */
   rh = 0.0;
 
@@ -301,7 +301,7 @@ int evolver_ndf15(
   done = _FALSE_;
   at_hmin = _FALSE_;
   while (done==_FALSE_){
-    hmin = minimum_variation;
+    hmin = MAX(hmin, minimum_variation);
     maxtmp = MAX(hmin,absh);
     absh = MIN(hmax, maxtmp);
     if (fabs(absh-hmin)<100*eps){
