@@ -5040,7 +5040,7 @@ int perturb_initial_conditions(struct precision * ppr,
     }
     class_test(ppr->pert_qs_ic_tolerance_test_smg>0 && (contribratio>ppr->pert_qs_ic_tolerance_test_smg),
         ppt->error_message,
-        "\n     Cannot set initial conditions for smg pertubations: quasi-static configuration with large correction of gravity required superhorizon.\n");
+        "\n     Cannot set initial conditions for smg pertubations: quasi-static configuration with large correction of gravity required superhorizon. Loss of connection to inflation. \n");
     // If contribratio small enough, don't fail and start evolving perturbations
     };
   }// end SMG adiabatic ICs
