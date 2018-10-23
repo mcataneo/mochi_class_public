@@ -672,8 +672,9 @@ int background_init(
   }
 
   /** - if shooting failed during input, catch the error here */
-  class_test(pba->shooting_failed == _TRUE_,
+  class_test_except(pba->shooting_failed == _TRUE_,
              pba->error_message,
+             background_free(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
 
@@ -1720,6 +1721,11 @@ int background_solve(
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
 
+  /** - impose initial conditions with background_initial_conditions() */
+  class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration),
+             pba->error_message,
+             pba->error_message);
+
   /** - initialize generic integrator with initialize_generic_integrator() */
 
   /* Size of vector to integrate is (pba->bi_size-1) rather than
@@ -1727,11 +1733,6 @@ int background_solve(
    */
   class_call(initialize_generic_integrator((pba->bi_size-1),&gi),
              gi.error_message,
-             pba->error_message);
-
-  /** - impose initial conditions with background_initial_conditions() */
-  class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration),
-             pba->error_message,
              pba->error_message);
 
   /* here tau_end is in fact the initial time (in the next loop
@@ -1766,8 +1767,9 @@ int background_solve(
       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
     }
 
-    class_test((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
+    class_test_except((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
                pba->error_message,
+               gt_free(&gTable);cleanup_generic_integrator(&gi);background_free(pba);free(pvecback_integration);free(pvecback),
                "integration step: relative change in time =%e < machine precision : leads either to numerical error or infinite loop",(tau_end-tau_start)/tau_start);
 
     /* -> save data in growTable */
@@ -2296,10 +2298,11 @@ int background_solve(
 		 pba->error_message);
 
      // check if any of the values becomes nan
-     int j = 0;
-        while (j < pba->bg_size){
-	  class_test( isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
+    int j = 0;
+    while (j < pba->bg_size){
+	  class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
                pba->error_message,
+               free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
                "pvecback[%i] = %e at a = %e in background!",j,pvecback[j],pvecback[pba->index_bg_a]);
 	 j++;
 	}
@@ -2586,11 +2589,12 @@ int background_initial_conditions(
       if (pba->background_verbose>3)
 	printf(" -> Initial conditions: phi = %e, phi' = %e \n",pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_prime_smg]);
 
-      class_test(!isfinite(pvecback_integration[pba->index_bi_phi_smg]) || !isfinite(pvecback_integration[pba->index_bi_phi_smg]),
+      class_test_except(!isfinite(pvecback_integration[pba->index_bi_phi_smg]) || !isfinite(pvecback_integration[pba->index_bi_phi_smg]),
 		 pba->error_message,
+     free(pvecback);free(pvecback_integration);background_free(pba),
 		 "initial phi = %e phi_prime = %e -> check initial conditions",
 		 pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_smg]);
-      }
+   }
       if (pba->M_pl_evolution_smg == _TRUE_)
 	if (pba->background_verbose>3)
 	  printf(" -> Initial conditions: M_pl = %e \n",pvecback_integration[pba->index_bi_M_pl_smg]);
@@ -2673,8 +2677,9 @@ int background_initial_conditions(
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
-  class_test(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
+  class_test_except(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
 	     pba->error_message,
+       free(pvecback);free(pvecback_integration);background_free(pba),
 	     "Omega_r = %e, Omega_de = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
 	     pvecback[pba->index_bg_Omega_r],pvecback[pba->index_bg_Omega_de]);
 
@@ -2682,8 +2687,9 @@ int background_initial_conditions(
       universe since Big Bang and therefore \f$ t=1/(2H) \f$ (good
       approximation for most purposes) */
 
-  class_test(pvecback[pba->index_bg_H] <= 0.,
+  class_test_except(pvecback[pba->index_bg_H] <= 0.,
              pba->error_message,
+             free(pvecback);free(pvecback_integration);background_free(pba),
              "H = %e instead of strictly positive",pvecback[pba->index_bg_H]);
 
   pvecback_integration[pba->index_bi_time] = 1./(2.* pvecback[pba->index_bg_H]);
@@ -3154,9 +3160,10 @@ int background_gravity_functions(
 
     /* Rewrite if ICs not set or no evolution */
     if (pba->initial_conditions_set_smg == _FALSE_ || pba->hubble_evolution == _FALSE_){
-      class_test(E3*pow(E0,1./2.) > 1e-10 && pba->initial_conditions_set_smg == _FALSE_,
+      class_test_except(E3*pow(E0,1./2.) > 1e-10 && pba->initial_conditions_set_smg == _FALSE_,
 		  pba->error_message,
-	           " E3=%e is large in Friedmann constraint when setting ICs ",  E3);
+      background_free(pba);free(pvecback);free(pvecback_B),
+           " E3=%e is large in Friedmann constraint when setting ICs ",  E3);
       /* Use Newton's method */
       x = sqrt(E0);
       f = E3*x*x*x -E2*x*x + E1*x + E0;
@@ -3177,8 +3184,9 @@ int background_gravity_functions(
 
     pvecback[pba->index_bg_M2_smg] = 2.*G4 + (2.*G4_X + H*phi_prime*pow(a,-1)*G5_X + (-1.)*G5_phi)*(-2.)*X;
 
-    class_test(isnan(pvecback[pba->index_bg_H]),
+    class_test_except(isnan(pvecback[pba->index_bg_H]),
 	       pba->error_message,
+         background_free(pba);free(pvecback);free(pvecback_B),
                " H=%e is not a number at a = %e. phi = %e, phi_prime = %e, E0=%e, E1=%e, E2=%e, E3=%e, M_*^2 = %e ",
 	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3,pvecback[pba->index_bg_M2_smg]);
 
@@ -3210,8 +3218,9 @@ int background_gravity_functions(
 
     P = ((-3.)*G5_X + (2.*G5_XX + X*G5_XXX)*4.*X)*(-2.)*pow(H,3)*X + ((-3.)*G4_X + 3.*G5_phi + (3.*G4_XX + (-4.)*G5_Xphi + (3.*G4_XXX + (-2.)*G5_XXphi)*2.*X)*X)*(-4.)*pow(H,2)*phi_prime*pow(a,-1) + ((-1.)*G2_phi + (G2_Xphi + (-1.)*G3_phiphi)*2.*X)*pow(H,-1) + ((-1.)*G2_X + 2.*G3_phi + (G2_XX + (-4.)*G3_Xphi + 6.*G4_Xphiphi)*X)*(-2.)*phi_prime*pow(a,-1) + (2.*G4_phi + ((-1.)*G3_X + G5_phiphi + (G3_XX + (-4.)*G4_XXphi + G5_Xphiphi)*2.*X)*X)*(-6.)*H;
 
-    class_test((A*M - B*F) == 0 ,
+    class_test_except((A*M - B*F) == 0 ,
 	       pba->error_message,
+         background_free(pba);free(pvecback);free(pvecback_B),
                "scalar field mixing with metric has degenerate denominator at a = %e, phi = %e, phi_prime = %e \n with A = %e, M =%e, B=%e, F=%e, \n H=%e, E0=%e, E1=%e, E2=%e, E3=%e \n M_*^2 = %e Kineticity = %e, Braiding = %e",
 	       a,phi,phi_prime, A, M, B, F,
 	       pvecback[pba->index_bg_H],E0,E1,E2,E3,
