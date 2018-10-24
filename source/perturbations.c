@@ -264,14 +264,15 @@ int perturb_init(
 
     if (ppt->method_smgqs == automatic) {
       //Check if at the initial time all the k modes start with the same kind of smgqs approximation
-      class_call(perturb_test_ini_smgqs(ppr,
-                                        pba,
-                                        ppt,
-                                        ppt->k[ppt->index_md_scalars][0],
-                                        ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
-                                        ppr->a_ini_over_a_today_default),
+      class_call_except(perturb_test_ini_smgqs(ppr,
+                                               pba,
+                                               ppt,
+                                               ppt->k[ppt->index_md_scalars][0],
+                                               ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
+                                               ppr->a_ini_over_a_today_default),
                  ppt->error_message,
-                 ppt->error_message);
+                 ppt->error_message,
+                 background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
     }
 
     if (((ppt->method_smgqs == automatic) && (ppt->initial_approx_smgqs==0)) || (ppt->method_smgqs == fully_dynamic) || (ppt->method_smgqs == fully_dynamic_debug)) {
@@ -279,22 +280,24 @@ int perturb_init(
       // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
       // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and
       // the initial amplitude supplied to hi_class.
-        class_call(perturb_test_ini_grav_ic_smg(ppr,
+        class_call_except(perturb_test_ini_grav_ic_smg(ppr,
             pba,
             ppt),
           ppt->error_message,
-          ppt->error_message);
+          ppt->error_message,
+        background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
       }
 
       if( ppt->pert_initial_conditions_smg == ext_field_attr){
       //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
       // If have it, fail, because we can't set the ICs properly
 
-        class_call(perturb_test_ini_extfld_ic_smg(ppr,
-            pba,
-            ppt),
-          ppt->error_message,
-          ppt->error_message);
+        class_call_except(perturb_test_ini_extfld_ic_smg(ppr,
+                                                         pba,
+                                                         ppt),
+                ppt->error_message,
+                ppt->error_message,
+                background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
       }
     }
   }
@@ -320,12 +323,13 @@ int perturb_init(
   /** - define the common time sampling for all sources using
       perturb_timesampling_for_sources() */
 
-  class_call(perturb_timesampling_for_sources(ppr,
-                                              pba,
-                                              pth,
-                                              ppt),
+  class_call_except(perturb_timesampling_for_sources(ppr,
+                                                     pba,
+                                                     pth,
+                                                     ppt),
              ppt->error_message,
-             ppt->error_message);
+             ppt->error_message,
+             background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
 
   /** - if we want to store perturbations, write titles and allocate storage */
   class_call(perturb_prepare_output(pba,ppt),
@@ -1173,15 +1177,17 @@ int perturb_timesampling_for_sources(
     }
 
     /* check it is non-zero */
-    class_test(timescale_source == 0.,
+    class_test_except(timescale_source == 0.,
                ppt->error_message,
+               free(pvecback);free(pvecthermo),
                "null evolution rate, integration is diverging");
 
     /* compute inverse rate */
     timescale_source = 1./timescale_source;
 
-    class_test(fabs(ppr->perturb_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
+    class_test_except(fabs(ppr->perturb_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
                ppt->error_message,
+               free(pvecback);free(pvecthermo),
                "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturb_sampling_stepsize*timescale_source);
 
     tau = tau + ppr->perturb_sampling_stepsize*timescale_source;
@@ -1254,15 +1260,17 @@ int perturb_timesampling_for_sources(
     }
 
     /* check it is non-zero */
-    class_test(timescale_source == 0.,
+    class_test_except(timescale_source == 0.,
                ppt->error_message,
+               free(pvecback);free(pvecthermo),
                "null evolution rate, integration is diverging");
 
     /* compute inverse rate */
     timescale_source = 1./timescale_source;
 
-    class_test(fabs(ppr->perturb_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
+    class_test_except(fabs(ppr->perturb_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
                ppt->error_message,
+               free(pvecback);free(pvecthermo),
                "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturb_sampling_stepsize*timescale_source);
 
     tau = tau + ppr->perturb_sampling_stepsize*timescale_source;
@@ -9466,8 +9474,9 @@ int perturb_test_ini_smgqs(
                           &approx_k_max
                          );
 
-  class_test(approx_k_min != approx_k_max,
+  class_test_except(approx_k_min != approx_k_max,
         ppt->error_message,
+        free(pvecback),
         "\n All the k modes should start evolving with the same type of initial conditions (either fully_dynamic or quasi_static).\n This is not the case at a = %e. Try to decrease a_ini_over_a_today_default.\n", ppr->a_ini_over_a_today_default);
 
   ppt->initial_approx_smgqs = approx_k_min;
@@ -10227,13 +10236,15 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   // conserved between inflation and the beginning of hi_class and therefore there is no
   // relation between the inflational amplitude A_S and the parameter we use for normalisation of curvature.
 
-  class_test(ppr->pert_ic_tolerance_smg>0 && (fabs(wouldbe_adiab) > ppr->pert_ic_tolerance_smg),
+  class_test_except(ppr->pert_ic_tolerance_smg>0 && (fabs(wouldbe_adiab) > ppr->pert_ic_tolerance_smg),
           ppt->error_message,
+          free(pvecback),
           "\n   Cannot set initial conditions for early_smg: adiabatic mode h ~ tau^2 lost, h ~ tau^n with n = %f",2+wouldbe_adiab);
 
   if (fabs(fastest_growth)>fabs(wouldbe_adiab)){
-    class_test(ppr->pert_ic_tolerance_smg>0 && (fabs(fastest_growth) > ppr->pert_ic_tolerance_smg),
+    class_test_except(ppr->pert_ic_tolerance_smg>0 && (fabs(fastest_growth) > ppr->pert_ic_tolerance_smg),
           ppt->error_message,
+          free(pvecback),
           "\n   Cannot set initial conditions for early_smg:\n    There exists a mode where curvature is (nearly) conserved n=%f, but solution destabilises to a faster-growing non-conserving mode with n=%f.",2+wouldbe_adiab,2+fastest_growth);
   }
 
@@ -10333,8 +10344,9 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
     }
   }
 
-  class_test(ppr->pert_ic_tolerance_smg>0 && (vx_growth > 3.+ppr->pert_ic_tolerance_smg),
+  class_test_except(ppr->pert_ic_tolerance_smg>0 && (vx_growth > 3.+ppr->pert_ic_tolerance_smg),
           ppt->error_message,
+          free(pvecback),
           "\n   Cannot set initial conditions for smg: tachyonic instability dominates attractor.\n");
 
   free(pvecback);
