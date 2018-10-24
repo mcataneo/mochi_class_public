@@ -2565,7 +2565,7 @@ int perturb_solve(
       generic_evolver = evolver_ndf15;
     }
 
-    class_call(generic_evolver(perturb_derivs,
+    class_call_except(generic_evolver(perturb_derivs,
                                interval_limit[index_interval],
                                interval_limit[index_interval+1],
                                ppw->pv->y,
@@ -2582,7 +2582,10 @@ int perturb_solve(
                                perhaps_print_variables,
                                ppt->error_message),
                ppt->error_message,
-               ppt->error_message);
+               ppt->error_message,
+               for (index_interval=0; index_interval<interval_number; index_interval++)
+                  free(interval_approx[index_interval]);
+             free(interval_approx);free(interval_limit);perturb_vector_free(ppw->pv));
 
   }
 
