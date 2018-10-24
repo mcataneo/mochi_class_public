@@ -12,3 +12,6 @@ python/build/i
 ini_files
 .vscode/
 .vscode/c_cpp_properties.json
+*.pyc
+python/build/
+RealSpaceInterface/cache/
