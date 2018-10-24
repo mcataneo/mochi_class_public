@@ -459,7 +459,17 @@ int perturb_init(
 
       } /* end of parallel region */
 
-      if (abort == _TRUE_) return _FAILURE_;
+      if (abort == _TRUE_) {
+        background_free(pba);
+        thermodynamics_free(pth);
+        perturb_free(ppt);
+        int t;
+        for (t = 0; t < number_of_threads; t++) {
+          perturb_workspace_free(ppt,index_md,pppw[t]);
+        }
+        free(pppw);
+        return _FAILURE_;
+      }
 
     } /* end of loop over initial conditions */
 
@@ -2530,18 +2540,21 @@ int perturb_solve(
         redistribute correctly the perturbations from the previous to
         the new vector of perturbations. */
 
-    class_call(perturb_vector_init(ppr,
-                                   pba,
-                                   pth,
-                                   ppt,
-                                   index_md,
-                                   index_ic,
-                                   k,
-                                   interval_limit[index_interval],
-                                   ppw,
-                                   previous_approx),
+    class_call_except(perturb_vector_init(ppr,
+                                          pba,
+                                          pth,
+                                          ppt,
+                                          index_md,
+                                          index_ic,
+                                          k,
+                                          interval_limit[index_interval],
+                                          ppw,
+                                          previous_approx),
                ppt->error_message,
-               ppt->error_message);
+               ppt->error_message,
+              for (index_interval=0; index_interval<interval_number; index_interval++)
+                 free(interval_approx[index_interval]);
+               free(interval_approx);free(interval_limit);perturb_vector_free(ppw->pv));
 
     /** - --> (d) integrate the perturbations over the current interval. */
 
