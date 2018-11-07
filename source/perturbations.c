@@ -279,7 +279,7 @@ int perturb_init(
                                                ppr->a_ini_over_a_today_default),
                  ppt->error_message,
                  ppt->error_message,
-                 background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
+                 background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
     }
 
     if (((ppt->method_smgqs == automatic) && (ppt->initial_approx_smgqs==0)) || (ppt->method_smgqs == fully_dynamic) || (ppt->method_smgqs == fully_dynamic_debug)) {
@@ -292,7 +292,7 @@ int perturb_init(
             ppt),
           ppt->error_message,
           ppt->error_message,
-        background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
+        background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
       }
 
       if( ppt->pert_initial_conditions_smg == ext_field_attr){
@@ -304,7 +304,7 @@ int perturb_init(
                                                          ppt),
                 ppt->error_message,
                 ppt->error_message,
-                background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
+                background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
       }
     }
   }
@@ -336,7 +336,7 @@ int perturb_init(
                                                      ppt),
              ppt->error_message,
              ppt->error_message,
-             background_free(pba);thermodynamics_free(pth);perturb_free(ppt));
+             background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
 
   /** - if we want to store perturbations, write titles and allocate storage */
   class_call(perturb_prepare_output(pba,ppt),
@@ -581,6 +581,61 @@ int perturb_free(
   return _SUCCESS_;
 
 }
+
+int perturb_free_nosource(
+                          struct perturbs * ppt
+                         ) {
+
+  int index_md,index_ic,index_type;
+  int filenum;
+
+  if (ppt->has_perturbations == _TRUE_) {
+
+    for (index_md = 0; index_md < ppt->md_size; index_md++) {
+
+      free(ppt->sources[index_md]);
+
+      free(ppt->k[index_md]);
+
+    }
+
+    free(ppt->tau_sampling);
+
+    free(ppt->tp_size);
+
+    free(ppt->ic_size);
+
+    free(ppt->k);
+
+    free(ppt->k_size_cmb);
+
+    free(ppt->k_size_cl);
+
+    free(ppt->k_size);
+
+    free(ppt->sources);
+
+    /** Stuff related to perturbations output: */
+
+    /** - Free non-NULL pointers */
+    if (ppt->index_k_output_values != NULL)
+      free(ppt->index_k_output_values);
+
+    for (filenum = 0; filenum<_MAX_NUMBER_OF_K_FILES_; filenum++){
+      if (ppt->scalar_perturbations_data[filenum] != NULL)
+        free(ppt->scalar_perturbations_data[filenum]);
+      if (ppt->vector_perturbations_data[filenum] != NULL)
+        free(ppt->vector_perturbations_data[filenum]);
+      if (ppt->tensor_perturbations_data[filenum] != NULL)
+        free(ppt->tensor_perturbations_data[filenum]);
+    }
+
+  }
+
+  return _SUCCESS_;
+
+}
+
 
 /**
  * Initialize all indices and allocate most arrays in perturbs structure.
