@@ -1515,10 +1515,21 @@ int input_read_parameters(
         pba->rho_evolution_smg=_TRUE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
-      
+        
+        
+      if (strcmp(string1,"wede") == 0) {    //ILSWEDE
+	      pba->expansion_model_smg = wede;
+	      flag2=_TRUE_;
+	      pba->parameters_size_smg = 3;
+	      class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+        // 	//optimize the guessing BUG: eventually leads to problem in the MCMC, perhaps the guess is too good?
+        // 	if(pba->tuning_index_smg == 0){
+        // 	  pba->parameters_smg[0] = pba->Omega0_smg;
+        // 	}
+      }
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w ...");
+		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
       
     }
     

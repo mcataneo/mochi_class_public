@@ -3310,6 +3310,31 @@ int background_gravity_functions(
       }
       pvecback[pba->index_bg_p_smg] = pvecback[pba->index_bg_w_smg] * pvecback[pba->index_bg_rho_smg];
 
+    }//ILSWEDE
+    if (pba->expansion_model_smg == wede){
+      
+      //Doran-Robbers model astro-ph/0601544
+      //as implemented in Pettorino et al. 1301.5279
+      //TODO: check these expressions, they probably assume the standard evolution/friedmann eqs, etc...
+      
+      double Om0 = pba->parameters_smg[0];
+      double w0 = pba->parameters_smg[1];
+      double Ome = pba->parameters_smg[2] + 1e-10;
+      
+      //NOTE: I've regularized the expression adding a tiny Omega_e
+      double Om = ((Om0 - Ome*(1.-pow(a,-3.*w0)))/(Om0 + (1.-Om0)*pow(a,3*w0)) + Ome*(1.-pow(a,-3*w0)));
+      double dOm_da = (3*pow(a,-1 - 3*w0)*(-1 + Om0)*(-2*pow(a,3*w0)*(-1 + Om0)*Ome + Om0*Ome + pow(a,6*w0)*(Om0 - 2*Ome + Om0*Ome))*w0)/pow(-(pow(a,3*w0)*(-1 + Om0)) + Om0,2); //from Mathematica
+      //I took a_eq = a*rho_r/rho_m, with rho_r = 3*p_tot_wo_smg
+      double a_eq = 3.*a*p_tot/(pvecback[pba->index_bg_rho_b]+pvecback[pba->index_bg_rho_cdm]); //tested!
+      double w = a_eq/(3.*(a+a_eq)) -a/(3.*(1-Om)*Om)*dOm_da;
+            
+      pvecback[pba->index_bg_rho_smg] = rho_tot*Om/(1.-Om);
+      //pow(pba->H0,2)/pow(a,3)*Om*(Om-1.)/(Om0-1.)*(1.+a_eq/a)/(1.+a_eq); //this eq is from Pettorino et al, not working
+      pvecback[pba->index_bg_p_smg] = w*pvecback[pba->index_bg_rho_smg];
+      
+//       if (a>0.9)
+// 	printf("a = %e, w = %f, Om_de = %e, rho_de/rho_t = %e \n",a,w,Om,
+// 	       pvecback[pba->index_bg_rho_smg]/(pvecback[pba->index_bg_rho_smg]+rho_tot));
     }
 
     rho_tot += pvecback[pba->index_bg_rho_smg];
@@ -3563,6 +3588,11 @@ int background_gravity_parameters(
       printf("Parameterized model with CPL expansion \n");
       printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
 	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
+      break;
+      
+      case wede:    //ILSWEDE
+      printf("Parameterized model with variable EoS + EDE \n");
+      printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
 
     }

@@ -2711,6 +2711,7 @@ int perturb_prepare_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles,"theta_b",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"psi",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"phi",_TRUE_);
+
       /* Perturbed recombination */
       class_store_columntitle(ppt->scalar_titles,"delta_Tb",ppt->has_perturbed_recombination);
       class_store_columntitle(ppt->scalar_titles,"delta_chi",ppt->has_perturbed_recombination);
@@ -2747,6 +2748,9 @@ int perturb_prepare_output(struct background * pba,
       /* Scalar field smg */
       class_store_columntitle(ppt->scalar_titles, "V_x_smg", pba->has_smg);
       class_store_columntitle(ppt->scalar_titles, "V_x_prime_smg", pba->has_smg);
+
+      class_store_columntitle(ppt->scalar_titles,"h_prime",pba->has_smg);   //ILSextraout
+      class_store_columntitle(ppt->scalar_titles,"eta",pba->has_smg);
 
       ppt->number_of_scalar_titles =
         get_number_of_titles(ppt->scalar_titles);
@@ -4785,14 +4789,14 @@ int perturb_initial_conditions(struct precision * ppr,
 
               dnv = sols[0];    //want closest to zero
               for (i=0; i<3;i+=1){
-                if (fabs(sols[i]) < fabs(dnh)){
+                if (fabs(sols[i]) < fabs(dnv)){
                   dnv = sols[i];
                 }
               }
 
 
             if (ppt->perturbations_verbose > 6)
-                printf("\nICs: Vx for mode k=%e grows with tau^3+nv with approx. nv=%f (%f), while h -- with nh=%f (%f) at a=%e. dM=%f\n",k,dnv,-(c0+c0vp)/(c1+c1vp),dnh,-(c0+c0hp)/(c1+c1hp),a,DelM2);
+                printf("Mode k=%e: ICs: grows with tau^3+nv with approx. nv=%f, while h -- with nh=%f at a=%e. dM=%f\n",k,dnv,dnh,a,DelM2);
 
             // Now we can set the initial ratio of amplitudes for Vx and h.The expression is left with dnh/dnv terms implicit.
 
@@ -4876,19 +4880,19 @@ int perturb_initial_conditions(struct precision * ppr,
             }
 
 
-            A1_eta_smg  =   ((2 + dnh)*(-(bra*(1 + DelM2)*kin) + 12*bra*(DelM2 + Omx) + 3*pow(bra,2)*(1 + DelM2)*(1 + dnh + run) +
+            A1_eta_smg  =  ((2 + dnh)*(-(bra*(1 + DelM2)*kin) + 12*bra*(DelM2 + Omx) + 3*pow(bra,2)*(1 + DelM2)*(1 + dnh + run) +
                             2*(1 + DelM2)*kin*(4 + dnh + run)))/(8.*(1 + DelM2)*den1) +
                             (amplitude*((1 + DelM2)*pow(kin,2)*(4 + dnv) + 3*bra*(1 + DelM2)*kin*(14 + 3*dnv) -
                             72*bra*(DelM2 + Omx) - 18*pow(bra,2)*(1 + DelM2)*(-3 + run) - 12*kin*((4 + dnv)*(DelM2 + Omx) +
                             (1 + DelM2)*run)))/(4.*(1 + DelM2)*den1);
-
+          
             A2_eta_smg  =   ((5 + 4*fracnu)*(-1 + Omx))/(6.*(30*(1 + DelM2) + 5*(1 + DelM2)*dnh*(5 + dnh) -
                             8*fracnu*(-1 + Omx))) + (5*amplitude*(3 + dnv)*(bra*(1 + DelM2)*(4 + dnv) -
                             4*(DelM2 + Omx)))/den2;
 
             eta = ppr->curvature_ini * (1. + A2_eta_smg/A1_eta_smg*ktau_two);
 
-            if(ppt->perturbations_verbose > 6)
+            if(ppt->perturbations_verbose > 8)
               printf("       ampl = %e, eta A1 = %e (%e), A2 = %e (%e), ktau^2 = %e, curv = %e \n",amplitude,A1_eta_smg,1.,A2_eta_smg,
                        -1./12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om),
                        ktau_two, ppr->curvature_ini );
@@ -4945,7 +4949,7 @@ int perturb_initial_conditions(struct precision * ppr,
               //TODO: needs to be modified?
               l3_ur = ktau_three/A1_eta_smg*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
 
-              if(ppt->perturbations_verbose > 6)
+              if(ppt->perturbations_verbose > 8)
                   printf("       fracnu = %e, A_v_nu = %e (%e), A_sigma_nu = %e (%e), th_ur/th_g = %e, Vx/vm = %e\n", fracnu, A_v_nu_smg,
                            -1./36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om),
                            A_sigma_nu_smg,
@@ -4954,7 +4958,7 @@ int perturb_initial_conditions(struct precision * ppr,
               if(pba->has_dr == _TRUE_) delta_dr = delta_ur;
               }// end neutrino part
               if(ppt->perturbations_verbose > 5)
-                printf("Mode k = %e. Gravitating_attr IC for early smg: ",k);
+                printf("Mode k=%e: gravitating_attr IC for early smg: ",k);
 
             } //end of gravitation_attr ICs
 
@@ -4963,7 +4967,7 @@ int perturb_initial_conditions(struct precision * ppr,
 	              ppw->pv->y[ppw->pv->index_pt_vx_smg] = ktau_two*dt;
 	              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 2*k*k*tau*dt;
 	          if(ppt->perturbations_verbose > 5)
-		            printf("Mode k = %e. Kin_only IC for smg: ",k);
+		            printf("Mode k=%e: kin_only IC for smg: ",k);
 	          }
 
 
@@ -4973,7 +4977,7 @@ int perturb_initial_conditions(struct precision * ppr,
 	      // Single clock IC => v_x^prime = 0
 	  ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
 	  if(ppt->perturbations_verbose > 5)
-		  printf("Mode k = %e. Single clock IC for smg: ",k);
+		  printf("Mode k=%e: Single clock IC for smg: ",k);
 	  }
 
 
@@ -4983,7 +4987,7 @@ int perturb_initial_conditions(struct precision * ppr,
 	    ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
 
 	    if(ppt->perturbations_verbose > 5)
-        printf("Mode k = %e. Zero IC for smg: ",k);
+        printf("Mode k=%e: Zero IC for smg: ",k);
 	  	  }
 
 
@@ -5051,7 +5055,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
 
         if(ppt->perturbations_verbose > 5)
-          printf("Mode k = %e. Ext_field_attr IC for smg: ",k);
+          printf("Mode k=%e: Ext_field_attr IC for smg: ",k);
 
 
       }// End external-field attractor ICs
@@ -7439,6 +7443,7 @@ int perturb_print_variables(double tau,
   double delta_rho_scf=0., rho_plus_p_theta_scf=0.;
   double delta_scf=0., theta_scf=0.;
   double V_x_smg=0., V_x_prime_smg=0.;
+  double h_prime_smg=0., eta_smg=0.; //ILSextraout
   /** - ncdm sector begins */
   int n_ncdm;
   double *delta_ncdm=NULL, *theta_ncdm=NULL, *shear_ncdm=NULL, *delta_p_over_delta_rho_ncdm=NULL;
@@ -7705,6 +7710,8 @@ int perturb_print_variables(double tau,
      //TODO: write here the perturbation variables
       V_x_smg = ppw->pvecmetric[ppw->index_mt_vx_smg];
       V_x_prime_smg = ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
+      h_prime_smg = ppw->pvecmetric[ppw->index_mt_h_prime];     //ILSextraout
+      eta_smg = y[ppw->pv->index_pt_eta];
     }
 
     /* converting synchronous variables to newtonian ones */
@@ -7782,6 +7789,9 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, theta_b, _TRUE_, storeidx);
     class_store_double(dataptr, psi, _TRUE_, storeidx);
     class_store_double(dataptr, phi, _TRUE_, storeidx);
+
+
+
     /* perturbed recombination */
     class_store_double(dataptr, delta_temp, ppt->has_perturbed_recombination, storeidx);
     class_store_double(dataptr, delta_chi, ppt->has_perturbed_recombination, storeidx);
@@ -7814,6 +7824,9 @@ int perturb_print_variables(double tau,
     /* Scalar field smg*/
     class_store_double(dataptr, V_x_smg, pba->has_smg, storeidx);
     class_store_double(dataptr, V_x_prime_smg, pba->has_smg, storeidx);
+    class_store_double(dataptr, h_prime_smg, pba->has_smg, storeidx);   //ILSextraout
+    class_store_double(dataptr, eta_smg, pba->has_smg, storeidx);
+    
 
   }
   /** - for tensor modes: */
@@ -10324,7 +10337,7 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
 
   if (ppt->perturbations_verbose > 1){
     printf("\nGravitating attractor ICs give growing modes at z=%e: \n (Approximate) polynomial",z_ref);
-    printf(" solutions h ~ (k_tau)^n (complex = %i): \n",complex);
+    printf(" solutions h ~ (k_tau)^n (complex = %i) with exponents: \n",complex);
   }
 
   fastest_growth = sols[0];   //want fastest
@@ -10346,21 +10359,23 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
       printf("  omx = %e, dM* = %e\n",Omx,DelM2);
   }
 
-  // Check that would-be adiabatic mode is (i) close enough to standard and (ii) actually the fastest mode, otherwise
+  // Check that would-be adiabatic mode is actually the fastest mode, otherwise
   // the would-be adiabatic attractor destabilises to the fastest mode, i.e. we cannot assume that the curvature was
   // conserved between inflation and the beginning of hi_class and therefore there is no
   // relation between the inflational amplitude A_S and the parameter we use for normalisation of curvature.
 
+  /* We don't need this: te closest to zero mode actually conserves eta/zeta in any case
   class_test_except(ppr->pert_ic_tolerance_smg>0 && (fabs(wouldbe_adiab) > ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           free(pvecback),
           "\n   Cannot set initial conditions for early_smg: adiabatic mode h ~ tau^2 lost, h ~ tau^n with n = %f",2+wouldbe_adiab);
+  */
 
   if (fabs(fastest_growth)>fabs(wouldbe_adiab)){
     class_test_except(ppr->pert_ic_tolerance_smg>0 && (fabs(fastest_growth) > ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           free(pvecback),
-          "\n   Cannot set initial conditions for early_smg:\n    There exists a mode where curvature is (nearly) conserved n=%f, but solution destabilises to a faster-growing non-conserving mode with n=%f.",2+wouldbe_adiab,2+fastest_growth);
+          "\n   Cannot set initial conditions for early_smg:\n    There does exist a mode where curvature is conserved n=%f, but solution destabilises to a faster-growing non-conserving mode with n=%f.",2+wouldbe_adiab,2+fastest_growth);
   }
 
   free(pvecback);
@@ -10462,7 +10477,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   class_test_except(ppr->pert_ic_tolerance_smg>0 && (vx_growth > 3.+ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           free(pvecback),
-          "\n   Cannot set initial conditions for smg: tachyonic instability dominates attractor.\n");
+          "\n   Cannot set initial conditions for smg: tachyonic instability dominates superhorizon attractor.\n");
 
   free(pvecback);
 
