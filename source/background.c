@@ -2694,7 +2694,9 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);   
   class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);       
   class_store_columntitle(titles,"c_s^2",pba->has_smg);        
-  class_store_columntitle(titles,"kin (D)",pba->has_smg);        
+  class_store_columntitle(titles,"kin (D)",pba->has_smg);
+  
+  class_store_columntitle(titles,"lambda_8",pba->has_smg);
 
   return _SUCCESS_;
 }
@@ -2753,6 +2755,8 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);     
     class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
+    
+    class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_smg],pba->has_smg,storeidx);
     
   }
 
