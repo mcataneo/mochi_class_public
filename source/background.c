@@ -2561,6 +2561,38 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[3];
 	break;
 
+    case nkgb:
+      {
+      /* Action is
+
+        -X + 1/n * g^[(2n-1)/2] Lambda (X/Lambda^4)^n box(phi)
+
+        g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
+
+      */
+      
+      double g = pba->parameters_smg[0];
+      double n = pba->parameters_smg[1];
+      double xi = pba->parameters_smg[2];
+        
+      double ngpow = pow(g,(2.*n-1.)/2.)/n;
+      double Lambda=1.;                       // mass scale
+      double nkgb_quarter_test_smg = 1e-5;    // when n is close to 1/4, set Lambda to 1
+      
+      if(fabs(n-0.25)>nkgb_quarter_test_smg){ //mass scale in G3 operator with M_pl=1
+        Lambda = pow(pba->H0,2*n/(4.*n-1.)); // when n=1/4, Lambda cancels out of the action
+      }
+    
+      double H = sqrt(rho_rad);
+      double phidot_attr;
+
+      phidot_attr = sqrt(2./g)* pow(Lambda,(4.*n-1.)/(2.*n-1.)) / pow(3.*sqrt(2.)*H,1./(2.*n-1.));
+
+	    pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
+      pvecback_integration[pba->index_bi_phi_prime_smg] = a*xi*phidot_attr ; //put it on the attractor value times xi
+      }
+    break;
+  
       case propto_omega:
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
 	break;
@@ -3141,6 +3173,37 @@ int background_gravity_functions(
 
     }
 
+    else if(pba->gravity_model_smg == nkgb){
+
+      /* Action is
+
+        -X + 1/n * g^[(2n-1)/2] Lambda (X/Lambda^4)^n box(phi)
+
+        g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
+        Note that for n=1/4 the Lambda mass scales cancels out, so we set it to 1.
+      */
+      
+      double g = pba->parameters_smg[0];
+      double n = pba->parameters_smg[1];
+      double ngpow = pow(g,(2.*n-1.)/2.)/n;
+      double Lambda=1.;                          // mass scale is n-dependent
+      double nkgb_quarter_test_smg = 1e-5;    // if fact, when n is close to 1/4, set Lambda to 1
+      
+      
+      if(fabs(n-0.25)>nkgb_quarter_test_smg){
+
+        Lambda = pow(pba->H0,2*n/(4*n-1)); // mass scale in G3 operator with M_pl=1
+
+      }
+      
+      G2    = -X;
+      G2_X  = -1.;
+      
+      // G3 = 1/n g^[(2n-1)/2] Lambda (X/Lambda^4)^n
+      G3_X  = n*ngpow/pow(Lambda,3.) * pow(X/pow(Lambda,4.),n-1.);
+      G3_XX = n*(n-1.)*ngpow/(Lambda,7.)*pow(X/pow(Lambda,4.),n-2.);
+    }
+
 
     //TODO: Write the Bellini-Sawicki functions and other information to pvecback
 
@@ -3525,6 +3588,12 @@ int background_gravity_parameters(
      printf("Modified gravity: Brans Dicke with parameters: \n");
      printf("-> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
+     break;
+
+    case nkgb:
+     printf("Modified gravity: Kinetic Gravity Braiding with K=-X and G=g*X^n with parameters: \n");
+     printf("-> g = %g, n = %g, phi_0 = 1.0, phi_prime_0 = %g * phi_prime_attr_0. \n",
+	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
      break;
 
    case propto_omega:
