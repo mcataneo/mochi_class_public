@@ -1468,13 +1468,13 @@ int input_read_parameters(
       }
 
 if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0) {
-	// This is KGB with K=-X and G(X)=g*X^n
+	// This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
   pba->gravity_model_smg = nkgb;
 	pba->field_evolution_smg = _TRUE_;
   pba->tuning_dxdy_guess_smg = -0.5;
 	flag2=_TRUE_;
 	
-	pba->parameters_size_smg = 3; // g, n, xi == phip/phip_attr
+	pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 	    class_test(pba->parameters_smg[1]==0.5,errmsg,"In n-KGB G(X)=X^n cannot have n=1/2 for laziness reasons.");
        }
