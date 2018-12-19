@@ -1471,8 +1471,16 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 	// This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
   pba->gravity_model_smg = nkgb;
 	pba->field_evolution_smg = _TRUE_;
-  pba->tuning_dxdy_guess_smg = -0.5;
-	flag2=_TRUE_;
+  if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+	  pba->tuning_index_smg = 0; //use g for default tuning
+	}
+	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
+		 errmsg,
+		 "nKGB: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+	if(has_dxdy_guess_smg == _FALSE_){
+    pba->tuning_dxdy_guess_smg = -0.5;
+  }
+  flag2=_TRUE_;
 	
 	pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
@@ -4689,19 +4697,27 @@ int input_find_root(double *xzero,
   (*fevals)++;
   //printf("x1= %g, f1= %g\n",x1,f1);
 
-  dx = 1.5*f1*dxdy;
-  
-  //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
-  // if f1<target precision then update the value
-  if (fabs(f1)<1e-5)
-    dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
-  //     return _SUCCESS_;
-  
-//    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
-
+ 
   /** - Do linear hunt for boundaries */
   for (iter=1; iter<=15; iter++){
-    //x2 = x1 + search_dir*dx;
+ 
+  if(iter<3){
+    //Set the search step size according to user's dxdy on first pass
+    //then update with a real one on second pass and keep that until the end.
+
+      dx = 1.5*f1*dxdy;
+  
+      //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
+      // if f1<target precision then update the value
+      if (fabs(f1)<1e-5)
+        dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
+      //     return _SUCCESS_;
+  
+  //    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
+
+  }
+    //x2 = x1 + search_dir*dx; 
+ 
     x2 = x1 - dx;
 
     for (iter2=1; iter2 <= 3; iter2++) {
@@ -4730,7 +4746,7 @@ int input_find_root(double *xzero,
       }
       break;
     }
-
+    dxdy=(x2-x1)/(f2-f1);//ILSroot Update dxdy to be more realistic
     x1 = x2;
     f1 = f2;
   }

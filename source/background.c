@@ -2639,6 +2639,7 @@ int background_initial_conditions(
     }
 
     if (pba->field_evolution_smg == _TRUE_){
+      //TODO: pba->backround_verbose is zero here for some reason?//ILS
       if (pba->background_verbose>3)
 	printf(" -> Initial conditions: phi = %e, phi' = %e \n",pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_prime_smg]);
 
