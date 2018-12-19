@@ -2571,23 +2571,31 @@ int background_initial_conditions(
 
         g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
 
+        Since the energy density in KGB must be >0, then -inf<xi0<1 and the combination xicomb>0
+        The alpha descrition breaks down for phidot=0, so we assume this is never crossed
+
+        This all implies that phidot on the attractor has the same sign as g, and therefore
+        phi dot always has the same sign as g.
+
       */
       
         double g = pba->parameters_smg[0];
         double n = pba->parameters_smg[1];
         double xi0 = pba->parameters_smg[2];
           
-        double ngpow = pow(g,(2.*n-1.)/2.)/n;
-      
         double H = sqrt(rho_rad);
         double H0 = pba->H0;
-      
+
+        double signg = copysign(1.,g);
+        g=fabs(g);
+        double xicomb = (2.-xi0)/(2.*(1.-xi0));
+        
         double phidot0=0., phidot_attr_init= 0., charge_init=0., phidot_init=0.;
 
-        phidot0 = sqrt(2./g)*H0 * pow((2.-xi0)/(2.*(1.-xi0))/(3*sqrt(2)),1./(2.*n-1.));    // value of phidot today, if xi0=0, then this is attractor
-        phidot_attr_init = sqrt(2./g)*H0 * pow(H0/(3.*sqrt(2.)*H),1./(2.*n-1.));          // value of phidot on attractor at initial time
+        phidot0 = signg * sqrt(2./g)*H0 * pow(xicomb/(3*sqrt(2)),1./(2.*n-1.));             // value of phidot today, if xi0=0, then this is attractor
+        phidot_attr_init = signg * sqrt(2./g)*H0 * pow(H0/(3.*sqrt(2.)*H),1./(2.*n-1.));    // value of phidot on attractor at initial time
         charge_init  = phidot0*xi0/(2*(1-xi0))*pow(a,-3);    // implied value of required shift charge initially
-
+        
         if(fabs(charge_init/phidot_attr_init)<1.){
           /* test if initial shift charge is large c.f. the on-attractor phidot. If no, we are nearly on attractor
           at initial time anyway, so just correct the attractor solution slightly
@@ -2598,8 +2606,8 @@ int background_initial_conditions(
           phidot_init = phidot_attr_init + charge_init/(2.*n-1.);
         }
         else{
-          phidot_init = pow( charge_init * pow(phidot_attr_init,2.*n-1.),1./(2.*n));
-        }
+          phidot_init = signg * pow( fabs(charge_init) * pow(fabs(phidot_attr_init),2.*n-1.),1./(2.*n));
+        }        
 
         pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
         pvecback_integration[pba->index_bi_phi_prime_smg] = a*phidot_init ; 
@@ -3198,7 +3206,7 @@ int background_gravity_functions(
       
       double g = pba->parameters_smg[0];
       double n = pba->parameters_smg[1];
-      double ngpow = pow(g,(2.*n-1.)/2.)/n;
+      double ngpow = copysign(1.,g)*pow(fabs(g),(2.*n-1.)/2.)/n;
       double H0=pba->H0;
       
       G2    = -X;
