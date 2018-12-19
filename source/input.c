@@ -4680,7 +4680,7 @@ int input_find_root(double *xzero,
                     int *fevals,
                     struct fzerofun_workspace *pfzw,
                     ErrorMsg errmsg){
-  double x1, x2, f1, f2, dxdy, dx;
+  double x1, x2, f1, f2, dxdy, dx, dxdytrue, dxdyold;
   int iter, iter2;
   int return_function;
   /** Summary: */
@@ -4699,10 +4699,10 @@ int input_find_root(double *xzero,
 
  
   /** - Do linear hunt for boundaries */
+  dxdytrue=dxdy;
   for (iter=1; iter<=15; iter++){
  
-  if(iter<3){
-    //Set the search step size according to user's dxdy on first pass
+    //Set the search step size according to guessed dxdy on first pass
     //then update with a real one on second pass and keep that until the end.
 
       dx = 1.5*f1*dxdy;
@@ -4715,7 +4715,7 @@ int input_find_root(double *xzero,
   
   //    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
 
-  }
+  
     //x2 = x1 + search_dir*dx; 
  
     x2 = x1 - dx;
@@ -4741,12 +4741,26 @@ int input_find_root(double *xzero,
 
     if (f1*f2<0.0){
       /** - root has been bracketed */
-      if (0==1){
+      if (1==1){
         printf("Root has been bracketed after %d iterations: [%g, %g].\n",iter,x1,x2);
       }
       break;
     }
-    dxdy=(x2-x1)/(f2-f1);//ILSroot Update dxdy to be more realistic
+    
+    dxdytrue=(x2-x1)/(f2-f1);
+    dxdyold=dxdy;
+    
+      if(iter==1){ //replace dxdy_guess with real estimate after one iteration
+        dxdy = dxdytrue;
+      }
+      else{
+        dxdy=copysign(dxdy,dxdytrue);//Otherwise keep dxdy magnitude fixed, but flip sign according to real
+      } 
+    
+    if(dxdyold*dxdy<0.&&iter!=1){//If dxdy changes sign after first iter, might have missed root, halve the step size and continue
+        dxdy/=2.;
+    }
+    //printf("dxdy true=%g, old=%g, new=%g.\n",dxdytrue, dxdyold, dxdy);
     x1 = x2;
     f1 = f2;
   }
