@@ -5012,28 +5012,26 @@ int perturb_initial_conditions(struct precision * ppr,
          * with amplitude = -B3/(6 + 3*B1 + B2).
          */
 
-        B1_smg =  (3*pow(bra,3)*l1 + 2*cs2num*(3*bra*kin + pow(kin,2) - 3*l4) +
-                  pow(bra,2)*((-6 + kin)*l1 + 3*l4) -
-                  2*bra*(kin*l1 - 3*l1*l2 + 3*l4) +
-                  2*(3*l2*l4 + kin*(l1*l2 - 8*l7) - 8*l1*l7))/
-                  (2.*(-2 + bra)*Dd*(kin + l1));
-
-	      B2_smg =  (8*(1 + DelM2)*(3*l2*l6 + 4*kin*l8) + 4*l1*(8*(1 + DelM2)*l8 +
-                  l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))))+
-                  2*pow(bra,2)*(6*(1 + DelM2)*l6 + l1*(12 - 12*Omx +
-                  (1 + DelM2)*(-30 + kin + 6*Omx*(1 - 3*wx)))) +
-                  3*pow(bra,3)*(1 + DelM2)*l1*(6 + Omx*(-1 + 3*wx)) +
-                  2*cs2num*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 +
-                  3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) +
-                  bra*(6 + Omx*(-1 + 3*wx))))) - 2*bra*(12*(1 + DelM2)*l6 +
-                  l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) +
-                  l2*(6 + Omx*(-1 + 3*wx)))))))/
-                  (4.*(-2 + bra)*Dd*(1 + DelM2)*(kin + l1));
-
-	      // Build up B3 numerator and denom separately, and add each order in alpha separately, to avoid cancellations.
+              
+        // Build up B_i terms by term, and add each order in alpha separately, to avoid cancellations.
         // Exact for both propto_omega and constant_alphas (provided they are very small).
 
-        B3num_smg = - 6.*(1 + wx) -(2.*(bra + dbra + 4.*DelM2 + 4.*run - 4.*ten))/Omx;
+
+        B1_smg = (bra/Dd)*(bra/(2.*(-2 + bra)*(kin + l1)))*((-6 + kin)*l1 + 3*l4);
+        B1_smg +=  (3*pow(bra,3))*(l1/Dd)/(2.*(-2 + bra)*(kin + l1));
+        B1_smg += 2*(cs2num/Dd)*(3*bra*kin + pow(kin,2) - 3*l4)/(2.*(-2. + bra)*(kin + l1));
+        B1_smg += 2*(3*l2*l4/Dd + (kin/Dd)*(l1*l2 - 8*l7) - 8*l1/Dd*l7)/(2.*(-2 + bra)*(kin + l1));
+        B1_smg -= 2*(bra/Dd)*((kin*l1/(kin + l1) - 3*l1*l2/(kin + l1) + 3*l4/(kin + l1))/(2.*(-2 + bra)));
+        
+        B2_smg =  8*(1 + DelM2)*(3*l2*l6/Dd + 4*kin*l8/Dd); 
+        B2_smg += 4*(l1/Dd)*(8*(1 + DelM2)*l8 + l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))));
+        B2_smg += 2*(bra/Dd)*bra*(6*(1 + DelM2)*l6 + l1*(12 - 12*Omx + (1 + DelM2)*(-30 + kin + 6*Omx*(1 - 3*wx))));
+        B2_smg += 3*pow(bra,3)*(1 + DelM2)*(l1/Dd)*(6 + Omx*(-1 + 3*wx));
+        B2_smg += 2*(cs2num/Dd)*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 + 3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) + bra*(6 + Omx*(-1 + 3*wx)))));
+        B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
+        B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
+
+	      B3num_smg = - 6.*(1 + wx) -(2.*(bra + dbra + 4.*DelM2 + 4.*run - 4.*ten))/Omx;
         B3num_smg += -((2.*dbra*DelM2 + 2*pow(run,2) + dbra*ten - 4*DelM2*ten - 2*run*(-4*DelM2 + ten) +
                       bra*(run + 2.*(DelM2 + ten)))/Omx) + (-(bra*(2. - 6.*wx)) -
                       6.*ten*(1. + wx) - 4.*DelM2*(-1. + 3.*wx))/2.;
@@ -5046,8 +5044,7 @@ int perturb_initial_conditions(struct precision * ppr,
         B3denom_smg += (2*DelM2*(-3*bra*(run - ten) + kin*ten))/Omx;
 
         B3_smg = B3num_smg/B3denom_smg;
-
-
+ 
         amplitude = -B3_smg/(6. + 3.*B1_smg + B2_smg);
 
         ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*ktau_two*tau*(ppr->curvature_ini);
@@ -10438,31 +10435,27 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   l8 = pvecback[pba->index_bg_lambda_8_smg];
   cs2num = pvecback[pba->index_bg_cs2num_smg];
   Dd = pvecback[pba->index_bg_kinetic_D_smg];
+    
+  B1_smg = (bra/Dd)*(bra/(2.*(-2 + bra)*(kin + l1)))*((-6 + kin)*l1 + 3*l4);
+  B1_smg +=  (3*pow(bra,3))*(l1/Dd)/(2.*(-2 + bra)*(kin + l1));
+  B1_smg += 2*(cs2num/Dd)*(3*bra*kin + pow(kin,2) - 3*l4)/(2.*(-2. + bra)*(kin + l1));
+  B1_smg += 2*(3*l2*l4/Dd + (kin/Dd)*(l1*l2 - 8*l7) - 8*l1/Dd*l7)/(2.*(-2 + bra)*(kin + l1));
+  B1_smg -= 2*(bra/Dd)*((kin*l1/(kin + l1) - 3*l1*l2/(kin + l1) + 3*l4/(kin + l1))/(2.*(-2 + bra)));
+  
+  B2_smg =  8*(1 + DelM2)*(3*l2*l6/Dd + 4*kin*l8/Dd); 
+  B2_smg += 4*(l1/Dd)*(8*(1 + DelM2)*l8 + l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))));
+  B2_smg += 2*(bra/Dd)*bra*(6*(1 + DelM2)*l6 + l1*(12 - 12*Omx + (1 + DelM2)*(-30 + kin + 6*Omx*(1 - 3*wx))));
+  B2_smg += 3*pow(bra,3)*(1 + DelM2)*(l1/Dd)*(6 + Omx*(-1 + 3*wx));
+  B2_smg += 2*(cs2num/Dd)*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 + 3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) + bra*(6 + Omx*(-1 + 3*wx)))));
+  B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
+  B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
 
-  B1_smg =  (3*pow(bra,3)*l1 + 2*cs2num*(3*bra*kin + pow(kin,2) - 3*l4) +
-            pow(bra,2)*((-6 + kin)*l1 + 3*l4) -
-            2*bra*(kin*l1 - 3*l1*l2 + 3*l4) +
-            2*(3*l2*l4 + kin*(l1*l2 - 8*l7) - 8*l1*l7))/
-            (2.*(-2 + bra)*Dd*(kin + l1));
-
-  B2_smg =  (8*(1 + DelM2)*(3*l2*l6 + 4*kin*l8) + 4*l1*(8*(1 + DelM2)*l8 +
-            l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))))+
-            2*pow(bra,2)*(6*(1 + DelM2)*l6 + l1*(12 - 12*Omx +
-            (1 + DelM2)*(-30 + kin + 6*Omx*(1 - 3*wx)))) +
-            3*pow(bra,3)*(1 + DelM2)*l1*(6 + Omx*(-1 + 3*wx)) +
-            2*cs2num*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 +
-            3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) +
-            bra*(6 + Omx*(-1 + 3*wx))))) - 2*bra*(12*(1 + DelM2)*l6 +
-            l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) +
-            l2*(6 + Omx*(-1 + 3*wx)))))))/
-            (4.*(-2 + bra)*Dd*(1 + DelM2)*(kin + l1));
-
-  //compute exponent ignoring any imaginary part
   vx_growth = 0.5*(1.-B1_smg);
+
   if (1.-2.*B1_smg + B1_smg*B1_smg -4.*B2_smg >=0){
     vx_growth += 0.5*sqrt(1. -2.*B1_smg + B1_smg*B1_smg -4.*B2_smg);
   }
-
+ 
   if (ppt->perturbations_verbose > 1){
     printf("\nExternal field attractor ICs at z=%e. Standard solution for grav. field, h = (k tau)^2.\n",z_ref);
     if(vx_growth<3){

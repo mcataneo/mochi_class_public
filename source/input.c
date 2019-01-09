@@ -1068,7 +1068,7 @@ int input_read_parameters(
   else if ((flag4 == _TRUE_) && (param4 < 0.)){
     // Fill up with scalar field
     pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_smg = %e\n",pba->Omega0_smg);
+    if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
   }
 
   if (flag3 == _FALSE_){
@@ -4313,7 +4313,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
   short compute_sigma8 = _FALSE_;
 
   pfzw = (struct fzerofun_workspace *) voidpfzw;
-
+ 
   for (i=0; i < unknown_parameters_size; i++) {
     sprintf(pfzw->fc.value[pfzw->unknown_parameters_index[i]],
             "%e",unknown_parameter[i]);
@@ -4688,6 +4688,7 @@ int input_find_root(double *xzero,
   /** - Fisrt we do our guess */
   class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
              errmsg, errmsg);
+
   //      printf("x1= %g\n",x1);
   class_call(input_fzerofun_1d(x1,
                                pfzw,
@@ -4697,10 +4698,9 @@ int input_find_root(double *xzero,
   (*fevals)++;
   //printf("x1= %g, f1= %g\n",x1,f1);
 
- 
   /** - Do linear hunt for boundaries */
   dxdytrue=dxdy;
-  for (iter=1; iter<=15; iter++){
+  for (iter=1; iter<=31; iter++){
  
     //Set the search step size according to guessed dxdy on first pass
     //then update with a real one on second pass and keep that until the end.

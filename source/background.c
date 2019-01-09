@@ -677,7 +677,7 @@ int background_init(
              background_free(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
-
+  
   /** - assign values to all indices in vectors of background quantities with background_indices()*/
   class_call(background_indices(pba),
              pba->error_message,
@@ -2339,7 +2339,7 @@ int background_solve(
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
     if (pba->has_smg == _TRUE_){
-      printf(" -> Omega_smg = %f, whished %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg);
+      printf(" -> Omega_smg = %f, wanted %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg);
       if(pba->has_lambda == _TRUE_)
 	printf(", Omega_Lambda = %f", pba->Omega0_lambda);
       printf("\n");
@@ -2639,7 +2639,6 @@ int background_initial_conditions(
     }
 
     if (pba->field_evolution_smg == _TRUE_){
-      //TODO: pba->backround_verbose is zero here for some reason?//ILS
       if (pba->background_verbose>3)
 	printf(" -> Initial conditions: phi = %e, phi' = %e \n",pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_prime_smg]);
 
@@ -3589,66 +3588,66 @@ int background_gravity_parameters(
 
    case quintessence_monomial:
      printf("Modified gravity: quintessence_monomial with parameters: \n");
-     printf("-> N = %g, V0 = %g, V0* = %g, phi_prime_0 = %g, phi_0 = %g \n",
+     printf(" -> N = %g, V0 = %g, V0* = %g, phi_prime_0 = %g, phi_0 = %g \n",
 	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[1]*3.*pow(pba->H0/pba->h,2),
 	    pba->parameters_smg[2], pba->parameters_smg[3]);
      break;
 
    case galileon:
      printf("Modified gravity: covariant Galileon with parameters: \n");
-     printf("-> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
+     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
 	    pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0], pba->xi_0_smg);
      break;
 
    case brans_dicke:
      printf("Modified gravity: Brans Dicke with parameters: \n");
-     printf("-> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
+     printf(" -> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
      break;
 
     case nkgb:
      printf("Modified gravity: Kinetic Gravity Braiding with K=-X and G=1/n g^(2n-1)/2 * X^n with parameters: \n");
-     printf("-> g = %g, n = %g, phi_0 = 0.0, n0*dphi0/rho0 = %g. \n",
+     printf(" -> g = %g, n = %g, phi_0 = 0.0, density fraction from shift charge = %g. \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
      break;
 
    case propto_omega:
      printf("Modified gravity: propto_omega with parameters: \n");
-     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
 
    case propto_scale:
      printf("Modified gravity: propto_scale with parameters: \n");
-     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
 
    case constant_alphas:
      printf("Modified gravity: constant_alphas with parameters: \n");
-     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
 
    case eft_alphas_power_law:
      printf("Modified gravity: eft_alphas_power_law with parameters: \n");
-     printf("-> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
+     printf(" -> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
    case eft_gammas_power_law:
      printf("Modified gravity: eft_gammas_power_law with parameters: \n");
-     printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
+     printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
    case eft_gammas_exponential:
      printf("Modified gravity: eft_gammas_exponential with parameters: \n");
-     printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
+     printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
