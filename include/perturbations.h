@@ -78,6 +78,11 @@ enum possible_gauges {
 
 //@}
 
+
+// list of possible initial conditions for the perturbations
+enum pert_possible_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
+
+
 //@{
 
 /**
@@ -99,7 +104,7 @@ enum selection_type {gaussian,tophat,dirac};
 //@}
 
 
-// /* coefficients of the Sawicki polynomial 
+// /* coefficients of the Sawicki polynomial
 //  * needed to find growing mode
 //  * NOTE: I'm trying that the code does not inline these very long computations
 //  */
@@ -264,24 +269,26 @@ struct perturbs
   short has_source_t;  /**< do we need source for CMB temperature? */
   short has_source_p;  /**< do we need source for CMB polarization? */
   short has_source_delta_m;   /**< do we need source for delta of total matter? */
+  short has_source_delta_cb; /**< do we ALSO need source for delta of ONLY cdm and baryon? */
   short has_source_delta_g;    /**< do we need source for delta of gammas? */
   short has_source_delta_b;    /**< do we need source for delta of baryons? */
   short has_source_delta_cdm;  /**< do we need source for delta of cold dark matter? */
   short has_source_delta_dcdm; /**< do we need source for delta of DCDM? */
   short has_source_delta_fld;  /**< do we need source for delta of dark energy? */
   short has_source_delta_scf;  /**< do we need source for delta from scalar field? */
-  short has_source_phi_smg;  /**< do we need source for delta of scalar field? */  
+  short has_source_phi_smg;  /**< do we need source for delta of scalar field? */
   short has_source_delta_dr; /**< do we need source for delta of decay radiation? */
   short has_source_delta_ur; /**< do we need source for delta of ultra-relativistic neutrinos/relics? */
   short has_source_delta_ncdm; /**< do we need source for delta of all non-cold dark matter species (e.g. massive neutrinos)? */
   short has_source_theta_m;    /**< do we need source for theta of total matter? */
+  short has_source_theta_cb; /**< do we ALSO need source for theta of ONLY cdm and baryon? */
   short has_source_theta_g;    /**< do we need source for theta of gammas? */
   short has_source_theta_b;    /**< do we need source for theta of baryons? */
   short has_source_theta_cdm;  /**< do we need source for theta of cold dark matter? */
   short has_source_theta_dcdm; /**< do we need source for theta of DCDM? */
   short has_source_theta_fld;  /**< do we need source for theta of dark energy? */
   short has_source_theta_scf;  /**< do we need source for theta of scalar field? */
-  short has_source_phi_prime_smg;  /**< do we need source for theta of scalar field? */  
+  short has_source_phi_prime_smg;  /**< do we need source for theta of scalar field? */
   short has_source_theta_dr; /**< do we need source for theta of ultra-relativistic neutrinos/relics? */
   short has_source_theta_ur; /**< do we need source for theta of ultra-relativistic neutrinos/relics? */
   short has_source_theta_ncdm; /**< do we need source for theta of all non-cold dark matter species (e.g. massive neutrinos)? */
@@ -303,13 +310,14 @@ struct perturbs
   int index_tp_t2; /**< index value for temperature (j=2 term) */
   int index_tp_p; /**< index value for polarization */
   int index_tp_delta_m; /**< index value for delta tot */
+  int index_tp_delta_cb; /**< index value for delta cb */
   int index_tp_delta_g;   /**< index value for delta of gammas */
   int index_tp_delta_b;   /**< index value for delta of baryons */
   int index_tp_delta_cdm; /**< index value for delta of cold dark matter */
   int index_tp_delta_dcdm;/**< index value for delta of DCDM */
   int index_tp_delta_fld;  /**< index value for delta of dark energy */
   int index_tp_delta_scf;  /**< index value for delta of scalar field */
-  int index_tp_phi_smg;  /**< index value for delta of scalar field */  
+  int index_tp_phi_smg;  /**< index value for delta of scalar field */
   int index_tp_delta_dr; /**< index value for delta of decay radiation */
   int index_tp_delta_ur; /**< index value for delta of ultra-relativistic neutrinos/relics */
   int index_tp_delta_ncdm1; /**< index value for delta of first non-cold dark matter species (e.g. massive neutrinos) */
@@ -317,13 +325,14 @@ struct perturbs
   int index_tp_perturbed_recombination_delta_chi;		/**< Inionization fraction perturbation */
 
   int index_tp_theta_m;    /**< index value for theta tot */
+  int index_tp_theta_cb;   /**< index value for theta cb */
   int index_tp_theta_g;    /**< index value for theta of gammas */
   int index_tp_theta_b;    /**< index value for theta of baryons */
   int index_tp_theta_cdm;  /**< index value for theta of cold dark matter */
   int index_tp_theta_dcdm; /**< index value for theta of DCDM */
   int index_tp_theta_fld;  /**< index value for theta of dark energy */
   int index_tp_theta_scf;  /**< index value for theta of scalar field */
-  int index_tp_phi_prime_smg;  /**< index value for theta of scalar field */     
+  int index_tp_phi_prime_smg;  /**< index value for theta of scalar field */
   int index_tp_theta_ur;   /**< index value for theta of ultra-relativistic neutrinos/relics */
   int index_tp_theta_dr;   /**< index value for F1 of decay radiation */
   int index_tp_theta_ncdm1;/**< index value for theta of first non-cold dark matter species (e.g. massive neutrinos) */
@@ -412,6 +421,15 @@ struct perturbs
   //@{
 
   enum possible_methods_smgqs method_smgqs;
+  short initial_approx_smgqs; /**< flag regulating the initial state of smgqs */
+
+  //@}
+
+  //@{
+
+    /** enumerator defining type of dynamical initial conditions */
+
+  enum pert_possible_initial_conditions pert_initial_conditions_smg;
 
   //@}
 
@@ -449,7 +467,7 @@ struct perturb_vector
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
   int index_pt_vx_smg;  /**< scalar field density */
-  int index_pt_vx_prime_smg;  /**< scalar field velocity */    
+  int index_pt_vx_prime_smg;  /**< scalar field velocity */
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */
   int index_pt_theta_ur; /**< velocity of ultra-relativistic neutrinos/relics */
   int index_pt_shear_ur; /**< shear of ultra-relativistic neutrinos/relics */
@@ -516,7 +534,7 @@ struct perturb_workspace
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
   int index_mt_vx_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_vx_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
-  int index_mt_vx_smg;       /**< scalar field perturbation */  
+  int index_mt_vx_smg;       /**< scalar field perturbation */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
   int mt_size;                /**< size of metric perturbation vector */
 
@@ -551,13 +569,16 @@ struct perturb_workspace
   double rsa_theta_g;  /**< photon velocity in radiation streaming approximation */
   double rsa_delta_ur; /**< photon density in radiation streaming approximation */
   double rsa_theta_ur; /**< photon velocity in radiation streaming approximation */
-  
+
   double * delta_ncdm;	/**< relative density perturbation of each ncdm species */
   double * theta_ncdm;	/**< velocity divergence theta of each ncdm species */
   double * shear_ncdm;	/**< shear for each ncdm species */
 
   double delta_m;	/**< relative density perturbation of all non-relativistic species */
   double theta_m;	/**< velocity divergence theta of all non-relativistic species */
+
+  double delta_cb;       /**< relative density perturbation of only cdm and baryon */
+  double theta_cb;       /**< velocity divergence theta of only cdm and baryon */
 
   double delta_rho_fld;        /**< density perturbation of fluid, not so trivial in PPF scheme */
   double rho_plus_p_theta_fld; /**< velocity divergence of fluid, not so trivial in PPF scheme */
@@ -654,6 +675,10 @@ extern "C" {
   int perturb_free(
                    struct perturbs * ppt
                    );
+
+  int perturb_free_nosource(
+                            struct perturbs * ppt
+                            );
 
   int perturb_indices_of_perturbs(
                                   struct precision * ppr,
@@ -855,19 +880,32 @@ extern "C" {
 
   int perturb_prepare_output(struct background * pba,
                              struct perturbs * ppt);
- 
+
   int perturb_test_ini_grav_ic_smg(struct precision * ppr,
 			  struct background * pba,
-			  struct perturbs * ppt);  
+			  struct perturbs * ppt);
 
   int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
 			  struct background * pba,
-			  struct perturbs * ppt);  
+			  struct perturbs * ppt);
+
+  int perturb_test_at_k_smgqs(struct precision * ppr,
+                              struct background * pba,
+                              struct perturbs * ppt,
+                              double k,
+                              double tau,
+                              int *approx);
+
+  int perturb_test_ini_smgqs(struct precision * ppr,
+                             struct background * pba,
+                             struct perturbs * ppt,
+                             double k_min,
+                             double k_max,
+                             double a_ini);
 
   int perturb_find_scheme_smgqs(struct precision * ppr,
                                 struct background * pba,
                                 struct perturbs * ppt,
-                                struct perturb_workspace * ppw,
                                 double k,
                                 double tau_ini,
                                 double tau_end,
@@ -876,7 +914,6 @@ extern "C" {
   int sample_mass_smgqs(struct precision * ppr,
                         struct background * pba,
                         struct perturbs * ppt,
-                        struct perturb_workspace * ppw,
                         double k,
                         double tau_ini,
                         double tau_end,
@@ -910,7 +947,6 @@ extern "C" {
   int correct_with_slope_smgqs(struct precision * ppr,
                                struct background * pba,
                                struct perturbs * ppt,
-                               struct perturb_workspace * ppw,
                                double tau_ini,
                                double tau_end,
                                double * tau_array,

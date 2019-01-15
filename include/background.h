@@ -10,18 +10,21 @@
 #include "dei_rkck.h"
 #include "parser.h"
 
+/** list of possible types of spatial curvature */
+
 enum spatial_curvature {flat,open,closed};
 enum gravity_model {propto_omega, propto_scale, constant_alphas,
   eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
   galileon, brans_dicke, quintessence_monomial
 }; //write here the different models
 
-// initial conditions for the perturbations
-enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
-
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
 enum expansion_model {lcdm, wowa, wowa_w}; //parameterized expansion, only for non-self consistent Horndeski theories
+
+/** list of possible parametrisations of the DE equation of state */
+
+enum equation_of_state {CLP,EDE};
 
 /**
  * All background parameters and evolution that other modules need to know.
@@ -61,8 +64,12 @@ struct background
   double Omega0_lambda; /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */
 
   double Omega0_fld; /**< \f$ \Omega_{0 de} \f$: fluid */
+
+  enum equation_of_state fluid_equation_of_state; /**< parametrisation scheme for fluid equation of state */
+
   double w0_fld; /**< \f$ w0_{DE} \f$: current fluid equation of state parameter */
   double wa_fld; /**< \f$ wa_{DE} \f$: fluid equation of state parameter derivative */
+  double Omega_EDE; /**< \f$ wa_{DE} \f$: Early Dark Energy density parameter */
 
   double cs2_fld; /**< \f$ c^2_{s~DE} \f$: sound speed of the fluid
 		     in the frame comoving with the fluid (so, this is
@@ -107,8 +114,6 @@ struct background
 //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
   enum expansion_model expansion_model_smg; /* choice of expansion rate */
   
-  enum pert_initial_conditions pert_initial_conditions_smg; /* initial conditions for perturbations */
-  
   short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
   short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
   
@@ -137,15 +142,7 @@ struct background
   int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
   int rho_evolution_smg; /**< does the model require integrating the energy density? */
 
-  double z_ref_smg; /**< Specifies redshift at which M* is input in models with running */
-  double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
-  double pert_ic_tolerance_smg; /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */
-  double pert_ic_ini_z_ref_smg; /**<Reference z to carry out test for conservation of curvature before pert evolution*/ 
-  double pert_ic_regulator_smg;  /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
-
-  
-  
-  /* Modified gravity parameters
+   /* Modified gravity parameters
    * parameters_smg -> contains the primary parameters. Any param that might be varied to determine Omega_smg should be here
    * tuning_index_smg -> which parameter is varied to obtain the right Omega_smg
    * parameters_2_smg -> contains auxiliary parameters. These will not be varied to obtain Omega_smg
@@ -215,7 +212,10 @@ struct background
   double Neff; /**< so-called "effective neutrino number", computed at earliest time in interpolation table */
   double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$: decaying cold dark matter */
   double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$: decay radiation */
-
+  double a_eq;      /**< scale factor at radiation/matter equality */
+  double H_eq;      /**< Hubble rate at radiation/matter equality [Mpc^-1] */
+  double z_eq;      /**< redshift at radiation/matter equality */
+  double tau_eq;    /**< conformal time at radiation/matter equality [Mpc] */
 
   //@}
 
@@ -553,6 +553,10 @@ extern "C" {
                             struct background *pba
                             );
 
+  int background_free_noinput(
+                    struct background *pba
+                    );
+
   int background_indices(
 			 struct background *pba
 			 );
@@ -618,6 +622,11 @@ extern "C" {
 				    double * pvecback,
 				    double * pvecback_integration
 				    );
+
+  int background_find_equality(
+                               struct precision *ppr,
+                               struct background *pba
+                               );
 
   int background_output_titles(struct background * pba,
                                char titles[_MAXTITLESTRINGLENGTH_]

@@ -223,7 +223,10 @@ int evolver_ndf15(
   htspan = fabs(tfinal-t0);
   for(ii=0;ii<6;ii++) stepstat[ii] = 0;
 
-  class_call((*derivs)(t0,y+1,f0+1,parameters_and_workspace_for_derivs,error_message),error_message,error_message);
+  class_call_except((*derivs)(t0,y+1,f0+1,parameters_and_workspace_for_derivs,error_message),
+				error_message,
+				error_message,
+			free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
   stepstat[2] +=1;
   if ((tfinal-t0)<0.0){
     tdir = -1;
@@ -236,14 +239,15 @@ int evolver_ndf15(
 
 
   nfenj=0;
-  class_call(numjac((*derivs),t,y,f0,&jac,&nj_ws,abstol,neq,
+  class_call_except(numjac((*derivs),t,y,f0,&jac,&nj_ws,abstol,neq,
 		    &nfenj,parameters_and_workspace_for_derivs,error_message),
-	     error_message,error_message);
+	     error_message,error_message,
+		 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
   stepstat[3] += 1;
   stepstat[2] += nfenj;
   Jcurrent = _TRUE_; /* True */
 
-  hmin = 16.0*eps*fabs(t);
+  hmin = 16.0*eps*MAX(fabs(t),fabs(tfinal));
   /*Calculate initial step */
   rh = 0.0;
 
@@ -260,8 +264,9 @@ int evolver_ndf15(
   h = tdir * absh;
   tdel = (t + tdir*MIN(sqrt(eps)*MAX(fabs(t),fabs(t+h)),absh)) - t;
 
-  class_call((*derivs)(t+tdel,y+1,tempvec1+1,parameters_and_workspace_for_derivs,error_message),
-	     error_message,error_message);
+  class_call_except((*derivs)(t+tdel,y+1,tempvec1+1,parameters_and_workspace_for_derivs,error_message),
+	     error_message,error_message,
+		 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
   stepstat[2] += 1;
 
   /*I assume that a full jacobi matrix is always calculated in the beginning...*/
@@ -292,8 +297,9 @@ int evolver_ndf15(
 
   hinvGak = h*invGa[k-1];
   nconhk = 0; 	/*steps taken with current h and k*/
-  class_call(new_linearisation(&jac,hinvGak,neq,error_message),
-	     error_message,error_message);
+  class_call_except(new_linearisation(&jac,hinvGak,neq,error_message),
+	     error_message,error_message,
+		 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
   stepstat[4] += 1;
   havrate = _FALSE_; /*false*/
 
@@ -301,7 +307,7 @@ int evolver_ndf15(
   done = _FALSE_;
   at_hmin = _FALSE_;
   while (done==_FALSE_){
-    hmin = minimum_variation;
+    hmin = MAX(hmin, minimum_variation);
     maxtmp = MAX(hmin,absh);
     absh = MIN(hmax, maxtmp);
     if (fabs(absh-hmin)<100*eps){
@@ -325,8 +331,9 @@ int evolver_ndf15(
       adjust_stepsize(dif,(absh/abshlast),neq,k);
       hinvGak = h * invGa[k-1];
       nconhk = 0;
-      class_call(new_linearisation(&jac,hinvGak,neq,error_message),
-		 error_message,error_message);
+      class_call_except(new_linearisation(&jac,hinvGak,neq,error_message),
+		 error_message,error_message,
+	 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
       stepstat[4] += 1;
       havrate = _FALSE_;
     }
@@ -376,8 +383,9 @@ int evolver_ndf15(
 	  for (ii=1;ii<=neq;ii++){
 	    tempvec1[ii]=(psi[ii]+difkp1[ii]);
 	  }
-	  class_call((*derivs)(tnew,ynew+1,f0+1,parameters_and_workspace_for_derivs,error_message),
-		     error_message,error_message);
+	  class_call_except((*derivs)(tnew,ynew+1,f0+1,parameters_and_workspace_for_derivs,error_message),
+		     error_message,error_message,
+			 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 	  stepstat[2] += 1;
 	  for(j=1;j<=neq;j++){
 	    rhs[j] = hinvGak*f0[j]-tempvec1[j];
@@ -445,18 +453,22 @@ int evolver_ndf15(
 	  stepstat[1] += 1;
 	  /*	! Speed up the iteration by forming new linearization or reducing h. */
 	  if (Jcurrent==_FALSE_){
-	    class_call((*derivs)(t,y+1,f0+1,parameters_and_workspace_for_derivs,error_message),
-		       error_message,error_message);
+	    class_call_except((*derivs)(t,y+1,f0+1,parameters_and_workspace_for_derivs,error_message),
+		       error_message,error_message,
+				 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 	    nfenj=0;
-	    class_call(numjac((*derivs),t,y,f0,&jac,&nj_ws,abstol,neq,
+	    class_call_except(numjac((*derivs),t,y,f0,&jac,&nj_ws,abstol,neq,
 			      &nfenj,parameters_and_workspace_for_derivs,error_message),
-		       error_message,error_message);
+		       error_message,error_message,
+				 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 	    stepstat[3] += 1;
 	    stepstat[2] += (nfenj + 1);
 	    Jcurrent = _TRUE_;
 	  }
 	  else if (absh <= hmin){
-	    class_test(absh <= hmin, error_message,
+	    class_test_except(absh <= hmin,
+				   error_message,
+					 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws),
 		       "Step size too small: step:%g, minimum:%g, in interval: [%g:%g]\n",
 		       absh,hmin,t0,tfinal);
 	  }
@@ -470,8 +482,9 @@ int evolver_ndf15(
 	    nconhk = 0;
 	  }
 	  /* A new linearisation is needed in both cases */
-	  class_call(new_linearisation(&jac,hinvGak,neq,error_message),
-		     error_message,error_message);
+	  class_call_except(new_linearisation(&jac,hinvGak,neq,error_message),
+		     error_message,error_message,
+			 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 	  stepstat[4] += 1;
 	  havrate = _FALSE_;
 	}
@@ -487,7 +500,9 @@ int evolver_ndf15(
 	/*Step failed */
 	stepstat[1]+= 1;
 	if (absh <= hmin){
-	  class_test(absh <= hmin, error_message,
+	  class_test_except(absh <= hmin,
+			   error_message,
+				 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws),
 		     "Step size too small: step:%g, minimum:%g, in interval: [%g:%g]\n",
 		     absh,hmin,t0,tfinal);
 	}
@@ -519,8 +534,9 @@ int evolver_ndf15(
 	adjust_stepsize(dif,(absh/abshlast),neq,k);
 	hinvGak = h * invGa[k-1];
 	nconhk = 0;
-	class_call(new_linearisation(&jac,hinvGak,neq,error_message),
-		   error_message,error_message);
+	class_call_except(new_linearisation(&jac,hinvGak,neq,error_message),
+		   error_message,error_message,
+		 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 	stepstat[4] += 1;
 	havrate = _FALSE_;
       }
@@ -545,8 +561,9 @@ int evolver_ndf15(
     while ((next<tres)&&(tdir * (tnew - t_vec[next]) >= 0.0)){
       /* Do we need to write output? */
       if (tnew==t_vec[next]){
-	class_call((*output)(t_vec[next],ynew+1,f0+1,next,parameters_and_workspace_for_derivs,error_message),
-		   error_message,error_message);
+	class_call_except((*output)(t_vec[next],ynew+1,f0+1,next,parameters_and_workspace_for_derivs,error_message),
+		   error_message,error_message,
+		 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 // MODIFICATION BY LUC
 // All print_variables have been moved to the end of time step
 /*
@@ -561,8 +578,9 @@ int evolver_ndf15(
 	/*Interpolate if we have overshot sample values*/
 	interp_from_dif(t_vec[next],tnew,ynew,h,dif,k,yinterp,ypinterp,yppinterp,interpidx,neq,2);
 
-	class_call((*output)(t_vec[next],yinterp+1,ypinterp+1,next,parameters_and_workspace_for_derivs,
-			     error_message),error_message,error_message);
+	class_call_except((*output)(t_vec[next],yinterp+1,ypinterp+1,next,parameters_and_workspace_for_derivs,error_message),
+				error_message,error_message,
+			free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 
       }
       next++;
@@ -633,16 +651,18 @@ int evolver_ndf15(
 
 // MODIFICATION BY LUC
     if (print_variables!=NULL){
-      class_call((*derivs)(tnew,
+      class_call_except((*derivs)(tnew,
 		             ynew+1,
 		             f0+1,
 		             parameters_and_workspace_for_derivs,error_message),
 	               error_message,
-	               error_message);
+	               error_message,
+							 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
 
-        class_call((*print_variables)(tnew,ynew+1,f0+1,
+        class_call_except((*print_variables)(tnew,ynew+1,f0+1,
 					parameters_and_workspace_for_derivs,error_message),
-		     error_message,error_message);
+		     error_message,error_message,
+			 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
     }
 // end of modification
 
@@ -651,13 +671,22 @@ int evolver_ndf15(
   /* a last call is compulsory to ensure that all quantitites in
      y,dy,parameters_and_workspace_for_derivs are updated to the
      last point in the covered range */
-  class_call(
+  class_call_except(
 	     (*derivs)(tnew,
 		       ynew+1,
 		       f0+1,
 		       parameters_and_workspace_for_derivs,error_message),
 	     error_message,
-	     error_message);
+	     error_message,
+		 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
+
+  if (print_variables!=NULL){
+    /** If we are printing variables, we must store the final point */
+    class_call_except((*print_variables)(tnew,ynew+1,f0+1,
+				  parameters_and_workspace_for_derivs,error_message),
+	       error_message,error_message,
+			 free(buffer);uninitialize_jacobian(&jac);uninitialize_numjac_workspace(&nj_ws));
+  }
 
   if (verbose > 0){
     printf("\n End of evolver. Next=%d, t=%e and tnew=%e.",next,t,tnew);

@@ -329,8 +329,8 @@ int background_functions(
     rho_tot += pvecback[pba->index_bg_rho_dr];
     p_tot += (1./3.)*pvecback[pba->index_bg_rho_dr];
     rho_r += pvecback[pba->index_bg_rho_dr];
-  }  
-  
+  }
+
   /* ncdm */
   if (pba->has_ncdm == _TRUE_) {
 
@@ -395,7 +395,7 @@ int background_functions(
     p_tot += w_fld * pvecback[pba->index_bg_rho_fld];
     rho_de += pvecback[pba->index_bg_rho_lambda];
   }
-  
+
   /* Quintessence */
   if (pba->has_scf == _TRUE_) {
     phi = pvecback_B[pba->index_bi_phi_scf];
@@ -426,37 +426,37 @@ int background_functions(
       only place where the Friedmann equation is assumed. Remember
       that densities are all expressed in units of \f$ [3c^2/8\pi G] \f$, ie
       \f$ \rho_{class} = [8 \pi G \rho_{physical} / 3 c^2]\f$
-      NOTE: different computation if scalar field is present */  
+      NOTE: different computation if scalar field is present */
   if (pba->has_smg == _FALSE_){
-    
+
     if (pba->hubble_evolution == _TRUE_)
       pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H]; //sqrt(rho_tot-pba->K/a/a);
     else
       pvecback[pba->index_bg_H] = sqrt(rho_tot - pba->K/a/a);
-    
+
     /** - compute derivative of H with respect to conformal time: friction added */
     pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a - a* pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - (rho_tot-pba->K/a/a) );
   }
   /* Scalar field */
   /** if (has_smg) do all the mess to compute the Hubble rate, etc... */
   else{
-    
+
 //       /** - save rho_tot and p_tot without smg (it is important that smg is the last thing to be computed) */
       pvecback[pba->index_bg_rho_tot_wo_smg] = rho_tot;
       pvecback[pba->index_bg_p_tot_wo_smg] = p_tot;
       //NOTE: add the field energy and pressure after the debug has been added
-     
+
     class_call(background_gravity_functions(pba,
 					    pvecback_B,
 					    return_format,
 					    pvecback),
 	       pba->error_message,
                pba->error_message);
-    
+
     rho_tot += pvecback[pba->index_bg_rho_smg];
     p_tot += pvecback[pba->index_bg_p_smg];
     //divide relativistic & nonrelativistic (not very meaningful for oscillatory models)
-    
+
     //TODO: need to define menaingfully -> separate early universe (IC, BBN...) from late (Halofit...)
     //BUG: causes problem with halofit!, if not, causes bug with Brans-Dicke
     rho_de += pvecback[pba->index_bg_rho_smg];
@@ -470,7 +470,7 @@ int background_functions(
 
   /** - compute relativistic density to total density ratio */
   pvecback[pba->index_bg_Omega_r] = rho_r / rho_tot;
-  
+
   /** - compute dark energy density to total density ratio */
   pvecback[pba->index_bg_Omega_de] = rho_de / rho_tot;
 
@@ -517,15 +517,59 @@ int background_w_fld(
                      double * dw_over_da_fld,
                      double * integral_fld) {
 
+  double Omega_ede = 0.;
+  double dOmega_ede_over_da = 0.;
+  double d2Omega_ede_over_da2 = 0.;
+  double a_eq, Omega_r, Omega_m;
+
   /** - first, define the function w(a) */
-  *w_fld = pba->w0_fld + pba->wa_fld * (1. - a / pba->a_today);
+  switch (pba->fluid_equation_of_state) {
+  case CLP:
+    *w_fld = pba->w0_fld + pba->wa_fld * (1. - a / pba->a_today);
+    break;
+  case EDE:
+    // Omega_ede(a) taken from eq. (10) in 1706.00730
+    Omega_ede = (pba->Omega0_fld - pba->Omega_EDE*(1.-pow(a,-3.*pba->w0_fld)))
+      /(pba->Omega0_fld+(1.-pba->Omega0_fld)*pow(a,3.*pba->w0_fld))
+      + pba->Omega_EDE*(1.-pow(a,-3.*pba->w0_fld));
+
+    // d Omega_ede / d a taken analytically from the above
+    dOmega_ede_over_da = - pba->Omega_EDE* 3.*pba->w0_fld*pow(a,-3.*pba->w0_fld-1.)/(pba->Omega0_fld+(1.-pba->Omega0_fld)*pow(a,3.*pba->w0_fld))
+      - (pba->Omega0_fld - pba->Omega_EDE*(1.-pow(a,-3.*pba->w0_fld)))*(1.-pba->Omega0_fld)*3.*pba->w0_fld*pow(a,3.*pba->w0_fld-1.)/pow(pba->Omega0_fld+(1.-pba->Omega0_fld)*pow(a,3.*pba->w0_fld),2)
+      + pba->Omega_EDE*3.*pba->w0_fld*pow(a,-3.*pba->w0_fld-1.);
+
+    // find a_equality (needed because EDE tracks first radiation, then matter)
+    Omega_r = pba->Omega0_g * (1. + 3.046 * 7./8.*pow(4./11.,4./3.)); // assumes LambdaCDM + eventually massive neutrinos so light that they are relativistic at equality; needs to be generalised later on.
+    Omega_m = pba->Omega0_b;
+    if (pba->has_cdm == _TRUE_) Omega_m += pba->Omega0_cdm;
+    if (pba->has_dcdm == _TRUE_)
+        class_stop(pba->error_message,"Early Dark Energy not compatible with decaying Dark Matter because we omitted to code the calculation of a_eq in that case, but it would not be difficult to add it if necessary, should be a matter of 5 minutes");
+    a_eq = Omega_r/Omega_m; // assumes a flat universe with a=1 today
+    class_stop(pba->error_message,"a_eq = %e, z_eq =%e\n",a_eq,1./a_eq-1.);
+
+    // w_ede(a) taken from eq. (11) in 1706.00730
+    *w_fld = - dOmega_ede_over_da*a/Omega_ede/3./(1.-Omega_ede)+a_eq/3./(a+a_eq);
+    break;
+  }
+
 
   /** - then, give the corresponding analytic derivative dw/da (used
         by perturbation equations; we could compute it numerically,
         but with a loss of precision; as long as there is a simple
         analytic expression of the derivative of the previous
         function, let's use it! */
-  *dw_over_da_fld = - pba->wa_fld / pba->a_today;
+  switch (pba->fluid_equation_of_state) {
+  case CLP:
+    *dw_over_da_fld = - pba->wa_fld / pba->a_today;
+    break;
+  case EDE:
+    d2Omega_ede_over_da2 = 0.;
+    *dw_over_da_fld = - d2Omega_ede_over_da2*a/3./(1.-Omega_ede)/Omega_ede
+      - dOmega_ede_over_da/3./(1.-Omega_ede)/Omega_ede
+      + dOmega_ede_over_da*dOmega_ede_over_da*a/3./(1.-Omega_ede)/(1.-Omega_ede)/Omega_ede
+      + a_eq/3./(a+a_eq)/(a+a_eq);
+    break;
+  }
 
   /** - finally, give the analytic solution of the following integral:
         \f$ \int_{a}^{a0} da 3(1+w_{fld})/a \f$. This is used in only
@@ -628,8 +672,9 @@ int background_init(
   }
 
   /** - if shooting failed during input, catch the error here */
-  class_test(pba->shooting_failed == _TRUE_,
+  class_test_except(pba->shooting_failed == _TRUE_,
              pba->error_message,
+             background_free(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
 
@@ -700,6 +745,11 @@ int background_init(
              pba->error_message,
              pba->error_message);
 
+  /** - this function finds and stores a few derived parameters at radiation-matter equality */
+  class_call(background_find_equality(ppr,pba),
+             pba->error_message,
+             pba->error_message);
+
   return _SUCCESS_;
 
 }
@@ -728,6 +778,24 @@ int background_free(
   return err;
 }
 
+/**
+ * Free only the memory space NOT allocated through input_read_parameters()
+ *
+ * @param pba Input: pointer to background structure (to be freed)
+ * @return the error status
+ */
+
+int background_free_noinput(
+                    struct background *pba
+                    ) {
+  free(pba->tau_table);
+  free(pba->z_table);
+  free(pba->d2tau_dz2_table);
+  free(pba->background_table);
+  free(pba->d2background_dtau2_table);
+
+  return _SUCCESS_;
+}
 /**
  * Free pointers inside background structure which were
  * allocated in input_read_parameters()
@@ -815,7 +883,7 @@ int background_indices(
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
   pba->has_scf = _FALSE_;
-  pba->has_smg = _FALSE_; /*Scalar field*/    
+  pba->has_smg = _FALSE_; /*Scalar field*/
   pba->has_lambda = _FALSE_;
   pba->has_fld = _FALSE_;
   pba->has_ur = _FALSE_;
@@ -832,9 +900,9 @@ int background_indices(
     if (pba->Gamma_dcdm != 0.)
       pba->has_dr = _TRUE_;
   }
-  
+
   if (pba->Omega0_smg != 0.)
-    pba->has_smg = _TRUE_;    
+    pba->has_smg = _TRUE_;
 
   if (pba->Omega0_lambda != 0.)
     pba->has_lambda = _TRUE_;
@@ -883,28 +951,28 @@ int background_indices(
 
   /* - index for dr */
   class_define_index(pba->index_bg_rho_dr,pba->has_dr,index_bg,1);
-  
+
   /* - indices for scalar field (modified gravity) */
   class_define_index(pba->index_bg_phi_smg,pba->field_evolution_smg,index_bg,1);
-  class_define_index(pba->index_bg_phi_prime_smg,pba->field_evolution_smg,index_bg,1);       
+  class_define_index(pba->index_bg_phi_prime_smg,pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_phi_prime_prime_smg,pba->field_evolution_smg,index_bg,1);
-  class_define_index(pba->index_bg_M2_smg,pba->has_smg,index_bg,1);      
+  class_define_index(pba->index_bg_M2_smg,pba->has_smg,index_bg,1);
 
-  class_define_index(pba->index_bg_rho_smg,pba->has_smg,index_bg,1);   
-  class_define_index(pba->index_bg_p_smg,pba->has_smg,index_bg,1);  
+  class_define_index(pba->index_bg_rho_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_p_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_rho_prime_smg,pba->has_smg && pba->rho_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_w_smg,pba->has_smg,index_bg,1);
-  
-  class_define_index(pba->index_bg_kineticity_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_braiding_smg,pba->has_smg,index_bg,1);  
-  class_define_index(pba->index_bg_tensor_excess_smg,pba->has_smg,index_bg,1);   
 
-  class_define_index(pba->index_bg_mpl_running_smg,pba->has_smg,index_bg,1);  
+  class_define_index(pba->index_bg_kineticity_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_braiding_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_tensor_excess_smg,pba->has_smg,index_bg,1);
+
+  class_define_index(pba->index_bg_mpl_running_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kineticity_prime_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_braiding_prime_smg,pba->has_smg,index_bg,1);  
-  class_define_index(pba->index_bg_mpl_running_prime_smg,pba->has_smg,index_bg,1);  
-  class_define_index(pba->index_bg_tensor_excess_prime_smg,pba->has_smg,index_bg,1);    
-  
+  class_define_index(pba->index_bg_braiding_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_mpl_running_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_tensor_excess_prime_smg,pba->has_smg,index_bg,1);
+
   class_define_index(pba->index_bg_cs2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_cs2num_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_cs2num_prime_smg,pba->has_smg,index_bg,1);
@@ -926,13 +994,13 @@ int background_indices(
   class_define_index(pba->index_bg_E2_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_E3_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
 
-  class_define_index(pba->index_bg_rho_tot_wo_smg,pba->has_smg,index_bg,1);  
-  class_define_index(pba->index_bg_p_tot_wo_smg,pba->has_smg,index_bg,1);   
-  
-  class_define_index(pba->index_bg_H_prime_prime,pba->has_smg,index_bg,1);  
+  class_define_index(pba->index_bg_rho_tot_wo_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_p_tot_wo_smg,pba->has_smg,index_bg,1);
+
+  class_define_index(pba->index_bg_H_prime_prime,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_p_tot_wo_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_p_prime_smg,pba->has_smg,index_bg,1);
-  
+
 
   /* - index for Lambda */
   class_define_index(pba->index_bg_rho_lambda,pba->has_lambda,index_bg,1);
@@ -946,7 +1014,7 @@ int background_indices(
 
   /* - index for Omega_r (relativistic density fraction) */
   class_define_index(pba->index_bg_Omega_r,_TRUE_,index_bg,1);
-  
+
   /* - index for Omega_de (dark energy density fraction) */
   class_define_index(pba->index_bg_Omega_de,_TRUE_,index_bg,1);
 
@@ -1001,7 +1069,7 @@ int background_indices(
 
   /* -> scale factor */
   class_define_index(pba->index_bi_a,_TRUE_,index_bi,1);
-  
+
   /* index for Hubble rate */
   class_define_index(pba->index_bi_H,pba->hubble_evolution,index_bi,1);
 
@@ -1014,7 +1082,7 @@ int background_indices(
   /* -> scalar field and its derivative wrt conformal time */
   class_define_index(pba->index_bi_phi_scf,pba->has_scf,index_bi,1);
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
-  
+
   /* -> scalar field and its derivative wrt conformal time (only if needs to evolve the field)
    * plus other parameters that might be integrated in certain parameterizations
    */
@@ -1023,7 +1091,7 @@ int background_indices(
 		       pba->field_evolution_smg,index_bi,1);
     class_define_index(pba->index_bi_phi_prime_smg,
 		       pba->field_evolution_smg,index_bi,1);
-    
+
     //if model needs to integrate M_pl from alpha_M, declare an index
     class_define_index(pba->index_bi_M_pl_smg,
 		       pba->M_pl_evolution_smg,index_bi,1);
@@ -1032,7 +1100,7 @@ int background_indices(
     class_define_index(pba->index_bi_rho_smg,
            pba->rho_evolution_smg,index_bi,1);
 
-}  
+}
 
   /* -> energy density in fluid */
   class_define_index(pba->index_bi_rho_fld,pba->has_fld,index_bi,1);
@@ -1392,8 +1460,8 @@ int background_ncdm_init(
 		 pba->error_message,
 		 pba->error_message);
       for (index_q=0; index_q<pba->q_size_ncdm[k]; index_q++) {
-	pba->q_ncdm_bg[k] = pba->q_ncdm[k];
-	pba->w_ncdm_bg[k] = pba->w_ncdm[k];
+	pba->q_ncdm_bg[k][index_q] = pba->q_ncdm[k][index_q];
+	pba->w_ncdm_bg[k][index_q] = pba->w_ncdm[k][index_q];
       }
     /** - in verbose mode, inform user of number of sampled momenta
         for background quantities */
@@ -1532,7 +1600,7 @@ int background_ncdm_momenta(
   }
 
   /** - adjust normalization */
-  if (n!=NULL) *n *= factor2*(1.+z);
+  if (n!=NULL) *n *= factor2/(1.+z);
   if (rho!=NULL) *rho *= factor2;
   if (p!=NULL) *p *= factor2;
   if (drho_dM!=NULL) *drho_dM *= factor2;
@@ -1658,6 +1726,11 @@ int background_solve(
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
 
+  /** - impose initial conditions with background_initial_conditions() */
+  class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration),
+             pba->error_message,
+             pba->error_message);
+
   /** - initialize generic integrator with initialize_generic_integrator() */
 
   /* Size of vector to integrate is (pba->bi_size-1) rather than
@@ -1665,11 +1738,6 @@ int background_solve(
    */
   class_call(initialize_generic_integrator((pba->bi_size-1),&gi),
              gi.error_message,
-             pba->error_message);
-
-  /** - impose initial conditions with background_initial_conditions() */
-  class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration),
-             pba->error_message,
              pba->error_message);
 
   /* here tau_end is in fact the initial time (in the next loop
@@ -1704,8 +1772,9 @@ int background_solve(
       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
     }
 
-    class_test((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
+    class_test_except((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
                pba->error_message,
+               gt_free(&gTable);cleanup_generic_integrator(&gi);background_free(pba);free(pvecback_integration);free(pvecback),
                "integration step: relative change in time =%e < machine precision : leads either to numerical error or infinite loop",(tau_end-tau_start)/tau_start);
 
     /* -> save data in growTable */
@@ -1864,31 +1933,31 @@ int background_solve(
                                       pba->error_message),
              pba->error_message,
              pba->error_message);
-  
-/** - second loop over lines, overwrite derivatives that can't be analytically computed from background_functions 
+
+/** - second loop over lines, overwrite derivatives that can't be analytically computed from background_functions
    * Fill the derivatives of the Bellini-Sawicki functions in pvecback
    * This is done just by overwriting the pvecback entries corresponding to the relevant indice
-   */ 
-  
+   */
+
   double * pvecback_derivs;
-  class_alloc(pvecback_derivs,pba->bg_size*sizeof(double),pba->error_message);  
-  
+  class_alloc(pvecback_derivs,pba->bg_size*sizeof(double),pba->error_message);
+
   for (i=0; i < pba->bt_size; i++) {
 
     // write the derivatives in the structure
-    class_call(array_derivate_spline(pba->tau_table, // x_array 
+    class_call(array_derivate_spline(pba->tau_table, // x_array
 				     pba->bt_size, // int n_lines
 				     pba->background_table, // array
 				     pba->d2background_dtau2_table, // double * array_splined
 				     pba->bg_size, // n_columns
 				     pba->tau_table[i], // double x -> tau
 				     &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
-				     pvecback_derivs, // double * result 
+				     pvecback_derivs, // double * result
 				     pba->bg_size, //result_size, from 1 to n_columns
 				     pba->error_message),
 		pba->error_message,
-		pba->error_message);  
-            
+		pba->error_message);
+
       /* -> write in the table (overwrite the alpha time derivatives, which were set to nan in background_functions)
        * direction of copy: add the corresponding indices to the coordinates
        * thing to be copied: the address (&) to the element of pvecback corresponding to the index we want
@@ -1896,7 +1965,7 @@ int background_solve(
        * -> repeat for all necessary quantities
        */
     if (pba->has_smg == _TRUE_){
-      
+
       //Need to update pvecback
       class_call(background_at_tau(pba,
 				   pba->tau_table[i],
@@ -1906,12 +1975,12 @@ int background_solve(
 				   pvecback),
 		 pba->error_message,
 		 pba->error_message);
-      
+
       /*NOTE: here we compute the derivatives of quantities coputed in background_gravity_functions during the integration.
        * for quantities that depend on these derivatives (e.g. the gamma_i functions determining the effective mass)
        * there is an additional loop at the end of background_solve
        */
-      
+
       // Kineticity'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kineticity_prime_smg,
 			      &pvecback_derivs[pba->index_bg_kineticity_smg],
@@ -1919,7 +1988,7 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kineticity_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
-      
+
       //Braiding'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_braiding_prime_smg,
 			      &pvecback_derivs[pba->index_bg_braiding_smg],
@@ -1927,7 +1996,7 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_braiding_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
-      
+
       //Planck mass run rate'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_prime_smg,
 			      &pvecback_derivs[pba->index_bg_mpl_running_smg],
@@ -1935,7 +2004,7 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
-      
+
       //Tensor excess'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_tensor_excess_prime_smg,
 			      &pvecback_derivs[pba->index_bg_tensor_excess_smg],
@@ -1951,7 +2020,7 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_H_prime_prime,
               pba->error_message,
               "cannot copy data back to pba->background_table");
-      
+
       // p_tot_wo_smg'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_p_tot_wo_prime_smg,
             &pvecback_derivs[pba->index_bg_p_tot_wo_smg],
@@ -1959,7 +2028,7 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_p_tot_wo_prime_smg,
               pba->error_message,
               "cannot copy data back to pba->background_table");
-      
+
       // p_smg'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_p_prime_smg,
             &pvecback_derivs[pba->index_bg_p_smg],
@@ -1978,10 +2047,10 @@ int background_solve(
 
       // Planck's mass running
       // Only need to compute it if neither self consistent field evolution nor evolving M_pl in terms of alpha_M
-      // check equation 3.3 of Bellini & Sawicki 2014 
-      
+      // check equation 3.3 of Bellini & Sawicki 2014
+
       if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
-	
+
 	double alpha_M = pvecback_derivs[pba->index_bg_M2_smg]/pvecback[pba->index_bg_M2_smg]/pvecback[pba->index_bg_a]/pvecback[pba->index_bg_H];
 
 	memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_smg,
@@ -1990,21 +2059,21 @@ int background_solve(
 	class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_smg,
 		   pba->error_message,
 		   "cannot copy data back to pba->background_table");
-      }      
-      
+      }
+
       double a = pvecback[pba->index_bg_a];
       double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
       double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
       double p_smg = pvecback[pba->index_bg_p_smg];
       double rho_smg = pvecback[pba->index_bg_rho_smg];
-      
+
       if(pba->background_verbose > 15 && fabs(1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H])>1e-8)
 	printf("a = %g, (delta H')/H' = %g \n", a, 1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]);
-      
-      
+
+
       //TODO: clean up this!!
       // speed of sound, wanted for output
-      
+
       double H = pvecback[pba->index_bg_H];
       double H_p = pvecback[pba->index_bg_H_prime];
 
@@ -2013,9 +2082,9 @@ int background_solve(
       double bra = pvecback[pba->index_bg_braiding_smg];
       double run = pvecback[pba->index_bg_mpl_running_smg];
       double ten = pvecback[pba->index_bg_tensor_excess_smg];
-      
-      //need to update the time derivatives of the interesting functions 
-      
+
+      //need to update the time derivatives of the interesting functions
+
       double kin_p = pvecback_derivs[pba->index_bg_kineticity_smg];
       double bra_p = pvecback_derivs[pba->index_bg_braiding_smg];
       double run_p = pvecback_derivs[pba->index_bg_mpl_running_smg];
@@ -2023,49 +2092,49 @@ int background_solve(
       double p_tot_p = pvecback_derivs[pba->index_bg_p_tot_wo_smg];
       double p_smg_p = pvecback_derivs[pba->index_bg_p_smg];
       double D = pvecback[pba->index_bg_kinetic_D_smg];
-      
+
       pvecback[pba->index_bg_lambda_1_smg] = (run + (-1.)*ten)*(-3.)*bra + (1. + ten)*kin;
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_1_smg,
             &pvecback[pba->index_bg_lambda_1_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_1_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_lambda_2_smg] = (2.*(1. + (-1.)*M2) + bra*M2)*(rho_tot + p_tot)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/2.*pow(H,-2) + pow(H,-1)*bra_p*pow(a,-1);
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_smg,
             &pvecback[pba->index_bg_lambda_2_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_lambda_3_smg] = (2. + run)*(-1.)/2.*D + (-3.)/4.*bra*pvecback[pba->index_bg_lambda_2_smg];
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_3_smg,
             &pvecback[pba->index_bg_lambda_3_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_3_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_lambda_4_smg] = kin*pvecback[pba->index_bg_lambda_2_smg] + (2.*kin*bra_p + (-1.)*bra*kin_p)*(-1.)*pow(H,-1)*pow(a,-1);
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_4_smg,
             &pvecback[pba->index_bg_lambda_4_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_4_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_lambda_5_smg] = (bra + 2.*run + (-2.)*ten + bra*ten)*3./2.*bra + (run + (-1.)*ten)*D + 3./2.*bra*pvecback[pba->index_bg_lambda_2_smg];
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_5_smg,
             &pvecback[pba->index_bg_lambda_5_smg],
             1*sizeof(double));
@@ -2075,35 +2144,35 @@ int background_solve(
 
 
       pvecback[pba->index_bg_lambda_6_smg] = 3./2.*(((9./2.*bra + kin)*(M2 - 1.)*pow(M2,-1) + (-9.)/4.*pow(bra,2) - bra*kin/2. + D*run)*pow(rho_tot,2) + ((9.*bra + kin)*(M2 - 1.)*pow(M2,-1) + (-9.)/2.*pow(bra,2) - bra*kin/2. + D*run)*rho_tot*p_tot + 9./2.*bra*(M2 - 1. - M2*bra/2.)*pow(M2,-1)*pow(p_tot,2) + (kin*(M2 - 1.)*pow(M2,-1) - bra*kin/2. + D*run)*(rho_tot + p_tot)*rho_smg + ((kin - bra*kin/2. + D*run)*rho_smg + ((9.*bra + kin)*(2. - bra)/2. + D*run - 9./2.*bra*pow(M2,-1))*rho_tot + 9.*bra*(1. - bra/2. - pow(M2,-1)/2.)*p_tot)*(rho_smg + p_smg) + 9./2.*bra*(1. - bra/2.)*pow(rho_smg + p_smg,2))*pow(H,-4) + (((9.*bra*(rho_tot + p_tot) - 2.*kin*(rho_tot + rho_smg)) + (rho_smg + p_smg)*9.*bra)*bra_p/2. + (rho_tot + rho_smg)*bra*kin_p + (-2.*(1. - M2)*kin + 3.*pow(bra,2)*M2)*3./2.*pow(M2,-1)*p_tot_p + 3.*D*p_smg_p)*pow(H,-3)*pow(a,-1)/2.;
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_6_smg,
             &pvecback[pba->index_bg_lambda_6_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_6_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_lambda_7_smg] = ((-2.) + bra)*(4. + run)*(-1.)/8.*D + ((-2.)*(1. + M2) + bra*M2)*(rho_tot + p_tot)*3./16.*pow(H,-2)*D*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*3./16.*pow(H,-2)*D + (D*bra_p + ((-2.) + bra)*((-3.)*bra*bra_p + (-1.)*kin_p))*1./8.*pow(H,-1)*pow(a,-1);
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_7_smg,
             &pvecback[pba->index_bg_lambda_7_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_7_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_lambda_8_smg] = ((-2.) + bra)*(4. + run)*1./8.*D + 3./8.*(rho_tot + p_tot)*(((-9.)*bra + (-2.)*D*(1. + 2.*M2 - bra*M2))*(-1.)/2. + (rho_tot*(1. - M2) - (p_smg + rho_smg*M2))*9.*pow(H,-2)*pow(M2,-1))*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/8.*pow(H,-2)*D + (2.*(1. - M2) + bra*M2)*(rho_tot + p_tot)*(p_tot + p_smg)*27./16.*pow(H,-4)*pow(M2,-2) + ((-9.)*(rho_tot + p_tot) + (-6.)*bra*pow(H,2)*M2 + 3.*pow(bra,2)*pow(H,2)*M2 + (-1.)*pow(H,2)*D*M2)*1./8.*pow(H,-3)*pow(M2,-1)*bra_p*pow(a,-1) + ((-2.) + bra)*1./8.*pow(H,-1)*kin_p*pow(a,-1) + ((-2.) + bra)*9./16.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
-      
+
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_smg,
             &pvecback[pba->index_bg_lambda_8_smg],
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
-      
+
       pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_smg,
@@ -2111,7 +2180,7 @@ int background_solve(
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");       
+              "cannot copy data back to pba->background_table");
 
 
       pvecback[pba->index_bg_cs2_smg] = pvecback[pba->index_bg_cs2num_smg]/D;
@@ -2121,7 +2190,7 @@ int background_solve(
             1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2_smg,
               pba->error_message,
-              "cannot copy data back to pba->background_table");      
+              "cannot copy data back to pba->background_table");
 
 
       /* Here we update the minimum values of the stability quantities
@@ -2131,69 +2200,72 @@ int background_solve(
 	if (D < pba->min_D_smg){
 	  pba->min_D_smg = D;
 	}
-	
+
 	if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
 	  pba->min_cs2_smg = pvecback[pba->index_bg_cs2_smg];
 	}
-      
+
 	if (pvecback[pba->index_bg_M2_smg] < pba->min_M2_smg){
 	  pba->min_M2_smg = pvecback[pba->index_bg_M2_smg];
 	}
-      
+
 	if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
 	  pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
 	}
       }
-     
-    }//end of has_smg   
+
+    }//end of has_smg
 
   }
 
   /* Horndeski stability tests
   * only if not overriden
   * and model is tuned!
-  * TODO: commented out till properly checked!
   */
-  if ((pba->has_smg == _TRUE_) && 
+  if ((pba->has_smg == _TRUE_) &&
       (pba->parameters_tuned_smg == _TRUE_) &&
       (pba->skip_stability_tests_smg == _FALSE_)){
-    
-    class_test(pba->min_D_smg <= -fabs(pba->D_safe_smg),
+
+    class_test_except(pba->min_D_smg <= -fabs(pba->D_safe_smg),
         pba->error_message,
+        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
         "Ghost instability for scalar field perturbations with minimum D=%g \n",pba->min_D_smg);
-    class_test(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
+    class_test_except(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
         pba->error_message,
+        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
         "Gradient instability for scalar field perturbations with minimum c_s^2=%g \n",pba->min_cs2_smg);
-    class_test(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
+    class_test_except(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
         pba->error_message,
+        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
         "Ghost instability for metric tensor perturbations with minimum M*^2=%g \n",pba->min_M2_smg);
-    class_test(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
+    class_test_except(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
         pba->error_message,
+        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
         "Gradient instability for metric tensor perturbations with minimum c_t^2=%g \n",pba->min_ct2_smg);
-     
-   } 
+
+   }
 
    /* Yet another (third!) loop to make sure the background table makes sense
    */
   for (i=0; i < pba->bt_size; i++) {
-      
+
     if (pba->has_smg == _TRUE_){
-      
-      
+
+
       //write the derivatives in the structure
-      class_call(array_derivate_spline(pba->tau_table, // x_array 
+      class_call(array_derivate_spline(pba->tau_table, // x_array
 				       pba->bt_size, // int n_lines
 				       pba->background_table, // array
 				       pba->d2background_dtau2_table, // double * array_splined
 				       pba->bg_size, // n_columns
 				       pba->tau_table[i], // double x -> tau
 				       &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
-				       pvecback_derivs, // double * result 
+				       pvecback_derivs, // double * result
 				       pba->bg_size, //result_size, from 1 to n_columns
 				       pba->error_message),
 		  pba->error_message,
 		  pba->error_message);
-    
+
       //cs2num'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
 			      &pvecback_derivs[pba->index_bg_cs2num_smg],
@@ -2201,7 +2273,7 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
-      
+
       //lambda_2'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
       	      &pvecback_derivs[pba->index_bg_lambda_2_smg],
@@ -2229,20 +2301,21 @@ int background_solve(
 				   pvecback),
 		 pba->error_message,
 		 pba->error_message);
-     
+
      // check if any of the values becomes nan
-     int j = 0;
-        while (j < pba->bg_size){
-	  class_test( isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
+    int j = 0;
+    while (j < pba->bg_size){
+	  class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
                pba->error_message,
+               free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
                "pvecback[%i] = %e at a = %e in background!",j,pvecback[j],pvecback[pba->index_bg_a]);
-	 j++; 
+	 j++;
 	}
-  
+
   }
-  
-  free(pvecback_derivs);  //free the structure  
-  
+
+  free(pvecback_derivs);  //free the structure
+
 
   /** - compute remaining "related parameters"
    *     - so-called "effective neutrino number", computed at earliest
@@ -2271,7 +2344,7 @@ int background_solve(
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
     if (pba->has_smg == _TRUE_){
-      printf(" -> Omega_smg = %f, whished %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg); 
+      printf(" -> Omega_smg = %f, whished %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg);
       if(pba->has_lambda == _TRUE_)
 	printf(", Omega_Lambda = %f", pba->Omega0_lambda);
       printf("\n");
@@ -2279,38 +2352,13 @@ int background_solve(
 	printf("Minimal stability values: cs2 = %g, ct2 = %g, D = %g, M2 = %g \n",pba->min_cs2_smg,pba->min_ct2_smg,pba->min_D_smg,pba->min_M2_smg);
       }
       background_gravity_parameters(pba);
-	      
-    }    
+
+    }
   }
 
   free(pvecback);
   free(pvecback_integration);
-  
-  /* Horndeski stability tests
-   * only if not overriden
-   * and model is tuned!
-   * TODO: commented out till properly checked!
-   */
-   if ((pba->has_smg == _TRUE_) && 
-       (pba->parameters_tuned_smg == _TRUE_) &&
-       (pba->skip_stability_tests_smg == _FALSE_)){
-     
-     class_test(pba->min_D_smg < -fabs(pba->D_safe_smg),
- 	       pba->error_message,
- 	       "Ghost instability for scalar field perturbations with minimum D=%g \n",pba->min_D_smg);
-     class_test(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
- 	       pba->error_message,
- 	       "Gradient instability for scalar field perturbations with minimum c_s^2=%g \n",pba->min_cs2_smg);
-     class_test(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
- 	       pba->error_message,
- 	       "Ghost instability for metric tensor perturbations with minimum M*^2=%g \n",pba->min_M2_smg);
-     class_test(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
- 	       pba->error_message,
- 	       "Gradient instability for metric tensor perturbations with minimum c_t^2=%g \n",pba->min_ct2_smg);
-     
-   } 
 
-  //printf('phi = %g\n', &pba->background_table[(pba->bt_size-1)*pba->bg_size+pba->index_bg_phi_smg]);
   return _SUCCESS_;
 
 }
@@ -2432,14 +2480,14 @@ int background_initial_conditions(
    * run over all possible model cases
    */
   if(pba->has_smg == _TRUE_){
-    
+
     pba->initial_conditions_set_smg = _FALSE_;
-    
+
     //default value, can override latter
     if (pba->M_pl_evolution_smg ==_TRUE_){
       pvecback_integration[pba->index_bi_M_pl_smg] = 1.;
     }
-       
+
     switch (pba->gravity_model_smg) {
 
       case quintessence_monomial:
@@ -2447,49 +2495,49 @@ int background_initial_conditions(
 	  pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[2]*pba->H0;
 	break;
 
-	
+
       /* Attractor IC: H\dot\phi = constant = H_0^2 \xi
        * phi_prime = xi*a*H_0^2/H (\dot\phi = phi_prime/a)
        * assumes H = sqrt(rho_rad) initially
-       * 
+       *
        * if attractor ICs change xi to fit some attractor value n = 0 with
-       * 
+       *
        * n/H0 = xi(c2 - 6c3 xi + 18c4 xi^2 + 5c5 xi^4)
-       * 
+       *
        * This is done at the level of background_initial_conditions
        * (this function does not seem to get access to the parameter being varied!)
-       * 
+       *
        * We pick the nonzero xi closest to the user's given value!
        */
-      
-      case galileon: 
-	
+
+      case galileon:
+
 	if(pba->attractor_ic_smg == _TRUE_){
-	
+
 	  double xi = pba->parameters_smg[0];
 	  double c2 = pba->parameters_smg[2];
 	  double c3 = pba->parameters_smg[3];
 	  double c4 = pba->parameters_smg[4];
 	  double c5 = pba->parameters_smg[5];
-	
+
 	  double x[3];
 	  double Omega_smg;
 	  int complex;
 	  int i;
 	  double mindiff = 1e100;
-	  
+
 	  double xi_start = xi;
-	  
+
 	  //Don't use poly_3_split, is bad unless c3 tiny!
 	  rf_solve_poly_3(5.*c5,18.*c4,-6.*c3,1.*c2,x,&complex);
-	
+
 	  if (pba->background_verbose > 2)
 	  {
 	    printf(" galileon attractor \n");
 	    printf(" c5 = %.2e, c4 = %.2e, c3 = %.3e, c2 = %.3e \n ",c5,c4,c3,c2);
 	    printf(" Solutions (complex = %i): \n",complex);
 	  }
-	  
+
 	  for (i=0; i<3;i+=1){
 	    Omega_smg = pow(x[i],2)*(c2/6. -2.*c3*x[i] +15./2.*c4*pow(x[i],2) + 7./3.*c5*pow(x[i],3));
 	    if (x[i]!=0 && fabs(x[i]-xi)<mindiff){
@@ -2507,7 +2555,7 @@ int background_initial_conditions(
 	}
 	//phi is irrelevant
 	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[6];
-	
+
 	break;
       /* BD IC: note that the field value is basically the planck mass,
        * so its initial value should be around 1
@@ -2517,18 +2565,18 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[2];
 	pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[3];
 	break;
-	
+
       case propto_omega:
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
-	break;	
-      
+	break;
+
       case propto_scale:
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
-	break;	
+	break;
 
       case constant_alphas:
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
-	break;	
+	break;
 
       case eft_alphas_power_law:
 	pvecback_integration[pba->index_bi_M_pl_smg] = 1. + pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
@@ -2541,20 +2589,21 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -1.;
 	break;
     }
-    
+
     if (pba->field_evolution_smg == _TRUE_){
-      if (pba->background_verbose>3) 
+      if (pba->background_verbose>3)
 	printf(" -> Initial conditions: phi = %e, phi' = %e \n",pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_prime_smg]);
-      
-      class_test(!isfinite(pvecback_integration[pba->index_bi_phi_smg]) || !isfinite(pvecback_integration[pba->index_bi_phi_smg]),
+
+      class_test_except(!isfinite(pvecback_integration[pba->index_bi_phi_smg]) || !isfinite(pvecback_integration[pba->index_bi_phi_smg]),
 		 pba->error_message,
+     free(pvecback);free(pvecback_integration);background_free(pba),
 		 "initial phi = %e phi_prime = %e -> check initial conditions",
-		 pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_smg]);    	
-      }
+		 pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_smg]);
+   }
       if (pba->M_pl_evolution_smg == _TRUE_)
-	if (pba->background_verbose>3) 
+	if (pba->background_verbose>3)
 	  printf(" -> Initial conditions: M_pl = %e \n",pvecback_integration[pba->index_bi_M_pl_smg]);
-    
+
       if (pba->rho_evolution_smg == _TRUE_){
         pvecback_integration[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_smg];
       }
@@ -2614,8 +2663,8 @@ int background_initial_conditions(
   class_call(background_functions(pba, pvecback_integration, pba->long_info, pvecback),
 	     pba->error_message,
 	     pba->error_message);
-  
-  
+
+
   /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation */
   if (pba->hubble_evolution == _TRUE_){
    if(pba->has_smg == _TRUE_){
@@ -2626,15 +2675,16 @@ int background_initial_conditions(
       pvecback_integration[pba->index_bi_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
     }
   }
-  
+
   /* Declare the smg initial conditions as set */
   if (pba->has_smg)
     pba->initial_conditions_set_smg = _TRUE_;
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
-  class_test(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
+  class_test_except(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
 	     pba->error_message,
+       free(pvecback);free(pvecback_integration);background_free(pba),
 	     "Omega_r = %e, Omega_de = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
 	     pvecback[pba->index_bg_Omega_r],pvecback[pba->index_bg_Omega_de]);
 
@@ -2642,8 +2692,9 @@ int background_initial_conditions(
       universe since Big Bang and therefore \f$ t=1/(2H) \f$ (good
       approximation for most purposes) */
 
-  class_test(pvecback[pba->index_bg_H] <= 0.,
+  class_test_except(pvecback[pba->index_bg_H] <= 0.,
              pba->error_message,
+             free(pvecback);free(pvecback_integration);background_free(pba),
              "H = %e instead of strictly positive",pvecback[pba->index_bg_H]);
 
   pvecback_integration[pba->index_bi_time] = 1./(2.* pvecback[pba->index_bg_H]);
@@ -2665,6 +2716,83 @@ int background_initial_conditions(
 }
 
 /**
+ * Find the time of radiation/matter equality and store characteristic
+ * quantitites at that time in the background structure..
+ *
+ * @param ppr                  Input: pointer to precision structure
+ * @param pba                  Input/Output: pointer to background structure
+  * @return the error status
+ */
+
+int background_find_equality(
+                             struct precision *ppr,
+                             struct background *pba) {
+
+  double Omega_m_over_Omega_r=0.;
+  int index_tau_minus = 0;
+  int index_tau_plus = pba->bt_size-1;
+  int index_tau_mid = 0;
+  double tau_minus,tau_plus,tau_mid=0.;
+  double * pvecback;
+
+  /* first bracket the right tau value between two consecutive indices in the table */
+
+  while ((index_tau_plus - index_tau_minus) > 1) {
+
+    index_tau_mid = (int)(0.5*(index_tau_plus+index_tau_minus));
+
+    Omega_m_over_Omega_r = pba->background_table[index_tau_mid*pba->bg_size+pba->index_bg_Omega_m]
+      /pba->background_table[index_tau_mid*pba->bg_size+pba->index_bg_Omega_r];
+
+    if (Omega_m_over_Omega_r > 1)
+      index_tau_plus = index_tau_mid;
+    else
+      index_tau_minus = index_tau_mid;
+
+  }
+
+  /* then get a better estimate within this range */
+
+  tau_minus = pba->tau_table[index_tau_minus];
+  tau_plus =  pba->tau_table[index_tau_plus];
+
+  class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
+
+  while ((tau_plus - tau_minus) > ppr->tol_tau_eq) {
+
+    tau_mid = 0.5*(tau_plus+tau_minus);
+
+    class_call(background_at_tau(pba,tau_mid,pba->long_info,pba->inter_closeby,&index_tau_minus,pvecback),
+               pba->error_message,
+               pba->error_message);
+
+    Omega_m_over_Omega_r = pvecback[pba->index_bg_Omega_m]/pvecback[pba->index_bg_Omega_r];
+
+    if (Omega_m_over_Omega_r > 1)
+      tau_plus = tau_mid;
+    else
+      tau_minus = tau_mid;
+
+  }
+
+  pba->a_eq = pvecback[pba->index_bg_a];
+  pba->H_eq = pvecback[pba->index_bg_H];
+  pba->z_eq = pba->a_today/pba->a_eq -1.;
+  pba->tau_eq = tau_mid;
+
+  if (pba->background_verbose > 0) {
+    printf(" -> radiation/matter equality at z = %f\n",pba->z_eq);
+    printf("    corresponding to conformal time = %f Mpc\n",pba->tau_eq);
+  }
+
+  free(pvecback);
+
+  return _SUCCESS_;
+
+}
+
+
+/**
  * Subroutine for formatting background output
  *
  */
@@ -2676,7 +2804,7 @@ int background_output_titles(struct background * pba,
   /** - Length of the column title should be less than _OUTPUTPRECISION_+6
       to be indented correctly, but it can be as long as . */
   int n;
-  char tmp[20];
+  char tmp[24];
 
   class_store_columntitle(titles,"z",_TRUE_);
   class_store_columntitle(titles,"proper time [Gyr]",_TRUE_);
@@ -2708,8 +2836,9 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"gr.fac. D",_TRUE_);
   class_store_columntitle(titles,"gr.fac. f",_TRUE_);
   
-  class_store_columntitle(titles,"(.)rho_smg",pba->has_smg);   
-  class_store_columntitle(titles,"(.)p_smg",pba->has_smg);   
+  class_store_columntitle(titles,"(.)rho_smg",pba->has_smg);
+  class_store_columntitle(titles,"(.)p_smg",pba->has_smg);
+
 
   if (pba->output_background_smg >= 1){
     class_store_columntitle(titles,"M*^2_smg",pba->has_smg);       
@@ -2730,6 +2859,7 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"E2",pba->field_evolution_smg); 
     class_store_columntitle(titles,"E3",pba->field_evolution_smg);
   }
+
 
   return _SUCCESS_;
 }
@@ -2774,8 +2904,8 @@ int background_output_data(
 
     class_store_double(dataptr,pvecback[pba->index_bg_D],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_f],_TRUE_,storeidx);
-    
-    class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],pba->has_smg,storeidx);  
+
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],pba->has_smg,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_smg],pba->has_smg,storeidx);
 
     if (pba->output_background_smg >= 1){  
@@ -2797,6 +2927,7 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);  
       class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);  
     }
+
   }
 
   return _SUCCESS_;
@@ -2864,7 +2995,7 @@ int background_derivs(
   /** - calculate /f$ H'= (...) + stabilization /f$ */
   if (pba->hubble_evolution == _TRUE_)
     dy[pba->index_bi_H] = pvecback[pba->index_bg_H_prime];
-  
+
   /** - calculate /f$ t' = a /f$ */
   dy[pba->index_bi_time] = y[pba->index_bi_a];
 
@@ -2898,7 +3029,7 @@ int background_derivs(
     dy[pba->index_bi_rho_dr] = -4.*y[pba->index_bi_a]*pvecback[pba->index_bg_H]*y[pba->index_bi_rho_dr]+
       y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
   }
-  
+
   /** - Scalar field equation: \f$ \phi'' + 2 a H \phi' + a^2 dV = 0 \f$  (note H is wrt cosmic time)**/
   if (pba->has_smg == _TRUE_){
     if(pba->field_evolution_smg){
@@ -2908,7 +3039,7 @@ int background_derivs(
     /** - Planck mass equation (if parameterization in terms of alpha_m **/
     if (pba->M_pl_evolution_smg == _TRUE_)
       dy[pba->index_bi_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*y[pba->index_bi_M_pl_smg];   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
-  }  
+  }
 
   if (pba->has_fld == _TRUE_) {
     /** - Compute fld density \f$ \rho' = -3aH (1+w_{fld}(a)) \rho \f$ */
@@ -2929,12 +3060,12 @@ int background_derivs(
 
 
 /** This function fills the modified gravity part of background_functions.
- * First all the Horndeski functions G_i(X,phi) are computed. 
+ * First all the Horndeski functions G_i(X,phi) are computed.
  * A loop is used to allow different implementations without erasing previous ones
  * Note that in CLASS units a canonical field has G2 = X ~ [Mpc]^-2
- * This implies that phi_prime ~ [Mpc]^-1 
+ * This implies that phi_prime ~ [Mpc]^-1
  * and phi is dimensionless (we can think of phi as given in units of the Planck mass
- * - A default module to numerically compute the derivatives when no analytic functions are given should be added. 
+ * - A default module to numerically compute the derivatives when no analytic functions are given should be added.
  * Numerical derivatives may further serve as a consistency check.
  * TODO: Add a background_write_alpha_primes
  */
@@ -2945,14 +3076,14 @@ int background_gravity_functions(
 				 short return_format,
 				 double * pvecback
 				 ){
-  
+
       // scalar field + curvature not yet implemented
   class_test(pba->K !=0 ,
 	     pba->error_message,
-	     "has_smg with curvature K = %e not yet implemented",pba->K);  
+	     "has_smg with curvature K = %e not yet implemented",pba->K);
 
   if (pba->field_evolution_smg == _TRUE_) {
-  
+
     /* declare variables and set defaults to zero */
     double a, phi, phi_prime, H;
     double x,f,df;
@@ -2964,27 +3095,27 @@ int background_gravity_functions(
     double G4, G4_smg=0;
     double G4_phi=0, G4_phiphi=0, G4_X=0, G4_XX=0, G4_XXX=0, G4_Xphi=0, G4_Xphiphi=0, G4_XXphi=0;
     double G5=0, G5_phi=0, G5_phiphi=0, G5_X=0, G5_XX=0, G5_XXX=0, G5_Xphi=0, G5_Xphiphi=0, G5_XXphi=0;
-    
+
     a = pvecback_B[pba->index_bi_a];
     if (pba->hubble_evolution == _TRUE_)
       H = pvecback_B[pba->index_bi_H];
-    
+
     phi = pvecback_B[pba->index_bi_phi_smg];
     phi_prime = pvecback_B[pba->index_bi_phi_prime_smg];
-  
+
     X = 0.5*pow(phi_prime/a,2);
     rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
     p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-  
+
     /* set default Einstein-Hilbert term (in CLASS units), can be overwritten latter */
     G4 = 1./2.;
-  
+
     /* Overwrite the Horneski functions and their partial derivatives depending on the model */
     if (pba->gravity_model_smg == quintessence_monomial) {
 
       double N = pba->parameters_smg[0];
       double V0 = pba->parameters_smg[1];
-      
+
       /* G2 = X - V0*pba->Omega0_smg*pow(pba->H0,2)*pow(phi,N); */
       G2 = X - V0*3.*pow(pba->H0/pba->h,2.)*pow(phi,N);
       G2_X = 1.;
@@ -2992,15 +3123,15 @@ int background_gravity_functions(
       G2_phi = -N*V0*3.*pow(pba->H0/pba->h,2.)*pow(phi,N-1.);
     }
     else if(pba->gravity_model_smg == galileon){//TODO: change name with ccc_galileon
-      
+
       double M3 = pow(pba->H0,2);
-      
+
       double Lambda1 = pba->parameters_smg[1]*M3;
       double Lambda2 = pba->parameters_smg[2];
       double Lambda3 = pba->parameters_smg[3]/M3;
       double Lambda4 = pba->parameters_smg[4]*pow(M3,-2);
       double Lambda5 = pba->parameters_smg[5]*pow(M3,-3);
-      
+
       G2 = Lambda2*X - 0.5*Lambda1*phi;
       G2_X = Lambda2;
       G2_phi = - 0.5*Lambda1;
@@ -3016,14 +3147,14 @@ int background_gravity_functions(
       G5_XX = 2.*Lambda5;
     }
     else if(pba->gravity_model_smg == brans_dicke){
-      
+
       /* Brans-Dicke can't cause acceleration:
        * - V is a constant potential, basically a cosmological constant
        * - omega is the Brans-Dicke parameter in charge of the fifth force
        */
-      double V = 3.*pba->parameters_smg[0]*pow(pba->H0,2); 
-      double omega = pba->parameters_smg[1]; 
-      
+      double V = 3.*pba->parameters_smg[0]*pow(pba->H0,2);
+      double omega = pba->parameters_smg[1];
+
       G2 = -V + omega*X/phi;
       G2_X = omega/phi;
       G2_Xphi = -omega/pow(phi,2);
@@ -3032,33 +3163,34 @@ int background_gravity_functions(
       G4_smg = (phi-1.)/2.;
       G4 = phi/2.;
       G4_phi = 1./2.;
-      
+
     }
 
-  
-    //TODO: Write the Bellini-Sawicki functions and other information to pvecback
-    
-    pvecback[pba->index_bg_phi_smg] = phi; // value of the scalar field phi
-    pvecback[pba->index_bg_phi_prime_smg] = phi_prime; // value of the scalar field phi derivative wrt conformal time     
 
-    /** - Modified time-time Friedmann equation 
+    //TODO: Write the Bellini-Sawicki functions and other information to pvecback
+
+    pvecback[pba->index_bg_phi_smg] = phi; // value of the scalar field phi
+    pvecback[pba->index_bg_phi_prime_smg] = phi_prime; // value of the scalar field phi derivative wrt conformal time
+
+    /** - Modified time-time Friedmann equation
      * E0 + E1 H + E3 H^3 = E2 H^2
      * NOTE: H is NOT the curly H!!
      * NOTE: added rho_smg, p_smg separately
      */
-                
+
     E0 = (3.*rho_tot + (-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3.;
     E1 = ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*phi_prime*pow(a,-1);
     E2 = (G4 + (4.*G4_X + (-3.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*2.*X)*(-1.)*X)*2.;
     E3 = (5.*G5_X + 2.*X*G5_XX)*2./3.*phi_prime*pow(a,-1)*X;
-    
+
     /* Rewrite if ICs not set or no evolution */
     if (pba->initial_conditions_set_smg == _FALSE_ || pba->hubble_evolution == _FALSE_){
-      class_test(E3*pow(E0,1./2.) > 1e-10 && pba->initial_conditions_set_smg == _FALSE_,
+      class_test_except(E3*pow(E0,1./2.) > 1e-10 && pba->initial_conditions_set_smg == _FALSE_,
 		  pba->error_message,
-	           " E3=%e is large in Friedmann constraint when setting ICs ",  E3);
+      background_free(pba);free(pvecback);free(pvecback_B),
+           " E3=%e is large in Friedmann constraint when setting ICs ",  E3);
       /* Use Newton's method */
-      x = sqrt(E0);   
+      x = sqrt(E0);
       f = E3*x*x*x -E2*x*x + E1*x + E0;
       n = 0;
       while (fabs(f/E0)> 1e-8 && n < 100){
@@ -3079,49 +3211,51 @@ int background_gravity_functions(
     
     /* Rewritten by the constraint if ICs have not been set */
     pvecback[pba->index_bg_H] = H;
-    
+
     pvecback[pba->index_bg_M2_smg] = 2.*G4 + (2.*G4_X + H*phi_prime*pow(a,-1)*G5_X + (-1.)*G5_phi)*(-2.)*X;
-    
-    class_test(isnan(pvecback[pba->index_bg_H]),
+
+    class_test_except(isnan(pvecback[pba->index_bg_H]),
 	       pba->error_message,
+         background_free(pba);free(pvecback);free(pvecback_B),
                " H=%e is not a number at a = %e. phi = %e, phi_prime = %e, E0=%e, E1=%e, E2=%e, E3=%e, M_*^2 = %e ",
-	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3,pvecback[pba->index_bg_M2_smg]);     
-    
-    
+	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3,pvecback[pba->index_bg_M2_smg]);
+
+
     /* alpha_K and alpha_B are needed in the equation and do not depend on phi'' */
     /* alpha_K kineticity */
-    pvecback[pba->index_bg_kineticity_smg] = ((3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*4.*H*phi_prime*pow(a,-1)*X + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*2.*pow(H,-2)*X + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*12.*pow(H,-1)*phi_prime*pow(a,-1)*X + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*12.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);    
+    pvecback[pba->index_bg_kineticity_smg] = ((3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*4.*H*phi_prime*pow(a,-1)*X + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*2.*pow(H,-2)*X + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*12.*pow(H,-1)*phi_prime*pow(a,-1)*X + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*12.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
 
     /* alpha_B braiding */
     pvecback[pba->index_bg_braiding_smg] = ((3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*8.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
-    
-    
-    /** TODO: add references 
+
+
+    /** TODO: add references
       * - Modified space-space Friedmann equation and scalar field equation
       * B phi'' + A H' + R = 0
       * M phi'' + F H' + P = 0
       * They will be mixed in general: write the coefficients and solve for phi'', H'
-      */    
-    
+      */
+
     B = (3.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,2)*pow(a,-1)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2./3.*pow(a,-1) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*4./3.*H*phi_prime*pow(a,-2);
 
     A = (-2.)/3.*pvecback[pba->index_bg_M2_smg];
-    
+
     R = (3.*G5_X + 2.*X*G5_XX)*(-4.)/3.*pow(H,3)*phi_prime*X + (((G4_X + (-1.)*G5_phi)*5. + (5.*G4_XX + (-3.)*G5_Xphi)*2.*X)*(-4.)/3.*pow(H,2)*X + ((-3.)*rho_tot + (-3.)*p_tot + (G2_X + (-2.)*G3_phi + 2.*G4_phiphi)*(-2.)*X)*1./3.)*a + ((-1.)*G4_phi + (2.*G3_X + (-6.)*G4_Xphi + G5_phiphi)*X)*(-4.)/3.*H*phi_prime;
-    
+
     M = (3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*2.*pow(H,2)*phi_prime*pow(a,-3) + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*pow(H,-1)*pow(a,-2) + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*6.*phi_prime*pow(a,-3) + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*6.*H*pow(a,-2);
-     
+
     F = (3.*G5_X + 2.*X*G5_XX)*6.*H*pow(a,-1)*X + (X*G3_X + (-1.)*G4_phi + (-2.)*X*G4_Xphi)*6.*pow(H,-1)*pow(a,-1) + (G4_X + 2.*X*G4_XX + (-1.)*G5_phi + (-1.)*X*G5_Xphi)*12.*phi_prime*pow(a,-2);
-    
+
     P = ((-3.)*G5_X + (2.*G5_XX + X*G5_XXX)*4.*X)*(-2.)*pow(H,3)*X + ((-3.)*G4_X + 3.*G5_phi + (3.*G4_XX + (-4.)*G5_Xphi + (3.*G4_XXX + (-2.)*G5_XXphi)*2.*X)*X)*(-4.)*pow(H,2)*phi_prime*pow(a,-1) + ((-1.)*G2_phi + (G2_Xphi + (-1.)*G3_phiphi)*2.*X)*pow(H,-1) + ((-1.)*G2_X + 2.*G3_phi + (G2_XX + (-4.)*G3_Xphi + 6.*G4_Xphiphi)*X)*(-2.)*phi_prime*pow(a,-1) + (2.*G4_phi + ((-1.)*G3_X + G5_phiphi + (G3_XX + (-4.)*G4_XXphi + G5_Xphiphi)*2.*X)*X)*(-6.)*H;
-     
-    class_test((A*M - B*F) == 0 ,
+
+    class_test_except((A*M - B*F) == 0 ,
 	       pba->error_message,
+         background_free(pba);free(pvecback);free(pvecback_B),
                "scalar field mixing with metric has degenerate denominator at a = %e, phi = %e, phi_prime = %e \n with A = %e, M =%e, B=%e, F=%e, \n H=%e, E0=%e, E1=%e, E2=%e, E3=%e \n M_*^2 = %e Kineticity = %e, Braiding = %e",
 	       a,phi,phi_prime, A, M, B, F,
 	       pvecback[pba->index_bg_H],E0,E1,E2,E3,
-	       pvecback[pba->index_bg_M2_smg], pvecback[pba->index_bg_kineticity_smg],pvecback[pba->index_bg_braiding_smg]);   
-    
+	       pvecback[pba->index_bg_M2_smg], pvecback[pba->index_bg_kineticity_smg],pvecback[pba->index_bg_braiding_smg]);
+
     /* Friedmann space-space equation with friction added */
     pvecback[pba->index_bg_H_prime] = ((-1.)*B*P + M*R)*pow(B*F + (-1.)*A*M,-1);
     /* choose sign for friction depending on the derivative */
@@ -3130,57 +3264,57 @@ int background_gravity_functions(
     else{
       pvecback[pba->index_bg_H_prime] += a*pba->hubble_friction*(E2*H*H - E0 - E1*H - E3*H*H*H);
     }
-    
+
     /* Field equation */
     pvecback[pba->index_bg_phi_prime_prime_smg] = (A*P + (-1.)*F*R)*pow(B*F + (-1.)*A*M,-1);
-    
+
     /* alpha_T, alpha_M depend on phi''... -> computed now */
     /* alpha_T: tensor speed excess */
     pvecback[pba->index_bg_tensor_excess_smg] = ((pvecback[pba->index_bg_phi_prime_prime_smg] + (-2.)*H*phi_prime*a)*(-2.)*pow(a,-2)*G5_X + (G4_X + (-1.)*G5_phi)*4.)*pow(pvecback[pba->index_bg_M2_smg],-1)*X;
 
     /* alpha_M: Planck mass running */
-    pvecback[pba->index_bg_mpl_running_smg] = ((-2.)*pow(H,-1)*pvecback[pba->index_bg_H_prime]*phi_prime*pow(a,-2)*X*G5_X + (3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((3.*G5_X + 2.*X*G5_XX)*(-2.)*X + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-2.)*pow(H,-1)*phi_prime*pow(a,-1))*pvecback[pba->index_bg_phi_prime_prime_smg]*pow(a,-2) + (G4_X + (-1.)*G5_phi + (G4_XX + (-1.)*G5_Xphi)*2.*X)*4.*X + (G4_phi + ((-2.)*G4_Xphi + G5_phiphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1))*pow(pvecback[pba->index_bg_M2_smg],-1);   
-    
+    pvecback[pba->index_bg_mpl_running_smg] = ((-2.)*pow(H,-1)*pvecback[pba->index_bg_H_prime]*phi_prime*pow(a,-2)*X*G5_X + (3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((3.*G5_X + 2.*X*G5_XX)*(-2.)*X + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-2.)*pow(H,-1)*phi_prime*pow(a,-1))*pvecback[pba->index_bg_phi_prime_prime_smg]*pow(a,-2) + (G4_X + (-1.)*G5_phi + (G4_XX + (-1.)*G5_Xphi)*2.*X)*4.*X + (G4_phi + ((-2.)*G4_Xphi + G5_phiphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1))*pow(pvecback[pba->index_bg_M2_smg],-1);
+
     /* Energy density of the field */
     pvecback[pba->index_bg_rho_smg] = (5.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3. + (G4_phi + (G3_X + (-2.)*G4_Xphi)*(-1.)*X)*(-2.)*H*phi_prime*pow(a,-1) + ((-2.)*G4_smg + ((4.*G4_X + (-3.)*G5_phi)*2. + (2.*G4_XX + (-1.)*G5_Xphi)*4.*X)*X)*pow(H,2);
-    
+
     /* Pressure density of the field */
     pvecback[pba->index_bg_p_smg] = (G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-4.)/3.*H*phi_prime*pow(a,-2)*X*G5_X + (-2.*G4_smg + (2.*G4_X + (-1.)*G5_phi)*2.*X)*(-2.)/3.*pow(a,-1))*pvecback[pba->index_bg_H_prime] + (6.*G4_smg + ((-2.)*G4_X + (-1.)*G5_phi + (4.*G4_XX + (-3.)*G5_Xphi)*2.*X)*2.*X)*1./3.*pow(H,2) + ((3.*G5_X + 2.*X*G5_XX)*(-2.)/3.*pow(H,2)*pow(a,-2)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*(-2.)/3.*pow(a,-2) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-4.)/3.*H*phi_prime*pow(a,-3))*pvecback[pba->index_bg_phi_prime_prime_smg] + (G2 + (G3_phi + (-2.)*G4_phiphi)*(-2.)*X)*1./3. + (G4_phi + (G3_X + (-6.)*G4_Xphi + 2.*G5_phiphi)*X)*2./3.*H*phi_prime*pow(a,-1);
-      
+
   }// end of if pba->field_evolution_smg
   else{
-    
+
     double a, M_pl;
     double rho_tot, p_tot;
     double Omega_smg;
-    
+
     a = pvecback_B[pba->index_bi_a];
-    M_pl = pvecback_B[pba->index_bi_M_pl_smg];    
-    
+    M_pl = pvecback_B[pba->index_bi_M_pl_smg];
+
     rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
     p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-    
+
     //initialize the values to the defaults
     pvecback[pba->index_bg_kineticity_smg] = 0;
     pvecback[pba->index_bg_braiding_smg] = 0.;
     pvecback[pba->index_bg_tensor_excess_smg] = 0.;
     pvecback[pba->index_bg_M2_smg] = 1.;
     pvecback[pba->index_bg_mpl_running_smg] = 0.;
-    
+
      if (pba->expansion_model_smg == lcdm){
-      
+
       double Omega_const_smg = pba->parameters_smg[0];
-      
+
       pvecback[pba->index_bg_rho_smg] = Omega_const_smg*pow(pba->H0,2);
       pvecback[pba->index_bg_p_smg] = -Omega_const_smg*pow(pba->H0,2);
     }
-    
+
     if (pba->expansion_model_smg == wowa){
-      
+
       double Omega_const_smg = pba->parameters_smg[0];
       double w0 = pba->parameters_smg[1];
       double wa = pba->parameters_smg[2];
-      
+
       pvecback[pba->index_bg_rho_smg] = Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1. + w0 + wa)) * exp(3.*wa*(a-1.));
       pvecback[pba->index_bg_p_smg] = (w0+(1-a)*wa) * Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1.+w0+wa)) * exp(3.*wa*(a-1.));
     }
@@ -3209,74 +3343,74 @@ int background_gravity_functions(
     }
 
     rho_tot += pvecback[pba->index_bg_rho_smg];
-    p_tot += pvecback[pba->index_bg_p_smg];    
+    p_tot += pvecback[pba->index_bg_p_smg];
 
-    
+
     Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot; //used for some parameterizations
-    
 
-    if (pba->gravity_model_smg == propto_omega) {	
-      
+
+    if (pba->gravity_model_smg == propto_omega) {
+
       double c_k = pba->parameters_2_smg[0];
       double c_b = pba->parameters_2_smg[1];
       double c_m = pba->parameters_2_smg[2];
-      double c_t = pba->parameters_2_smg[3];      
-      
+      double c_t = pba->parameters_2_smg[3];
+
       pvecback[pba->index_bg_kineticity_smg] = c_k*Omega_smg;
-      pvecback[pba->index_bg_braiding_smg] = c_b*Omega_smg;	
+      pvecback[pba->index_bg_braiding_smg] = c_b*Omega_smg;
       pvecback[pba->index_bg_tensor_excess_smg] = c_t*Omega_smg;
       pvecback[pba->index_bg_mpl_running_smg] = c_m*Omega_smg;
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
-    else if (pba->gravity_model_smg == propto_scale) {	
-      
+    else if (pba->gravity_model_smg == propto_scale) {
+
       double c_k = pba->parameters_2_smg[0];
       double c_b = pba->parameters_2_smg[1];
       double c_m = pba->parameters_2_smg[2];
-      double c_t = pba->parameters_2_smg[3];      
-      
+      double c_t = pba->parameters_2_smg[3];
+
       pvecback[pba->index_bg_kineticity_smg] = c_k*a;
-      pvecback[pba->index_bg_braiding_smg] = c_b*a;	
+      pvecback[pba->index_bg_braiding_smg] = c_b*a;
       pvecback[pba->index_bg_tensor_excess_smg] = c_t*a;
       pvecback[pba->index_bg_mpl_running_smg] = c_m*a;
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
-    else if (pba->gravity_model_smg == constant_alphas) {	
-      
+    else if (pba->gravity_model_smg == constant_alphas) {
+
       double c_k = pba->parameters_2_smg[0];
       double c_b = pba->parameters_2_smg[1];
       double c_m = pba->parameters_2_smg[2];
-      double c_t = pba->parameters_2_smg[3];      
-      
+      double c_t = pba->parameters_2_smg[3];
+
       pvecback[pba->index_bg_kineticity_smg] = c_k;
       pvecback[pba->index_bg_braiding_smg] = c_b;
       pvecback[pba->index_bg_tensor_excess_smg] = c_t;
       pvecback[pba->index_bg_mpl_running_smg] = c_m;
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
-    else if (pba->gravity_model_smg == eft_alphas_power_law) {	
-      
+    else if (pba->gravity_model_smg == eft_alphas_power_law) {
+
       double M_0 = pba->parameters_2_smg[0];
       double c_k = pba->parameters_2_smg[1];
       double c_b = pba->parameters_2_smg[2];
-      double c_t = pba->parameters_2_smg[3];      
+      double c_t = pba->parameters_2_smg[3];
       double M_0_exp = pba->parameters_2_smg[4];
       double c_k_exp = pba->parameters_2_smg[5];
       double c_b_exp = pba->parameters_2_smg[6];
-      double c_t_exp = pba->parameters_2_smg[7];      
-      
+      double c_t_exp = pba->parameters_2_smg[7];
+
       pvecback[pba->index_bg_kineticity_smg] = c_k*pow(a, c_k_exp);
-      pvecback[pba->index_bg_braiding_smg] = c_b*pow(a, c_b_exp);	
+      pvecback[pba->index_bg_braiding_smg] = c_b*pow(a, c_b_exp);
       pvecback[pba->index_bg_tensor_excess_smg] = c_t*pow(a, c_t_exp);
       pvecback[pba->index_bg_mpl_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
       pvecback[pba->index_bg_M2_smg] = M_pl;
     }
     else if ((pba->gravity_model_smg == eft_gammas_power_law) || (pba->gravity_model_smg == eft_gammas_exponential)) {
-      
+
       double Omega=0., g1=0., g2=0., g3=0., Omega_p=0., Omega_pp=0., g3_p=0.;
       double Omega_0=0., g1_0=0., g2_0=0., g3_0=0.;
       double Omega_exp=0., g1_exp=0., g2_exp=0., g3_exp=0.;
-      
+
       Omega_0 = pba->parameters_2_smg[0];
       g1_0 = pba->parameters_2_smg[1];
       g2_0 = pba->parameters_2_smg[2];
@@ -3285,7 +3419,7 @@ int background_gravity_functions(
       g1_exp = pba->parameters_2_smg[5];
       g2_exp = pba->parameters_2_smg[6];
       g3_exp = pba->parameters_2_smg[7];
-      
+
       if (pba->gravity_model_smg == eft_gammas_power_law) {
         Omega = Omega_0*pow(a,Omega_exp);
         Omega_p = Omega_0*Omega_exp*pow(a,Omega_exp-1.); // Derivative w.r.t. the scale factor
@@ -3304,10 +3438,10 @@ int background_gravity_functions(
         g3 = exp(g3_0*pow(a,g3_exp))-1.;
         g3_p = g3_0*g3_exp*pow(a,g3_exp-1.)*exp(g3_0*pow(a,g3_exp)); // Derivative w.r.t. the scale factor
       }
-      
-      
+
+
       double c_over_H2 = (-pow(a,2.)*Omega_pp + 3.*(Omega + a*Omega_p/2.)*(rho_tot + p_tot)/rho_tot + 3.*(pvecback[pba->index_bg_rho_smg]+pvecback[pba->index_bg_p_smg])/rho_tot)/2.;
-      
+
       pvecback[pba->index_bg_kineticity_smg] = 2.*(2.*g1*pow(pba->H0,2.)/rho_tot + c_over_H2)/(1. + Omega + g3);
       pvecback[pba->index_bg_braiding_smg] = -(g2*pba->H0/sqrt(rho_tot) + a*Omega_p)/(1. + Omega + g3);
       pvecback[pba->index_bg_tensor_excess_smg] = -g3/(1. + Omega + g3);
@@ -3315,12 +3449,12 @@ int background_gravity_functions(
       pvecback[pba->index_bg_M2_smg] = M_pl;
 
     }//end of look pover models
-    
-    
+
+
     pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
     /** - compute derivative of H with respect to conformal time */
     pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
-    
+
     //add friction term
     if (pba->hubble_evolution == _TRUE_ && pba->initial_conditions_set_smg == _TRUE_){
       pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H];
@@ -3333,17 +3467,17 @@ int background_gravity_functions(
         pvecback[pba->index_bg_rho_prime_smg] = -3.*a*pvecback[pba->index_bg_H]*(1.+pvecback[pba->index_bg_w_smg])*pvecback[pba->index_bg_rho_smg];
     }
 
-}//end of parameterized mode  
-    
+}//end of parameterized mode
+
   // add a value to the kineticity to avoid problems with perturbations in certain models.
   // NOTE: this needs to be done here to avoid interfering with the equations
   pvecback[pba->index_bg_kineticity_smg] += pba->kineticity_safe_smg;
-  
+
   // kinetic term
   pvecback[pba->index_bg_kinetic_D_smg] = 3./2.*pow(pvecback[pba->index_bg_braiding_smg],2) + pvecback[pba->index_bg_kineticity_smg];
-  
+
   //Derivatives of the BS functions and others. Set to zero here and computed numerically once the background is integrated (needed so that debuggers don't complain).
-      
+
   pvecback[pba->index_bg_kineticity_prime_smg] = 0.;
   pvecback[pba->index_bg_braiding_prime_smg] = 0.;
   pvecback[pba->index_bg_mpl_running_prime_smg] = 0.;
@@ -3370,22 +3504,22 @@ int background_gravity_functions(
   }
 
   return _SUCCESS_;
-  
+
 }
 
 int background_gravity_parameters(
 				  struct background *pba
 				  ){
- 
+
   switch (pba->gravity_model_smg) {
-  
+
    case quintessence_monomial:
      printf("Modified gravity: quintessence_monomial with parameters: \n");
      printf("-> N = %g, V0 = %g, V0* = %g, phi_prime_0 = %g, phi_0 = %g \n",
 	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[1]*3.*pow(pba->H0/pba->h,2),
 	    pba->parameters_smg[2], pba->parameters_smg[3]);
      break;
-     
+
    case galileon:
      printf("Modified gravity: covariant Galileon with parameters: \n");
      printf("-> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
@@ -3396,15 +3530,15 @@ int background_gravity_parameters(
      printf("Modified gravity: Brans Dicke with parameters: \n");
      printf("-> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
-     break;   
-     
+     break;
+
    case propto_omega:
      printf("Modified gravity: propto_omega with parameters: \n");
      printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
-     
+
    case propto_scale:
      printf("Modified gravity: propto_scale with parameters: \n");
      printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
@@ -3438,12 +3572,12 @@ int background_gravity_parameters(
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
-    
+
   }
-  
+
   if(pba->field_evolution_smg==_FALSE_) {
     switch (pba->expansion_model_smg) {
-      
+
     case lcdm:
       printf("Parameterized model with LCDM expansion \n");
       printf("-> Omega_smg = %f \n",pba->parameters_smg[0]);
@@ -3462,11 +3596,11 @@ int background_gravity_parameters(
       break;
 
     }
-    
+
   }
-  
+
   return _SUCCESS_;
-  
+
 }
 
 /**
