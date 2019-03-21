@@ -15,12 +15,12 @@
 enum spatial_curvature {flat,open,closed};
 enum gravity_model {propto_omega, propto_scale, constant_alphas,
   eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
-  galileon, brans_dicke, quintessence_monomial
+  galileon, brans_dicke, quintessence_monomial, nkgb
 }; //write here the different models
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
-enum expansion_model {lcdm, wowa, wowa_w}; //parameterized expansion, only for non-self consistent Horndeski theories
+enum expansion_model {lcdm, wowa, wowa_w, wede}; //parameterized expansion, only for non-self consistent Horndeski theories \\ILSWEDE
 
 /** list of possible parametrisations of the DE equation of state */
 

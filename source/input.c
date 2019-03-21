@@ -1068,7 +1068,7 @@ int input_read_parameters(
   else if ((flag4 == _TRUE_) && (param4 < 0.)){
     // Fill up with scalar field
     pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_smg = %e\n",pba->Omega0_smg);
+    if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
   }
 
   if (flag3 == _FALSE_){
@@ -1461,6 +1461,27 @@ int input_read_parameters(
 	pba->tuning_index_2_smg = 2;
       }
 
+if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0) {
+	// This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
+  pba->gravity_model_smg = nkgb;
+	pba->field_evolution_smg = _TRUE_;
+  if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+	  pba->tuning_index_smg = 0; //use g for default tuning
+	}
+	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
+		 errmsg,
+		 "nKGB: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+	if(has_dxdy_guess_smg == _FALSE_){
+    pba->tuning_dxdy_guess_smg = -0.5;
+  }
+  flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+	class_test(pba->parameters_smg[1]<=0.5,errmsg,"In n-KGB G(X)=X^n n>1/2 for acceleration.");
+  class_test(pba->parameters_smg[2]>=1.,errmsg,"In n-KGB, xi0<1 for positive energy density today.");
+  class_test(pba->parameters_smg[2]<0.,errmsg,"In n-KGB, xi0>=0, or ICs for background can't be set.");
+}
 
       class_test(flag2==_FALSE_,
 		 errmsg,
@@ -1506,10 +1527,21 @@ int input_read_parameters(
         pba->rho_evolution_smg=_TRUE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
-      
+        
+        
+      if (strcmp(string1,"wede") == 0) {    //ILSWEDE
+	      pba->expansion_model_smg = wede;
+	      flag2=_TRUE_;
+	      pba->parameters_size_smg = 3;
+	      class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+        // 	//optimize the guessing BUG: eventually leads to problem in the MCMC, perhaps the guess is too good?
+        // 	if(pba->tuning_index_smg == 0){
+        // 	  pba->parameters_smg[0] = pba->Omega0_smg;
+        // 	}
+      }
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w ...");
+		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
       
     }
     
@@ -4277,7 +4309,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
   short compute_sigma8 = _FALSE_;
 
   pfzw = (struct fzerofun_workspace *) voidpfzw;
-
+ 
   for (i=0; i < unknown_parameters_size; i++) {
     sprintf(pfzw->fc.value[pfzw->unknown_parameters_index[i]],
             "%e",unknown_parameter[i]);
@@ -4636,7 +4668,7 @@ int input_find_root(double *xzero,
                     int *fevals,
                     struct fzerofun_workspace *pfzw,
                     ErrorMsg errmsg){
-  double x1, x2, f1, f2, dxdy, dx;
+  double x1, x2, f1, f2, dxdy, dx, dxdytrue, dxdyold;
   int iter, iter2;
   int return_function;
   /** Summary: */
@@ -4644,6 +4676,7 @@ int input_find_root(double *xzero,
   /** - Fisrt we do our guess */
   class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
              errmsg, errmsg);
+
   //      printf("x1= %g\n",x1);
   class_call(input_fzerofun_1d(x1,
                                pfzw,
@@ -4653,19 +4686,26 @@ int input_find_root(double *xzero,
   (*fevals)++;
   //printf("x1= %g, f1= %g\n",x1,f1);
 
-  dx = 1.5*f1*dxdy;
-  
-  //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
-  // if f1<target precision then update the value
-  if (fabs(f1)<1e-5)
-    dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
-  //     return _SUCCESS_;
-  
-//    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
-
   /** - Do linear hunt for boundaries */
-  for (iter=1; iter<=15; iter++){
-    //x2 = x1 + search_dir*dx;
+  dxdytrue=dxdy;
+  for (iter=1; iter<=31; iter++){
+ 
+    //Set the search step size according to guessed dxdy on first pass
+    //then update with a real one on second pass and keep that until the end.
+
+      dx = 1.5*f1*dxdy;
+  
+      //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
+      // if f1<target precision then update the value
+      if (fabs(f1)<1e-5)
+        dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
+      //     return _SUCCESS_;
+  
+  //    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
+
+  
+    //x2 = x1 + search_dir*dx; 
+ 
     x2 = x1 - dx;
 
     for (iter2=1; iter2 <= 3; iter2++) {
@@ -4689,12 +4729,26 @@ int input_find_root(double *xzero,
 
     if (f1*f2<0.0){
       /** - root has been bracketed */
-      if (0==1){
+      if (1==1){
         printf("Root has been bracketed after %d iterations: [%g, %g].\n",iter,x1,x2);
       }
       break;
     }
-
+    
+    dxdytrue=(x2-x1)/(f2-f1);
+    dxdyold=dxdy;
+    
+      if(iter==1){ //replace dxdy_guess with real estimate after one iteration
+        dxdy = dxdytrue;
+      }
+      else{
+        dxdy=copysign(dxdy,dxdytrue);//Otherwise keep dxdy magnitude fixed, but flip sign according to real
+      } 
+    
+    if(dxdyold*dxdy<0.&&iter!=1){//If dxdy changes sign after first iter, might have missed root, halve the step size and continue
+        dxdy/=2.;
+    }
+    //printf("dxdy true=%g, old=%g, new=%g.\n",dxdytrue, dxdyold, dxdy);
     x1 = x2;
     f1 = f2;
   }

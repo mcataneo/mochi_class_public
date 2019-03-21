@@ -677,7 +677,7 @@ int background_init(
              background_free(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
-
+  
   /** - assign values to all indices in vectors of background quantities with background_indices()*/
   class_call(background_indices(pba),
              pba->error_message,
@@ -2344,7 +2344,7 @@ int background_solve(
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
     if (pba->has_smg == _TRUE_){
-      printf(" -> Omega_smg = %f, whished %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg);
+      printf(" -> Omega_smg = %f, wanted %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg);
       if(pba->has_lambda == _TRUE_)
 	printf(", Omega_Lambda = %f", pba->Omega0_lambda);
       printf("\n");
@@ -2566,6 +2566,59 @@ int background_initial_conditions(
 	pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[3];
 	break;
 
+    case nkgb:
+      {
+      /* Action is
+
+        -X + 1/n * g^[(2n-1)/2] Lambda (X/Lambda^4)^n box(phi)
+
+        with Lambda^(4n-1)=MPl^(2n-1)*H0^2n
+
+        g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
+
+        Since the energy density in KGB must be >0, then -inf<xi0<1 and the combination xicomb>0
+        The alpha descrition breaks down for phidot=0, so we assume this is never crossed
+
+        This all implies that phidot on the attractor has the same sign as g, and therefore
+        phi dot always has the same sign as g.
+
+      */
+      
+        double g = pba->parameters_smg[0];
+        double n = pba->parameters_smg[1];
+        double xi0 = pba->parameters_smg[2];
+          
+        double H = sqrt(rho_rad);
+        double H0 = pba->H0;
+
+        double signg = copysign(1.,g);
+        g=fabs(g);
+        double xicomb = (2.-xi0)/(2.*(1.-xi0));
+        
+        double phidot0=0., phidot_attr_init= 0., charge_init=0., phidot_init=0.;
+
+        phidot0 = signg * sqrt(2./g)*H0 * pow(xicomb/(3*sqrt(2)),1./(2.*n-1.));             // value of phidot today, if xi0=0, then this is attractor
+        phidot_attr_init = signg * sqrt(2./g)*H0 * pow(H0/(3.*sqrt(2.)*H),1./(2.*n-1.));    // value of phidot on attractor at initial time
+        charge_init  = phidot0*xi0/(2*(1-xi0))*pow(a,-3);    // implied value of required shift charge initially
+        
+        if(fabs(charge_init/phidot_attr_init)<1.){
+          /* test if initial shift charge is large c.f. the on-attractor phidot. If no, we are nearly on attractor
+          at initial time anyway, so just correct the attractor solution slightly
+          if yes, then we are off-attractor and then we have approximate analytic solution in limit of 
+          n_init >> phidot. For the range n_init ~ phidot just use the solution for large shift charge.
+          by the late universe, this will be an irrelevant error. */
+
+          phidot_init = phidot_attr_init + charge_init/(2.*n-1.);
+        }
+        else{
+          phidot_init = signg * pow( fabs(charge_init) * pow(fabs(phidot_attr_init),2.*n-1.),1./(2.*n));
+        }        
+
+        pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
+        pvecback_integration[pba->index_bi_phi_prime_smg] = a*phidot_init ; 
+      }
+      break;
+  
       case propto_omega:
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
 	break;
@@ -3166,6 +3219,31 @@ int background_gravity_functions(
 
     }
 
+    else if(pba->gravity_model_smg == nkgb){
+
+      /* Action is
+
+        -X + 1/n * g^[(2n-1)/2] Lambda (X/Lambda^4)^n box(phi)
+
+        g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
+        Note that for n=1/4 the Lambda mass scales cancels out, so we set it to 1.
+      */
+      
+      double g = pba->parameters_smg[0];
+      double n = pba->parameters_smg[1];
+      double ngpow = copysign(1.,g)*pow(fabs(g),(2.*n-1.)/2.)/n;
+      double H0=pba->H0;
+      
+      G2    = -X;
+      G2_X  = -1.;
+      
+      // G3 = 1/n g^[(2n-1)/2] Lambda (X/Lambda^4)^n
+  
+      G3_X = n*ngpow*pow(X,n-1)/pow(H0,2*n);
+      G3_XX = n*(n-1.)*ngpow*pow(X,n-2)/pow(H0,2*n);
+
+    }
+
 
     //TODO: Write the Bellini-Sawicki functions and other information to pvecback
 
@@ -3278,7 +3356,7 @@ int background_gravity_functions(
     /* Energy density of the field */
     pvecback[pba->index_bg_rho_smg] = (5.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3. + (G4_phi + (G3_X + (-2.)*G4_Xphi)*(-1.)*X)*(-2.)*H*phi_prime*pow(a,-1) + ((-2.)*G4_smg + ((4.*G4_X + (-3.)*G5_phi)*2. + (2.*G4_XX + (-1.)*G5_Xphi)*4.*X)*X)*pow(H,2);
 
-    /* Pressure density of the field */
+    /* Pressure of the field */
     pvecback[pba->index_bg_p_smg] = (G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-4.)/3.*H*phi_prime*pow(a,-2)*X*G5_X + (-2.*G4_smg + (2.*G4_X + (-1.)*G5_phi)*2.*X)*(-2.)/3.*pow(a,-1))*pvecback[pba->index_bg_H_prime] + (6.*G4_smg + ((-2.)*G4_X + (-1.)*G5_phi + (4.*G4_XX + (-3.)*G5_Xphi)*2.*X)*2.*X)*1./3.*pow(H,2) + ((3.*G5_X + 2.*X*G5_XX)*(-2.)/3.*pow(H,2)*pow(a,-2)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*(-2.)/3.*pow(a,-2) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-4.)/3.*H*phi_prime*pow(a,-3))*pvecback[pba->index_bg_phi_prime_prime_smg] + (G2 + (G3_phi + (-2.)*G4_phiphi)*(-2.)*X)*1./3. + (G4_phi + (G3_X + (-6.)*G4_Xphi + 2.*G5_phiphi)*X)*2./3.*H*phi_prime*pow(a,-1);
 
   }// end of if pba->field_evolution_smg
@@ -3340,6 +3418,31 @@ int background_gravity_functions(
       }
       pvecback[pba->index_bg_p_smg] = pvecback[pba->index_bg_w_smg] * pvecback[pba->index_bg_rho_smg];
 
+    }//ILSWEDE
+    if (pba->expansion_model_smg == wede){
+      
+      //Doran-Robbers model astro-ph/0601544
+      //as implemented in Pettorino et al. 1301.5279
+      //TODO: check these expressions, they probably assume the standard evolution/friedmann eqs, etc...
+      
+      double Om0 = pba->parameters_smg[0];
+      double w0 = pba->parameters_smg[1];
+      double Ome = pba->parameters_smg[2] + 1e-10;
+      
+      //NOTE: I've regularized the expression adding a tiny Omega_e
+      double Om = ((Om0 - Ome*(1.-pow(a,-3.*w0)))/(Om0 + (1.-Om0)*pow(a,3*w0)) + Ome*(1.-pow(a,-3*w0)));
+      double dOm_da = (3*pow(a,-1 - 3*w0)*(-1 + Om0)*(-2*pow(a,3*w0)*(-1 + Om0)*Ome + Om0*Ome + pow(a,6*w0)*(Om0 - 2*Ome + Om0*Ome))*w0)/pow(-(pow(a,3*w0)*(-1 + Om0)) + Om0,2); //from Mathematica
+      //I took a_eq = a*rho_r/rho_m, with rho_r = 3*p_tot_wo_smg
+      double a_eq = 3.*a*p_tot/(pvecback[pba->index_bg_rho_b]+pvecback[pba->index_bg_rho_cdm]); //tested!
+      double w = a_eq/(3.*(a+a_eq)) -a/(3.*(1-Om)*Om)*dOm_da;
+            
+      pvecback[pba->index_bg_rho_smg] = rho_tot*Om/(1.-Om);
+      //pow(pba->H0,2)/pow(a,3)*Om*(Om-1.)/(Om0-1.)*(1.+a_eq/a)/(1.+a_eq); //this eq is from Pettorino et al, not working
+      pvecback[pba->index_bg_p_smg] = w*pvecback[pba->index_bg_rho_smg];
+      
+//       if (a>0.9)
+// 	printf("a = %e, w = %f, Om_de = %e, rho_de/rho_t = %e \n",a,w,Om,
+// 	       pvecback[pba->index_bg_rho_smg]/(pvecback[pba->index_bg_rho_smg]+rho_tot));
     }
 
     rho_tot += pvecback[pba->index_bg_rho_smg];
@@ -3515,60 +3618,66 @@ int background_gravity_parameters(
 
    case quintessence_monomial:
      printf("Modified gravity: quintessence_monomial with parameters: \n");
-     printf("-> N = %g, V0 = %g, V0* = %g, phi_prime_0 = %g, phi_0 = %g \n",
+     printf(" -> N = %g, V0 = %g, V0* = %g, phi_prime_0 = %g, phi_0 = %g \n",
 	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[1]*3.*pow(pba->H0/pba->h,2),
 	    pba->parameters_smg[2], pba->parameters_smg[3]);
      break;
 
    case galileon:
      printf("Modified gravity: covariant Galileon with parameters: \n");
-     printf("-> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
+     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
 	    pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0], pba->xi_0_smg);
      break;
 
    case brans_dicke:
      printf("Modified gravity: Brans Dicke with parameters: \n");
-     printf("-> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
+     printf(" -> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
+     break;
+
+    case nkgb:
+     printf("Modified gravity: Kinetic Gravity Braiding with K=-X and G=1/n g^(2n-1)/2 * X^n with parameters: \n");
+     printf(" -> g = %g, n = %g, phi_0 = 0.0, density fraction from shift charge = %g. \n",
+	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
      break;
 
    case propto_omega:
      printf("Modified gravity: propto_omega with parameters: \n");
-     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
 
    case propto_scale:
      printf("Modified gravity: propto_scale with parameters: \n");
-     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
 
    case constant_alphas:
      printf("Modified gravity: constant_alphas with parameters: \n");
-     printf("-> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
+     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4]);
      break;
 
    case eft_alphas_power_law:
      printf("Modified gravity: eft_alphas_power_law with parameters: \n");
-     printf("-> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
+     printf(" -> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
 	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
    case eft_gammas_power_law:
      printf("Modified gravity: eft_gammas_power_law with parameters: \n");
-     printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
+     printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
    case eft_gammas_exponential:
      printf("Modified gravity: eft_gammas_exponential with parameters: \n");
-     printf("-> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
+     printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
 
@@ -3593,6 +3702,11 @@ int background_gravity_parameters(
       printf("Parameterized model with CPL expansion \n");
       printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
 	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
+      break;
+      
+      case wede:    //ILSWEDE
+      printf("Parameterized model with variable EoS + EDE \n");
+      printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
 
     }
