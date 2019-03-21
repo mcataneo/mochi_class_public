@@ -43,7 +43,7 @@ int input_init_from_arguments(
 
   char input_file[_ARGUMENT_LENGTH_MAX_];
   char precision_file[_ARGUMENT_LENGTH_MAX_];
-  char tmp_file[_ARGUMENT_LENGTH_MAX_];
+  char tmp_file[_ARGUMENT_LENGTH_MAX_+26]; // 26 is enough to extend the file name [...] with the characters "output/[...]%02d_parameters.ini" (as done below)
 
   int i;
   char extension[5];
@@ -809,27 +809,32 @@ int input_read_parameters(
     pba->Omega0_dcdmdr = param1;
   if (flag2 == _TRUE_)
     pba->Omega0_dcdmdr = param2/pba->h/pba->h;
-  Omega_tot += pba->Omega0_dcdmdr;
 
-  /** - Read Omega_ini_dcdm or omega_ini_dcdm */
-  class_call(parser_read_double(pfc,"Omega_ini_dcdm",&param1,&flag1,errmsg),
-             errmsg,
-             errmsg);
-  class_call(parser_read_double(pfc,"omega_ini_dcdm",&param2,&flag2,errmsg),
-             errmsg,
-             errmsg);
-  class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
-             errmsg,
-             "In input file, you can only enter one of Omega_ini_dcdm or omega_ini_dcdm, choose one");
-  if (flag1 == _TRUE_)
-    pba->Omega_ini_dcdm = param1;
-  if (flag2 == _TRUE_)
-    pba->Omega_ini_dcdm = param2/pba->h/pba->h;
+  if (pba->Omega0_dcdmdr > 0) {
 
-  /** - Read Gamma in same units as H0, i.e. km/(s Mpc)*/
-  class_read_double("Gamma_dcdm",pba->Gamma_dcdm);
-  /* Convert to Mpc */
-  pba->Gamma_dcdm *= (1.e3 / _c_);
+    Omega_tot += pba->Omega0_dcdmdr;
+
+    /** - Read Omega_ini_dcdm or omega_ini_dcdm */
+    class_call(parser_read_double(pfc,"Omega_ini_dcdm",&param1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    class_call(parser_read_double(pfc,"omega_ini_dcdm",&param2,&flag2,errmsg),
+               errmsg,
+               errmsg);
+    class_test(((flag1 == _TRUE_) && (flag2 == _TRUE_)),
+               errmsg,
+               "In input file, you can only enter one of Omega_ini_dcdm or omega_ini_dcdm, choose one");
+    if (flag1 == _TRUE_)
+      pba->Omega_ini_dcdm = param1;
+    if (flag2 == _TRUE_)
+      pba->Omega_ini_dcdm = param2/pba->h/pba->h;
+
+    /** - Read Gamma in same units as H0, i.e. km/(s Mpc)*/
+    class_read_double("Gamma_dcdm",pba->Gamma_dcdm);
+    /* Convert to Mpc */
+    pba->Gamma_dcdm *= (1.e3 / _c_);
+
+  }
 
   /** - non-cold relics (ncdm) */
   class_read_int("N_ncdm",N_ncdm);
@@ -1063,7 +1068,7 @@ int input_read_parameters(
   else if ((flag4 == _TRUE_) && (param4 < 0.)){
     // Fill up with scalar field
     pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_smg = %e\n",pba->Omega0_smg);
+    if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
   }
 
   if (flag3 == _FALSE_){
@@ -1087,9 +1092,6 @@ int input_read_parameters(
   */
 
   if (pba->Omega0_fld != 0.) {
-    class_read_double("w0_fld",pba->w0_fld);
-    class_read_double("wa_fld",pba->wa_fld);
-    class_read_double("cs2_fld",pba->cs2_fld);
 
     class_call(parser_read_string(pfc,
                                   "use_ppf",
@@ -1109,6 +1111,36 @@ int input_read_parameters(
       }
     }
 
+    class_call(parser_read_string(pfc,"fluid_equation_of_state",&string1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+
+    if (flag1 == _TRUE_) {
+
+      if ((strstr(string1,"CLP") != NULL) || (strstr(string1,"clp") != NULL)) {
+        pba->fluid_equation_of_state = CLP;
+      }
+
+      else if ((strstr(string1,"EDE") != NULL) || (strstr(string1,"ede") != NULL)) {
+        pba->fluid_equation_of_state = EDE;
+      }
+
+      else {
+        class_stop(errmsg,"incomprehensible input '%s' for the field 'fluid_equation_of_state'",string1);
+      }
+    }
+
+    if (pba->fluid_equation_of_state == CLP) {
+      class_read_double("w0_fld",pba->w0_fld);
+      class_read_double("wa_fld",pba->wa_fld);
+      class_read_double("cs2_fld",pba->cs2_fld);
+    }
+
+    if (pba->fluid_equation_of_state == EDE) {
+      class_read_double("w0_fld",pba->w0_fld);
+      class_read_double("Omega_EDE",pba->Omega_EDE);
+      class_read_double("cs2_fld",pba->cs2_fld);
+    }
   }
 
   /* Additional SCF parameters: */
@@ -1215,6 +1247,15 @@ int input_read_parameters(
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
       
+      if (strcmp(string1,"constant_alphas") == 0) {
+	pba->gravity_model_smg = constant_alphas;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 5;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      }
+
       if (strcmp(string1,"eft_alphas_power_law") == 0) {
 	pba->gravity_model_smg = eft_alphas_power_law;
 	pba->field_evolution_smg = _FALSE_;
@@ -1303,16 +1344,8 @@ int input_read_parameters(
       if (strcmp(string1,"galileon") == 0) {
 	pba->gravity_model_smg = galileon;
 	pba->field_evolution_smg = _TRUE_;
-	flag2=_TRUE_;
-	
 	pba->parameters_size_smg = 7;
-	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-	
-	double xi = pba->parameters_smg[0];
-	double c2 = pba->parameters_smg[2];
-	double c3 = pba->parameters_smg[3];
-	double c4 = pba->parameters_smg[4];
-	double c5 = pba->parameters_smg[5];
+	flag2=_TRUE_;
 	
 	/* Galileon dynamics pulls towards the shift-symmetry attractor n = 0 with
 	 * 
@@ -1330,89 +1363,91 @@ int input_read_parameters(
 	 * 
 	 * (Barreira+ '14 2.22 for z\neq 0), which equals Omega_smg at z=0 only if tuned.
 	 * 
-	 * There are three modes:
+	 * There are three submodels (taken on tracker):
 	 * 	1) rogue mode: user sets all (if Omega_smg_debug or NO attractor_ic_smg)
 	 * 	2) cubic attractor: c3, xi set for attractor
 	 * 	3) quartic/quintic attractor: c3, c4 set xi for attractor
 	 */
 	
-	//rho/H0^2 for each Horndeski term
-	double rho_H2;
 	
-	/* 1) ROGUE mode: user provides BOTH tuning index and guess
-	 *    otherwise ignore complain loudly
-	 */
-	if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+	// read submodel: remember flag2 used for test over gravity models
+	class_call(parser_read_string(pfc,"gravity_submodel",&string2,&flag3,errmsg),
+	       errmsg,
+	       errmsg);
+	
+	/*1) base galileon, user specifies everything!  */
+	if (flag3==_FALSE_){ 
+	  
+	  class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+	  
+	}
+	else {//a submodel is given
+	  
+	  /*  temporary allocation, will be rewritten latter
+	   *  order is xi, phi, c2, c3, c4, c5  */
+	  class_alloc(pba->parameters_smg, sizeof(double*)*7,pba->error_message);
+	  double * input_params_gal; //dummy allocation vector
+	  
+	  double xi, c2, c3, c4, c5;
+	  double phi0 = 0;
+	  
+	  /*2) cubic Galileon in the attractor
+	    * Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
+	    */
+	  if (strcmp(string2,"cubic") == 0) {
+	    
+	    c2 = -1.;
+	    c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
+	    xi = c2/6./c3;
+	    c4 = 0;
+	    c5 = 0;
+
+	  }//end of cubic
+	   /* 3) quartic Galileon on the attractor
+	    */
+	  else if (strcmp(string2,"quartic") == 0) {
+		    
+	    class_read_list_of_doubles("parameters_smg",input_params_gal,1);
+	    xi = input_params_gal[0];
+	    c2 = -1;
+	    c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
+	    c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
+	    c5 = 0;
+	  
+	  }/* 4) quartic Galileon on the attractor
+	    */
+	  else if (strcmp(string2,"quintic") == 0) {//Quintic case   
+	    
+	    class_read_list_of_doubles("parameters_smg",input_params_gal,2);
+	    xi = input_params_gal[0];
+	    c2 = -1;
+	    c3 = input_params_gal[1];
+	    c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
+	    c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
+	    
+	  }//end of quintic
+	  
+	  /* Set parameters for submodels */
+	  pba->parameters_smg[0] = xi;
+	  pba->parameters_smg[1] = phi0;
+	  pba->parameters_smg[2] = c2;
+	  pba->parameters_smg[3] = c3;
+	  pba->parameters_smg[4] = c4;
+	  pba->parameters_smg[5] = c5;
+	  
+	}//end of submodels
+	
+	/* default tuning index is 3 */
+	if (has_tuning_index_smg == _FALSE_){
 	  pba->tuning_index_smg = 3; //use c3 for default tuning
+	  pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3
 	}
 	//TODO: write guess
 	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
 		 errmsg,
 		 "Galileon: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
 	
-	if (pba->Omega_smg_debug == 0 && pba->attractor_ic_smg == _TRUE_){
-	  if(pba->tuning_index_smg == 3){	    
-	    
-	    /*2) cubic Galileon
-	     * in this case Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
-	     */
-	    if (c4 == 0 && c5 == 0) {
-	      
-	      
-	      //NOTE: maybe make this error in other module
-	      class_test(c2>0,
-			 errmsg,
-		         "Galileon: cubic case (c4=c5=0) only has Omega_smg >0 if c2<0 (current c2=%e)",
-			 c2);
-	      
-	      c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
-	      xi = c2/6./c3;
-	      
-	      pba->parameters_smg[3] = c3;
-	      pba->parameters_smg[0] = xi;
-	      pba->tuning_dxdy_guess_smg = -0.5*c3/pba->Omega0_smg;
-// 	      printf("dxdy_guess = %e \n",pba->tuning_dxdy_guess_smg);
-	    }//end of cubic
-	    //quartic Galileon
-	    //TODO: should allow for non-attractor
-	    else if (c5 == 0){
-	   	     
-	      c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
-	      c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
-		    //-(c2-6.*c3*xi+5.*c5*pow(xi,3))/(18.*pow(xi,2));//without solving for c3, would be an attempt to get c3 in the loop when its varied
-	      
-	      pba->parameters_smg[3] = c3;
-	      pba->parameters_smg[4] = c4;
-	      pba->tuning_dxdy_guess_smg = 2./pow(xi,3);
-	      
-// 	      printf("quartic read_params: xi = %e,  c3 = %e, c4 = %e, c5 = %e \n", xi, c3,c4,c5);
-// 	      printf("read_params:c3 = %e, c4 = %e, c5 = %e, xi=%e \n", pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0]);
-	    
-// 	    //Quartic theories might not have an attractor: start always in the region for which there is one!
-// 	    //but we choose c3 so this doesn't happen!
-// 	    if (c5 == 0 && c3*c3 < c2*c4/18.)
-// 	      c3 = c2*c4/18;
-// 	    
-// 	    	    rho_H2 = c2*pow(xi,2)/6. - 2.*c3*pow(xi,3) + 15./2.*c4*pow(xi,4) + 7./3.*c5*pow(xi,5);
-// 	    pba->tuning_dxdy_guess_smg = fabs(pow(1. + rho_H2, 2)/(-2.*pow(xi,3))); //absolute value to consider scale of variation ??
-// 	    
-// 	    pba->parameters_smg[3] = c3;
-	    
-	    }//end of quartic
-	    else{//Quintic case   
-	      
-// 	      printf("quintic read_params: xi = %e,  c3 = %e, c4 = %e, c5 = %e \n", xi, c3,c4,c5);
-	      
-	      c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
-	      c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
-	      
-	      pba->parameters_smg[4] = c4;
-	      pba->parameters_smg[5] = c5;
-	      pba->tuning_dxdy_guess_smg = 2./pow(xi,3);
-	    
-	    }//end of quintic	    
-	  }//end of tuning_index=3
-	}//end of no Omega_smg_debug
+	
       }//end of Galileon
       if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
 	pba->gravity_model_smg = brans_dicke;
@@ -1426,16 +1461,34 @@ int input_read_parameters(
 	pba->tuning_index_2_smg = 2;
       }
 
+if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0) {
+	// This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
+  pba->gravity_model_smg = nkgb;
+	pba->field_evolution_smg = _TRUE_;
+  if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+	  pba->tuning_index_smg = 0; //use g for default tuning
+	}
+	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
+		 errmsg,
+		 "nKGB: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+	if(has_dxdy_guess_smg == _FALSE_){
+    pba->tuning_dxdy_guess_smg = -0.5;
+  }
+  flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+	class_test(pba->parameters_smg[1]<=0.5,errmsg,"In n-KGB G(X)=X^n n>1/2 for acceleration.");
+  class_test(pba->parameters_smg[2]>=1.,errmsg,"In n-KGB, xi0<1 for positive energy density today.");
+  class_test(pba->parameters_smg[2]<0.,errmsg,"In n-KGB, xi0>=0, or ICs for background can't be set.");
+}
 
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential' ...");
+		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential' ...");
       
     }// end of loop over models
-    
-    //TODO: Generalize branch choices and attractor IC
-    
-    //TODO: if self consistent evolution read the initial conditions. These might be ignored, e.g. if there are attractor initial conditions.
+
     if(pba->field_evolution_smg == _TRUE_){
       
       //TODO: include generic stuff for covariant theories
@@ -1456,6 +1509,7 @@ int input_read_parameters(
 	pba->expansion_model_smg = lcdm;
 	flag2=_TRUE_;
 	pba->parameters_size_smg = 1;
+        pba->rho_evolution_smg=_FALSE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
       //accept different names
@@ -1463,12 +1517,31 @@ int input_read_parameters(
 	pba->expansion_model_smg = wowa;
 	flag2=_TRUE_;
 	pba->parameters_size_smg = 3;
+        pba->rho_evolution_smg=_FALSE_;
 	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
       }
-      
+      if (strcmp(string1,"wowa_w") == 0 || strcmp(string1,"w0wa_w") == 0 || strcmp(string1,"cpl_w") == 0 ) {
+	pba->expansion_model_smg = wowa_w;
+	flag2=_TRUE_;
+	pba->parameters_size_smg = 3;
+        pba->rho_evolution_smg=_TRUE_;
+	class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      }
+        
+        
+      if (strcmp(string1,"wede") == 0) {    //ILSWEDE
+	      pba->expansion_model_smg = wede;
+	      flag2=_TRUE_;
+	      pba->parameters_size_smg = 3;
+	      class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+        // 	//optimize the guessing BUG: eventually leads to problem in the MCMC, perhaps the guess is too good?
+        // 	if(pba->tuning_index_smg == 0){
+        // 	  pba->parameters_smg[0] = pba->Omega0_smg;
+        // 	}
+      }
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify expansion_model value, check that it is either lcdm, wowa ...");
+		 "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
       
     }
     
@@ -1484,13 +1557,15 @@ int input_read_parameters(
     class_read_double("ct2_safe_smg",pba->ct2_safe_smg);
     class_read_double("M2_safe_smg",pba->M2_safe_smg);
 
-    class_read_double("pert_ic_tolerance_smg",pba->pert_ic_tolerance_smg);
-    class_read_double("pert_ic_ini_z_ref_smg",pba->pert_ic_ini_z_ref_smg);
-    class_read_double("pert_ic_regulator_smg",pba->pert_ic_regulator_smg);
+    class_read_double("pert_ic_tolerance_smg",ppr->pert_ic_tolerance_smg);
+    class_read_double("pert_ic_ini_z_ref_smg",ppr->pert_ic_ini_z_ref_smg);
+    class_read_double("pert_ic_regulator_smg",ppr->pert_ic_regulator_smg);
+    class_read_double("pert_qs_ic_tolerance_test_smg",ppr->pert_qs_ic_tolerance_test_smg);
+  
     class_read_double("a_min_stability_test_smg",pba->a_min_stability_test_smg);
     
     class_read_double("kineticity_safe_smg",pba->kineticity_safe_smg); // minimum value of the kineticity (to avoid trouble)
-    class_read_double("min_a_pert_smg",pba->min_a_pert_smg);
+    class_read_double("min_a_pert_smg",ppr->min_a_pert_smg);
  
     
     class_call(parser_read_string(pfc,
@@ -1520,19 +1595,19 @@ int input_read_parameters(
 		errmsg);
     
     if (strcmp(string1,"single_clock") == 0) {
-	    pba->pert_initial_conditions_smg = single_clock;
+	    ppt->pert_initial_conditions_smg = single_clock;
       }
     if (strcmp(string1,"gravitating_attr") == 0) {
-      pba->pert_initial_conditions_smg = gravitating_attr;
+      ppt->pert_initial_conditions_smg = gravitating_attr;
       }
     if (strcmp(string1,"zero") == 0) {
-	    pba->pert_initial_conditions_smg = zero;
+	    ppt->pert_initial_conditions_smg = zero;
       }
     if (strcmp(string1,"kin_only") == 0) {
-      pba->pert_initial_conditions_smg = kin_only;
+      ppt->pert_initial_conditions_smg = kin_only;
     }
     if (strcmp(string1,"ext_field_attr") == 0 ){//this is the default
-      pba->pert_initial_conditions_smg = ext_field_attr;
+      ppt->pert_initial_conditions_smg = ext_field_attr;
     }
 
 //     else {
@@ -1815,6 +1890,21 @@ int input_read_parameters(
     if ((strstr(string1,"mPk") != NULL) || (strstr(string1,"MPk") != NULL) || (strstr(string1,"MPK") != NULL)) {
       ppt->has_pk_matter=_TRUE_;
       ppt->has_perturbations = _TRUE_;
+
+      /*if (pba->Omega0_ncdm_tot != 0.0){
+          class_call(parser_read_string(pfc,"pk_only_cdm_bar",&string1,&flag1,errmsg),
+                     errmsg,
+                     errmsg);
+          if (flag1 == _TRUE_){
+              if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+                  ppt->pk_only_cdm_bar = _TRUE_;
+              }
+              else {
+                  ppt->pk_only_cdm_bar = _FALSE_;
+              }
+          }
+      }*/
+
     }
 
     if ((strstr(string1,"mTk") != NULL) || (strstr(string1,"MTk") != NULL) || (strstr(string1,"MTK") != NULL) ||
@@ -2919,8 +3009,13 @@ int input_read_parameters(
   }
   /* end of z_max section */
 
-  class_read_string("root",pop->root);
-
+  class_call(parser_read_string(pfc,"root",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+  if (flag1 == _TRUE_){
+    class_test(strlen(string1)>_FILENAMESIZE_-32,errmsg,"Root directory name is too long. Please install in other directory, or increase _FILENAMESIZE_ in common.h");
+    strcpy(pop->root,string1);
+  }
   class_call(parser_read_string(pfc,
                                 "headers",
                                 &(string1),
@@ -3010,6 +3105,8 @@ int input_read_parameters(
   class_read_double("tol_initial_Omega_r",ppr->tol_initial_Omega_r);
   class_read_double("tol_ncdm_initial_w",ppr->tol_ncdm_initial_w);
   class_read_double("safe_phi_scf",ppr->safe_phi_scf);
+  class_read_double("safe_phi_scf",ppr->safe_phi_scf);
+  class_read_double("tol_tau_eq",ppr->tol_tau_eq);
 
   /** - (h.2.) parameters related to the thermodynamics */
 
@@ -3246,6 +3343,8 @@ int input_read_parameters(
   class_read_double("halofit_k_per_decade",ppr->halofit_k_per_decade);
   class_read_double("halofit_sigma_precision",ppr->halofit_sigma_precision);
   class_read_double("halofit_tol_sigma",ppr->halofit_tol_sigma);
+  class_read_double("pk_eq_z_max",ppr->pk_eq_z_max);
+  class_read_double("pk_eq_tol",ppr->pk_eq_tol);
 
   /** - (h.7.) parameter related to lensing */
 
@@ -3349,8 +3448,28 @@ int input_read_parameters(
     if (ppr->perturb_sampling_stepsize > 0.05)
       ppr->perturb_sampling_stepsize=0.05;
     
+    //how much info on background.dat?
+    class_read_double("output_background_smg",pba->output_background_smg);
+    
   }
     
+
+  /** - (i.5) special steps if we want Halofit with wa_fld non-zero:
+        so-called "Pk_equal method" of 0810.0190 and 1601.07230 */
+
+  if ((pnl->method == nl_halofit) && (pba->Omega0_fld != 0.) && (pba->wa_fld != 0.))
+    pnl->has_pk_eq = _TRUE_;
+
+  if (pnl->has_pk_eq == _TRUE_) {
+
+    if (input_verbose > 0) {
+      printf(" -> since you want to use Halofit with a non-zero wa_fld, calling background module to\n");
+      printf("    extract the effective w(tau), Omega_m(tau) parameters required by the Pk_equal method\n");
+    }
+    class_call(input_prepare_pk_eq(ppr,pba,pth,pnl,input_verbose,errmsg),
+               errmsg,
+               errmsg);
+  }
 
   return _SUCCESS_;
 
@@ -3450,6 +3569,7 @@ int input_default_params(
   
   pba->hubble_evolution = _TRUE_; /** dynamical evolution of Friedmann eq. */
   pba->hubble_friction = 3.; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
+  pba->rho_evolution_smg = _FALSE_; /*does the model require to evolve the background energy density? (only for parameterizations)*/
   
   pba->kineticity_safe_smg = 0; /* value added to the kineticity, useful to cure perturbations at early time in some models */
   pba->cs2_safe_smg = 0; /* threshold to consider the sound speed of scalars negative in the stability check */
@@ -3457,13 +3577,7 @@ int input_default_params(
   pba->ct2_safe_smg = 0; /* threshold to consider the sound speed of tensors negative in the stability check */
   pba->M2_safe_smg = 0; /* threshold to consider the kinetic term of tensors (M2) negative in the stability check */
   
-  pba->pert_ic_tolerance_smg = 2e-2; /* tolerance to deviations from n=2 for IC h~tau^n as evaluated at pert_ic_ini_z_ref_smg. Negative values override test */
-  pba->pert_ic_ini_z_ref_smg = 1e10;/* redshift at which initial IC stability test performed */
-  pba->pert_ic_regulator_smg = 1e-15; /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */ 
-
   
-  pba->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
- 
   /*set stability quantities to nonzero values*/
   pba->min_M2_smg = 1e10;
   pba->min_ct2_smg = 1e10;
@@ -3472,13 +3586,13 @@ int input_default_params(
 
   pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */  
   pba->initial_conditions_set_smg = _FALSE_;
-  pba->z_ref_smg = 0.;
-  pba->min_a_pert_smg = 1.;
   
   pba->parameters_smg = NULL;
   pba->parameters_size_smg = 0;
   pba->tuning_index_smg = 0;  
   pba->tuning_dxdy_guess_smg = 1;
+  
+  pba->output_background_smg = 1; /**< amount of information printed onbackground.dat output */
 
   pba->Omega0_k = 0.;
   pba->K = 0.;
@@ -3486,11 +3600,13 @@ int input_default_params(
   pba->Omega0_lambda = 1.-pba->Omega0_k-pba->Omega0_g-pba->Omega0_ur-pba->Omega0_b-pba->Omega0_cdm-pba->Omega0_ncdm_tot-pba->Omega0_dcdmdr;
   pba->Omega0_fld = 0.;
   pba->a_today = 1.;
-  pba->w0_fld=-1.;
-  pba->wa_fld=0.;
-  pba->cs2_fld=1.;
   pba->use_ppf = _TRUE_;
   pba->c_gamma_over_c_fld = 0.4;
+  pba->fluid_equation_of_state = CLP;
+  pba->w0_fld = -1.;
+  pba->wa_fld = 0.;
+  pba->Omega_EDE = 0.;
+  pba->cs2_fld = 1.;
 
   pba->has_smg= _FALSE_;
   pba->parameters_tuned_smg = _FALSE_;
@@ -3548,6 +3664,8 @@ int input_default_params(
   ppt->has_nc_lens = _FALSE_;
   ppt->has_nc_gr = _FALSE_;
 
+  //ppt->pk_only_cdm_bar=_FALSE_;
+
   ppt->switch_sw = 1;
   ppt->switch_eisw = 1;
   ppt->switch_lisw = 1;
@@ -3579,6 +3697,8 @@ int input_default_params(
   ppt->gauge=synchronous;
 
   ppt->method_smgqs=fully_dynamic;
+
+  ppt->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
 
   ppt->k_output_values_num=0;
   ppt->store_perturbations = _FALSE_;
@@ -3720,6 +3840,7 @@ int input_default_params(
   /** - nonlinear structure */
 
   pnl->method = nl_none;
+  pnl->has_pk_eq = _FALSE_;
 
   /** - all verbose parameters */
 
@@ -3765,6 +3886,8 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->tol_ncdm_newtonian = 1.e-5;
   ppr->tol_ncdm_bg = 1.e-5;
   ppr->tol_ncdm_initial_w=1.e-3;
+
+  ppr->tol_tau_eq = 1.e-6;
 
   /**
    * - parameters related to the thermodynamics
@@ -3893,6 +4016,16 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->trigger_rad_smgqs = 1.e3;
   ppr->eps_s_smgqs = 0.01;
 
+  // precision parameters for setting initial conditions
+    
+  ppr->min_a_pert_smg = 1.;
+  ppr->pert_ic_ini_z_ref_smg = 1e10;/* redshift at which initial IC stability test performed */
+  ppr->pert_ic_tolerance_smg = 2e-2; /* tolerance to deviations from n=2 for IC h~tau^n as evaluated at pert_ic_ini_z_ref_smg. Negative values override test */
+  ppr->pert_ic_regulator_smg = 1e-15; /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */ 
+  ppr->pert_qs_ic_tolerance_test_smg = 10.; /* Maximal contribution to zeta non-conservation source from QS SMG in (0i) Einstein equation*/
+  
+  
+  
   /**
    * - parameter related to the primordial spectra
    */
@@ -3986,6 +4119,8 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->halofit_k_per_decade = 80.;
   ppr->halofit_sigma_precision = 0.05;
   ppr->halofit_tol_sigma = 1.e-6;
+  ppr->pk_eq_z_max = 5.;
+  ppr->pk_eq_tol = 1.e-7;
 
   /**
    * - parameter related to lensing
@@ -4174,7 +4309,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
   short compute_sigma8 = _FALSE_;
 
   pfzw = (struct fzerofun_workspace *) voidpfzw;
-
+ 
   for (i=0; i < unknown_parameters_size; i++) {
     sprintf(pfzw->fc.value[pfzw->unknown_parameters_index[i]],
             "%e",unknown_parameter[i]);
@@ -4308,16 +4443,8 @@ int input_try_unknown_parameters(double * unknown_parameter,
         -ba.Omega0_scf;
       break;
     case Omega_smg:
-	//NOTE: bugged when normalizing by (ba.H0*ba.H0)!!
-      /** In case scalar field is used to fill, pba->Omega0_smg is not equal to pfzw->target_value[i].*/
-      //NOTE: galileon model benefits from this normalization (see 1406.0485 eq 2.22 generalized to z\neq 0)
-      if (ba.gravity_model_smg == galileon)
-	output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
-		    -ba.Omega0_smg;
-      else
-	output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
-		    /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit]
-		    -ba.Omega0_smg;
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
+		  -ba.Omega0_smg;
       if (input_verbose > 2)	  
 	printf(" param[%i] = %e, Omega_smg = %.3e, %.3e, target = %.2e \n",ba.tuning_index_smg, ba.parameters_smg[ba.tuning_index_smg],
 	       ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
@@ -4541,7 +4668,7 @@ int input_find_root(double *xzero,
                     int *fevals,
                     struct fzerofun_workspace *pfzw,
                     ErrorMsg errmsg){
-  double x1, x2, f1, f2, dxdy, dx;
+  double x1, x2, f1, f2, dxdy, dx, dxdytrue, dxdyold;
   int iter, iter2;
   int return_function;
   /** Summary: */
@@ -4549,6 +4676,7 @@ int input_find_root(double *xzero,
   /** - Fisrt we do our guess */
   class_call(input_get_guess(&x1, &dxdy, pfzw, errmsg),
              errmsg, errmsg);
+
   //      printf("x1= %g\n",x1);
   class_call(input_fzerofun_1d(x1,
                                pfzw,
@@ -4558,19 +4686,26 @@ int input_find_root(double *xzero,
   (*fevals)++;
   //printf("x1= %g, f1= %g\n",x1,f1);
 
-  dx = 1.5*f1*dxdy;
-  
-  //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
-  // if f1<target precision then update the value
-  if (fabs(f1)<1e-5)
-    dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
-  //     return _SUCCESS_;
-  
-//    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
-
   /** - Do linear hunt for boundaries */
-  for (iter=1; iter<=15; iter++){
-    //x2 = x1 + search_dir*dx;
+  dxdytrue=dxdy;
+  for (iter=1; iter<=31; iter++){
+ 
+    //Set the search step size according to guessed dxdy on first pass
+    //then update with a real one on second pass and keep that until the end.
+
+      dx = 1.5*f1*dxdy;
+  
+      //BUG: problem if the guess is very good (f1~0) => no variation and no bracketing
+      // if f1<target precision then update the value
+      if (fabs(f1)<1e-5)
+        dx = 1.5*1e-5*f1/fabs(f1)*dxdy;
+      //     return _SUCCESS_;
+  
+  //    printf("f1 = %.3e, dxdy = %.3e, dx = %.3e \n",f1,dxdy,dx);
+
+  
+    //x2 = x1 + search_dir*dx; 
+ 
     x2 = x1 - dx;
 
     for (iter2=1; iter2 <= 3; iter2++) {
@@ -4594,12 +4729,26 @@ int input_find_root(double *xzero,
 
     if (f1*f2<0.0){
       /** - root has been bracketed */
-      if (0==1){
+      if (1==1){
         printf("Root has been bracketed after %d iterations: [%g, %g].\n",iter,x1,x2);
       }
       break;
     }
-
+    
+    dxdytrue=(x2-x1)/(f2-f1);
+    dxdyold=dxdy;
+    
+      if(iter==1){ //replace dxdy_guess with real estimate after one iteration
+        dxdy = dxdytrue;
+      }
+      else{
+        dxdy=copysign(dxdy,dxdytrue);//Otherwise keep dxdy magnitude fixed, but flip sign according to real
+      } 
+    
+    if(dxdyold*dxdy<0.&&iter!=1){//If dxdy changes sign after first iter, might have missed root, halve the step size and continue
+        dxdy/=2.;
+    }
+    //printf("dxdy true=%g, old=%g, new=%g.\n",dxdytrue, dxdyold, dxdy);
     x1 = x2;
     f1 = f2;
   }
@@ -4677,4 +4826,195 @@ int compare_doubles(const void *a,const void *b) {
   else if
     (*x > *y) return 1;
   return 0;
+}
+
+
+/**
+ * Perform preliminary steps fur using the method called Pk_equal,
+ * described in 0810.0190 and 1601.07230, extending the range of
+ * validity of HALOFIT from constant w to (w0,wa) models. In that
+ * case, one must compute here some effective values of w0_eff(z_i)
+ * and Omega_m_eff(z_i), that will be interpolated later at arbitrary
+ * redshift in the non-linear module.
+ *
+ * Returns table of values [z_i, tau_i, w0_eff_i, Omega_m_eff_i]
+ * stored in nonlinear structure.
+ *
+ * @param ppr           Input: pointer to precision structure
+ * @param pba           Input: pointer to background structure
+ * @param pth           Input: pointer to thermodynamics structure
+ * @param pnl    Input/Output: pointer to nonlinear structure
+ * @param input_verbose Input: verbosity of this input module
+ * @param errmsg  Input/Ouput: error message
+ */
+
+int input_prepare_pk_eq(
+                        struct precision * ppr,
+                        struct background *pba,
+                        struct thermo *pth,
+                        struct nonlinear *pnl,
+                        int input_verbose,
+                        ErrorMsg errmsg
+                        ) {
+
+  /** Summary: */
+
+  /** - define local variables */
+
+  double tau_of_z;
+  double delta_tau;
+  double error;
+  double delta_tau_eq;
+  double * pvecback;
+  int last_index=0;
+  int index_pk_eq_z;
+  int index_eq;
+  int true_background_verbose;
+  int true_thermodynamics_verbose;
+  double true_w0_fld;
+  double true_wa_fld;
+  double * z;
+
+  /** - store the true cosmological parameters (w0, wa) somwhere before using temporarily some fake ones in this function */
+
+  true_background_verbose = pba->background_verbose;
+  true_thermodynamics_verbose = pth->thermodynamics_verbose;
+  true_w0_fld = pba->w0_fld;
+  true_wa_fld = pba->wa_fld;
+
+  /** - the fake calls of the background and thermodynamics module will be done in non-verbose mode */
+
+  pba->background_verbose = 0;
+  pth->thermodynamics_verbose = 0;
+
+  /** - allocate indices and arrays for storing the results */
+
+  pnl->pk_eq_tau_size = 10;
+  class_alloc(pnl->pk_eq_tau,pnl->pk_eq_tau_size*sizeof(double),errmsg);
+  class_alloc(z,pnl->pk_eq_tau_size*sizeof(double),errmsg);
+
+  index_eq = 0;
+  class_define_index(pnl->index_pk_eq_w,_TRUE_,index_eq,1);
+  class_define_index(pnl->index_pk_eq_Omega_m,_TRUE_,index_eq,1);
+  pnl->pk_eq_size = index_eq;
+  class_alloc(pnl->pk_eq_w_and_Omega,pnl->pk_eq_tau_size*pnl->pk_eq_size*sizeof(double),errmsg);
+  class_alloc(pnl->pk_eq_ddw_and_ddOmega,pnl->pk_eq_tau_size*pnl->pk_eq_size*sizeof(double),errmsg);
+
+  /** - call the background module in order to fill a table of tau_i[z_i] */
+
+  class_call(background_init(ppr,pba), pba->error_message, errmsg);
+  for (index_pk_eq_z=0; index_pk_eq_z<pnl->pk_eq_tau_size; index_pk_eq_z++) {
+    z[index_pk_eq_z] = exp(log(1.+ppr->pk_eq_z_max)/(pnl->pk_eq_tau_size-1)*index_pk_eq_z)-1.;
+    class_call(background_tau_of_z(pba,z[index_pk_eq_z],&tau_of_z),
+               pba->error_message, errmsg);
+    pnl->pk_eq_tau[index_pk_eq_z] = tau_of_z;
+  }
+  class_call(background_free_noinput(pba), pba->error_message, errmsg);
+
+  /** - loop over z_i values. For each of them, we will call the
+     background and thermodynamics module for fake models. The goal is
+     to find, for each z_i, and effective w0_eff[z_i] and
+     Omega_m_eff{z_i], such that: the true model with (w0,wa) and the
+     equivalent model with (w0_eff[z_i],0) have the same conformal
+     distance between z_i and z_recombination, namely chi = tau[z_i] -
+     tau_rec. It is thus necessary to call both the background and
+     thermodynamics module for each fake model and to re-compute
+     tau_rec for each of them. Once the eqauivalent model is found we
+     compute and store Omega_m_effa(z_i) of the equivalent model */
+
+  for (index_pk_eq_z=0; index_pk_eq_z<pnl->pk_eq_tau_size; index_pk_eq_z++) {
+
+    if (input_verbose > 2)
+      printf("    * computing Pk_equal parameters at z=%e\n",z[index_pk_eq_z]);
+
+    /* get chi = (tau[z_i] - tau_rec) in true model */
+
+    pba->w0_fld = true_w0_fld;
+    pba->wa_fld = true_wa_fld;
+
+    class_call(background_init(ppr,pba), pba->error_message, errmsg);
+    class_call(thermodynamics_init(ppr,pba,pth), pth->error_message, errmsg);
+
+    delta_tau = pnl->pk_eq_tau[index_pk_eq_z] - pth->tau_rec;
+
+    /* launch iterations in order to coverge to effective model with wa=0 but the same chi = (tau[z_i] - tau_rec) */
+
+    pba->wa_fld=0.;
+
+    do {
+      class_call(background_free_noinput(pba), pba->error_message, errmsg);
+      class_call(thermodynamics_free(pth), pth->error_message, errmsg);
+
+      class_call(background_init(ppr,pba), pba->error_message, errmsg);
+      class_call(background_tau_of_z(pba,z[index_pk_eq_z],&tau_of_z), pba->error_message, errmsg);
+      class_call(thermodynamics_init(ppr,pba,pth), pth->error_message, errmsg);
+
+      delta_tau_eq = tau_of_z - pth->tau_rec;
+
+      error = 1.-delta_tau_eq/delta_tau;
+      pba->w0_fld = pba->w0_fld*pow(1.+error,10.);
+
+    }
+    while(fabs(error) > ppr->pk_eq_tol);
+
+    /* Equivalent model found. Store w0(z) in that model. Find Omega_m(z) in that model and store it. */
+
+    pnl->pk_eq_w_and_Omega[pnl->pk_eq_size*index_pk_eq_z+pnl->index_pk_eq_w] = pba->w0_fld;
+
+    class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
+    class_call(background_at_tau(pba,
+                                 tau_of_z,
+                                 pba->long_info,
+                                 pba->inter_normal,
+                                 &last_index,
+                                 pvecback),
+               pba->error_message, errmsg);
+    pnl->pk_eq_w_and_Omega[pnl->pk_eq_size*index_pk_eq_z+pnl->index_pk_eq_Omega_m] = pvecback[pba->index_bg_Omega_m];
+    free(pvecback);
+
+    class_call(background_free_noinput(pba), pba->error_message, errmsg);
+    class_call(thermodynamics_free(pth), pth->error_message, errmsg);
+
+  }
+
+  /** - restore cosmological parameters (w0, wa) to their true values before main call to CLASS modules */
+
+  pba->background_verbose = true_background_verbose;
+  pth->thermodynamics_verbose = true_thermodynamics_verbose;
+  pba->w0_fld = true_w0_fld;
+  pba->wa_fld = true_wa_fld;
+
+  /* in verbose mode, report the results */
+
+  if (input_verbose > 1) {
+
+    fprintf(stdout,"    Effective parameters for Pk_equal:\n");
+
+    for (index_pk_eq_z=0; index_pk_eq_z<pnl->pk_eq_tau_size; index_pk_eq_z++) {
+
+      fprintf(stdout,"    * at z=%e, tau=%e w=%e Omega_m=%e\n",
+              z[index_pk_eq_z],
+              pnl->pk_eq_tau[index_pk_eq_z],
+              pnl->pk_eq_w_and_Omega[pnl->pk_eq_size*index_pk_eq_z+pnl->index_pk_eq_w],
+              pnl->pk_eq_w_and_Omega[pnl->pk_eq_size*index_pk_eq_z+pnl->index_pk_eq_Omega_m]
+              );
+    }
+  }
+
+  free(z);
+
+  /** - spline the table for later interpolation */
+
+  class_call(array_spline_table_lines(
+                                      pnl->pk_eq_tau,
+                                      pnl->pk_eq_tau_size,
+                                      pnl->pk_eq_w_and_Omega,
+                                      pnl->pk_eq_size,
+                                      pnl->pk_eq_ddw_and_ddOmega,
+                                      _SPLINE_NATURAL_,
+                                      errmsg),
+             errmsg,errmsg);
+
+  return _SUCCESS_;
+
 }

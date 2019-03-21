@@ -10,18 +10,21 @@
 #include "dei_rkck.h"
 #include "parser.h"
 
-enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, 
-  eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
-  galileon, brans_dicke, quintessence_monomial
-}; //write here the different models
+/** list of possible types of spatial curvature */
 
-// initial conditions for the perturbations
-enum pert_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
+enum spatial_curvature {flat,open,closed};
+enum gravity_model {propto_omega, propto_scale, constant_alphas,
+  eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
+  galileon, brans_dicke, quintessence_monomial, nkgb
+}; //write here the different models
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
-enum expansion_model {lcdm, wowa}; //parameterized expansion, only for non-self consistent Horndeski theories
+enum expansion_model {lcdm, wowa, wowa_w, wede}; //parameterized expansion, only for non-self consistent Horndeski theories \\ILSWEDE
+
+/** list of possible parametrisations of the DE equation of state */
+
+enum equation_of_state {CLP,EDE};
 
 /**
  * All background parameters and evolution that other modules need to know.
@@ -61,8 +64,12 @@ struct background
   double Omega0_lambda; /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */
 
   double Omega0_fld; /**< \f$ \Omega_{0 de} \f$: fluid */
+
+  enum equation_of_state fluid_equation_of_state; /**< parametrisation scheme for fluid equation of state */
+
   double w0_fld; /**< \f$ w0_{DE} \f$: current fluid equation of state parameter */
   double wa_fld; /**< \f$ wa_{DE} \f$: fluid equation of state parameter derivative */
+  double Omega_EDE; /**< \f$ wa_{DE} \f$: Early Dark Energy density parameter */
 
   double cs2_fld; /**< \f$ c^2_{s~DE} \f$: sound speed of the fluid
 		     in the frame comoving with the fluid (so, this is
@@ -107,8 +114,6 @@ struct background
 //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
   enum expansion_model expansion_model_smg; /* choice of expansion rate */
   
-  enum pert_initial_conditions pert_initial_conditions_smg; /* initial conditions for perturbations */
-  
   short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
   short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
   
@@ -135,16 +140,9 @@ struct background
   
   int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
   int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
+  int rho_evolution_smg; /**< does the model require integrating the energy density? */
 
-  double z_ref_smg; /**< Specifies redshift at which M* is input in models with running */
-  double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
-  double pert_ic_tolerance_smg; /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */
-  double pert_ic_ini_z_ref_smg; /**<Reference z to carry out test for conservation of curvature before pert evolution*/ 
-  double pert_ic_regulator_smg;  /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
-
-  
-  
-  /* Modified gravity parameters
+   /* Modified gravity parameters
    * parameters_smg -> contains the primary parameters. Any param that might be varied to determine Omega_smg should be here
    * tuning_index_smg -> which parameter is varied to obtain the right Omega_smg
    * parameters_2_smg -> contains auxiliary parameters. These will not be varied to obtain Omega_smg
@@ -161,6 +159,8 @@ struct background
   int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
   int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
   double M_pl_today_smg;
+  
+  short output_background_smg; /**< flag regulating the amount of information printed onbackground.dat output */
   
   //some thermo parameters: little cheat to be able to call sigma(rs_d), etc..
   double rs_d; //drag horizon
@@ -212,7 +212,10 @@ struct background
   double Neff; /**< so-called "effective neutrino number", computed at earliest time in interpolation table */
   double Omega0_dcdm; /**< \f$ \Omega_{0 dcdm} \f$: decaying cold dark matter */
   double Omega0_dr; /**< \f$ \Omega_{0 dr} \f$: decay radiation */
-
+  double a_eq;      /**< scale factor at radiation/matter equality */
+  double H_eq;      /**< Hubble rate at radiation/matter equality [Mpc^-1] */
+  double z_eq;      /**< redshift at radiation/matter equality */
+  double tau_eq;    /**< conformal time at radiation/matter equality [Mpc] */
 
   //@}
 
@@ -258,6 +261,7 @@ struct background
   int index_bg_M2_smg;   /**< relative Planck mass */
   int index_bg_rho_smg;       /**< scalar field energy density */
   int index_bg_p_smg;         /**< scalar field pressure */
+  int index_bg_rho_prime_smg;       /**< derivative of the scalar field energy density */
   int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/ 
   int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/   
   int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/ 
@@ -267,6 +271,11 @@ struct background
   int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/    
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/    
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
+  
+  int index_bg_E0_smg; /**< Hubble equation */
+  int index_bg_E1_smg; /**< Hubble equation */
+  int index_bg_E2_smg; /**< Hubble equation */
+  int index_bg_E3_smg; /**< Hubble equation */
 
   int index_bg_kinetic_D_smg;
   int index_bg_kinetic_D_prime_smg;
@@ -294,6 +303,7 @@ struct background
   int index_bg_H_prime_prime; /**< second derivative of the hubble parameter (necessary for BS perturbations equation for h'') */
   int index_bg_p_tot_wo_prime_smg; /**< derivative of the total pressure minus scalar field */
   int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */ 
+  int index_bg_w_smg; /**< equation of state of the scalar field */
   
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
@@ -367,6 +377,7 @@ struct background
   int index_bi_phi_smg;   /**< scalar field */  
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/    
   int index_bi_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/  
+  int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */
@@ -542,6 +553,10 @@ extern "C" {
                             struct background *pba
                             );
 
+  int background_free_noinput(
+                    struct background *pba
+                    );
+
   int background_indices(
 			 struct background *pba
 			 );
@@ -607,6 +622,11 @@ extern "C" {
 				    double * pvecback,
 				    double * pvecback_integration
 				    );
+
+  int background_find_equality(
+                               struct precision *ppr,
+                               struct background *pba
+                               );
 
   int background_output_titles(struct background * pba,
                                char titles[_MAXTITLESTRINGLENGTH_]

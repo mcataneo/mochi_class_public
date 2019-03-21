@@ -15,7 +15,7 @@
 #ifndef __COMMON__
 #define __COMMON__
 
-#define _VERSION_ "v2.6.3"
+#define _VERSION_ "v2.7.1"
 /* @cond INCLUDE_WITH_DOXYGEN */
 
 #define _TRUE_ 1 /**< integer associated to true statement */
@@ -416,6 +416,12 @@ struct precision
    */
   double safe_phi_scf;
 
+  /**
+   * parameter controlling precision with which tau_eq (conformal time
+   * at radiation/matter equality) is found (units: Mpc)
+   */
+  double tol_tau_eq;
+
   //@}
 
   /** @name - parameters related to the thermodynamics */
@@ -625,6 +631,16 @@ struct precision
   double trigger_rad_smgqs; /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
   double eps_s_smgqs; /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
+
+  double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */
+  double pert_ic_tolerance_smg; /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */
+  double pert_ic_ini_z_ref_smg; /**<Reference z to carry out test for conservation of curvature before pert evolution*/ 
+  double pert_ic_regulator_smg;  /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
+  double pert_qs_ic_tolerance_test_smg; /* maximal fractional contribution to (0i) equation of SMG terms in QS initial condition */
+  
+ 
+
+
   //@}
 
   /** @name - parameters related to the primordial spectra */
@@ -780,6 +796,10 @@ struct precision
                                matching the condition sigma(R_nl)=1,
                                whcih defines the wavenumber of
                                non-linearity, k_nl=1./R_nl */
+
+  double pk_eq_z_max; /**< Maximum z until which the Pk_equal method of 0810.0190 and 1601.07230 is used */
+
+  double pk_eq_tol;   /**< tolerance for finding the equivalent models of the pk_equal method */
 
   //@}
 
