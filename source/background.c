@@ -988,6 +988,11 @@ int background_indices(
   class_define_index(pba->index_bg_lambda_8_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_prime_smg,pba->has_smg,index_bg,1);
+  
+  class_define_index(pba->index_bg_E0_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
+  class_define_index(pba->index_bg_E1_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
+  class_define_index(pba->index_bg_E2_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
+  class_define_index(pba->index_bg_E3_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
 
   class_define_index(pba->index_bg_rho_tot_wo_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_p_tot_wo_smg,pba->has_smg,index_bg,1);
@@ -2883,20 +2888,34 @@ int background_output_titles(struct background * pba,
 
   class_store_columntitle(titles,"gr.fac. D",_TRUE_);
   class_store_columntitle(titles,"gr.fac. f",_TRUE_);
-
+  
   class_store_columntitle(titles,"(.)rho_smg",pba->has_smg);
   class_store_columntitle(titles,"(.)p_smg",pba->has_smg);
 
-  class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg);
-  class_store_columntitle(titles,"phi'",pba->field_evolution_smg);
-  class_store_columntitle(titles,"phi''",pba->field_evolution_smg);
-  class_store_columntitle(titles,"M*^2_smg",pba->has_smg);
-  class_store_columntitle(titles,"kineticity_smg",pba->has_smg);
-  class_store_columntitle(titles,"braiding_smg",pba->has_smg);
-  class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);
-  class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);
-  class_store_columntitle(titles,"c_s^2",pba->has_smg);
-  class_store_columntitle(titles,"kin (D)",pba->has_smg);
+
+  if (pba->output_background_smg >= 1){
+    class_store_columntitle(titles,"M*^2_smg",pba->has_smg);       
+    class_store_columntitle(titles,"kineticity_smg",pba->has_smg);   
+    class_store_columntitle(titles,"braiding_smg",pba->has_smg);
+    class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);   
+    class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);       
+    class_store_columntitle(titles,"c_s^2",pba->has_smg);        
+    class_store_columntitle(titles,"kin (D)",pba->has_smg);
+  }
+  
+  if (pba->output_background_smg >= 2){
+    class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"phi'",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"phi''",pba->field_evolution_smg);
+    class_store_columntitle(titles,"E0",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"E1",pba->field_evolution_smg);
+    class_store_columntitle(titles,"E2",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"E3",pba->field_evolution_smg);
+  }
+  
+  //TODO: add in output background trigger
+  class_store_columntitle(titles,"lambda_8",pba->has_smg);
+
 
   return _SUCCESS_;
 }
@@ -2945,17 +2964,28 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],pba->has_smg,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_smg],pba->has_smg,storeidx);
 
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
+    if (pba->output_background_smg >= 1){  
+      class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx); 
+      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);   
+      class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);   
+      class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);     
+      class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
+    }
+    
+    if (pba->output_background_smg >= 2){
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx); 
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx); 
+      class_store_double(dataptr,pvecback[pba->index_bg_E0_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_E1_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);  
+    }
 
+    class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_smg],pba->has_smg,storeidx);
+    
   }
 
   return _SUCCESS_;
@@ -3256,7 +3286,12 @@ int background_gravity_functions(
       if (pba->background_verbose > 5 && pba->initial_conditions_set_smg == _FALSE_ )
 	printf(" Initial H = %e, sqrt(rho) = %e, ratio = %e, n=%i \n", H, sqrt(rho_tot),sqrt(rho_tot)/H,n);
     }
-
+    
+    pvecback[pba->index_bg_E0_smg] = E0;
+    pvecback[pba->index_bg_E1_smg] = E1;
+    pvecback[pba->index_bg_E2_smg] = E2;
+    pvecback[pba->index_bg_E3_smg] = E3;
+    
     /* Rewritten by the constraint if ICs have not been set */
     pvecback[pba->index_bg_H] = H;
 
