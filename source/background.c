@@ -3205,8 +3205,8 @@ int background_gravity_functions(
       */
       
       double g = pba->parameters_smg[0];
-      double n = pba->parameters_smg[1];
-      double ngpow = copysign(1.,g)*pow(fabs(g),(2.*n-1.)/2.)/n;
+      double npow = pba->parameters_smg[1];
+      double ngpow = copysign(1.,g)*pow(fabs(g),(2.*npow-1.)/2.)/npow;
       double H0=pba->H0;
       
       G2    = -X;
@@ -3214,9 +3214,9 @@ int background_gravity_functions(
       
       // G3 = 1/n g^[(2n-1)/2] Lambda (X/Lambda^4)^n
   
-      G3_X = n*ngpow*pow(X,n-1)/pow(H0,2*n);
-      G3_XX = n*(n-1.)*ngpow*pow(X,n-2)/pow(H0,2*n);
-
+      G3_X = npow*ngpow*pow(X,npow-1)/pow(H0,2*npow);
+      G3_XX = npow*(npow-1.)*ngpow*pow(X,npow-2)/pow(H0,2*npow);
+ 
     }
 
 
