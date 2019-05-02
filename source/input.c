@@ -4022,7 +4022,7 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->pert_ic_ini_z_ref_smg = 1e10;/* redshift at which initial IC stability test performed */
   ppr->pert_ic_tolerance_smg = 2e-2; /* tolerance to deviations from n=2 for IC h~tau^n as evaluated at pert_ic_ini_z_ref_smg. Negative values override test */
   ppr->pert_ic_regulator_smg = 1e-15; /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */ 
-  ppr->pert_qs_ic_tolerance_test_smg = 10.; /* Maximal contribution to zeta non-conservation source from QS SMG in (0i) Einstein equation*/
+  ppr->pert_qs_ic_tolerance_test_smg = 1; /* Maximal contribution to zeta non-conservation source from QS SMG in (0i) Einstein equation*/
   
   
   
