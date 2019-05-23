@@ -282,7 +282,12 @@ int perturb_init(
                  background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
     }
 
-    if (((ppt->method_smgqs == automatic) && (ppt->initial_approx_smgqs==0)) || (ppt->method_smgqs == fully_dynamic) || (ppt->method_smgqs == fully_dynamic_debug)) {
+    if (!((ppt->method_smgqs == automatic) && (ppt->initial_approx_smgqs==1))) {
+  
+      // if scalar is dynamical or always quasi-static, test for stability at the initial time. 
+      // Only in the case it is QS because of a trigger test (through "automatic" method_qs), 
+      // we already know mass is positive and therefore can assume it is stable, so skip this. 
+
       if( ppt->pert_initial_conditions_smg == gravitating_attr){
       // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
       // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and
@@ -4597,7 +4602,6 @@ int perturb_initial_conditions(struct precision * ppr,
 
         if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
       /* Initial conditions for the *dynamical* scalar field
-       *
        * 1) gravitating_attr: Self-consistent Gravitating Attractor
        *    We allow the scalar to contribute the gravitational field during RD (can happen if Omx or alphas large at early times)
        *    and solve radiation-scalar system together.
@@ -5101,6 +5105,7 @@ int perturb_initial_conditions(struct precision * ppr,
           rho_plus_p_theta_r = rho_plus_p_theta;
 
           // Below QS equations are copied from perturb_einstein: make sure any changes there are reflected
+          // QS-IC-change
 
           vx_smg_qs=  (4.*cs2num*pow(k,2)*M2*eta + 6.*l2*delta_rho*pow(a,2) +
                       ((-2.) + bra)*9.*bra*delta_p*pow(a,2))*1./4.*pow(H,-1)*pow(M2,-1)*pow(a,-1)*pow(cs2num*pow(k,2) +
@@ -6147,6 +6152,7 @@ int perturb_einstein(
 
       	  /* scalar field equation */
           // Make sure you copy this to QS initial conditions if you change it (lines ~4963 or so)
+          //search for "QS-IC-change"
       	  ppw->pvecmetric[ppw->index_mt_vx_smg] = (4.*cs2num*pow(k,2)*M2*y[ppw->pv->index_pt_eta] + 6.*l2*ppw->delta_rho*pow(a,2) + ((-2.) + bra)*9.*bra*ppw->delta_p*pow(a,2))*1./4.*pow(H,-1)*pow(M2,-1)*pow(a,-1)*pow(cs2num*pow(k,2) + (-4.)*pow(H,2)*l8*pow(a,2),-1);
 
       	  g1 = cs2num*pow(k/(a*H),2) -4.*l8;
