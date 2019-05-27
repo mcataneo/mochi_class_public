@@ -986,6 +986,8 @@ int background_indices(
   class_define_index(pba->index_bg_lambda_6_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_7_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_9_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_10_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_prime_smg,pba->has_smg,index_bg,1);
 
@@ -2173,6 +2175,26 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
+      pvecback[pba->index_bg_lambda_9_smg] = ((-2.) + 3.*bra)*D + 2.*pvecback[pba->index_bg_lambda_3_smg] + (D + (-1.)*pvecback[pba->index_bg_lambda_2_smg])*(((-3.) + 2.*bra)*(-3.)/2. + (p_tot + p_smg)*9./2.*pow(H,-2)) + (3.*bra*bra_p + kin_p)*(-1.)*pow(H,-1)*pow(a,-1) + (-9.)/2.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
+
+            memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_smg,
+            &pvecback[pba->index_bg_lambda_9_smg],
+            1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_smg,
+                pba->error_message,
+                "cannot copy data back to pba->background_table");
+
+
+      pvecback[pba->index_bg_lambda_10_smg] = (D + (-1.)*pvecback[pba->index_bg_lambda_3_smg])*(-2.) + (-3.*bra*(1. - M2) + kin*M2)*(rho_tot + p_tot)*3.*pow(H,-2)*pow(M2,-1) + (3.*bra + kin)*(rho_smg + p_smg)*3.*pow(H,-2) + (-1.)*pow(H,-1)*kin_p*pow(a,-1);
+
+            memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_10_smg,
+            &pvecback[pba->index_bg_lambda_10_smg],
+            1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_10_smg,
+                pba->error_message,
+                "cannot copy data back to pba->background_table");
+
+
       pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_smg,
@@ -2923,6 +2945,8 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"lambda_6",pba->has_smg);
     class_store_columntitle(titles,"lambda_7",pba->has_smg);
     class_store_columntitle(titles,"lambda_8",pba->has_smg);
+    class_store_columntitle(titles,"lambda_9",pba->has_smg);
+    class_store_columntitle(titles,"lambda_10",pba->has_smg);
     class_store_columntitle(titles,"lambda_2_p",pba->has_smg);
     class_store_columntitle(titles,"lambda_8_p",pba->has_smg);
     class_store_columntitle(titles,"cs2num",pba->has_smg);
@@ -3006,6 +3030,8 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_6_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_7_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_9_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_10_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_prime_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_prime_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_cs2num_smg],pba->has_smg,storeidx);
@@ -3631,6 +3657,8 @@ int background_gravity_functions(
   pvecback[pba->index_bg_lambda_6_smg] = 0.;
   pvecback[pba->index_bg_lambda_7_smg] = 0.;
   pvecback[pba->index_bg_lambda_8_smg] = 0.;
+  pvecback[pba->index_bg_lambda_9_smg] = 0.;
+  pvecback[pba->index_bg_lambda_10_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_prime_smg] = 0.;
   pvecback[pba->index_bg_lambda_8_prime_smg] = 0.;
   if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
