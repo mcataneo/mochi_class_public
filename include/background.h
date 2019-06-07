@@ -134,6 +134,9 @@ struct background
   double min_D_smg; /**< minimum value of scalar kinetic term (for stability test) */
   double min_cs2_smg; /**< minimum value of scalar speed of sound squared (for stability test) */
 
+  double min_bra_smg; /**< minimum value of the braiding */
+  double max_bra_smg; /**< maximum value of the braiding */
+
   int skip_stability_tests_smg; /**< specify if you want to skip the stability tests for the field perturbations */
   double a_min_stability_test_smg; /** < skip stability tests for a < a_min */
 

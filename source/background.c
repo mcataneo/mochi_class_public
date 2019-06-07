@@ -2234,6 +2234,13 @@ int background_solve(
 	if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
 	  pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
 	}
+
+  if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
+	  pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
+	}
+  if (pvecback[pba->index_bg_braiding_smg] > pba->max_bra_smg){
+	  pba->max_bra_smg = pvecback[pba->index_bg_braiding_smg];
+	}
       }
 
     }//end of has_smg

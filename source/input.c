@@ -3585,6 +3585,9 @@ int input_default_params(
   pba->min_D_smg = 1e10;
   pba->min_cs2_smg = 1e10;
 
+  pba->min_bra_smg = 2.;
+  pba->max_bra_smg = 2.;
+
   pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */
   pba->initial_conditions_set_smg = _FALSE_;
 
