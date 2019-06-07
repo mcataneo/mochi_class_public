@@ -1615,8 +1615,6 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 // 	printf(" Initial conditions for Modified gravity perturbations not specified, using default \n");
 //     }
 
-    class_read_double("range_braiding_close_to_2_smg",ppr->range_braiding_close_to_2_smg);
-
     /** re-assign shooting parameter (for no-tuning debug mode) */
     if (pba->Omega_smg_debug == 0)
       class_read_double("shooting_parameter_smg",pba->parameters_smg[pba->tuning_index_smg]);
@@ -3365,6 +3363,16 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
   class_read_double("trigger_rad_smgqs",ppr->trigger_rad_smgqs);
   class_read_double("eps_s_smgqs",ppr->eps_s_smgqs);
 
+  class_call(parser_read_string(pfc,"get_h_from_trace",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+
+  if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))) {
+
+    ppr->get_h_from_trace = _TRUE_;
+
+  }
+
   /** (i) Write values in file */
   if (ple->has_lensed_cls == _TRUE_)
     ppt->l_scalar_max+=ppr->delta_l_max;
@@ -3585,8 +3593,8 @@ int input_default_params(
   pba->min_D_smg = 1e10;
   pba->min_cs2_smg = 1e10;
 
-  pba->min_bra_smg = 2.;
-  pba->max_bra_smg = 2.;
+  pba->min_bra_smg = 4.;
+  pba->max_bra_smg = 0.;
 
   pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */
   pba->initial_conditions_set_smg = _FALSE_;
@@ -4019,6 +4027,7 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->trigger_mass_smgqs = 1.e3;
   ppr->trigger_rad_smgqs = 1.e3;
   ppr->eps_s_smgqs = 0.01;
+  ppr->get_h_from_trace = _FALSE_;
 
   // precision parameters for setting initial conditions
 
@@ -4027,7 +4036,6 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->pert_ic_tolerance_smg = 2e-2; /* tolerance to deviations from n=2 for IC h~tau^n as evaluated at pert_ic_ini_z_ref_smg. Negative values override test */
   ppr->pert_ic_regulator_smg = 1e-15; /* minumum size of denominator in IC expressions: regulate to prevent infinities. Negative => off */
   ppr->pert_qs_ic_tolerance_test_smg = 1; /* Maximal contribution to zeta non-conservation source from QS SMG in (0i) Einstein equation*/
-  ppr->range_braiding_close_to_2_smg = 1.e-2;
 
 
 

@@ -6180,7 +6180,12 @@ int perturb_einstein(
           /* scalar field equation */
           // Make sure you copy this to QS initial conditions if you change it (lines ~4963 or so)
           //search for "QS-IC-change"
-          ppw->pvecmetric[ppw->index_mt_vx_smg] = (4.*cs2num*pow(k,2)*M2*y[ppw->pv->index_pt_eta] + 6.*l2*ppw->delta_rho*pow(a,2) + ((-2.) + bra)*9.*bra*ppw->delta_p*pow(a,2))*1./4.*pow(H,-1)*pow(M2,-1)*pow(a,-1)*pow(pow(a*H,2),-1)/g1;
+          if ((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.) || (ppr->get_h_from_trace==_TRUE_)) {
+            ppw->pvecmetric[ppw->index_mt_vx_smg] = 0.;
+          }
+          else{
+            ppw->pvecmetric[ppw->index_mt_vx_smg] = (4.*cs2num*pow(k,2)*M2*y[ppw->pv->index_pt_eta] + 6.*l2*ppw->delta_rho*pow(a,2) + ((-2.) + bra)*9.*bra*ppw->delta_p*pow(a,2))*1./4.*pow(H,-1)*pow(M2,-1)*pow(a,-1)*pow(pow(a*H,2),-1)/g1;
+          }
 
           /* scalar field derivative equation
            * In order to estimate it we followed this procedure:
@@ -6190,13 +6195,18 @@ int perturb_einstein(
            * - we used the conservation equation for a generic fluid to get rid of delta_rho'
            * - we used the Einstein equations to get rid of eta'
            * The result is approximated when rsa is on since the velocity of radiation gets updated only after the first Einstein equations (few lines below) */
+           if ((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.) || (ppr->get_h_from_trace==_TRUE_)) {
+             ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = 0.;
+           }
+           else{
+             ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = 3./2./g2*(pow(2.-bra,2)*bra*pow(H,-2)*ppw->delta_rho_r/M2
+             + (2.-bra)*(cs2num-l2)*pow(H,-3)*ppw->rho_plus_p_theta/2./a/M2
+             + 3./2.*(2.-bra)*pow(H,-2)*((2.-bra)*(-7.+2.*run)*bra/4.+bra*g3/g1/8.-l2-9./4.*(2.-bra)*bra*pow(H,-2)*(p_tot+p_smg)-(1.-bra)*bra_p/a/H)*ppw->delta_p/M2
+             + ((2.-bra)*bra*rho_r*pow(H,-2)*pow(M2,-1)-g3/g1*l2/8.-(6.*rho_tot/M2*pow(H,-2)-2.+bra+4.*run-2.*bra*run)*l2/4.-3./4.*(2./M2-6.+3.*bra)*pow(H,-2)*l2*p_tot+9./4.*(2.-bra)*pow(H,-2)*l2*p_smg+(2.-bra)*l2_p/a/H/2.)*pow(H,-2)*ppw->delta_rho/M2
+             + (3./2.*(2.-bra)*cs2num*(p_tot+p_smg)*pow(H,-2)- l2*(rho_tot+p_tot)/M2*pow(H,-2)+ (2.-bra)*cs2num_p/a/H/3.+ (2.-bra)*cs2num/2.- cs2num*g3/g1/12.+ 2./3.*(2.-bra)*bra*rho_r/M2*pow(H,-2))*pow(k/a/H,2)*y[ppw->pv->index_pt_eta]
+             +pow(2.-bra,2)*bra*pow(H,-3)*ppw->rho_plus_p_theta_r/a/M2/4.);
+           }
 
-          ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = 3./2./g2*(pow(2.-bra,2)*bra*pow(H,-2)*ppw->delta_rho_r/M2
-          + (2.-bra)*(cs2num-l2)*pow(H,-3)*ppw->rho_plus_p_theta/2./a/M2
-          + 3./2.*(2.-bra)*pow(H,-2)*((2.-bra)*(-7.+2.*run)*bra/4.+bra*g3/g1/8.-l2-9./4.*(2.-bra)*bra*pow(H,-2)*(p_tot+p_smg)-(1.-bra)*bra_p/a/H)*ppw->delta_p/M2
-          + ((2.-bra)*bra*rho_r*pow(H,-2)*pow(M2,-1)-g3/g1*l2/8.-(6.*rho_tot/M2*pow(H,-2)-2.+bra+4.*run-2.*bra*run)*l2/4.-3./4.*(2./M2-6.+3.*bra)*pow(H,-2)*l2*p_tot+9./4.*(2.-bra)*pow(H,-2)*l2*p_smg+(2.-bra)*l2_p/a/H/2.)*pow(H,-2)*ppw->delta_rho/M2
-          + (3./2.*(2.-bra)*cs2num*(p_tot+p_smg)*pow(H,-2)- l2*(rho_tot+p_tot)/M2*pow(H,-2)+ (2.-bra)*cs2num_p/a/H/3.+ (2.-bra)*cs2num/2.- cs2num*g3/g1/12.+ 2./3.*(2.-bra)*bra*rho_r/M2*pow(H,-2))*pow(k/a/H,2)*y[ppw->pv->index_pt_eta]
-          +pow(2.-bra,2)*bra*pow(H,-3)*ppw->rho_plus_p_theta_r/a/M2/4.);
 
         }//end of quasi_static assignation of vx and vx'
         else {
@@ -6206,11 +6216,12 @@ int perturb_einstein(
 
 
         /* first equation involving total density fluctuation */
-        if (fabs(bra-2.)>ppr->range_braiding_close_to_2_smg) {
-          ppw->pvecmetric[ppw->index_mt_h_prime] = (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*bra*pow(k,2) + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2) + (18.*(1. - M2) + 15.*bra*M2 + 2.*kin*M2)*rho_tot*pow(M2,-1)*pow(a,2) + (2. - 2.*M2 + bra*M2)*9.*pow(M2,-1)*p_tot*pow(a,2) + 9.*(-2. + bra)*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
-        }
-        else {
+        /* If braiding crosses 2 integrate from Einstein trace to avoid divergences */
+        if ((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.) || (ppr->get_h_from_trace==_TRUE_)) {
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace_smg];
+        }
+        else{
+          ppw->pvecmetric[ppw->index_mt_h_prime] = (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*bra*pow(k,2) + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2) + (18.*(1. - M2) + 15.*bra*M2 + 2.*kin*M2)*rho_tot*pow(M2,-1)*pow(a,2) + (2. - 2.*M2 + bra*M2)*9.*pow(M2,-1)*p_tot*pow(a,2) + 9.*(-2. + bra)*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
         }
 
         /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
