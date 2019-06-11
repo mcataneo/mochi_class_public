@@ -990,6 +990,7 @@ int background_indices(
   class_define_index(pba->index_bg_lambda_10_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_9_prime_smg,pba->has_smg,index_bg,1);
 
   class_define_index(pba->index_bg_E0_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_E1_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
@@ -2319,6 +2320,14 @@ int background_solve(
             pba->error_message,
            "cannot copy data back to pba->background_table");
 
+           //lambda_9'
+           memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
+           	      &pvecback_derivs[pba->index_bg_lambda_9_smg],
+           	      1*sizeof(double));
+           class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
+                  pba->error_message,
+                  "cannot copy data back to pba->background_table");
+
     }
 
 
@@ -2956,6 +2965,7 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"lambda_10",pba->has_smg);
     class_store_columntitle(titles,"lambda_2_p",pba->has_smg);
     class_store_columntitle(titles,"lambda_8_p",pba->has_smg);
+    class_store_columntitle(titles,"lambda_9_p",pba->has_smg);
     class_store_columntitle(titles,"cs2num",pba->has_smg);
     class_store_columntitle(titles,"cs2num_p",pba->has_smg);
   }
@@ -3041,6 +3051,7 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_10_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_prime_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_prime_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_9_prime_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_cs2num_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_cs2num_prime_smg],pba->has_smg,storeidx);
     }
@@ -3668,6 +3679,7 @@ int background_gravity_functions(
   pvecback[pba->index_bg_lambda_10_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_prime_smg] = 0.;
   pvecback[pba->index_bg_lambda_8_prime_smg] = 0.;
+  pvecback[pba->index_bg_lambda_9_prime_smg] = 0.;
   if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
     pvecback[pba->index_bg_mpl_running_smg] = 0.;
   }

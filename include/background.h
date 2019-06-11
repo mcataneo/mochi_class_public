@@ -294,6 +294,7 @@ struct background
   int index_bg_lambda_10_smg;
   int index_bg_lambda_2_prime_smg;
   int index_bg_lambda_8_prime_smg;
+  int index_bg_lambda_9_prime_smg;
   int index_bg_gamma_1_smg;
   int index_bg_gamma_1_prime_smg;
   int index_bg_gamma_2_smg;
