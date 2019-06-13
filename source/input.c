@@ -3363,13 +3363,13 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
   class_read_double("trigger_rad_smgqs",ppr->trigger_rad_smgqs);
   class_read_double("eps_s_smgqs",ppr->eps_s_smgqs);
 
-  class_call(parser_read_string(pfc,"get_h_from_trace",&string1,&flag1,errmsg),
+  class_call(parser_read_string(pfc,"get_h_from_trace_smg",&string1,&flag1,errmsg),
              errmsg,
              errmsg);
 
   if ((flag1 == _TRUE_) && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))) {
 
-    ppr->get_h_from_trace = _TRUE_;
+    ppr->get_h_from_trace_smg = _TRUE_;
 
   }
 
@@ -4027,7 +4027,7 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->trigger_mass_smgqs = 1.e3;
   ppr->trigger_rad_smgqs = 1.e3;
   ppr->eps_s_smgqs = 0.01;
-  ppr->get_h_from_trace = _FALSE_;
+  ppr->get_h_from_trace_smg = _FALSE_;
 
   // precision parameters for setting initial conditions
 

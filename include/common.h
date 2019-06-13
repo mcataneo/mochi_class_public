@@ -631,7 +631,7 @@ struct precision
   double trigger_rad_smgqs; /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
   double eps_s_smgqs; /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
-  short get_h_from_trace; /* Get h' from Einstein trace rather than 00 */
+  short get_h_from_trace_smg; /* Get h' from Einstein trace rather than 00 */
 
 
   double min_a_pert_smg; /**< minimum value of scale factor to start integration (important to test some ede models */

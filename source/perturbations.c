@@ -6195,7 +6195,7 @@ int perturb_einstein(
           /* scalar field equation */
           // Make sure you copy this to QS initial conditions if you change it (lines ~4963 or so)
           //search for "QS-IC-change"
-          if (((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.)) || (ppr->get_h_from_trace==_TRUE_)) {
+          if (((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.)) || (ppr->get_h_from_trace_smg==_TRUE_)) {
 
             ppw->pvecmetric[ppw->index_mt_vx_smg] = ((-2.)*pow(k,2)*l11*M2*y[ppw->pv->index_pt_eta] + (-1.)*H*l2*M2*y[ppw->pv->index_pt_h_prime_from_trace_smg]*a + 9.*bra*ppw->delta_p*pow(a,2))*pow((l11 + l2)*(-2.)*H*pow(k,2)*M2*a + 2.*pow(H,3)*l9*M2*pow(a,3),-1);
 
@@ -6214,7 +6214,7 @@ int perturb_einstein(
            * - we used the conservation equation for a generic fluid to get rid of delta_rho'
            * - we used the Einstein equations to get rid of eta'
            * The result is approximated when rsa is on since the velocity of radiation gets updated only after the first Einstein equations (few lines below) */
-           if (((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.)) || (ppr->get_h_from_trace==_TRUE_)) {
+           if (((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.)) || (ppr->get_h_from_trace_smg==_TRUE_)) {
 
              ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = (-3.)/2.*pow(g4,-1)*pow(g5,-1)*g9*pow(H,-2)*pow(M2,-1)*ppw->delta_rho_r + pow(g4,-1)*pow(g5,-1)*g6*pow(H,-2)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-2) + (-3.)*pow(g4,-1)*pow(H,-3)*D*l11*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,-1) + (-3.)*bra*pow(g4,-1)*pow(H,-3)*D*pow(M2,-1)*ppw->rho_plus_p_theta_r*pow(a,-1) + (-1.)*pow(g4,-1)*pow(g5,-1)*g7*pow(H,-1)*y[ppw->pv->index_pt_h_prime_from_trace_smg]*pow(a,-1) + (-1.)*pow(g4,-1)*g8*H*ppw->pvecmetric[ppw->index_mt_vx_smg]*a;
 
@@ -6240,7 +6240,7 @@ int perturb_einstein(
 
         /* first equation involving total density fluctuation */
         /* If braiding crosses 2 integrate from Einstein trace to avoid divergences */
-        if (((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.)) || (ppr->get_h_from_trace==_TRUE_)) {
+        if (((pba->min_bra_smg<=2.) && (pba->max_bra_smg>=2.)) || (ppr->get_h_from_trace_smg==_TRUE_)) {
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace_smg];
         }
         else{
