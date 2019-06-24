@@ -6192,6 +6192,10 @@ int perturb_einstein(
 
           g9 = 2.*D*(bra_p*l9 - bra*l9_p)/a/H - (bra*D + 2.*bra*run*D - 2.*kin*l2 - 9.*bra*D*(p_tot + p_smg)*pow(H,-2))*l9 + (2.*D*(bra*l11_p + bra*l2_p - (l11 + l2)*bra_p)/a/H + (l11 + l2)*(3.*bra*D + 2.*bra*run*D - 2.*kin*l2 - 3.*bra*D*(p_tot + p_smg)*pow(H,-2)))*pow(k/a/H,2);
 
+          class_test(g1<0.,
+              ppt->error_message,
+              " At k =%e and a =%e the mass of the scalar field is negative. In this regime you should not use the QS approximation, since divergencies are expected!", k, a);
+
           /* scalar field equation */
           // Make sure you copy this to QS initial conditions if you change it (lines ~4963 or so)
           //search for "QS-IC-change"
