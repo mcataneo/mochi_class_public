@@ -605,30 +605,30 @@ int input_read_parameters(
 
   /** Main flag for the quasi-static approximation scheme */
 
-  class_call(parser_read_string(pfc,"method_smgqs",&string1,&flag1,errmsg),
+  class_call(parser_read_string(pfc,"method_qs_smg",&string1,&flag1,errmsg),
              errmsg,
              errmsg);
 
   if (flag1 == _TRUE_) {
 
     if ((strstr(string1,"automatic") != NULL) || (strstr(string1,"a") != NULL) || (strstr(string1,"A") != NULL)) {
-      ppt->method_smgqs = automatic;
+      ppt->method_qs_smg = automatic;
     }
 
     if ((strstr(string1,"fully_dynamic") != NULL) || (strstr(string1,"fd") != NULL) || (strstr(string1,"FD") != NULL)) {
-      ppt->method_smgqs = fully_dynamic;
+      ppt->method_qs_smg = fully_dynamic;
     }
 
     if ((strstr(string1,"quasi_static") != NULL) || (strstr(string1,"qs") != NULL) || (strstr(string1,"QS") != NULL)) {
-      ppt->method_smgqs = quasi_static;
+      ppt->method_qs_smg = quasi_static;
     }
 
     if ((strstr(string1,"fully_dynamic_debug") != NULL) || (strstr(string1,"fdd") != NULL) || (strstr(string1,"FDD") != NULL)) {
-      ppt->method_smgqs = fully_dynamic_debug;
+      ppt->method_qs_smg = fully_dynamic_debug;
     }
 
     if ((strstr(string1,"quasi_static_debug") != NULL) || (strstr(string1,"qsd") != NULL) || (strstr(string1,"QSD") != NULL)) {
-      ppt->method_smgqs = quasi_static_debug;
+      ppt->method_qs_smg = quasi_static_debug;
     }
   }
 
@@ -3354,14 +3354,14 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
     class_read_int("tol_gauss_legendre",ppr->tol_gauss_legendre);
   }
 
-  /** h.8. parameter related to the quasi-static approximation scheme (smgqs) */
+  /** h.8. parameter related to the quasi-static approximation scheme (qs_smg) */
 
-  class_read_double("n_min_smgqs",ppr->n_min_smgqs);
-  class_read_double("n_max_smgqs",ppr->n_max_smgqs);
-  class_read_double("z_fd_smgqs",ppr->z_fd_smgqs);
-  class_read_double("trigger_mass_smgqs",ppr->trigger_mass_smgqs);
-  class_read_double("trigger_rad_smgqs",ppr->trigger_rad_smgqs);
-  class_read_double("eps_s_smgqs",ppr->eps_s_smgqs);
+  class_read_double("n_min_qs_smg",ppr->n_min_qs_smg);
+  class_read_double("n_max_qs_smg",ppr->n_max_qs_smg);
+  class_read_double("z_fd_qs_smg",ppr->z_fd_qs_smg);
+  class_read_double("trigger_mass_qs_smg",ppr->trigger_mass_qs_smg);
+  class_read_double("trigger_rad_qs_smg",ppr->trigger_rad_qs_smg);
+  class_read_double("eps_s_qs_smg",ppr->eps_s_qs_smg);
 
   class_call(parser_read_string(pfc,"get_h_from_trace_smg",&string1,&flag1,errmsg),
              errmsg,
@@ -3708,7 +3708,7 @@ int input_default_params(
 
   ppt->gauge=synchronous;
 
-  ppt->method_smgqs=fully_dynamic;
+  ppt->method_qs_smg=fully_dynamic;
 
   ppt->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
 
@@ -4018,15 +4018,15 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->neglect_CMB_sources_below_visibility = 1.e-3;
 
   /**
-   * - parameter related to the quasi-static approximation scheme (smgqs)
+   * - parameter related to the quasi-static approximation scheme (qs_smg)
    */
 
-  ppr->n_min_smgqs = 1e2;
-  ppr->n_max_smgqs = 1e4;
-  ppr->z_fd_smgqs = 10.;
-  ppr->trigger_mass_smgqs = 1.e3;
-  ppr->trigger_rad_smgqs = 1.e3;
-  ppr->eps_s_smgqs = 0.01;
+  ppr->n_min_qs_smg = 1e2;
+  ppr->n_max_qs_smg = 1e4;
+  ppr->z_fd_qs_smg = 10.;
+  ppr->trigger_mass_qs_smg = 1.e3;
+  ppr->trigger_rad_qs_smg = 1.e3;
+  ppr->eps_s_qs_smg = 0.01;
   ppr->get_h_from_trace_smg = _FALSE_;
 
   // precision parameters for setting initial conditions
