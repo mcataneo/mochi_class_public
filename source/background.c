@@ -677,7 +677,7 @@ int background_init(
              background_free(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
-  
+
   /** - assign values to all indices in vectors of background quantities with background_indices()*/
   class_call(background_indices(pba),
              pba->error_message,
@@ -986,9 +986,14 @@ int background_indices(
   class_define_index(pba->index_bg_lambda_6_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_7_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_9_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_10_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_11_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_8_prime_smg,pba->has_smg,index_bg,1);
-  
+  class_define_index(pba->index_bg_lambda_9_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_lambda_11_prime_smg,pba->has_smg,index_bg,1);
+
   class_define_index(pba->index_bg_E0_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_E1_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_E2_smg,pba->has_smg && pba->field_evolution_smg,index_bg,1);
@@ -2173,6 +2178,36 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
+      pvecback[pba->index_bg_lambda_9_smg] = ((-2.) + 3.*bra)*D + 2.*pvecback[pba->index_bg_lambda_3_smg] + (D + (-1.)*pvecback[pba->index_bg_lambda_2_smg])*(((-3.) + 2.*bra)*(-3.)/2. + (p_tot + p_smg)*9./2.*pow(H,-2)) + (3.*bra*bra_p + kin_p)*(-1.)*pow(H,-1)*pow(a,-1) + (-9.)/2.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
+
+            memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_smg,
+            &pvecback[pba->index_bg_lambda_9_smg],
+            1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_smg,
+                pba->error_message,
+                "cannot copy data back to pba->background_table");
+
+
+      pvecback[pba->index_bg_lambda_10_smg] = (D + (-1.)*pvecback[pba->index_bg_lambda_3_smg])*(-2.) + (-3.*bra*(1. - M2) + kin*M2)*(rho_tot + p_tot)*3.*pow(H,-2)*pow(M2,-1) + (3.*bra + kin)*(rho_smg + p_smg)*3.*pow(H,-2) + (-1.)*pow(H,-1)*kin_p*pow(a,-1);
+
+            memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_10_smg,
+            &pvecback[pba->index_bg_lambda_10_smg],
+            1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_10_smg,
+                pba->error_message,
+                "cannot copy data back to pba->background_table");
+
+
+        pvecback[pba->index_bg_lambda_11_smg] = bra + 2.*run - (2.-bra)*ten;
+
+            memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_smg,
+            &pvecback[pba->index_bg_lambda_11_smg],
+            1*sizeof(double));
+        class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_smg,
+                  pba->error_message,
+                  "cannot copy data back to pba->background_table");
+
+
       pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_smg,
@@ -2211,6 +2246,13 @@ int background_solve(
 
 	if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
 	  pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
+	}
+
+  if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
+	  pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
+	}
+  if (pvecback[pba->index_bg_braiding_smg] > pba->max_bra_smg){
+	  pba->max_bra_smg = pvecback[pba->index_bg_braiding_smg];
 	}
       }
 
@@ -2289,6 +2331,22 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
             pba->error_message,
            "cannot copy data back to pba->background_table");
+
+           //lambda_9'
+           memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
+           	      &pvecback_derivs[pba->index_bg_lambda_9_smg],
+           	      1*sizeof(double));
+           class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
+                  pba->error_message,
+                  "cannot copy data back to pba->background_table");
+
+          //lambda_11'
+          memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_prime_smg,
+          	      &pvecback_derivs[pba->index_bg_lambda_11_smg],
+          	      1*sizeof(double));
+          class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_prime_smg,
+                 pba->error_message,
+                 "cannot copy data back to pba->background_table");
 
     }
 
@@ -2583,28 +2641,28 @@ int background_initial_conditions(
         phi dot always has the same sign as g.
 
       */
-      
+
         double g = pba->parameters_smg[0];
         double n = pba->parameters_smg[1];
         double xi0 = pba->parameters_smg[2];
-          
+
         double H = sqrt(rho_rad);
         double H0 = pba->H0;
 
         double signg = copysign(1.,g);
         g=fabs(g);
         double xicomb = (2.-xi0)/(2.*(1.-xi0));
-        
+
         double phidot0=0., phidot_attr_init= 0., charge_init=0., phidot_init=0.;
 
         phidot0 = signg * sqrt(2./g)*H0 * pow(xicomb/(3*sqrt(2)),1./(2.*n-1.));             // value of phidot today, if xi0=0, then this is attractor
         phidot_attr_init = signg * sqrt(2./g)*H0 * pow(H0/(3.*sqrt(2.)*H),1./(2.*n-1.));    // value of phidot on attractor at initial time
         charge_init  = phidot0*xi0/(2*(1-xi0))*pow(a,-3);    // implied value of required shift charge initially
-        
+
         if(fabs(charge_init/phidot_attr_init)<1.){
           /* test if initial shift charge is large c.f. the on-attractor phidot. If no, we are nearly on attractor
           at initial time anyway, so just correct the attractor solution slightly
-          if yes, then we are off-attractor and then we have approximate analytic solution in limit of 
+          if yes, then we are off-attractor and then we have approximate analytic solution in limit of
           n_init >> phidot. For the range n_init ~ phidot just use the solution for large shift charge.
           by the late universe, this will be an irrelevant error. */
 
@@ -2612,13 +2670,13 @@ int background_initial_conditions(
         }
         else{
           phidot_init = signg * pow( fabs(charge_init) * pow(fabs(phidot_attr_init),2.*n-1.),1./(2.*n));
-        }        
+        }
 
         pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
-        pvecback_integration[pba->index_bi_phi_prime_smg] = a*phidot_init ; 
+        pvecback_integration[pba->index_bi_phi_prime_smg] = a*phidot_init ;
       }
       break;
-  
+
       case propto_omega:
 	pvecback_integration[pba->index_bi_M_pl_smg] = pba->parameters_2_smg[4];
 	break;
@@ -2888,33 +2946,51 @@ int background_output_titles(struct background * pba,
 
   class_store_columntitle(titles,"gr.fac. D",_TRUE_);
   class_store_columntitle(titles,"gr.fac. f",_TRUE_);
-  
+
   class_store_columntitle(titles,"(.)rho_smg",pba->has_smg);
   class_store_columntitle(titles,"(.)p_smg",pba->has_smg);
 
 
   if (pba->output_background_smg >= 1){
-    class_store_columntitle(titles,"M*^2_smg",pba->has_smg);       
-    class_store_columntitle(titles,"kineticity_smg",pba->has_smg);   
+    class_store_columntitle(titles,"M*^2_smg",pba->has_smg);
+    class_store_columntitle(titles,"kineticity_smg",pba->has_smg);
     class_store_columntitle(titles,"braiding_smg",pba->has_smg);
-    class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);   
-    class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);       
-    class_store_columntitle(titles,"c_s^2",pba->has_smg);        
+    class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);
+    class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);
+    class_store_columntitle(titles,"c_s^2",pba->has_smg);
     class_store_columntitle(titles,"kin (D)",pba->has_smg);
   }
-  
+
   if (pba->output_background_smg >= 2){
-    class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg); 
-    class_store_columntitle(titles,"phi'",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg);
+    class_store_columntitle(titles,"phi'",pba->field_evolution_smg);
     class_store_columntitle(titles,"phi''",pba->field_evolution_smg);
-    class_store_columntitle(titles,"E0",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"E0",pba->field_evolution_smg);
     class_store_columntitle(titles,"E1",pba->field_evolution_smg);
-    class_store_columntitle(titles,"E2",pba->field_evolution_smg); 
+    class_store_columntitle(titles,"E2",pba->field_evolution_smg);
     class_store_columntitle(titles,"E3",pba->field_evolution_smg);
   }
-  
+
   //TODO: add in output background trigger
-  class_store_columntitle(titles,"lambda_8",pba->has_smg);
+  if (pba->output_background_smg >= 3){
+    class_store_columntitle(titles,"lambda_1",pba->has_smg);
+    class_store_columntitle(titles,"lambda_2",pba->has_smg);
+    class_store_columntitle(titles,"lambda_3",pba->has_smg);
+    class_store_columntitle(titles,"lambda_4",pba->has_smg);
+    class_store_columntitle(titles,"lambda_5",pba->has_smg);
+    class_store_columntitle(titles,"lambda_6",pba->has_smg);
+    class_store_columntitle(titles,"lambda_7",pba->has_smg);
+    class_store_columntitle(titles,"lambda_8",pba->has_smg);
+    class_store_columntitle(titles,"lambda_9",pba->has_smg);
+    class_store_columntitle(titles,"lambda_10",pba->has_smg);
+    class_store_columntitle(titles,"lambda_11",pba->has_smg);
+    class_store_columntitle(titles,"lambda_2_p",pba->has_smg);
+    class_store_columntitle(titles,"lambda_8_p",pba->has_smg);
+    class_store_columntitle(titles,"lambda_9_p",pba->has_smg);
+    class_store_columntitle(titles,"lambda_11_p",pba->has_smg);
+    class_store_columntitle(titles,"cs2num",pba->has_smg);
+    class_store_columntitle(titles,"cs2num_p",pba->has_smg);
+  }
 
 
   return _SUCCESS_;
@@ -2964,28 +3040,46 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],pba->has_smg,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_p_smg],pba->has_smg,storeidx);
 
-    if (pba->output_background_smg >= 1){  
-      class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx); 
-      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);   
-      class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);   
+    if (pba->output_background_smg >= 1){
+      class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);     
+      class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
     }
-    
+
     if (pba->output_background_smg >= 2){
-      class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);  
-      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx); 
-      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx); 
-      class_store_double(dataptr,pvecback[pba->index_bg_E0_smg],pba->field_evolution_smg,storeidx);  
-      class_store_double(dataptr,pvecback[pba->index_bg_E1_smg],pba->field_evolution_smg,storeidx);  
-      class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);  
-      class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);  
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_E0_smg],pba->field_evolution_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_E1_smg],pba->field_evolution_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);
     }
 
-    class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_smg],pba->has_smg,storeidx);
-    
+    if (pba->output_background_smg >= 3){
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_1_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_3_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_4_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_5_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_6_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_7_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_9_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_10_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_11_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_prime_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_prime_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_9_prime_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_lambda_11_prime_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_cs2num_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_cs2num_prime_smg],pba->has_smg,storeidx);
+    }
+
   }
 
   return _SUCCESS_;
@@ -3233,20 +3327,20 @@ int background_gravity_functions(
         g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
         Note that for n=1/4 the Lambda mass scales cancels out, so we set it to 1.
       */
-      
+
       double g = pba->parameters_smg[0];
       double npow = pba->parameters_smg[1];
       double ngpow = copysign(1.,g)*pow(fabs(g),(2.*npow-1.)/2.)/npow;
       double H0=pba->H0;
-      
+
       G2    = -X;
       G2_X  = -1.;
-      
+
       // G3 = 1/n g^[(2n-1)/2] Lambda (X/Lambda^4)^n
-  
+
       G3_X = npow*ngpow*pow(X,npow-1)/pow(H0,2*npow);
       G3_XX = npow*(npow-1.)*ngpow*pow(X,npow-2)/pow(H0,2*npow);
- 
+
     }
 
 
@@ -3286,12 +3380,12 @@ int background_gravity_functions(
       if (pba->background_verbose > 5 && pba->initial_conditions_set_smg == _FALSE_ )
 	printf(" Initial H = %e, sqrt(rho) = %e, ratio = %e, n=%i \n", H, sqrt(rho_tot),sqrt(rho_tot)/H,n);
     }
-    
+
     pvecback[pba->index_bg_E0_smg] = E0;
     pvecback[pba->index_bg_E1_smg] = E1;
     pvecback[pba->index_bg_E2_smg] = E2;
     pvecback[pba->index_bg_E3_smg] = E3;
-    
+
     /* Rewritten by the constraint if ICs have not been set */
     pvecback[pba->index_bg_H] = H;
 
@@ -3425,26 +3519,26 @@ int background_gravity_functions(
 
     }//ILSWEDE
     if (pba->expansion_model_smg == wede){
-      
+
       //Doran-Robbers model astro-ph/0601544
       //as implemented in Pettorino et al. 1301.5279
       //TODO: check these expressions, they probably assume the standard evolution/friedmann eqs, etc...
-      
+
       double Om0 = pba->parameters_smg[0];
       double w0 = pba->parameters_smg[1];
       double Ome = pba->parameters_smg[2] + 1e-10;
-      
+
       //NOTE: I've regularized the expression adding a tiny Omega_e
       double Om = ((Om0 - Ome*(1.-pow(a,-3.*w0)))/(Om0 + (1.-Om0)*pow(a,3*w0)) + Ome*(1.-pow(a,-3*w0)));
       double dOm_da = (3*pow(a,-1 - 3*w0)*(-1 + Om0)*(-2*pow(a,3*w0)*(-1 + Om0)*Ome + Om0*Ome + pow(a,6*w0)*(Om0 - 2*Ome + Om0*Ome))*w0)/pow(-(pow(a,3*w0)*(-1 + Om0)) + Om0,2); //from Mathematica
       //I took a_eq = a*rho_r/rho_m, with rho_r = 3*p_tot_wo_smg
       double a_eq = 3.*a*p_tot/(pvecback[pba->index_bg_rho_b]+pvecback[pba->index_bg_rho_cdm]); //tested!
       double w = a_eq/(3.*(a+a_eq)) -a/(3.*(1-Om)*Om)*dOm_da;
-            
+
       pvecback[pba->index_bg_rho_smg] = rho_tot*Om/(1.-Om);
       //pow(pba->H0,2)/pow(a,3)*Om*(Om-1.)/(Om0-1.)*(1.+a_eq/a)/(1.+a_eq); //this eq is from Pettorino et al, not working
       pvecback[pba->index_bg_p_smg] = w*pvecback[pba->index_bg_rho_smg];
-      
+
 //       if (a>0.9)
 // 	printf("a = %e, w = %f, Om_de = %e, rho_de/rho_t = %e \n",a,w,Om,
 // 	       pvecback[pba->index_bg_rho_smg]/(pvecback[pba->index_bg_rho_smg]+rho_tot));
@@ -3605,8 +3699,13 @@ int background_gravity_functions(
   pvecback[pba->index_bg_lambda_6_smg] = 0.;
   pvecback[pba->index_bg_lambda_7_smg] = 0.;
   pvecback[pba->index_bg_lambda_8_smg] = 0.;
+  pvecback[pba->index_bg_lambda_9_smg] = 0.;
+  pvecback[pba->index_bg_lambda_10_smg] = 0.;
+  pvecback[pba->index_bg_lambda_11_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_prime_smg] = 0.;
   pvecback[pba->index_bg_lambda_8_prime_smg] = 0.;
+  pvecback[pba->index_bg_lambda_9_prime_smg] = 0.;
+  pvecback[pba->index_bg_lambda_11_prime_smg] = 0.;
   if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
     pvecback[pba->index_bg_mpl_running_smg] = 0.;
   }
@@ -3708,7 +3807,7 @@ int background_gravity_parameters(
       printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
 	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
-      
+
       case wede:    //ILSWEDE
       printf("Parameterized model with variable EoS + EDE \n");
       printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);

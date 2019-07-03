@@ -491,6 +491,7 @@ struct perturb_vector
   int index_pt_phi;	      /**< newtonian gauge metric perturbation phi */
   int index_pt_hv_prime;  /**< vector metric perturbation h_v' in synchronous gauge */
   int index_pt_V;         /**< vector metric perturbation V in Newtonian gauge */
+  int index_pt_h_prime_from_trace_smg;
 
   int index_pt_gw;        /**< tensor metric perturbation h (gravitational waves) */
   int index_pt_gwdot;     /**< its time-derivative */
