@@ -2646,7 +2646,7 @@ int background_initial_conditions(
         double n = pba->parameters_smg[1];
         double xi0 = pba->parameters_smg[2];
 
-        double H = sqrt(rho_rad);
+        double H = sqrt(rho_rad); //TODO: for low n -> need to solve tracker + Constraint simultaneously. Increasing H (e.g. double H = 10*sqrt(rho_rad);) works for n~0.65.
         double H0 = pba->H0;
 
         double signg = copysign(1.,g);
