@@ -3523,6 +3523,7 @@ int background_gravity_functions(
       //Doran-Robbers model astro-ph/0601544
       //as implemented in Pettorino et al. 1301.5279
       //TODO: check these expressions, they probably assume the standard evolution/friedmann eqs, etc...
+      //TODO: rewrite the expressions integrating the equation of state
 
       double Om0 = pba->parameters_smg[0];
       double w0 = pba->parameters_smg[1];
@@ -3809,7 +3810,7 @@ int background_gravity_parameters(
       break;
 
       case wede:    //ILSWEDE
-      printf("Parameterized model with variable EoS + EDE \n");
+      printf("Parameterized model with variable EoS + Early DE \n");
       printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
 
