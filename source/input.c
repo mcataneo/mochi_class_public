@@ -1282,25 +1282,33 @@ int input_read_parameters(
 	pba->parameters_2_size_smg = 8;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
+      
+    if (strncmp("quintessence", string1, strlen("quintessence")) == 0){
+          // Check if gravity_model has quintessence as prefix.
+          // Add here all variables common to quintessence.
+          pba->smg_is_quintessence = _TRUE_;
+          class_read_double("quintessence_w_safe_smg", pba->quintessence_w_safe_smg);
+      }
 
-      if (strcmp(string1,"quintessence_monomial") == 0) {
+    if (strcmp(string1,"quintessence_monomial") == 0) {
 	pba->gravity_model_smg = quintessence_monomial;
 	pba->field_evolution_smg = _TRUE_;
+    pba->smg_is_quintessence = _TRUE_;
 	flag2=_TRUE_;
-
+	
 	pba->parameters_size_smg = 4;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
-	/* Guess for the parameter variation range. Copied from galileons.
+	/* Guess for the parameter variation range.
      *
      * For the initial parameter one can use:
-	 *
+	 * 
 	 * 	rho_smg = 1/2*a_ini^-2*phi_prime_ini^2 + V0*3*H0^2/h^2*phi_ini^N
-	 *
+	 * 
 	 * However, for the range of variation it is better to use
-	 *
+	 * 
 	 * 	Omega = rho_smg/(rho_smg + rho_m)
-	 *
+	 * 
 	 * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
 	 * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
 	 * where we use rho_m ~ H_0^2
@@ -1314,33 +1322,90 @@ int input_read_parameters(
     double phi_ini_smg =  pba->parameters_smg[3];
 
     double P_ini = pow(phi_ini_smg, N);  // V=cte*P(phi)
+    
+    double phi_end_guess = fmax(phi_ini_smg,2); //guess the final value of the field
+
+    // class_test( ((abs(N)<1) || (abs(N)>7)), errmsg, "Exponent out of range. N must be a interger in (1,7)-range" );
 
 	if (has_tuning_index_smg == _FALSE_)
 	  pba->tuning_index_smg = 1; //use V0 for default tuning
-
+	
 	if (has_dxdy_guess_smg == _FALSE_){
+ 
 	  if(pba->tuning_index_smg == 1){
-	    if(phi_ini_smg != 0){
-	      V0 = pba->Omega0_smg/pow(phi_ini_smg,N);
-	      pba->tuning_dxdy_guess_smg = 1./pow(phi_ini_smg,N); // fabs(pow(1. + rho_H2, 2)*pow(pba->h,2)/(3.*P_ini));
-	      pba->parameters_smg[1] = V0;
-	    }
-	    else{
-	      V0 = pba->Omega0_smg/pow(1.e-40,N);
-	      pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N); // fabs(pow(1. + rho_H2, 2)*pow(pba->h,2)/(3.*P_ini));
-	      pba->parameters_smg[1] = V0;
-
-	    }
+//           if(phi_ini_smg != 0){
+            V0 = pba->Omega0_smg/pow(phi_end_guess,N); 
+            pba->tuning_dxdy_guess_smg = 1./pow(phi_end_guess,N);
+            pba->parameters_smg[1] = V0;
+//           }
+//           else{
+//             V0 = pba->Omega0_smg/pow(1.e-40,N); 
+//             pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N); 
+//             pba->parameters_smg[1] = V0;
+// 
+//           }
 	  }
 
-	  if(pba->tuning_index_smg == 3){
+	  if(pba->tuning_index_smg == 3){ 
        phi_ini_smg = pow(pba->Omega0_smg/V0, 1./N);
        pba->parameters_smg[3] = phi_ini_smg;
-       pba->tuning_dxdy_guess_smg = phi_ini_smg/(pba->Omega0_smg)/N; //pow(rho_Omega0/V0,1./N-1)/N;
+       pba->tuning_dxdy_guess_smg = phi_ini_smg/(pba->Omega0_smg)/N;
 	  }
 	}//end of no has_dxdy_guess_smg
-      }
+      }//end of quintessence_monomial
+      
+      
+    if (strcmp(string1,"quintessence_tracker") == 0) {
+	pba->gravity_model_smg = quintessence_tracker;
+	pba->field_evolution_smg = _TRUE_;
+    pba->smg_is_quintessence = _TRUE_;
+	flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 6;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
+    double K_ini = pba->parameters_smg[0];
+    double P_ini =  pba->parameters_smg[1];
+    double V0 = pba->parameters_smg[2];
+    double n = pba->parameters_smg[3];
+    double m = pba->parameters_smg[4];
+    double lambda = pba->parameters_smg[5];
+
+       /* Guess for the parameter variation range.
+        *
+        * For the initial parameter one can use:
+        *  V = H0^2/h^2* V0 * phi^-n exp(lambda*phi^m)
+        *
+        *  minimum at phi0 = (n/(lambda*m))^(1/m)
+        *  -> choose V0 ~ V(phi0)~Omega_smg H_0^2
+        * 
+        * Initial conditions: see background.c
+        *  
+        *  choose phi_ini so V = P_ini*sqrt(rho_rad)
+        *  choose phi_prime_ini so K = K_ini*sqrt(rho_rad)
+        * 
+        */
+
+    double phi_0 = pow(n/lambda/m,1./m); /* minimum of the potential */
+    double v_0_guess = (pow(phi_0,-n) * exp(lambda*pow(phi_0,m))); /*V/V0 at the minimum*/
+     
+	if (has_tuning_index_smg == _FALSE_)
+	  pba->tuning_index_smg = 2; //use V0 for default tuning
+	
+	if (has_dxdy_guess_smg == _FALSE_){
+	  if(pba->tuning_index_smg == 2){
+              
+              V0 = 3* pba->h * (pba->Omega0_smg)/v_0_guess;
+              pba->tuning_dxdy_guess_smg = 3. * pba->h/ (v_0_guess); //*(1-pba->Omega0_smg) -> removed, lead to instability!
+              pba->parameters_smg[2] = V0;
+          }
+      }//end of no has_dxdy_guess_smg
+      } //end of tracker
+      
+      
+
+      
+      
       if (strcmp(string1,"galileon") == 0) {
 	pba->gravity_model_smg = galileon;
 	pba->field_evolution_smg = _TRUE_;
@@ -1485,7 +1550,7 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential' ...");
+		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker' ...");
 
     }// end of loop over models
 
