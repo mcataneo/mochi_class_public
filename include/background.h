@@ -13,9 +13,12 @@
 /** list of possible types of spatial curvature */
 
 enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, constant_alphas,
-  eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
-  galileon, brans_dicke, quintessence_monomial, nkgb
+enum gravity_model {propto_omega, propto_scale, 
+    constant_alphas,
+    eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
+    galileon, nkgb, 
+    brans_dicke, 
+    quintessence_monomial, quintessence_tracker
 }; //write here the different models
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
@@ -128,6 +131,7 @@ struct background
   double ct2_safe_smg; /* threshold to consider the sound speed of tensors negative in the stability check */
   double M2_safe_smg; /* threshold to consider the kinetic term of tensors (M2) negative in the stability check */
   double kineticity_safe_smg; /**< minimum value of the kineticity, to avoid problems with the perturbations */
+  double quintessence_w_safe_smg; /**< threshold to consider the quintessence equation of state less than -1 in the stability check */
 
   double min_M2_smg; /**< minimum value of planck mass (for stability test) */
   double min_ct2_smg; /**< minimum value of tensor speed of sound squared (for stability test) */
@@ -414,7 +418,7 @@ struct background
   short has_curvature; /**< presence of global spatial curvature? */
 
   short smg_is_tuned; /**< is the scalar field tuned to give Omega0_smg? */
-
+  short smg_is_quintessence; /**< is the scalar field from a quintessence
   //@}
 
   /**

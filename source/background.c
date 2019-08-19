@@ -744,7 +744,7 @@ int background_init(
   class_call(background_solve(ppr,pba),
              pba->error_message,
              pba->error_message);
-
+  
   /** - this function finds and stores a few derived parameters at radiation-matter equality */
   class_call(background_find_equality(ppr,pba),
              pba->error_message,
@@ -1762,6 +1762,11 @@ int background_solve(
   while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
 
     tau_start = tau_end;
+    
+    
+//        if (pvecback_integration[pba->index_bi_a]>.3)
+//          printf("a=%.2f \n",pvecback_integration[pba->index_bi_a]);
+//      printf(" .");
 
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
@@ -1776,18 +1781,20 @@ int background_solve(
       tau_end = tau_start + (pba->a_today/pvecback_integration[pba->index_bi_a]-1.) / (pvecback_integration[pba->index_bi_a]*pvecback[pba->index_bg_H]);
       /* no possible segmentation fault here: non-zeroness of "a" has been checked in background_functions() */
     }
+     
 
     class_test_except((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
                pba->error_message,
                gt_free(&gTable);cleanup_generic_integrator(&gi);background_free(pba);free(pvecback_integration);free(pvecback),
                "integration step: relative change in time =%e < machine precision : leads either to numerical error or infinite loop",(tau_end-tau_start)/tau_start);
-
+    
     /* -> save data in growTable */
     class_call(gt_add(&gTable,_GT_END_,(void *) pvecback_integration,sizeof(double)*pba->bi_size),
                gTable.error_message,
                pba->error_message);
     pba->bt_size++;
 
+    
     /* -> perform one step */
     class_call(generic_integrator(background_derivs,
                                   tau_start,
@@ -1802,8 +1809,11 @@ int background_solve(
 
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
+    
+//     printf("* \n");
 
   }
+//    printf("x\n");
 
   /** - save last data in growTable with gt_add() */
   class_call(gt_add(&gTable,_GT_END_,(void *) pvecback_integration,sizeof(double)*pba->bi_size),
@@ -2451,6 +2461,8 @@ int background_initial_conditions(
   double scf_lambda;
   double rho_fld_today;
   double w_fld,dw_over_da_fld,integral_fld;
+  double phi_scale, V_scale,p1,p2,p3; //smg related variables
+  int i = 0;
 
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default * pba->a_today;
@@ -2551,6 +2563,50 @@ int background_initial_conditions(
       case quintessence_monomial:
 	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[3];
 	  pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[2]*pba->H0;
+	break;
+    
+    case quintessence_tracker:
+          
+        /* Tracker quintessence at early times
+        *  V = H0^2/h^2* V0 * phi^-n exp(lambda*phi^m)
+        *
+        *  log(V/V0) = lambda phi^m - n log (phi)
+        *  
+        *  choose phi_ini so V = P_ini*sqrt(rho_rad)
+        *  choose phi_prime_ini so K = K_ini*sqrt(rho_rad)
+        * 
+        * initial guess: phi_ini = (log(rho_rad/H0^2)/lambda)^(1/m))
+        * then adjust to the right potential using Newton's method
+        * 
+        */
+        
+        p1 = pba->parameters_smg[3];// n
+        p2 = pba->parameters_smg[4]; //m
+        p3 = pba->parameters_smg[5]; //lambda
+//         phi_scale = gsl_sf_lambert_W0(10);
+        
+        //initial guess
+        phi_scale = pow(log(rho_rad/pba->parameters_smg[2]/pow(pba->H0/pba->h,2)/p3), 1./pba->parameters_smg[4]);
+        
+        //log of the potential
+        V_scale =100;//start off at a high value
+        
+        //do a newton root finding
+        while (i < 100){
+                    
+            V_scale = p3*pow(phi_scale,p2) - p1*log(phi_scale) - pba->parameters_smg[1]*log(rho_rad/pba->parameters_smg[2]/pow(pba->H0/pba->h,2));
+            
+            if (fabs(V_scale) < 1e-5)
+                break;
+            
+            phi_scale -= (V_scale)/((p3*p2*pow(phi_scale,p2)-p1)/phi_scale);
+            i++;
+        }
+//         printf("V_scale %e, i %i \n",V_scale,i);
+        
+        pvecback_integration[pba->index_bi_phi_smg] = phi_scale;
+        pvecback_integration[pba->index_bi_phi_prime_smg] = -a*sqrt(pba->parameters_smg[0]*2*rho_rad);
+
 	break;
 
 
@@ -3267,13 +3323,29 @@ int background_gravity_functions(
 
       double N = pba->parameters_smg[0];
       double V0 = pba->parameters_smg[1];
-
-      /* G2 = X - V0*pba->Omega0_smg*pow(pba->H0,2)*pow(phi,N); */
-      G2 = X - V0*3.*pow(pba->H0/pba->h,2.)*pow(phi,N);
+      
+      G2 = X - V0*pow(pba->H0/pba->h,2.)*pow(phi,N); // V written as in arXiv:1406.2301 in CLASS units
       G2_X = 1.;
-      /* G2_phi = -N*V0*pba->Omega0_smg*pow(pba->H0,2)*pow(phi,N-1); */
-      G2_phi = -N*V0*3.*pow(pba->H0/pba->h,2.)*pow(phi,N-1.);
+      G2_phi = -N*V0*pow(pba->H0/pba->h,2.)*pow(phi,N-1.);
     }
+    
+    else if (pba->gravity_model_smg == quintessence_tracker) {
+        // V written as in arXiv:1406.2301 in CLASS units
+
+      double V0 = pba->parameters_smg[2];
+      double n = pba->parameters_smg[3];
+      double m = pba->parameters_smg[4];
+      double lambda = pba->parameters_smg[5];
+      double V, V_phi;
+      
+      V = pow(pba->H0/pba->h,2)* V0 * pow(phi, -n) * exp(lambda*pow(phi, m));
+      V_phi = (lambda * m * pow(phi, m) - n) /phi * V;
+      
+      G2 = X - V;
+      G2_X = 1.;
+      G2_phi = -V_phi;
+    }
+    
     else if(pba->gravity_model_smg == galileon){//TODO: change name with ccc_galileon
 
       double M3 = pow(pba->H0,2);
@@ -3523,6 +3595,7 @@ int background_gravity_functions(
       //Doran-Robbers model astro-ph/0601544
       //as implemented in Pettorino et al. 1301.5279
       //TODO: check these expressions, they probably assume the standard evolution/friedmann eqs, etc...
+      //TODO: rewrite the expressions integrating the equation of state
 
       double Om0 = pba->parameters_smg[0];
       double w0 = pba->parameters_smg[1];
@@ -3709,6 +3782,21 @@ int background_gravity_functions(
   if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
     pvecback[pba->index_bg_mpl_running_smg] = 0.;
   }
+  
+    /* Check required conditions for the gravity_models. */
+  if ( (pba->skip_stability_tests_smg == _FALSE_) && (pba->parameters_tuned_smg == _TRUE_) ){
+      double a = pvecback_B[pba->index_bi_a];
+      if (pba->smg_is_quintessence == _TRUE_){
+          /*  Check that w is not lower than w < -1 for quintessence */
+         class_test( (pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg] < -(1 + pba->quintessence_w_safe_smg)),
+             pba->error_message,
+             "Dark Energy equation of state at a = %e is w = %e, lower than w = -(1 + th), with threshold, th = %e. Quintessence models can only have  w > -1. Aborting.\n", a, pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg], pba->quintessence_w_safe_smg);
+
+         class_test(( (pvecback[pba->index_bg_rho_smg] / (pba->Omega0_smg*pow(pba->H0,2))  + 1e-3)  < 1),
+                 pba->error_message,
+                 "Dark Energy density, rho_smg = %e, at a = %e is lower than its given present value, Omega0_smg*H0^2= %e, since quintessence models have  w > -1, it will never be reached. Aborting.\n", pvecback[pba->index_bg_rho_smg], a, pba->Omega0_smg*pow(pba->H0,2) );
+      }
+  }
 
   return _SUCCESS_;
 
@@ -3722,9 +3810,16 @@ int background_gravity_parameters(
 
    case quintessence_monomial:
      printf("Modified gravity: quintessence_monomial with parameters: \n");
-     printf(" -> N = %g, V0 = %g, V0* = %g, phi_prime_0 = %g, phi_0 = %g \n",
-	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[1]*3.*pow(pba->H0/pba->h,2),
+     printf("-> N = %g, V0 = %g, V0* = %g, phi_prime_ini = %g, phi_ini = %g \n",
+	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[1]*pow(pba->H0/pba->h,2),
 	    pba->parameters_smg[2], pba->parameters_smg[3]);
+     break;
+     
+   case quintessence_tracker:
+     printf("Modified gravity: quintessence_tracker with parameters: \n");
+     printf("-> K_ini = %g, P_ini = %g, V0 = %g, V0* = %g, n = %g, m = %g, lambda=%g  \n",
+	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[2]*pow(pba->H0/pba->h,2),
+	    pba->parameters_smg[2], pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]);
      break;
 
    case galileon:
@@ -3735,13 +3830,13 @@ int background_gravity_parameters(
 
    case brans_dicke:
      printf("Modified gravity: Brans Dicke with parameters: \n");
-     printf(" -> Lambda = %g, w = %g, phi_0 = %g, phi_prime_0 = %g \n",
+     printf(" -> Lambda = %g, w = %g, phi_ini = %g, phi_prime_ini = %g \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
      break;
 
     case nkgb:
      printf("Modified gravity: Kinetic Gravity Braiding with K=-X and G=1/n g^(2n-1)/2 * X^n with parameters: \n");
-     printf(" -> g = %g, n = %g, phi_0 = 0.0, density fraction from shift charge = %g. \n",
+     printf(" -> g = %g, n = %g, phi_ini = 0.0, density fraction from shift charge = %g. \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
      break;
 
@@ -3809,7 +3904,7 @@ int background_gravity_parameters(
       break;
 
       case wede:    //ILSWEDE
-      printf("Parameterized model with variable EoS + EDE \n");
+      printf("Parameterized model with variable EoS + Early DE \n");
       printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
 
