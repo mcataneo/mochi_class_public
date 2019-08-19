@@ -968,6 +968,10 @@ extern "C" {
                             int size_scheme,
                             double * tau_export);
 
+  int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2, 
+                        double Omx, double wx, double l1, double l2, double l3, double l4,
+                        double l5, double l6,double l7,double l8, double cs2num, double Dd, 
+                        double * amplitude);
 #ifdef __cplusplus
 }
 #endif
