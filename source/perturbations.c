@@ -280,9 +280,9 @@ int perturb_init(
   
     // TODO: think of some suitable tests for the scalar field
 
-    if (ppt->method_smgqs == automatic) {
-      //Check if at the initial time all the k modes start with the same kind of smgqs approximation
-      class_call_except(perturb_test_ini_smgqs(ppr,
+    if (ppt->method_qs_smg == automatic) {
+      //Check if at the initial time all the k modes start with the same kind of qs_smg approximation
+      class_call_except(perturb_test_ini_qs_smg(ppr,
                                                pba,
                                                ppt,
                                                ppt->k[ppt->index_md_scalars][0],
@@ -293,7 +293,7 @@ int perturb_init(
                  background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
     }
 
-    if (!((ppt->method_smgqs == automatic) && (ppt->initial_approx_smgqs==1))) {
+    if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==1))) {
 
       // if scalar is dynamical or always quasi-static, test for stability at the initial time.
       // Only in the case it is QS because of a trigger test (through "automatic" method_qs),
@@ -2138,7 +2138,7 @@ int perturb_workspace_init(
     class_define_index(ppw->index_ap_ufa,pba->has_ur,index_ap,1);
     class_define_index(ppw->index_ap_ncdmfa,pba->has_ncdm,index_ap,1);
 
-    class_define_index(ppw->index_ap_smgqs,pba->has_smg,index_ap,1);
+    class_define_index(ppw->index_ap_qs_smg,pba->has_smg,index_ap,1);
 
 }
 
@@ -2162,7 +2162,7 @@ int perturb_workspace_init(
       ppw->approx[ppw->index_ap_ncdmfa]=(int)ncdmfa_off;
     }
     if (pba->has_smg == _TRUE_) {
-      ppw->approx[ppw->index_ap_smgqs]=(int)smgqs_fd_0;
+      ppw->approx[ppw->index_ap_qs_smg]=(int)qs_smg_fd_0;
     }
   }
 
@@ -2311,7 +2311,7 @@ int perturb_solve(
   int n_ncdm,is_early_enough;
 
   /* array that contains the quasi-static approximation scheme */
-  double * tau_scheme_smgqs;
+  double * tau_scheme_qs_smg;
 
   /* function pointer to ODE evolver and names of possible evolvers */
 
@@ -2463,22 +2463,22 @@ int perturb_solve(
 
   tau = tau_mid;
 
-  /* A second loop starts here to anticipate the initial time if the smgqs
-     state is different from ppt->initial_approx_smgqs. */
+  /* A second loop starts here to anticipate the initial time if the qs_smg
+     state is different from ppt->initial_approx_qs_smg. */
   if (pba->has_smg == _TRUE_) {
-    if (ppt->method_smgqs == automatic) {
+    if (ppt->method_qs_smg == automatic) {
       tau_upper = tau;
       tau_lower = pba->tau_table[0];
       is_early_enough = _FALSE_;
       while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
         int approx;
-        perturb_test_at_k_smgqs(ppr,
+        perturb_test_at_k_qs_smg(ppr,
                                 pba,
                                 ppt,
                                 k,
                                 tau_upper,
                                 &approx);
-        if (approx == ppt->initial_approx_smgqs) {
+        if (approx == ppt->initial_approx_qs_smg) {
           is_early_enough = _TRUE_;
         }
         else {
@@ -2489,20 +2489,20 @@ int perturb_solve(
     }
   }
 
-  /** - find the intervals over which the approximation scheme for smgqs is constant */
+  /** - find the intervals over which the approximation scheme for qs_smg is constant */
 
-  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
-  class_alloc(tau_scheme_smgqs,sizeof(smgqs_array)/sizeof(int)*sizeof(double),ppt->error_message);
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+  class_alloc(tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
 
   if (pba->has_smg == _TRUE_) {
-    if ((ppt->method_smgqs == automatic) || (ppt->method_smgqs == fully_dynamic_debug) || (ppt->method_smgqs == quasi_static_debug)) {
-    class_call(perturb_find_scheme_smgqs(ppr,
+    if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
+    class_call(perturb_find_scheme_qs_smg(ppr,
                                          pba,
 				         ppt,
                                          k,
                                          tau,
                                          ppt->tau_sampling[tau_actual_size-1],
-                                         tau_scheme_smgqs),
+                                         tau_scheme_qs_smg),
                ppt->error_message,
                ppt->error_message);
     }
@@ -2525,7 +2525,7 @@ int perturb_solve(
                                                ppt->tau_sampling[tau_actual_size-1],
                                                &interval_number,
                                                interval_number_of,
-                                               tau_scheme_smgqs),
+                                               tau_scheme_qs_smg),
              ppt->error_message,
              ppt->error_message);
 
@@ -2550,12 +2550,12 @@ int perturb_solve(
                                                  interval_number_of,
                                                  interval_limit,
                                                  interval_approx,
-                                                 tau_scheme_smgqs),
+                                                 tau_scheme_qs_smg),
              ppt->error_message,
              ppt->error_message);
 
   free(interval_number_of);
-  free(tau_scheme_smgqs);
+  free(tau_scheme_qs_smg);
 
   /** - fill the structure containing all fixed parameters, indices
       and workspaces needed by perturb_derivs */
@@ -2842,7 +2842,7 @@ int perturb_find_approximation_number(
                                       double tau_end,
                                       int * interval_number,
                                       int * interval_number_of, /* interval_number_of[index_ap] (already allocated) */
-                                      double * tau_scheme_smgqs
+                                      double * tau_scheme_qs_smg
                                       ){
 
   /** Summary: */
@@ -2868,7 +2868,7 @@ int perturb_find_approximation_number(
                                       k,
                                       tau_ini,
                                       ppw,
-                                      tau_scheme_smgqs),
+                                      tau_scheme_qs_smg),
                ppt->error_message,
                ppt->error_message);
 
@@ -2882,7 +2882,7 @@ int perturb_find_approximation_number(
                                       k,
                                       tau_end,
                                       ppw,
-                                      tau_scheme_smgqs),
+                                      tau_scheme_qs_smg),
                ppt->error_message,
                ppt->error_message);
 
@@ -2937,7 +2937,7 @@ int perturb_find_approximation_switches(
                                         int * interval_number_of,
                                         double * interval_limit, /* interval_limit[index_interval] (already allocated) */
                                         int ** interval_approx,   /* interval_approx[index_interval][index_ap] (already allocated) */
-                                        double * tau_scheme_smgqs
+                                        double * tau_scheme_qs_smg
                                         ){
 
   /** Summary: */
@@ -2952,7 +2952,7 @@ int perturb_find_approximation_switches(
   double next_tau_switch;
   int flag_ini;
   int num_switching_at_given_time;
-  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   /** - write in output arrays the initial time and approximation */
 
@@ -2966,7 +2966,7 @@ int perturb_find_approximation_switches(
                                     k,
                                     tau_ini,
                                     ppw,
-                                    tau_scheme_smgqs),
+                                    tau_scheme_qs_smg),
              ppt->error_message,
              ppt->error_message);
 
@@ -3017,7 +3017,7 @@ int perturb_find_approximation_switches(
                                               k,
                                               mid,
                                               ppw,
-                                              tau_scheme_smgqs),
+                                              tau_scheme_qs_smg),
                        ppt->error_message,
                        ppt->error_message);
 
@@ -3081,7 +3081,7 @@ int perturb_find_approximation_switches(
                                         k,
                                         0.5*(interval_limit[index_switch]+interval_limit[index_switch+1]),
                                         ppw,
-                                        tau_scheme_smgqs),
+                                        tau_scheme_qs_smg),
 
                  ppt->error_message,
                  ppt->error_message);
@@ -3143,12 +3143,12 @@ int perturb_find_approximation_switches(
             }
           }
           if (pba->has_smg == _TRUE_) {
-            if ((smgqs_array[interval_approx[index_switch-1][ppw->index_ap_smgqs]]==1) &&
-                (smgqs_array[interval_approx[index_switch][ppw->index_ap_smgqs]]==0)) {
+            if ((qs_array_smg[interval_approx[index_switch-1][ppw->index_ap_qs_smg]]==1) &&
+                (qs_array_smg[interval_approx[index_switch][ppw->index_ap_qs_smg]]==0)) {
               fprintf(stdout,"Mode k=%e: will switch off the quasi_static approximation smg (1 -> 0) at tau=%e\n",k,interval_limit[index_switch]);
             }
-            if ((smgqs_array[interval_approx[index_switch-1][ppw->index_ap_smgqs]]==0) &&
-                (smgqs_array[interval_approx[index_switch][ppw->index_ap_smgqs]]==1)) {
+            if ((qs_array_smg[interval_approx[index_switch-1][ppw->index_ap_qs_smg]]==0) &&
+                (qs_array_smg[interval_approx[index_switch][ppw->index_ap_qs_smg]]==1)) {
               fprintf(stdout,"Mode k=%e: will switch on the quasi_static approximation smg (0 -> 1) at tau=%e\n",k,interval_limit[index_switch]);
             }
           }
@@ -3178,7 +3178,7 @@ int perturb_find_approximation_switches(
                                       k,
                                       tau_end,
                                       ppw,
-                                      tau_scheme_smgqs),
+                                      tau_scheme_qs_smg),
 
                ppt->error_message,
                ppt->error_message);
@@ -3252,7 +3252,7 @@ int perturb_vector_init(
   int l;
   int n_ncdm,index_q,ncdm_l_size;
   double rho_plus_p_ncdm,q,q2,epsilon,a,factor;
-  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   /** - allocate a new perturb_vector structure to which ppw-->pv will point at the end of the routine */
 
@@ -3358,7 +3358,7 @@ int perturb_vector_init(
 
     /* scalar field: integration indices are assigned only if fd (0) */
 
-    if ((pba->has_smg == _TRUE_) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
+    if ((pba->has_smg == _TRUE_) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
       class_define_index(ppv->index_pt_vx_smg,_TRUE_,index_pt,1); /* dynamical scalar field perturbation */
       class_define_index(ppv->index_pt_vx_prime_smg,_TRUE_,index_pt,1); /* dynamical scalar field velocity */
     }
@@ -3793,13 +3793,13 @@ int perturb_vector_init(
       if (pba->has_smg == _TRUE_) {//pass the values only if the order is correct
 
         // TODO: Check this. I am not sure I am passing the correct values
-        if ((smgqs_array[pa_old[ppw->index_ap_smgqs]] == 1) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
+        if ((qs_array_smg[pa_old[ppw->index_ap_qs_smg]] == 1) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
           ppv->y[ppv->index_pt_vx_smg] =
             ppw->pvecmetric[ppw->index_mt_vx_smg];
           ppv->y[ppv->index_pt_vx_prime_smg] =
             ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
         }
-        else if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+        else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
           ppv->y[ppv->index_pt_vx_smg] =
             ppw->pv->y[ppw->pv->index_pt_vx_smg];
           ppv->y[ppv->index_pt_vx_prime_smg] =
@@ -4376,8 +4376,8 @@ int perturb_initial_conditions(struct precision * ppr,
   double g1=0., g2=0., g3=0.;
   double vx_smg=0.,vxp_smg=0.,delta_rho_r=0.;
 
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
-  int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
 
 
   /** - for scalars */
@@ -4637,8 +4637,57 @@ int perturb_initial_conditions(struct precision * ppr,
 
       if (pba->has_smg == _TRUE_) {
 
-      
-        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+
+       //smg related variables for hi_class
+          double dt=0., Omx=0., wx=0., kin=0., bra=0., bra_p=0., dbra=0., ten=0., run=0., M2=0.,DelM2=0.;
+          double Dd=0., cs2num=0., cs2num_p=0.;
+          double l1=0.,l2=0., l3=0., l4=0.,l5=0.,l6=0.,l7=0.,l8=0.,l2_p=0., l8_p=0.;
+          double rho_tot=0., p_tot=0., p_smg=0., H=0.,Hprime=0;
+          double g1=0., g2=0., g3=0.;
+          double vx_smg=0.,vxp_smg=0.,delta_rho_r=0.;
+
+
+          // Read in the initial values of all background params: alphas, Omx, w
+
+          //perturbation to time variable
+	        dt = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
+
+
+          H = ppw->pvecback[pba->index_bg_H];
+          Hprime = ppw->pvecback[pba->index_bg_H_prime];
+          a = ppw->pvecback[pba->index_bg_a];
+	        rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
+	        p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
+	        rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
+	        p_smg = ppw->pvecback[pba->index_bg_p_smg];
+
+          wx = p_smg/rho_smg;
+	        Omx = rho_smg/pow(H,2);
+          kin = ppw->pvecback[pba->index_bg_kineticity_smg];
+          bra = ppw->pvecback[pba->index_bg_braiding_smg];
+          bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
+          dbra= bra_p/(a*H) ; //Read in log(a) diff of braiding
+          run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+          ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
+	        l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
+	        l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
+	        l3 = ppw->pvecback[pba->index_bg_lambda_3_smg];
+	        l4 = ppw->pvecback[pba->index_bg_lambda_4_smg];
+          l5 = ppw->pvecback[pba->index_bg_lambda_5_smg];
+          l6 = ppw->pvecback[pba->index_bg_lambda_6_smg];
+	        l7 = ppw->pvecback[pba->index_bg_lambda_7_smg];
+	        l8 = ppw->pvecback[pba->index_bg_lambda_8_smg];
+          l2_p = ppw->pvecback[pba->index_bg_lambda_2_prime_smg];
+          l8_p = ppw->pvecback[pba->index_bg_lambda_8_prime_smg];
+	        cs2num = ppw->pvecback[pba->index_bg_cs2num_smg];
+          cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
+	        Dd = ppw->pvecback[pba->index_bg_kinetic_D_smg];
+          M2 = ppw->pvecback[pba->index_bg_M2_smg];
+          DelM2 = M2-1.;
+
+
+        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
+
       /* Initial conditions for the *dynamical* scalar field
        * 1) gravitating_attr: Self-consistent Gravitating Attractor
        *    We allow the scalar to contribute the gravitational field during RD (can happen if Omx or alphas large at early times)
@@ -5391,7 +5440,7 @@ int perturb_initial_conditions(struct precision * ppr,
       }
 
       /* scalar field: TODO: add gauge transformations (when we add Newtonian gauge) */
-      if ((pba->has_smg == _TRUE_) && (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0)) {
+      if ((pba->has_smg == _TRUE_) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
 	      ppw->pv->y[ppw->pv->index_pt_vx_smg] += 0.;
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += 0.;
       }
@@ -5644,7 +5693,7 @@ int perturb_approximations(
                            double k,
                            double tau,
                            struct perturb_workspace * ppw,
-                           double * tau_scheme_smgqs
+                           double * tau_scheme_qs_smg
                            ) {
   /** Summary: */
 
@@ -5771,38 +5820,38 @@ int perturb_approximations(
      */
 
      if (pba->has_smg == _TRUE_){
-       if (ppt->method_smgqs == automatic) {
+       if (ppt->method_qs_smg == automatic) {
 
-         if (tau >= tau_scheme_smgqs[6]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_6;
+         if (tau >= tau_scheme_qs_smg[6]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_6;
          }
-         else if (tau >= tau_scheme_smgqs[5]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_5;
+         else if (tau >= tau_scheme_qs_smg[5]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_5;
          }
-         else if (tau >= tau_scheme_smgqs[4]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_4;
+         else if (tau >= tau_scheme_qs_smg[4]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_4;
          }
-         else if (tau >= tau_scheme_smgqs[3]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_3;
+         else if (tau >= tau_scheme_qs_smg[3]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_3;
          }
-         else if (tau >= tau_scheme_smgqs[2]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_2;
+         else if (tau >= tau_scheme_qs_smg[2]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_2;
          }
-         else if (tau >= tau_scheme_smgqs[1]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_1;
+         else if (tau >= tau_scheme_qs_smg[1]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_1;
          }
-         else if (tau >= tau_scheme_smgqs[0]) {
-           ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_0;
+         else if (tau >= tau_scheme_qs_smg[0]) {
+           ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_0;
          }
        }
-       else if ((ppt->method_smgqs == quasi_static) || (ppt->method_smgqs == quasi_static_debug)) {
-         ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_qs_1;
+       else if ((ppt->method_qs_smg == quasi_static) || (ppt->method_qs_smg == quasi_static_debug)) {
+         ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_1;
        }
-       else if ((ppt->method_smgqs == fully_dynamic) || (ppt->method_smgqs == fully_dynamic_debug)) {
-         ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_0;
+       else if ((ppt->method_qs_smg == fully_dynamic) || (ppt->method_qs_smg == fully_dynamic_debug)) {
+         ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_0;
        }
        else {
-         ppw->approx[ppw->index_ap_smgqs] = (int)smgqs_fd_0;
+         ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_0;
        }
      }
 
@@ -6169,16 +6218,16 @@ int perturb_einstein(
         D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
         cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
 
-        int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+        int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
-        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
 
           /* write here the values, as taken from the integration */
           ppw->pvecmetric[ppw->index_mt_vx_smg] = y[ppw->pv->index_pt_vx_smg];
           ppw->pvecmetric[ppw->index_mt_vx_prime_smg] = y[ppw->pv->index_pt_vx_prime_smg];
 
         }//end of fully_dynamic assignation of vx and vx'
-        else if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 1) {
+        else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 1) {
 
           g1 = cs2num*pow(k/(a*H),2) -4.*l8;
 
@@ -6243,7 +6292,7 @@ int perturb_einstein(
 
         }//end of quasi_static assignation of vx and vx'
         else {
-          printf("scalar field equation: quasi-static approximation mode %i not recognized. should be quasi_static or fully_dynamic\n",ppw->approx[ppw->index_ap_smgqs]);
+          printf("scalar field equation: quasi-static approximation mode %i not recognized. should be quasi_static or fully_dynamic\n",ppw->approx[ppw->index_ap_qs_smg]);
           return _FAILURE_;
         }
 
@@ -6305,7 +6354,7 @@ int perturb_einstein(
         ppw->pvecmetric[ppw->index_mt_alpha_prime] = (1. + ten)*y[ppw->pv->index_pt_eta] + (2. + run)*(-1.)*H*ppw->pvecmetric[ppw->index_mt_alpha]*a + (run + (-1.)*ten)*H*ppw->pvecmetric[ppw->index_mt_vx_smg]*a + (-9.)/2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_shear*pow(a,2);
 
 
-        if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
 
           /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
           ppw->pvecmetric[ppw->index_mt_vx_prime_prime_smg] = (1./2.*l2*ppw->pvecmetric[ppw->index_mt_h_prime] + (bra + 2.*run + (-2.)*ten + bra*ten)*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) + (-9.)/2.*bra*pow(H,-1)*pow(M2,-1)*ppw->delta_p*a + H*l10*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + ((bra + 2.*run + (-2.)*ten + bra*ten + l2)*(-1.)*pow(k,2) + pow(H,2)*l9*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])/D;
@@ -8570,14 +8619,14 @@ int perturb_derivs(double tau,
 
     if (pba->has_smg == _TRUE_) {
 
-        int smgqs_array[] = _VALUES_SMGQS_FLAGS_;
+        int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
 	class_test(ppt->gauge == newtonian,
                ppt->error_message,
                "asked for scalar field AND Newtonian gauge. Not yet implemented");
 
 	//make sure that second order equations are being used
-	if (smgqs_array[ppw->approx[ppw->index_ap_smgqs]] == 0) {
+	if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
 
 	  /** ---> scalar field velocity */
 	  dy[pv->index_pt_vx_smg] =  pvecmetric[ppw->index_mt_vx_prime_smg];
@@ -9587,7 +9636,7 @@ int perturb_rsa_delta_and_theta(
 
 }
 
-int perturb_test_at_k_smgqs(struct precision * ppr,
+int perturb_test_at_k_qs_smg(struct precision * ppr,
                             struct background * pba,
                             struct perturbs * ppt,
                             double k,
@@ -9625,12 +9674,12 @@ int perturb_test_at_k_smgqs(struct precision * ppr,
   short proposal;
 
   class_call(background_tau_of_z(pba,
-                                 ppr->z_fd_smgqs,
+                                 ppr->z_fd_qs_smg,
                                  &tau_fd),
              pba->error_message,
              ppt->error_message);
   //Approximation
-  if ((mass2 > pow(ppr->trigger_mass_smgqs,2)) && (rad2 > pow(ppr->trigger_rad_smgqs,2))) {
+  if ((mass2 > pow(ppr->trigger_mass_qs_smg,2)) && (rad2 > pow(ppr->trigger_rad_qs_smg,2))) {
     proposal = 1;
   }
   else {
@@ -9649,7 +9698,7 @@ int perturb_test_at_k_smgqs(struct precision * ppr,
 
 }
 
-int perturb_test_ini_smgqs(
+int perturb_test_ini_qs_smg(
                            struct precision * ppr,
                            struct background * pba,
                            struct perturbs * ppt,
@@ -9670,7 +9719,7 @@ int perturb_test_ini_smgqs(
              ppt->error_message);
 
   //Approximation for k_min
-  perturb_test_at_k_smgqs(
+  perturb_test_at_k_qs_smg(
                           ppr,
                           pba,
                           ppt,
@@ -9680,7 +9729,7 @@ int perturb_test_ini_smgqs(
                          );
 
   //Approximation for k_max
-  perturb_test_at_k_smgqs(
+  perturb_test_at_k_qs_smg(
                           ppr,
                           pba,
                           ppt,
@@ -9694,7 +9743,7 @@ int perturb_test_ini_smgqs(
         free(pvecback),
         "\n All the k modes should start evolving with the same type of initial conditions (either fully_dynamic or quasi_static).\n This is not the case at a = %e. Try to decrease a_ini_over_a_today_default.\n", ppr->a_ini_over_a_today_default);
 
-  ppt->initial_approx_smgqs = approx_k_min;
+  ppt->initial_approx_qs_smg = approx_k_min;
 
   free(pvecback);
 
@@ -9702,7 +9751,7 @@ int perturb_test_ini_smgqs(
 
 }
 
-int perturb_find_scheme_smgqs(
+int perturb_find_scheme_qs_smg(
                               struct precision * ppr,
                               struct background * pba,
                               struct perturbs * ppt,
@@ -9712,7 +9761,7 @@ int perturb_find_scheme_smgqs(
 			      double * tau_export
                               ) {
 
-  int size_sample = ppr->n_max_smgqs;
+  int size_sample = ppr->n_max_qs_smg;
 
   double * tau_sample;
   double * mass2_sample;
@@ -9729,7 +9778,7 @@ int perturb_find_scheme_smgqs(
    * Output: sample of the time, mass, decaying rate of the oscillations (slope)
    *   and radiation density.
    **/
-  sample_mass_smgqs(
+  sample_mass_qs_smg(
                     ppr,
                     pba,
                     ppt,
@@ -9752,7 +9801,7 @@ int perturb_find_scheme_smgqs(
    * Input: sample of the time, mass and radiation density
    * Output: sample of the approx scheme
    **/
-  mass_to_approx_smgqs(
+  mass_to_approx_qs_smg(
                        ppr,
                        pba,
                        ppt,
@@ -9784,7 +9833,7 @@ int perturb_find_scheme_smgqs(
    * Output: arrays containing the time, the slope and the approximation
    * scheme only when it changes
    **/
-  shorten_first_smgqs(
+  shorten_first_qs_smg(
                       tau_sample,
                       slope_sample,
                       approx_sample,
@@ -9804,7 +9853,7 @@ int perturb_find_scheme_smgqs(
    * Input: arrays with time, slope and approximation schemes
    * Output: arrays with time and approximation scheme corrected with the slope
    **/
-  correct_with_slope_smgqs(
+  correct_with_slope_qs_smg(
                            ppr,
                            pba,
                            ppt,
@@ -9830,7 +9879,7 @@ int perturb_find_scheme_smgqs(
    *   (there is the possibility that the same number in approx_array is repeated)
    * Output: shortened arrays of time and approximation
    **/
-  shorten_second_smgqs(
+  shorten_second_qs_smg(
                        tau_array,
                        approx_array,
                        size_array,
@@ -9846,7 +9895,7 @@ int perturb_find_scheme_smgqs(
    * Input: real approx_scheme and tau_scheme
    * Output: approx scheme (tau_export) adjusted to fit the implemented one
    **/
-  fit_real_scheme_smgqs(
+  fit_real_scheme_qs_smg(
                         tau_end,
                         approx_scheme,
                         tau_scheme,
@@ -9867,7 +9916,7 @@ int perturb_find_scheme_smgqs(
 }
 
 
-int sample_mass_smgqs(
+int sample_mass_qs_smg(
                       struct precision * ppr,
                       struct background * pba,
                       struct perturbs * ppt,
@@ -9883,7 +9932,7 @@ int sample_mass_smgqs(
   /* Definition of local variables */
   double mass2, mass2_p, rad2, friction, slope;
   double tau = tau_ini;
-  double delta_tau = (tau_end - tau_ini)/ppr->n_max_smgqs;
+  double delta_tau = (tau_end - tau_ini)/ppr->n_max_qs_smg;
   double * pvecback;
   int first_index_back;
   int count = 0;
@@ -9946,9 +9995,9 @@ int sample_mass_smgqs(
     rad2_sample[count] = rad2;
     slope_sample[count] = slope;
 
-    delta_tau = fabs(2.*mass2/mass2_p)/sqrt(ppr->n_min_smgqs*ppr->n_max_smgqs);
-    delta_tau = MIN(delta_tau, (tau_end - tau_ini)/ppr->n_min_smgqs);
-    delta_tau = MAX(delta_tau, (tau_end - tau_ini)/ppr->n_max_smgqs);
+    delta_tau = fabs(2.*mass2/mass2_p)/sqrt(ppr->n_min_qs_smg*ppr->n_max_qs_smg);
+    delta_tau = MIN(delta_tau, (tau_end - tau_ini)/ppr->n_min_qs_smg);
+    delta_tau = MAX(delta_tau, (tau_end - tau_ini)/ppr->n_max_qs_smg);
 
     tau += delta_tau;
     count += 1;
@@ -9964,7 +10013,7 @@ int sample_mass_smgqs(
 }
 
 
-int mass_to_approx_smgqs(struct precision * ppr,
+int mass_to_approx_qs_smg(struct precision * ppr,
                          struct background * pba,
                          struct perturbs * ppt,
                          double tau_ini,
@@ -9982,7 +10031,7 @@ int mass_to_approx_smgqs(struct precision * ppr,
   short proposal;
 
   class_call(background_tau_of_z(pba,
-                                 ppr->z_fd_smgqs,
+                                 ppr->z_fd_qs_smg,
                                  &tau_fd),
              pba->error_message,
              ppt->error_message);
@@ -9990,7 +10039,7 @@ int mass_to_approx_smgqs(struct precision * ppr,
   int i;
   for (i = 0; i < size_sample; i++) {
 
-    if ((mass2_sample[i] > pow(ppr->trigger_mass_smgqs,2)) && (rad2_sample[i] > pow(ppr->trigger_rad_smgqs,2))) {
+    if ((mass2_sample[i] > pow(ppr->trigger_mass_qs_smg,2)) && (rad2_sample[i] > pow(ppr->trigger_rad_qs_smg,2))) {
       proposal = 1;
     }
     else {
@@ -10011,7 +10060,7 @@ int mass_to_approx_smgqs(struct precision * ppr,
 }
 
 
-int shorten_first_smgqs(double * tau_sample,
+int shorten_first_qs_smg(double * tau_sample,
                         double * slope_sample,
                         int * approx_sample,
                         int size_sample,
@@ -10069,7 +10118,7 @@ int shorten_first_smgqs(double * tau_sample,
 }
 
 
-int correct_with_slope_smgqs(struct precision * ppr,
+int correct_with_slope_qs_smg(struct precision * ppr,
                              struct background * pba,
                              struct perturbs * ppt,
                              double tau_ini,
@@ -10097,7 +10146,7 @@ int correct_with_slope_smgqs(struct precision * ppr,
              pba->error_message,
              ppt->error_message);
 
-      double a_final = pvecback[pba->index_bg_a] * pow(ppr->eps_s_smgqs, -1./slope_array[i]);
+      double a_final = pvecback[pba->index_bg_a] * pow(ppr->eps_s_qs_smg, -1./slope_array[i]);
       double tau_final;
 
       class_call(background_tau_of_z(pba,
@@ -10133,7 +10182,7 @@ int correct_with_slope_smgqs(struct precision * ppr,
 }
 
 
-int shorten_second_smgqs(double * tau_array,
+int shorten_second_qs_smg(double * tau_array,
                          int * approx_array,
                          int size_array,
                          double * tau_scheme,
@@ -10159,7 +10208,7 @@ int shorten_second_smgqs(double * tau_array,
 }
 
 
-int fit_real_scheme_smgqs(
+int fit_real_scheme_qs_smg(
                           double tau_end,
                           int * approx_scheme,
                           double * tau_scheme,
@@ -10168,7 +10217,7 @@ int fit_real_scheme_smgqs(
                           ) {
 
   /* Definition of local variables */
-  int implemented_scheme[] = _VALUES_SMGQS_FLAGS_;
+  int implemented_scheme[] = _VALUES_QS_SMG_FLAGS_;
   int size_implemented_scheme = sizeof(implemented_scheme)/sizeof(int);
 
   int i, j;

@@ -15,7 +15,7 @@
 #ifndef __COMMON__
 #define __COMMON__
 
-#define _VERSION_ "v2.7.1"
+#define _VERSION_ "v2.7.2"
 /* @cond INCLUDE_WITH_DOXYGEN */
 
 #define _TRUE_ 1 /**< integer associated to true statement */
@@ -624,12 +624,12 @@ struct precision
    */
   double neglect_CMB_sources_below_visibility;
 
-  int n_min_smgqs; /**< minimum number of steps used to sample the quantities in the quasi-static approximation (smgqs) */
-  int n_max_smgqs; /**< maximum number of steps used to sample the quantities in the quasi-static approximation (smgqs) */
-  double z_fd_smgqs; /**< minimum redshift after which the user requires the full-dynamic evolution */
-  double trigger_mass_smgqs; /**< if the mass is above this trigger the quasi-static approximation is switched on */
-  double trigger_rad_smgqs; /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
-  double eps_s_smgqs; /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
+  int n_min_qs_smg; /**< minimum number of steps used to sample the quantities in the quasi-static approximation (qs_smg) */
+  int n_max_qs_smg; /**< maximum number of steps used to sample the quantities in the quasi-static approximation (qs_smg) */
+  double z_fd_qs_smg; /**< minimum redshift after which the user requires the full-dynamic evolution */
+  double trigger_mass_qs_smg; /**< if the mass is above this trigger the quasi-static approximation is switched on */
+  double trigger_rad_qs_smg; /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
+  double eps_s_qs_smg; /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
   short get_h_from_trace_smg; /* Get h' from Einstein trace rather than 00 */
 
