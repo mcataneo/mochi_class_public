@@ -10584,17 +10584,18 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
         /* Solutions assuming the alphas are small, i.e. Vx does not gravitate but moves
          * on an attractor provided by collapsing radiation. (w!=1/3 terms included properly here!)
         // We have already tested for an RD tachyon at z=pert_ic_ini_z_ref_smg and it wasn't there.
-         * We can thus assume that h has the standard tau^2 solution and solve the Vx e.o.m. assuming C1=C2=0.
+         * We can thus assume that h has the standard solution (tau^2 for adiabatic)
+         * and solve the Vx e.o.m. assuming C1=C2=0.
          *
-	       *   Vx = C1 tau^n1 + C2 tau^n2 + A k^2 tau^3
+	       *   Vx = C1 tau^n1 + C2 tau^n2 + A k^2 tau^n
          *
          * This requires that if the tachyon has appeared at some later time, the system will be moving into it slowly.
          *
-         * We do not correct any other fields, since it woudl be inconsistent to include them
+         * We do not correct any other fields, since it would be inconsistent to include them
          * here, but not in the calculation of the exponent. If this is importnant, use gravitating_attr ICs.
          *
 	       *
-         * The on-attractor solution for the scalar velocity Vx is Vx = amplitude * k^2 tau^3 * ppr->curvature_ini
+         * The on-attractor solution for the scalar velocity Vx is Vx = amplitude * k^2 tau^n * ppr->curvature_ini
          * with amplitude = -B3/(6 + 3*B1 + B2).
          */
 
@@ -10633,8 +10634,8 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
 
         B3_smg = B3num_smg/B3denom_smg;
     
-        *amplitude = -B3_smg/(6. + 3.*B1_smg + B2_smg);
-    
+        *amplitude = -(B3_smg/(B1_smg + B2_smg + nexpo + B1_smg*nexpo + pow(nexpo,2)));
+
         return _SUCCESS_;
 
 }
