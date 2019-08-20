@@ -125,6 +125,8 @@ struct background
   short attractor_ic_smg; /** < whether the scalar field has attractor initial conditions */
 
   double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
+  double phi_0_smg; /** < final value of phi  */
+  double M2_0_smg; /** < final value of M_*^2  */
 
   double cs2_safe_smg; /**< threshold for the speed of sound to consider it negative */
   double D_safe_smg; /* threshold to consider the kinetic term of scalars negative in the stability check */

@@ -2414,6 +2414,7 @@ int background_solve(
       
       if (pba->field_evolution_smg == _TRUE_){
           pba->xi_0_smg = pvecback_integration[pba->index_bi_phi_prime_smg]*pvecback[pba->index_bg_H]/pow(pba->H0,2);
+          pba->phi_0_smg = pvecback_integration[pba->index_bi_phi_smg];
       }
       
       background_gravity_parameters(pba);
@@ -3821,14 +3822,14 @@ int background_gravity_parameters(
 
    case galileon:
      printf("Modified gravity: covariant Galileon with parameters: \n");
-     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
+     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n    c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
 	    pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0], pba->xi_0_smg);
      break;
 
    case brans_dicke:
      printf("Modified gravity: Brans Dicke with parameters: \n");
-     printf(" -> Lambda = %g, w = %g, phi_ini = %g, phi_prime_ini = %g \n",
-	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
+     printf(" -> Lambda = %g, omega_BD = %g, \n    phi_ini = %g (phi_0 = %g), phi_prime_ini = %g \n",
+	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->phi_0_smg,pba->parameters_smg[3]);
      break;
 
     case nkgb:

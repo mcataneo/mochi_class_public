@@ -1708,7 +1708,20 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 		 errmsg,
 		 "You asked to tune M_pl(today) to %e but currently this is only allowed for Brans-Dicke\n",
 		 pba->M_pl_today_smg);
-//
+
+      class_call(parser_read_string(pfc,"normalize_G_NR",
+				  &string1,
+				  &flag1,
+				  errmsg),
+		errmsg,
+		errmsg);
+
+    if (flag1 == _TRUE_){
+      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+          double omega_BD = pba->parameters_smg[1];
+          pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
+      }
+    }
 
       class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
 //       printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
