@@ -5258,6 +5258,27 @@ int perturb_initial_conditions(struct precision * ppr,
 
       eta = -ppr->entropy_ini*fracb*om*tau*(1./6.-om*tau/16.);
 
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr))
+      {
+          
+        nexpo=1;
+
+        coeff_isocurv_smg = 2*ppr->entropy_ini*fracb*om;
+
+        calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
+                        &amplitude);
+       
+        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+
+        if(ppt->perturbations_verbose > 5)
+        {
+          printf("Mode k=%e: BI mode ext_field_attr IC for smg: ",k);
+          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+        }
+      }
+
     }
 
     /** - --> (b.4.) Neutrino density Isocurvature */
