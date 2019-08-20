@@ -4377,6 +4377,8 @@ int perturb_initial_conditions(struct precision * ppr,
   double vx_smg=0.,vxp_smg=0.,delta_rho_r=0.;
 
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+  double coeff_isocurv_smg;
+  int nexpo;
 
 
 
@@ -4467,9 +4469,6 @@ int perturb_initial_conditions(struct precision * ppr,
     */
 
   
-
-    /*  pre-load variables for smg corrections
-        they are used for both adiabatic and isocurvature modes, so do it once here */
 
     if (pba->has_smg == _TRUE_) {
           
@@ -4607,29 +4606,26 @@ int perturb_initial_conditions(struct precision * ppr,
             a*a/ppw->pvecback[pba->index_bg_phi_prime_scf]*( - ktau_two/4.*(1.+1./3.)*(4.-3.*1.)/(4.-6.*(1/3.)+3.*1.)*ppw->pvecback[pba->index_bg_rho_scf] - ppw->pvecback[pba->index_bg_dV_scf]*ppw->pv->y[ppw->pv->index_pt_phi_scf])* ppr->curvature_ini * s2_squared; */
       }
 
-        /* all relativistic relics: ur, early ncdm, dr */
+      /* all relativistic relics: ur, early ncdm, dr */
 
-        if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)) {
+      if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)) {
 
-          delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* density of ultra-relativistic neutrinos/relics */
+        delta_ur = ppw->pv->y[ppw->pv->index_pt_delta_g]; /* density of ultra-relativistic neutrinos/relics */
 
-          theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; /* velocity of ultra-relativistic neutrinos/relics */ //TBC
+        theta_ur = - k*ktau_three/36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini * s2_squared; /* velocity of ultra-relativistic neutrinos/relics */ //TBC
 
-          shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
+        shear_ur = ktau_two/(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
 
-          l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
+        l3_ur = ktau_three*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
 
-          if (pba->has_dr == _TRUE_) delta_dr = delta_ur;
+        if (pba->has_dr == _TRUE_) delta_dr = delta_ur;
 
-        }
+      }
 
-        /* synchronous metric perturbation eta */
-        //eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)) /  s2_squared;
-        //eta = ppr->curvature_ini * s2_squared * (1.-ktau_two/12./(15.+4.*fracnu)*(15.*s2_squared-10.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
-        eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
-
-
-
+      /* synchronous metric perturbation eta */
+      //eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om)) /  s2_squared;
+      //eta = ppr->curvature_ini * s2_squared * (1.-ktau_two/12./(15.+4.*fracnu)*(15.*s2_squared-10.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
+      eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
 
       if (pba->has_smg == _TRUE_) {
 
@@ -5029,12 +5025,7 @@ int perturb_initial_conditions(struct precision * ppr,
           {
 
             
-              // Build up B_i terms by term, and add each order in alpha separately, to avoid cancellations.
-              // Exact for both propto_omega and constant_alphas (provided they are very small).
-
-
-
-              int nexpo=2;
+              nexpo=2; // h = C tau^2
 
           
               calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
@@ -5167,9 +5158,9 @@ int perturb_initial_conditions(struct precision * ppr,
     /*  SMG and isocurvature:
         *   if we have "zero" or "single_clock" ICs for SMG, then  leave vx 
             and vxp at the initalisation value of 0
-            and let it find a propert solution.
-        *   grav_attr isocurvature would backreact and has not been implemented. 
-            We have already failed earlier.
+            and let it find a proper solution.
+        *   grav_attr isocurvature would backreact and has NOT been implemented. 
+            We have already failed earlier if it is asked for.
 
         *   Only need to implement ext_field_attr.
             We assume that there is no backreaction of vx onto the other species
@@ -5177,6 +5168,17 @@ int perturb_initial_conditions(struct precision * ppr,
             However, vx is determined by a particular solution of the 
             evolution equation with a source h scaling with a different exponent 
             for each isocurvature mode type 
+
+            We only take the leading-order power-law in om
+            since we start very deep in RD
+
+            The calc_extfld_ampl function produces the amplitude for v_X
+            on the assumption that the normalisation is  h = 1/2 * tau^n 
+            We correct for this normalisation by using coeff_isocurv_smg
+            defining is according to the normalisation in BMT99
+            adjusted for the CLASS redefinition.
+
+
     */
 
 
@@ -5206,20 +5208,25 @@ int perturb_initial_conditions(struct precision * ppr,
 
       eta = -ppr->entropy_ini*fraccdm*om*tau*(1./6.-om*tau/16.);
 
-      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)){
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr))
+      {
           
-        int nexpo=2;
+        nexpo=1;
+
+        coeff_isocurv_smg = 2*ppr->entropy_ini*fraccdm*om;
 
         calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
                         &amplitude);
-        printf("the tude is %e\n",amplitude); //ILS
+       
+        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*ktau_two*tau*(ppr->curvature_ini);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = nexpo*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
-
-
-
+        if(ppt->perturbations_verbose > 5)
+        {
+          printf("Mode k=%e: CDI mode ext_field_attr IC for smg: ",k);
+          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+        }
       }
     
     
@@ -5309,9 +5316,11 @@ int perturb_initial_conditions(struct precision * ppr,
       shear_ur = ppr->entropy_ini/(4.*fracnu+15.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */
 
       eta = ppr->entropy_ini*fracnu*k*tau*(-1./(4.*fracnu+5.) + (-3./64.*fracb/fracg+15./4./(4.*fracnu+15.)/(4.*fracnu+5.)*om*tau)); /* small diff wrt camb */
-
+     
+     
+     
     }
-
+  
     /** - (c) If the needed gauge is really the synchronous gauge, we need to affect the previously computed value of eta to the actual variable eta */
 
     if (ppt->gauge == synchronous) {
@@ -10624,9 +10633,9 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
         B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
         B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
 
-	      B3num_smg = ((-(((-2 + bra) * bra + 2 * l2) *
-                           ((-2 + bra) * l1 - 4 * l3 + 2 * Dd * (-1 + nexpo))) +
-                         cs2num * (-2 * (-2 + bra) * kin - 8 * l3 + 4 * Dd * (-1 + nexpo))) *
+	      B3num_smg = ((-(((-2. + bra) * bra + 2 * l2) *
+                           ((-2. + bra) * l1 - 4 * l3 + 2 * Dd * (-1. + nexpo))) +
+                         cs2num * (-2 * (-2. + bra) * kin - 8 * l3 + 4 * Dd * (-1. + nexpo))) *
                         nexpo) /
                        ((2. * Omx)*(kin + l1));
 
