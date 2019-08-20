@@ -1454,7 +1454,7 @@ int input_read_parameters(
 	  double * input_params_gal; //dummy allocation vector
 
 	  double xi, c2, c3, c4, c5;
-	  double phi0 = 0;
+	  double phi0 = 0, c1 = 0;
 
 	  /*2) cubic Galileon in the attractor
 	    * Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
@@ -1462,7 +1462,7 @@ int input_read_parameters(
 	  if (strcmp(string2,"cubic") == 0) {
 
 	    c2 = -1.;
-	    c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
+	    c3 = -sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
 	    xi = c2/6./c3;
 	    c4 = 0;
 	    c5 = 0;
@@ -1491,16 +1491,23 @@ int input_read_parameters(
 	    c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
 
 	  }//end of quintic
+	  else {
+          class_test(flag3 == _TRUE_,
+		 errmsg,
+		 "Galileon: you specified a gravity_submodel that could not be identified. \n Options are: cubic, quartic, quintic");
+    };
 
 	  /* Set parameters for submodels */
 	  pba->parameters_smg[0] = xi;
-	  pba->parameters_smg[1] = phi0;
+	  pba->parameters_smg[1] = c1;
 	  pba->parameters_smg[2] = c2;
 	  pba->parameters_smg[3] = c3;
 	  pba->parameters_smg[4] = c4;
 	  pba->parameters_smg[5] = c5;
+      pba->parameters_smg[6] = phi0;
 
 	}//end of submodels
+	
 
 	/* default tuning index is 3 */
 	if (has_tuning_index_smg == _FALSE_){

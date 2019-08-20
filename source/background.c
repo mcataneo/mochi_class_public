@@ -1762,11 +1762,6 @@ int background_solve(
   while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
 
     tau_start = tau_end;
-    
-    
-//        if (pvecback_integration[pba->index_bi_a]>.3)
-//          printf("a=%.2f \n",pvecback_integration[pba->index_bi_a]);
-//      printf(" .");
 
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
@@ -1810,10 +1805,7 @@ int background_solve(
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
     
-//     printf("* \n");
-
   }
-//    printf("x\n");
 
   /** - save last data in growTable with gt_add() */
   class_call(gt_add(&gTable,_GT_END_,(void *) pvecback_integration,sizeof(double)*pba->bi_size),
@@ -2419,6 +2411,11 @@ int background_solve(
       if (pba->background_verbose > 3) {
 	printf("Minimal stability values: cs2 = %g, ct2 = %g, D = %g, M2 = %g \n",pba->min_cs2_smg,pba->min_ct2_smg,pba->min_D_smg,pba->min_M2_smg);
       }
+      
+      if (pba->field_evolution_smg == _TRUE_){
+          pba->xi_0_smg = pvecback_integration[pba->index_bi_phi_prime_smg]*pvecback[pba->index_bg_H]/pow(pba->H0,2);
+      }
+      
       background_gravity_parameters(pba);
 
     }
@@ -3879,6 +3876,9 @@ int background_gravity_parameters(
      printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
+   
+   default:
+       printf("Modified gravity: output not implemented in background_gravity_parameters() \n");
 
 
   }
@@ -3907,6 +3907,9 @@ int background_gravity_parameters(
       printf("Parameterized model with variable EoS + Early DE \n");
       printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
+      
+      default:
+       printf("Parameterized model: expansion hisotry output not implemented in background_gravity_parameters() \n");
 
     }
 
