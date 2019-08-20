@@ -5056,7 +5056,7 @@ int perturb_initial_conditions(struct precision * ppr,
           vxp_smg = ppw->pv->y[ppw->pv->index_pt_vx_prime_smg];
           delta_rho_r = rho_r * ppw->pv->y[ppw->pv->index_pt_delta_g];
 
-        }//end adiabatic mode dynamical ICs for smg 
+        } //end adiabatic mode dynamical ICs for smg 
         
         else 
         //TODO: Need to set up QS ICs for isocurvature modes. Probably move this to an external function //ILS
@@ -10576,7 +10576,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   return _SUCCESS_;
 }
 
-int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2, 
+int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run, double ten, double DelM2, 
                         double Omx, double wx, double l1, double l2, double l3, double l4,
                         double l5, double l6,double l7,double l8, double cs2num, double Dd, 
                         double * amplitude){
@@ -10604,7 +10604,7 @@ int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, do
  
   // Calculate the amplitude of v_x in ext_field_attr ICs, both for adiabatic and isocurvature
   // Since the scalar does not backreact, the different Ad and ISOcurv solutions differ
-  // only by the exponent in h, h = C*tau^n
+  // only by the exponent in h, h = C*tau^n. The only n-dependent terms are in B3 and amplitude
 
  
         double B1_smg, B2_smg, B3_smg, B3num_smg, B3denom_smg;
@@ -10623,22 +10623,18 @@ int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, do
         B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
         B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
 
-	      B3num_smg = - 6.*(1 + wx) -(2.*(bra + dbra + 4.*DelM2 + 4.*run - 4.*ten))/Omx;
-        B3num_smg += -((2.*dbra*DelM2 + 2*pow(run,2) + dbra*ten - 4*DelM2*ten - 2*run*(-4*DelM2 + ten) +
-                      bra*(run + 2.*(DelM2 + ten)))/Omx) + (-(bra*(2. - 6.*wx)) -
-                      6.*ten*(1. + wx) - 4.*DelM2*(-1. + 3.*wx))/2.;
-        B3num_smg += -((DelM2*(2.*pow(run,2) + dbra*ten - 2.*run*ten) + bra*(2.*DelM2*ten + run*(DelM2 + ten)))/Omx) +
-                      ((-2.*DelM2*ten + bra*(2.*DelM2 + ten))*(-1. + 3.*wx))/2.;
-        B3num_smg +=  -((bra*DelM2*run*ten)/Omx) + (bra*DelM2*ten*(-1. + 3.*wx))/2.;
+	      B3num_smg = ((-(((-2 + bra) * bra + 2 * l2) *
+                           ((-2 + bra) * l1 - 4 * l3 + 2 * Dd * (-1 + nexpo))) +
+                         cs2num * (-2 * (-2 + bra) * kin - 8 * l3 + 4 * Dd * (-1 + nexpo))) *
+                        nexpo) /
+                       ((2. * Omx)*(kin + l1));
 
-        B3denom_smg = (4*kin)/Omx;
-        B3denom_smg += (-6*bra*(run - ten) + 2*kin*(2*DelM2 + ten))/Omx;
-        B3denom_smg += (2*DelM2*(-3*bra*(run - ten) + kin*ten))/Omx;
+        B3denom_smg = 4*(Dd/Omx)*(-2 + bra);
 
         B3_smg = B3num_smg/B3denom_smg;
-
+    
         *amplitude = -B3_smg/(6. + 3.*B1_smg + B2_smg);
-
+    
         return _SUCCESS_;
 
 }
