@@ -3782,9 +3782,9 @@ int background_gravity_functions(
   }
   
     /* Check required conditions for the gravity_models. */
-  if ( (pba->skip_stability_tests_smg == _FALSE_) && (pba->parameters_tuned_smg == _TRUE_) ){
+  if ( (pba->skip_stability_tests_smg == _FALSE_) && (pba->parameters_tuned_smg == _TRUE_) && (pba->Omega_smg_debug == 0) ){
       double a = pvecback_B[pba->index_bi_a];
-      if (pba->smg_is_quintessence == _TRUE_){
+      if (pba->is_quintessence_smg == _TRUE_){
           /*  Check that w is not lower than w < -1 for quintessence */
          class_test( (pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg] < -(1 + pba->quintessence_w_safe_smg)),
              pba->error_message,

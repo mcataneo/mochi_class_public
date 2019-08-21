@@ -119,6 +119,7 @@ struct background
 
   short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
   short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
+  short is_quintessence_smg; /* is the scalar field from a quintessence model?*/
 
   double Omega0_smg; /**< \f$ \Omega_{0_\phi} \f$ : scalar field energy fraction */
   double Omega_smg_debug; /**< debug value when no tuning is wanted */
@@ -418,9 +419,7 @@ struct background
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
   short has_smg;       /**< presence of scalar field? */
   short has_curvature; /**< presence of global spatial curvature? */
-
-  short smg_is_tuned; /**< is the scalar field tuned to give Omega0_smg? */
-  short smg_is_quintessence; /**< is the scalar field from a quintessence
+  
   //@}
 
   /**

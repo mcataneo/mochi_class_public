@@ -1000,6 +1000,14 @@ int input_read_parameters(
   class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
              errmsg,
              errmsg);
+  /* Look for Omega_smg_debug if Omega_smg is not specified */
+  if (flag4 == _FALSE_){
+      class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag4 == _TRUE_)
+          pba->Omega_smg_debug = param4;
+  }
 
   class_test((flag3 == _TRUE_) && (flag4 == _TRUE_),
              errmsg,
@@ -1069,17 +1077,6 @@ int input_read_parameters(
     // Fill up with scalar field
     pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
     if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
-  }
-
-  if (flag3 == _FALSE_){
-    class_call(parser_read_double(pfc,"Omega_smg_debug",&param3,&flag3,errmsg),
-             errmsg,
-             errmsg);
-    //rewrite before doing the test
-    if (flag3 == _TRUE_){
-      pba->Omega_smg_debug = param3;
-//       pba->Omega0_smg = pba->Omega_smg_debug; \\TODO: check if this is needed (it wasn't in hi_class devel)
-    }
   }
 
   /*
@@ -1286,14 +1283,14 @@ int input_read_parameters(
     if (strncmp("quintessence", string1, strlen("quintessence")) == 0){
           // Check if gravity_model has quintessence as prefix.
           // Add here all variables common to quintessence.
-          pba->smg_is_quintessence = _TRUE_;
+          pba->is_quintessence_smg = _TRUE_;
           class_read_double("quintessence_w_safe_smg", pba->quintessence_w_safe_smg);
       }
 
     if (strcmp(string1,"quintessence_monomial") == 0) {
 	pba->gravity_model_smg = quintessence_monomial;
 	pba->field_evolution_smg = _TRUE_;
-    pba->smg_is_quintessence = _TRUE_;
+    pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
 	
 	pba->parameters_size_smg = 4;
@@ -1358,7 +1355,7 @@ int input_read_parameters(
     if (strcmp(string1,"quintessence_tracker") == 0) {
 	pba->gravity_model_smg = quintessence_tracker;
 	pba->field_evolution_smg = _TRUE_;
-    pba->smg_is_quintessence = _TRUE_;
+    pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
 	
 	pba->parameters_size_smg = 6;
@@ -3680,9 +3677,7 @@ int input_default_params(
 
   pba->min_bra_smg = 4.;
   pba->max_bra_smg = 0.;
-
-  pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */
-  pba->initial_conditions_set_smg = _FALSE_;
+  pba->quintessence_w_safe_smg = 0;
 
   pba->parameters_smg = NULL;
   pba->parameters_size_smg = 0;
@@ -3708,6 +3703,9 @@ int input_default_params(
   pba->has_smg= _FALSE_;
   pba->parameters_tuned_smg = _FALSE_;
   pba->shooting_failed = _FALSE_;
+  pba->is_quintessence_smg = _FALSE_;
+  pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */
+  pba->initial_conditions_set_smg = _FALSE_;
 
   /** - thermodynamics structure */
 
