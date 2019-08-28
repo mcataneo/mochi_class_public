@@ -2607,6 +2607,12 @@ int background_initial_conditions(
 
 	break;
 
+      case alpha_attractor_canonical:
+    // Note: we are using as input parameters f = phi/sqrt(alpha)
+	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[1]*sqrt(pba->parameters_smg[2]);
+	  pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[0]*pba->H0;
+	break;
+
 
       /* Attractor IC: H\dot\phi = constant = H_0^2 \xi
        * phi_prime = xi*a*H_0^2/H (\dot\phi = phi_prime/a)
@@ -3343,6 +3349,31 @@ int background_gravity_functions(
       G2_X = 1.;
       G2_phi = -V_phi;
     }
+
+    else if (pba->gravity_model_smg == alpha_attractor_canonical) {
+        // V written as in eq. 12 of arXiv:1505.00815 in CLASS units with canonical field.
+
+      double alpha = pba->parameters_smg[2];
+      double c2 = pow(pba->parameters_smg[3], 2);
+      double p = pba->parameters_smg[4];
+      double n = pba->parameters_smg[5];
+      double V, V_phi;
+      double x = tanh(phi/(sqrt(6*alpha)));
+      double y = sinh(sqrt(2/(3*alpha))*phi);
+      V = alpha* c2 * pow(x,p)/pow(1+x, 2*n);
+
+      V_phi = sqrt(2*alpha/3)*c2* pow(x,p)* (p +(p-2*n)*x)/(y * pow(1+x,2*n +1));
+      
+      G2 = X - V;
+      G2_X = 1.;
+      G2_phi = -V_phi;
+
+     class_test((phi < 0. ) && ( phi_prime > 0 ) 
+             && (pba->parameters_tuned_smg == _TRUE_)
+             && (pba->skip_stability_tests_smg == _FALSE_),
+             pba->error_message,
+             "The model has started oscillating with first minimum at a = %e. Since <w> = 0 yields matter, it cannot make the universe expand accelerately.", a);
+    }
     
     else if(pba->gravity_model_smg == galileon){//TODO: change name with ccc_galileon
 
@@ -3818,6 +3849,14 @@ int background_gravity_parameters(
      printf("-> K_ini = %g, P_ini = %g, V0 = %g, V0* = %g, n = %g, m = %g, lambda=%g  \n",
 	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[2]*pow(pba->H0/pba->h,2),
 	    pba->parameters_smg[2], pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]);
+     break;
+
+   case alpha_attractor_canonical:
+     printf("Modified gravity: alpha_attractor_canonical with parameters: \n");
+     printf("-> f = phi/sqrt(alpha) \n");
+     printf("-> phi_prime_ini = %g, f_ini = %g, alpha = %g, c = %g, p = %g, n = %g \n",
+	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[2],
+	    pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]); 
      break;
 
    case galileon:
