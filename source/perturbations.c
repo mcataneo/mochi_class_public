@@ -2765,7 +2765,7 @@ int perturb_prepare_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "V_x_smg", pba->has_smg);
       class_store_columntitle(ppt->scalar_titles, "V_x_prime_smg", pba->has_smg);
 
-      class_store_columntitle(ppt->scalar_titles,"h_prime",pba->has_smg);   //ILSextraout
+      class_store_columntitle(ppt->scalar_titles,"h_prime",pba->has_smg); 
       class_store_columntitle(ppt->scalar_titles,"eta",pba->has_smg);
 
       ppt->number_of_scalar_titles =
@@ -4371,7 +4371,7 @@ int perturb_initial_conditions(struct precision * ppr,
   double dt=0., Omx=0., wx=0., kin=0., bra=0., bra_p=0., dbra=0., ten=0., run=0., M2=0.,DelM2=0.;
   double Dd=0., cs2num=0., cs2num_p=0.;
   double l1=0.,l2=0., l3=0., l4=0.,l5=0.,l6=0.,l7=0.,l8=0.,l2_p=0., l8_p=0.;
-  double B1_smg, B2_smg, B3_smg, B3num_smg, B3denom_smg, amplitude; //ILS
+  double B1_smg, B2_smg, B3_smg, B3num_smg, B3denom_smg, amplitude; 
   double rho_smg=0., rho_tot=0., p_tot=0., p_smg=0., H=0.,Hprime=0;
   double g1=0., g2=0., g3=0.;
   double vx_smg=0.,vxp_smg=0.,delta_rho_r=0.;
@@ -4979,7 +4979,7 @@ int perturb_initial_conditions(struct precision * ppr,
               // /(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om) * ppr->curvature_ini;//TBC /s2_squared; /* shear of ultra-relativistic neutrinos/relics */  //TBC:0
 
               //TODO: needs to be modified?
-              l3_ur = ktau_three/A1_eta_smg*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//TBC
+              l3_ur = ktau_three/A1_eta_smg*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//ILS
 
               if(ppt->perturbations_verbose > 8)
                   printf("       fracnu = %e, A_v_nu = %e (%e), A_sigma_nu = %e (%e), th_ur/th_g = %e, Vx/vm = %e\n", fracnu, A_v_nu_smg,
@@ -5050,7 +5050,6 @@ int perturb_initial_conditions(struct precision * ppr,
         } //end adiabatic mode dynamical ICs for smg 
         
         else 
-        //TODO: Need to set up QS ICs for isocurvature modes. Probably move this to an external function //ILS
         {
           //  Adiabatic mode Quasi-Static initial conditions
 
@@ -5176,7 +5175,13 @@ int perturb_initial_conditions(struct precision * ppr,
             on the assumption that the normalisation is  h = 1/2 * tau^n 
             We correct for this normalisation by using coeff_isocurv_smg
             defining is according to the normalisation in BMT99
-            adjusted for the CLASS redefinition.
+            adjusted for the CLASS redefinition. However, for NID and NIV, 
+            we need to find the leading order term in h which is not 
+            from fracb
+
+    TODO: In principle should also test if sg is initialised as QS whether gravity is modified already, just like 
+            we do for adiabatic modes.
+    TODO: Gravitating attractor isocurvature modes.
 
 
     */
@@ -5205,20 +5210,23 @@ int perturb_initial_conditions(struct precision * ppr,
         shear_ur = -ppr->entropy_ini*fraccdm*ktau_two*tau*om/6./(2.*fracnu+15.);
 
       }
-
       eta = -ppr->entropy_ini*fraccdm*om*tau*(1./6.-om*tau/16.);
 
-      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr))
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0))
+      //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
       {
           
-        nexpo=1;
+        nexpo= 1;
 
-        coeff_isocurv_smg = 2*ppr->entropy_ini*fraccdm*om;
+        coeff_isocurv_smg = ppr->entropy_ini*fraccdm*om;
 
-        calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+        class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
-                        &amplitude);
-       
+                        &amplitude),
+                  ppt->error_message,ppt->error_message);
+        amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
+        
+
         ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
 
@@ -5258,20 +5266,26 @@ int perturb_initial_conditions(struct precision * ppr,
 
       eta = -ppr->entropy_ini*fracb*om*tau*(1./6.-om*tau/16.);
 
-      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr))
-      {
-          
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0))
+      //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
+      {    
         nexpo=1;
 
-        coeff_isocurv_smg = 2*ppr->entropy_ini*fracb*om;
+     
 
-        calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+        coeff_isocurv_smg = ppr->entropy_ini*fracb*om;
+
+        class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
-                        &amplitude);
-       
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+                        &amplitude),
+                  ppt->error_message,ppt->error_message);
+        amplitude *=2;  //calc_extfld_ampl assumes h normalised to 1/2.
+
+        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1); 
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
 
+        
+        
         if(ppt->perturbations_verbose > 5)
         {
           printf("Mode k=%e: BI mode ext_field_attr IC for smg: ",k);
@@ -5283,7 +5297,9 @@ int perturb_initial_conditions(struct precision * ppr,
 
     /** - --> (b.4.) Neutrino density Isocurvature */
 
-    if ((ppt->has_nid == _TRUE_) && (index_ic == ppt->index_ic_nid)) {
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0))
+      //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
+      {
 
       class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_),
                  ppt->error_message,
@@ -5307,26 +5323,44 @@ int perturb_initial_conditions(struct precision * ppr,
 
       eta = -ppr->entropy_ini*fracnu/(4.*fracnu+15.)/6.*ktau_two;
 
-      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr))
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0))
+      //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
       {
         // Dominant higher-order correction to BMT99 in the limit fracb*om*tau<<(k*tau)^2: 
         // h = -fracnu/(36*(15+4*fracnu)) * (k*tau)^4
 
-        nexpo=4;
+        nexpo=3;
+        
+        coeff_isocurv_smg = ppr->entropy_ini * fracb*fracnu/fracg/10.*k*k * om/4;
 
-        coeff_isocurv_smg = -2*ppr->entropy_ini * fracnu/(36*(15+4*fracnu))*k*k*k*k;
-
-        calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+        class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
-                        &amplitude);
-       
+                        &amplitude),
+                  ppt->error_message,ppt->error_message);
+        amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
+        
         ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+
+        nexpo=4; //next-order term (tau^4) similar in size for h as tau^3 if start late
+        
+        coeff_isocurv_smg = ppr->entropy_ini * k*k*fracnu/1152.*
+                            (-32.*k*k/(15.+4.*fracnu)- 9.*fracb*(fracb+fracg)*om*om/fracg/fracg);
+
+        class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
+                        &amplitude),
+                  ppt->error_message,ppt->error_message);
+        amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
+        
+        ppw->pv->y[ppw->pv->index_pt_vx_smg]  += amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+
 
         if(ppt->perturbations_verbose > 5)
         {
           printf("Mode k=%e: NID mode ext_field_attr IC for smg: ",k);
-          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+          printf(" Vx = %e, Vx'= %e \n", ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
         }
       }
     }
@@ -5356,11 +5390,49 @@ int perturb_initial_conditions(struct precision * ppr,
 
       delta_ur = -ppr->entropy_ini*k*tau*(1.+3./16.*fracb*fracnu/fracg*om*tau);  /* small diff wrt camb */
       theta_ur = ppr->entropy_ini*3./4.*k*(1. - 1./6.*ktau_two*(4.*fracnu+9.)/(4.*fracnu+5.));
-      shear_ur = ppr->entropy_ini/(4.*fracnu+15.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */
+      //shear_ur = ppr->entropy_ini/(4.*fracnu+15.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */ //Original CLASS
+      shear_ur = ppr->entropy_ini/(4.*fracnu+5.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */ //ILS corrected 15->5 in the first denom
+
 
       eta = ppr->entropy_ini*fracnu*k*tau*(-1./(4.*fracnu+5.) + (-3./64.*fracb/fracg+15./4./(4.*fracnu+15.)/(4.*fracnu+5.)*om*tau)); /* small diff wrt camb */
      
-     
+      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0))
+      //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
+      {
+    
+        nexpo=2;
+        
+        coeff_isocurv_smg = ppr->entropy_ini * 9./2. *k*k*k* fracnu*fracb/fracg/om; 
+
+        class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
+                        &amplitude),
+                  ppt->error_message,ppt->error_message);
+        amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
+        
+        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+
+        nexpo=3; //next-order term (tau^3) similar in size for h as tau^2 if start late
+        
+        coeff_isocurv_smg = ppr->entropy_ini * 1./30.*k*k*k* fracnu*
+                            ( -(9*fracb*(3*fracb+5*fracg)/fracg/fracg)-128*k*k/(5.+4.*fracnu)/om/om );
+
+        class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, 
+                        &amplitude),
+                  ppt->error_message,ppt->error_message);
+        amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
+        
+        ppw->pv->y[ppw->pv->index_pt_vx_smg]  += amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+
+        if(ppt->perturbations_verbose > 5)
+        {
+          printf("Mode k=%e: NIV mode ext_field_attr IC for smg: ",k);
+          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+        }
+      }
      
     }
   
@@ -7583,7 +7655,7 @@ int perturb_print_variables(double tau,
   double delta_rho_scf=0., rho_plus_p_theta_scf=0.;
   double delta_scf=0., theta_scf=0.;
   double V_x_smg=0., V_x_prime_smg=0.;
-  double h_prime_smg=0., eta_smg=0.; //ILSextraout
+  double h_prime_smg=0., eta_smg=0.;
   /** - ncdm sector begins */
   int n_ncdm;
   double *delta_ncdm=NULL, *theta_ncdm=NULL, *shear_ncdm=NULL, *delta_p_over_delta_rho_ncdm=NULL;
@@ -7847,10 +7919,10 @@ int perturb_print_variables(double tau,
     }
 
     if (pba->has_smg == _TRUE_){
-     //TODO: write here the perturbation variables
+    
       V_x_smg = ppw->pvecmetric[ppw->index_mt_vx_smg];
       V_x_prime_smg = ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
-      h_prime_smg = ppw->pvecmetric[ppw->index_mt_h_prime];     //ILSextraout
+      h_prime_smg = ppw->pvecmetric[ppw->index_mt_h_prime];    
       eta_smg = y[ppw->pv->index_pt_eta];
     }
 
@@ -7964,7 +8036,7 @@ int perturb_print_variables(double tau,
     /* Scalar field smg*/
     class_store_double(dataptr, V_x_smg, pba->has_smg, storeidx);
     class_store_double(dataptr, V_x_prime_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, h_prime_smg, pba->has_smg, storeidx);   //ILSextraout
+    class_store_double(dataptr, h_prime_smg, pba->has_smg, storeidx);   
     class_store_double(dataptr, eta_smg, pba->has_smg, storeidx);
 
 
@@ -10545,7 +10617,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
   double B1_smg, B2_smg;
   double tau_ini, z_ref;
-  double vx_growth;
+  double vx_growth_smg;
   double * pvecback;
   int first_index_back;
 
@@ -10599,24 +10671,24 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
   B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
 
-  vx_growth = 0.5*(1.-B1_smg);
+  vx_growth_smg = 0.5*(1.-B1_smg);
 
   if (1.-2.*B1_smg + B1_smg*B1_smg -4.*B2_smg >=0){
-    vx_growth += 0.5*sqrt(1. -2.*B1_smg + B1_smg*B1_smg -4.*B2_smg);
+    vx_growth_smg += 0.5*sqrt(1. -2.*B1_smg + B1_smg*B1_smg -4.*B2_smg);
   }
 
   if (ppt->perturbations_verbose > 1){
     printf("\nExternal field attractor ICs at z=%e. Standard solution for grav. field, h = (k tau)^2.\n",z_ref);
-    if(vx_growth<3){
+    if(vx_growth_smg<=3){
       printf("  smg evolves on standard attractor in external field with Vx = k^2 tau^3;\n\n");
     }
     else{
-      printf("  tachyonic instability in smg dominates, Vx = k^2 tau^n with n=%f.\n",vx_growth);
+      printf("  tachyonic instability in smg dominates, Vx = k^2 tau^n with n=%f.\n",vx_growth_smg);
       printf("  smg is sensitive to its initial conditions at end of inflation.\n");
     }
   }
 
-  class_test_except(ppr->pert_ic_tolerance_smg>0 && (vx_growth > 3.+ppr->pert_ic_tolerance_smg),
+  class_test_except(ppr->pert_ic_tolerance_smg>0 && (vx_growth_smg > 3.+ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           free(pvecback),
           "\n   Cannot set initial conditions for smg: tachyonic instability dominates superhorizon attractor.\n");
@@ -10689,5 +10761,4 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
         *amplitude = -(B3_smg/(B1_smg + B2_smg + nexpo + B1_smg*nexpo + pow(nexpo,2)));
 
         return _SUCCESS_;
-
 }
