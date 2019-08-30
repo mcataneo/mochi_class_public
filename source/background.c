@@ -1762,11 +1762,6 @@ int background_solve(
   while (pvecback_integration[pba->index_bi_a] < pba->a_today) {
 
     tau_start = tau_end;
-    
-    
-//        if (pvecback_integration[pba->index_bi_a]>.3)
-//          printf("a=%.2f \n",pvecback_integration[pba->index_bi_a]);
-//      printf(" .");
 
     /* -> find step size (trying to adjust the last step as close as possible to the one needed to reach a=a_today; need not be exact, difference corrected later) */
     class_call(background_functions(pba,pvecback_integration, pba->short_info, pvecback),
@@ -1810,10 +1805,7 @@ int background_solve(
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
     
-//     printf("* \n");
-
   }
-//    printf("x\n");
 
   /** - save last data in growTable with gt_add() */
   class_call(gt_add(&gTable,_GT_END_,(void *) pvecback_integration,sizeof(double)*pba->bi_size),
@@ -2419,6 +2411,12 @@ int background_solve(
       if (pba->background_verbose > 3) {
 	printf("Minimal stability values: cs2 = %g, ct2 = %g, D = %g, M2 = %g \n",pba->min_cs2_smg,pba->min_ct2_smg,pba->min_D_smg,pba->min_M2_smg);
       }
+      
+      if (pba->field_evolution_smg == _TRUE_){
+          pba->xi_0_smg = pvecback_integration[pba->index_bi_phi_prime_smg]*pvecback[pba->index_bg_H]/pow(pba->H0,2);
+          pba->phi_0_smg = pvecback_integration[pba->index_bi_phi_smg];
+      }
+      
       background_gravity_parameters(pba);
 
     }
@@ -2607,6 +2605,12 @@ int background_initial_conditions(
         pvecback_integration[pba->index_bi_phi_smg] = phi_scale;
         pvecback_integration[pba->index_bi_phi_prime_smg] = -a*sqrt(pba->parameters_smg[0]*2*rho_rad);
 
+	break;
+
+      case alpha_attractor_canonical:
+    // Note: we are using as input parameters f = phi/sqrt(alpha)
+	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[1]*sqrt(pba->parameters_smg[2]);
+	  pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[0]*pba->H0;
 	break;
 
 
@@ -3345,6 +3349,31 @@ int background_gravity_functions(
       G2_X = 1.;
       G2_phi = -V_phi;
     }
+
+    else if (pba->gravity_model_smg == alpha_attractor_canonical) {
+        // V written as in eq. 12 of arXiv:1505.00815 in CLASS units with canonical field.
+
+      double alpha = pba->parameters_smg[2];
+      double c2 = pow(pba->parameters_smg[3], 2);
+      double p = pba->parameters_smg[4];
+      double n = pba->parameters_smg[5];
+      double V, V_phi;
+      double x = tanh(phi/(sqrt(6*alpha)));
+      double y = sinh(sqrt(2/(3*alpha))*phi);
+      V = alpha* c2 * pow(x,p)/pow(1+x, 2*n);
+
+      V_phi = sqrt(2*alpha/3)*c2* pow(x,p)* (p +(p-2*n)*x)/(y * pow(1+x,2*n +1));
+      
+      G2 = X - V;
+      G2_X = 1.;
+      G2_phi = -V_phi;
+
+     class_test((phi < 0. ) && ( phi_prime > 0 ) 
+             && (pba->parameters_tuned_smg == _TRUE_)
+             && (pba->skip_stability_tests_smg == _FALSE_),
+             pba->error_message,
+             "The model has started oscillating with first minimum at a = %e. Since <w> = 0 yields matter, it cannot make the universe expand accelerately.", a);
+    }
     
     else if(pba->gravity_model_smg == galileon){//TODO: change name with ccc_galileon
 
@@ -3784,9 +3813,9 @@ int background_gravity_functions(
   }
   
     /* Check required conditions for the gravity_models. */
-  if ( (pba->skip_stability_tests_smg == _FALSE_) && (pba->parameters_tuned_smg == _TRUE_) ){
+  if ( (pba->skip_stability_tests_smg == _FALSE_) && (pba->parameters_tuned_smg == _TRUE_) && (pba->Omega_smg_debug == 0) ){
       double a = pvecback_B[pba->index_bi_a];
-      if (pba->smg_is_quintessence == _TRUE_){
+      if (pba->is_quintessence_smg == _TRUE_){
           /*  Check that w is not lower than w < -1 for quintessence */
          class_test( (pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg] < -(1 + pba->quintessence_w_safe_smg)),
              pba->error_message,
@@ -3822,16 +3851,24 @@ int background_gravity_parameters(
 	    pba->parameters_smg[2], pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]);
      break;
 
+   case alpha_attractor_canonical:
+     printf("Modified gravity: alpha_attractor_canonical with parameters: \n");
+     printf("-> f = phi/sqrt(alpha) \n");
+     printf("-> phi_prime_ini = %g, f_ini = %g, alpha = %g, c = %g, p = %g, n = %g \n",
+	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[2],
+	    pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]); 
+     break;
+
    case galileon:
      printf("Modified gravity: covariant Galileon with parameters: \n");
-     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n   c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
+     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n    c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
 	    pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0], pba->xi_0_smg);
      break;
 
    case brans_dicke:
      printf("Modified gravity: Brans Dicke with parameters: \n");
-     printf(" -> Lambda = %g, w = %g, phi_ini = %g, phi_prime_ini = %g \n",
-	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3]);
+     printf(" -> Lambda = %g, omega_BD = %g, \n    phi_ini = %g (phi_0 = %g), phi_prime_ini = %g \n",
+	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->phi_0_smg,pba->parameters_smg[3]);
      break;
 
     case nkgb:
@@ -3879,6 +3916,9 @@ int background_gravity_parameters(
      printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
 	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
      break;
+   
+   default:
+       printf("Modified gravity: output not implemented in background_gravity_parameters() \n");
 
 
   }
@@ -3907,6 +3947,9 @@ int background_gravity_parameters(
       printf("Parameterized model with variable EoS + Early DE \n");
       printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
+      
+      default:
+       printf("Parameterized model: expansion hisotry output not implemented in background_gravity_parameters() \n");
 
     }
 

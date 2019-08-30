@@ -3,20 +3,26 @@
 hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System
 ==================================================================
 
-:Authors: Miguel Zumalacarregui, Emilio Bellini
+:Authors: Miguel Zumalacarregui, Emilio Bellini, Ignacy Sawicki
 
 (based on the CLASS code by Julien Lesgourgues, with several major
 inputs from other people, especially Thomas Tram)
 
 hi_class can be used freely, provided that you cite the CLASS paper and
 
-    "hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System" 
-    M. Zumalacarregui, E. Bellini, I. Sawicki, J, Lesgourgues
+    "hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System",
+    M. Zumalacarregui, E. Bellini, I. Sawicki, J. Lesgourgues, P. Ferreira,
+    JCAP 1708 (2017) no.08, 019 http://arxiv.org/abs/arXiv:1605.06102 
+    
+    "hi_class: Background Evolution, Initial Conditions and Approximation Schemes" 
+    E. Bellini, I. Sawicki, M. Zumalacarregui,
+    http://arxiv.org/abs/arXiv:1909.xxxxx
 
 For further information please visit
 http://hiclass-code.net and http://class-code.net
 
-See also hi_class.ini for details on the available models and features
+See also hi_class.ini for details on the available models and features.
+Additional initialization files are included in the gravity_models directory
 
 
 
