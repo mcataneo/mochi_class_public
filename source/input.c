@@ -1000,6 +1000,14 @@ int input_read_parameters(
   class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
              errmsg,
              errmsg);
+  /* Look for Omega_smg_debug if Omega_smg is not specified */
+  if (flag4 == _FALSE_){
+      class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag4 == _TRUE_)
+          pba->Omega_smg_debug = param4;
+  }
 
   class_test((flag3 == _TRUE_) && (flag4 == _TRUE_),
              errmsg,
@@ -1069,17 +1077,6 @@ int input_read_parameters(
     // Fill up with scalar field
     pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
     if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
-  }
-
-  if (flag3 == _FALSE_){
-    class_call(parser_read_double(pfc,"Omega_smg_debug",&param3,&flag3,errmsg),
-             errmsg,
-             errmsg);
-    //rewrite before doing the test
-    if (flag3 == _TRUE_){
-      pba->Omega_smg_debug = param3;
-//       pba->Omega0_smg = pba->Omega_smg_debug; \\TODO: check if this is needed (it wasn't in hi_class devel)
-    }
   }
 
   /*
@@ -1286,14 +1283,14 @@ int input_read_parameters(
     if (strncmp("quintessence", string1, strlen("quintessence")) == 0){
           // Check if gravity_model has quintessence as prefix.
           // Add here all variables common to quintessence.
-          pba->smg_is_quintessence = _TRUE_;
+          pba->is_quintessence_smg = _TRUE_;
           class_read_double("quintessence_w_safe_smg", pba->quintessence_w_safe_smg);
       }
 
     if (strcmp(string1,"quintessence_monomial") == 0) {
 	pba->gravity_model_smg = quintessence_monomial;
 	pba->field_evolution_smg = _TRUE_;
-    pba->smg_is_quintessence = _TRUE_;
+    pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
 	
 	pba->parameters_size_smg = 4;
@@ -1358,7 +1355,7 @@ int input_read_parameters(
     if (strcmp(string1,"quintessence_tracker") == 0) {
 	pba->gravity_model_smg = quintessence_tracker;
 	pba->field_evolution_smg = _TRUE_;
-    pba->smg_is_quintessence = _TRUE_;
+    pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
 	
 	pba->parameters_size_smg = 6;
@@ -1403,6 +1400,72 @@ int input_read_parameters(
       } //end of tracker
       
       
+      if (strcmp(string1,"alpha_attractor_canonical") == 0) {
+	pba->gravity_model_smg = alpha_attractor_canonical;
+	pba->field_evolution_smg = _TRUE_;
+    pba->is_quintessence_smg = _TRUE_;
+	flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 6;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+
+    class_call(parser_read_string(pfc,"log_10_param_alpha",&string1,&flag1,errmsg),
+	       errmsg,
+	       errmsg);    
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){ 
+        pba->parameters_smg[2] = pow(10, pba->parameters_smg[2]);
+      }
+
+    class_call(parser_read_string(pfc,"use_phi_no_f",&string1,&flag1,errmsg),
+	       errmsg,
+	       errmsg);    
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){ 
+        pba->parameters_smg[1] =  pba->parameters_smg[1]/sqrt(pba->parameters_smg[2]);
+      }
+
+	/* Guess for the parameter variation range. Copied from galileons.
+     *
+     * For the initial parameter one can use:
+	 * 
+	 * However, for the range of variation it is better to use
+	 * 
+	 * 	Omega = rho_smg/(rho_smg + rho_m)
+	 * 
+	 * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
+	 * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
+	 * where we use rho_m ~ H_0^2
+     *
+	 */
+
+    //Note: f = phi/sqrt(alpha)
+
+      if (pba->Omega_smg_debug == 0.) {
+        double phi_prime_ini = pba->parameters_smg[0];
+        double f_ini = pba->parameters_smg[1];
+        double alpha = pba->parameters_smg[2];
+        double c = pba->parameters_smg[3];
+        double p = pba->parameters_smg[4];
+        double n = pba->parameters_smg[5];
+        double x = tanh(f_ini/(sqrt(6))); 
+        double v = alpha* pow(x,p)/pow(1+x, 2*n); // v = V/c^2
+        double rho_c = pow(pba->H0, 2);
+
+
+        if (has_tuning_index_smg == _FALSE_)
+          pba->tuning_index_smg = 3; //use V0 for default tuning
+        
+        if (has_dxdy_guess_smg == _FALSE_){
+          if(pba->tuning_index_smg == 3){
+              c = sqrt(pba->Omega0_smg * rho_c / v);
+              pba->tuning_dxdy_guess_smg = pow((1 + 3*pba->Omega0_smg) * pba->H0,2)/(2*c*v);
+              pba->parameters_smg[3] = c;
+          }
+        }//end of no has_dxdy_guess_smg
+      }//end Omega_smg_debug
+
+      } //endif  alpha_attractor_canonical
 
       
       
@@ -1454,7 +1517,7 @@ int input_read_parameters(
 	  double * input_params_gal; //dummy allocation vector
 
 	  double xi, c2, c3, c4, c5;
-	  double phi0 = 0;
+	  double phi0 = 0, c1 = 0;
 
 	  /*2) cubic Galileon in the attractor
 	    * Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
@@ -1462,7 +1525,7 @@ int input_read_parameters(
 	  if (strcmp(string2,"cubic") == 0) {
 
 	    c2 = -1.;
-	    c3 =  sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
+	    c3 = -sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
 	    xi = c2/6./c3;
 	    c4 = 0;
 	    c5 = 0;
@@ -1491,16 +1554,23 @@ int input_read_parameters(
 	    c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
 
 	  }//end of quintic
+	  else {
+          class_test(flag3 == _TRUE_,
+		 errmsg,
+		 "Galileon: you specified a gravity_submodel that could not be identified. \n Options are: cubic, quartic, quintic");
+    };
 
 	  /* Set parameters for submodels */
 	  pba->parameters_smg[0] = xi;
-	  pba->parameters_smg[1] = phi0;
+	  pba->parameters_smg[1] = c1;
 	  pba->parameters_smg[2] = c2;
 	  pba->parameters_smg[3] = c3;
 	  pba->parameters_smg[4] = c4;
 	  pba->parameters_smg[5] = c5;
+      pba->parameters_smg[6] = phi0;
 
 	}//end of submodels
+	
 
 	/* default tuning index is 3 */
 	if (has_tuning_index_smg == _FALSE_){
@@ -1550,7 +1620,7 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker' ...");
+		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
 
     }// end of loop over models
 
@@ -1701,7 +1771,20 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 		 errmsg,
 		 "You asked to tune M_pl(today) to %e but currently this is only allowed for Brans-Dicke\n",
 		 pba->M_pl_today_smg);
-//
+
+      class_call(parser_read_string(pfc,"normalize_G_NR",
+				  &string1,
+				  &flag1,
+				  errmsg),
+		errmsg,
+		errmsg);
+
+    if (flag1 == _TRUE_){
+      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+          double omega_BD = pba->parameters_smg[1];
+          pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
+      }
+    }
 
       class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
 //       printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
@@ -3660,9 +3743,7 @@ int input_default_params(
 
   pba->min_bra_smg = 4.;
   pba->max_bra_smg = 0.;
-
-  pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */
-  pba->initial_conditions_set_smg = _FALSE_;
+  pba->quintessence_w_safe_smg = 0;
 
   pba->parameters_smg = NULL;
   pba->parameters_size_smg = 0;
@@ -3688,6 +3769,9 @@ int input_default_params(
   pba->has_smg= _FALSE_;
   pba->parameters_tuned_smg = _FALSE_;
   pba->shooting_failed = _FALSE_;
+  pba->is_quintessence_smg = _FALSE_;
+  pba->attractor_ic_smg = _TRUE_;  /* only read for those models in which it is implemented */
+  pba->initial_conditions_set_smg = _FALSE_;
 
   /** - thermodynamics structure */
 

@@ -9,6 +9,7 @@
 #include "arrays.h"
 #include "dei_rkck.h"
 #include "parser.h"
+#include "rootfinder.h"
 
 /** list of possible types of spatial curvature */
 
@@ -18,7 +19,8 @@ enum gravity_model {propto_omega, propto_scale,
     eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
     galileon, nkgb, 
     brans_dicke, 
-    quintessence_monomial, quintessence_tracker
+    quintessence_monomial, quintessence_tracker,
+    alpha_attractor_canonical
 }; //write here the different models
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
@@ -119,12 +121,15 @@ struct background
 
   short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
   short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
+  short is_quintessence_smg; /* is the scalar field from a quintessence model?*/
 
   double Omega0_smg; /**< \f$ \Omega_{0_\phi} \f$ : scalar field energy fraction */
   double Omega_smg_debug; /**< debug value when no tuning is wanted */
   short attractor_ic_smg; /** < whether the scalar field has attractor initial conditions */
 
   double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
+  double phi_0_smg; /** < final value of phi  */
+  double M2_0_smg; /** < final value of M_*^2  */
 
   double cs2_safe_smg; /**< threshold for the speed of sound to consider it negative */
   double D_safe_smg; /* threshold to consider the kinetic term of scalars negative in the stability check */
@@ -416,9 +421,7 @@ struct background
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
   short has_smg;       /**< presence of scalar field? */
   short has_curvature; /**< presence of global spatial curvature? */
-
-  short smg_is_tuned; /**< is the scalar field tuned to give Omega0_smg? */
-  short smg_is_quintessence; /**< is the scalar field from a quintessence
+  
   //@}
 
   /**
