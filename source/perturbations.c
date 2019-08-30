@@ -5194,6 +5194,11 @@ int perturb_initial_conditions(struct precision * ppr,
                  ppt->error_message,
                  "not consistent to ask for CDI in absence of CDM!");
 
+      class_test(ppt->pert_initial_conditions_smg==gravitating_attr,
+                 ppt->error_message,
+                 "CDI mode for gravitating attractor initial conditions not implemented. Only adiabatic mode available.");
+
+
       ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*fraccdm*om*tau*(-2./3.+om*tau/4.);
       ppw->pv->y[ppw->pv->index_pt_theta_g] = -ppr->entropy_ini*fraccdm*om*ktau_two/12.;
 
@@ -5242,6 +5247,11 @@ int perturb_initial_conditions(struct precision * ppr,
     /** - --> (b.3.) Baryon Isocurvature */
 
     if ((ppt->has_bi == _TRUE_) && (index_ic == ppt->index_ic_bi)) {
+
+      class_test(ppt->pert_initial_conditions_smg==gravitating_attr,
+                 ppt->error_message,
+                 "BI mode for gravitating attractor initial conditions not implemented. Only adiabatic mode available.");
+
 
       ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*fracb*om*tau*(-2./3.+om*tau/4.);
       ppw->pv->y[ppw->pv->index_pt_theta_g] = -ppr->entropy_ini*fracb*om*ktau_two/12.;
@@ -5296,13 +5306,16 @@ int perturb_initial_conditions(struct precision * ppr,
 
     /** - --> (b.4.) Neutrino density Isocurvature */
 
-      if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0))
-      //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
-      {
-
+    if ((ppt->has_nid == _TRUE_) && (index_ic == ppt->index_ic_nid)) {
+      
       class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_),
                  ppt->error_message,
                  "not consistent to ask for NID in absence of ur or ncdm species!");
+
+      class_test(ppt->pert_initial_conditions_smg==gravitating_attr,
+                 ppt->error_message,
+                 "NID mode for gravitating attractor initial conditions not implemented. Only adiabatic mode available.");
+
 
       ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*fracnu/fracg*(-1.+ktau_two/6.);
       ppw->pv->y[ppw->pv->index_pt_theta_g] = -ppr->entropy_ini*fracnu/fracg*k*k*tau*(1./4.-fracb/fracg*3./16.*om*tau);
@@ -5371,6 +5384,11 @@ int perturb_initial_conditions(struct precision * ppr,
       class_test((pba->has_ur == _FALSE_) && (pba->has_ncdm == _FALSE_),
                  ppt->error_message,
                  "not consistent to ask for NIV in absence of ur or ncdm species!");
+
+      class_test(ppt->pert_initial_conditions_smg==gravitating_attr,
+                 ppt->error_message,
+                 "NIV mode for gravitating attractor initial conditions not implemented. Only adiabatic mode available.");
+
 
       ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*k*tau*fracnu/fracg*
         (1. - 3./16.*fracb*(2.+fracg)/fracg*om*tau); /* small diff wrt camb */
