@@ -1400,6 +1400,72 @@ int input_read_parameters(
       } //end of tracker
       
       
+      if (strcmp(string1,"alpha_attractor_canonical") == 0) {
+	pba->gravity_model_smg = alpha_attractor_canonical;
+	pba->field_evolution_smg = _TRUE_;
+    pba->is_quintessence_smg = _TRUE_;
+	flag2=_TRUE_;
+	
+	pba->parameters_size_smg = 6;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+
+    class_call(parser_read_string(pfc,"log_10_param_alpha",&string1,&flag1,errmsg),
+	       errmsg,
+	       errmsg);    
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){ 
+        pba->parameters_smg[2] = pow(10, pba->parameters_smg[2]);
+      }
+
+    class_call(parser_read_string(pfc,"use_phi_no_f",&string1,&flag1,errmsg),
+	       errmsg,
+	       errmsg);    
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){ 
+        pba->parameters_smg[1] =  pba->parameters_smg[1]/sqrt(pba->parameters_smg[2]);
+      }
+
+	/* Guess for the parameter variation range. Copied from galileons.
+     *
+     * For the initial parameter one can use:
+	 * 
+	 * However, for the range of variation it is better to use
+	 * 
+	 * 	Omega = rho_smg/(rho_smg + rho_m)
+	 * 
+	 * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
+	 * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
+	 * where we use rho_m ~ H_0^2
+     *
+	 */
+
+    //Note: f = phi/sqrt(alpha)
+
+      if (pba->Omega_smg_debug == 0.) {
+        double phi_prime_ini = pba->parameters_smg[0];
+        double f_ini = pba->parameters_smg[1];
+        double alpha = pba->parameters_smg[2];
+        double c = pba->parameters_smg[3];
+        double p = pba->parameters_smg[4];
+        double n = pba->parameters_smg[5];
+        double x = tanh(f_ini/(sqrt(6))); 
+        double v = alpha* pow(x,p)/pow(1+x, 2*n); // v = V/c^2
+        double rho_c = pow(pba->H0, 2);
+
+
+        if (has_tuning_index_smg == _FALSE_)
+          pba->tuning_index_smg = 3; //use V0 for default tuning
+        
+        if (has_dxdy_guess_smg == _FALSE_){
+          if(pba->tuning_index_smg == 3){
+              c = sqrt(pba->Omega0_smg * rho_c / v);
+              pba->tuning_dxdy_guess_smg = pow((1 + 3*pba->Omega0_smg) * pba->H0,2)/(2*c*v);
+              pba->parameters_smg[3] = c;
+          }
+        }//end of no has_dxdy_guess_smg
+      }//end Omega_smg_debug
+
+      } //endif  alpha_attractor_canonical
 
       
       
@@ -1547,14 +1613,14 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
 
 	pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-	class_test(pba->parameters_smg[1]<=0.5,errmsg,"In n-KGB G(X)=X^n n>1/2 for acceleration.");
+	class_test(pba->parameters_smg[1]<=0.5,errmsg,"In n-KGB G(X)=X^n n>1/2 for acceleration. Note that limit n->1/2 is singular and models become badly behaved for n<0.7");
   class_test(pba->parameters_smg[2]>=1.,errmsg,"In n-KGB, xi0<1 for positive energy density today.");
   class_test(pba->parameters_smg[2]<0.,errmsg,"In n-KGB, xi0>=0, or ICs for background can't be set.");
 }
 
       class_test(flag2==_FALSE_,
 		 errmsg,
-		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker' ...");
+		 "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
 
     }// end of loop over models
 

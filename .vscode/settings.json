@@ -1,2 +1,7 @@
 {
+    "files.associations": {
+        "background.h": "c",
+        "common.h": "c",
+        "stdio.h": "c"
+    }
 }

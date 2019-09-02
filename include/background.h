@@ -9,6 +9,7 @@
 #include "arrays.h"
 #include "dei_rkck.h"
 #include "parser.h"
+#include "rootfinder.h"
 
 /** list of possible types of spatial curvature */
 
@@ -18,7 +19,8 @@ enum gravity_model {propto_omega, propto_scale,
     eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
     galileon, nkgb, 
     brans_dicke, 
-    quintessence_monomial, quintessence_tracker
+    quintessence_monomial, quintessence_tracker,
+    alpha_attractor_canonical
 }; //write here the different models
 
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
