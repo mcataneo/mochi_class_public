@@ -1596,7 +1596,7 @@ int input_read_parameters(
 	pba->tuning_index_2_smg = 2;
       }
 
-if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0) {
+if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0 || strcmp(string1,"nKGB") == 0) {
 	// This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
   pba->gravity_model_smg = nkgb;
 	pba->field_evolution_smg = _TRUE_;
