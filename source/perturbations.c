@@ -5400,8 +5400,8 @@ int perturb_initial_conditions(struct precision * ppr,
       {
 
         nexpo=2;
-
-        coeff_isocurv_smg = ppr->entropy_ini * 9./2. *k*k*k* fracnu*fracb/fracg/om;
+        
+        coeff_isocurv_smg = ppr->entropy_ini * 9./32. *k*om*fracnu*fracb/fracg; 
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
@@ -5413,9 +5413,9 @@ int perturb_initial_conditions(struct precision * ppr,
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
 
         nexpo=3; //next-order term (tau^3) similar in size for h as tau^2 if start late
-
-        coeff_isocurv_smg = ppr->entropy_ini * 1./30.*k*k*k* fracnu*
-                            ( -(9*fracb*(3*fracb+5*fracg)/fracg/fracg)-128*k*k/(5.+4.*fracnu)/om/om );
+        
+        coeff_isocurv_smg = ppr->entropy_ini * fracnu *
+                            ( -3.*om*om*k/160.*fracb*(3*fracb+5*fracg)/fracg/fracg -4*k*k*k/15./(5.+4.*fracnu) );
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
