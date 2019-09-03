@@ -2700,7 +2700,7 @@ int background_initial_conditions(
         This all implies that phidot on the attractor has the same sign as g, and therefore
         phi dot always has the same sign as g.
 
-        xi0 = (phidot0*J0)/rho_smg0, i.e. fraction of the DE energy-density today in the shift-charge as opposed to the vacuum part
+        Rshift0 = (phidot0*J0)/rho_smg0, i.e. fraction of the DE energy-density today in the shift-charge as opposed to the vacuum part
 
       */
 
