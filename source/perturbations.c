@@ -268,8 +268,6 @@ int perturb_init(
                "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
 
 
-    //TODO: implement overrride //ILS
-    //TODO: Change to class call except?
     if ( ppt->pert_initial_conditions_smg == gravitating_attr ){
       class_test_except((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
                  ppt->error_message,
