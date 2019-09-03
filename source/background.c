@@ -2700,24 +2700,26 @@ int background_initial_conditions(
         This all implies that phidot on the attractor has the same sign as g, and therefore
         phi dot always has the same sign as g.
 
+        Rshift0 = (phidot0*J0)/rho_smg0, i.e. fraction of the DE energy-density today in the shift-charge as opposed to the vacuum part
+
       */
 
         double g = pba->parameters_smg[0];
         double n = pba->parameters_smg[1];
-        double xi0 = pba->parameters_smg[2];
+        double Rshift0 = pba->parameters_smg[2];
 
         double H = sqrt(rho_rad); //TODO: for low n -> need to solve tracker + Constraint simultaneously. Increasing H (e.g. double H = 10*sqrt(rho_rad);) works for n~0.65.
         double H0 = pba->H0;
 
         double signg = copysign(1.,g);
         g=fabs(g);
-        double xicomb = (2.-xi0)/(2.*(1.-xi0));
+        double Rshiftcomb = (2.-Rshift0)/(2.*(1.-Rshift0));
 
         double phidot0=0., phidot_attr_init= 0., charge_init=0., phidot_init=0.;
 
-        phidot0 = signg * sqrt(2./g)*H0 * pow(xicomb/(3*sqrt(2)),1./(2.*n-1.));             // value of phidot today, if xi0=0, then this is attractor
+        phidot0 = signg * sqrt(2./g)*H0 * pow(Rshiftcomb/(3*sqrt(2)),1./(2.*n-1.));             // value of phidot today, if xi0=0, then this is attractor
         phidot_attr_init = signg * sqrt(2./g)*H0 * pow(H0/(3.*sqrt(2.)*H),1./(2.*n-1.));    // value of phidot on attractor at initial time
-        charge_init  = phidot0*xi0/(2*(1-xi0))*pow(a,-3);    // implied value of required shift charge initially
+        charge_init  = phidot0*Rshift0/(2*(1-Rshift0))*pow(a,-3);    // implied value of required shift charge initially
 
         if(fabs(charge_init/phidot_attr_init)<1.){
           /* test if initial shift charge is large c.f. the on-attractor phidot. If no, we are nearly on attractor
@@ -3873,7 +3875,7 @@ int background_gravity_parameters(
 
     case nkgb:
      printf("Modified gravity: Kinetic Gravity Braiding with K=-X and G=1/n g^(2n-1)/2 * X^n with parameters: \n");
-     printf(" -> g = %g, n = %g, phi_ini = 0.0, density fraction from shift charge = %g. \n",
+     printf(" -> g = %g, n = %g, phi_ini = 0.0, smg density fraction from shift charge term = %g. \n",
 	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
      break;
 
