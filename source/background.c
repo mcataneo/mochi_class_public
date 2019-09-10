@@ -2668,7 +2668,9 @@ int background_initial_conditions(
 	  if (pba->background_verbose > 2)
 	    printf(" Dealer's pick: xi = %e (wish = %e) \n",xi_start,xi);
 	  pvecback_integration[pba->index_bi_phi_prime_smg] = a*xi_start*pow(pba->H0,2)/sqrt(rho_rad);
-	}else{
+	}
+	else
+    {/* non attractor ICs */
 	  pvecback_integration[pba->index_bi_phi_prime_smg] = a*pba->parameters_smg[0]*pow(pba->H0,2)/sqrt(rho_rad);
 	}
 	//phi is irrelevant

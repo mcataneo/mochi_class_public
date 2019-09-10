@@ -1575,13 +1575,24 @@ int input_read_parameters(
 	/* default tuning index is 3 */
 	if (has_tuning_index_smg == _FALSE_){
 	  pba->tuning_index_smg = 3; //use c3 for default tuning
-	  pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3
+	  //Use the tracker condition for the cubic to define xi_0, in case xi is used as an IC.
+      pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[2]/6./pba->parameters_smg[3],3);
+	  //pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3 and xi = c2/6./c3;
 	}
-	//TODO: write guess
 	class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
 		 errmsg,
 		 "Galileon: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
 
+    class_call(parser_read_string(pfc,"attractor_ic_smg",&string1,&flag1,errmsg),
+	       errmsg,
+	       errmsg);    
+    
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
+          pba->attractor_ic_smg = _TRUE_;
+      }
+      else{
+          pba->attractor_ic_smg = _FALSE_;
+      }
 
       }//end of Galileon
       if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
