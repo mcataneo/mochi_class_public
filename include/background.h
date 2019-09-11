@@ -14,11 +14,11 @@
 /** list of possible types of spatial curvature */
 
 enum spatial_curvature {flat,open,closed};
-enum gravity_model {propto_omega, propto_scale, 
+enum gravity_model {propto_omega, propto_scale,
     constant_alphas,
     eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
-    galileon, nkgb, 
-    brans_dicke, 
+    galileon, nkgb,
+    brans_dicke,
     quintessence_monomial, quintessence_tracker,
     alpha_attractor_canonical
 }; //write here the different models
@@ -271,6 +271,7 @@ struct background
   int index_bg_phi_prime_smg; /**< scalar field derivative wrt conformal time */
   int index_bg_phi_prime_prime_smg; /**< scalar field second derivative wrt conformal time */
   int index_bg_M2_smg;   /**< relative Planck mass */
+  int index_bg_delta_M2_smg;   /**< relative Planck mass -1. */
   int index_bg_rho_smg;       /**< scalar field energy density */
   int index_bg_p_smg;         /**< scalar field pressure */
   int index_bg_rho_prime_smg;       /**< derivative of the scalar field energy density */
@@ -387,7 +388,7 @@ struct background
 
   int index_bi_phi_smg;   /**< scalar field */
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
-  int index_bi_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/
+  int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/
   int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
@@ -421,7 +422,7 @@ struct background
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
   short has_smg;       /**< presence of scalar field? */
   short has_curvature; /**< presence of global spatial curvature? */
-  
+
   //@}
 
   /**
