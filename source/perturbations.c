@@ -4507,7 +4507,7 @@ int perturb_initial_conditions(struct precision * ppr,
           cs2num_p = ppw->pvecback[pba->index_bg_cs2num_prime_smg];
 	        Dd = ppw->pvecback[pba->index_bg_kinetic_D_smg];
           M2 = ppw->pvecback[pba->index_bg_M2_smg];
-          DelM2 = M2-1.;
+          DelM2 = ppw->pvecback[pba->index_bg_delta_M2_smg];//M2-1
     }
 
     // Add smg to radiation to correct om: if have early dark energy, it will take that into account the changed mat-red equality
@@ -5398,8 +5398,8 @@ int perturb_initial_conditions(struct precision * ppr,
       {
 
         nexpo=2;
-        
-        coeff_isocurv_smg = ppr->entropy_ini * 9./32. *k*om*fracnu*fracb/fracg; 
+
+        coeff_isocurv_smg = ppr->entropy_ini * 9./32. *k*om*fracnu*fracb/fracg;
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
                          l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
@@ -5411,7 +5411,7 @@ int perturb_initial_conditions(struct precision * ppr,
 	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
 
         nexpo=3; //next-order term (tau^3) similar in size for h as tau^2 if start late
-        
+
         coeff_isocurv_smg = ppr->entropy_ini * fracnu *
                             ( -3.*om*om*k/160.*fracb*(3*fracb+5*fracg)/fracg/fracg -4*k*k*k/15./(5.+4.*fracnu) );
 
@@ -6201,7 +6201,7 @@ int perturb_einstein(
   double D=0., cs2num=0., cs2num_p=0.;
   double l1=0., l2=0., l3=0., l4=0., l5=0., l6=0., l7=0., l8=0., l9=0., l10=0., l11=0.;
   double l2_p=0., l8_p=0., l9_p=0., l11_p=0.;
-  double M2=0., kin=0., bra=0., run=0., ten=0., bra_p=0.;
+  double M2=0., DelM2=0., kin=0., bra=0., run=0., ten=0., bra_p=0.;
   double rho_tot=0., p_tot=0., rho_smg=0., p_smg=0., H=0., rho_r=0.;
   double g1=0., g2=0., g3=0., g4=0., g5=0., g6=0., g7=0., g8=0., g9=0.;
 
@@ -6263,6 +6263,7 @@ int perturb_einstein(
       if (pba->has_smg == _TRUE_) {
 
         M2 = ppw->pvecback[pba->index_bg_M2_smg];
+        DelM2 = ppw->pvecback[pba->index_bg_delta_M2_smg];//M2-1
         kin = ppw->pvecback[pba->index_bg_kineticity_smg];
         bra = ppw->pvecback[pba->index_bg_braiding_smg];
         run = ppw->pvecback[pba->index_bg_mpl_running_smg];
@@ -6322,7 +6323,7 @@ int perturb_einstein(
 
           g7 = -2.*l2*l3*l9 - 2.*bra*rho_r*pow(H,-2)*D*l9*pow(M2,-1) - (pow(H,2) + 3.*p_tot + 3.*p_smg)*pow(H,-2)*D*l2*l9 + (D*(l11*l2_p - l2*l11_p)/a/H + (l11 + l2)*2.*l2*l3 + (l11 + l2)*2.*bra*rho_r*pow(H,-2)*D/M2)*pow(k/a/H,2) - D*(l9*l2_p - l2*l9_p)/a/H;
 
-          g8 = 6.*l2*l6 + (2.*l2*l5 + (3. - 3.*M2 + bra*M2)*rho_tot*pow(H,-2)*D*l11*pow(M2,-1) + 3.*(1.-M2)*pow(H,-2)*D*l11*pow(M2,-1)*p_tot - (3.*rho_smg - bra*rho_smg + 3.*p_smg)*pow(H,-2)*D*l11)*pow(k/a/H,2);
+          g8 = 6.*l2*l6 + (2.*l2*l5 + (- 3.*DelM2 + bra*M2)*rho_tot*pow(H,-2)*D*l11*pow(M2,-1) - 3.*DelM2*pow(H,-2)*D*l11*pow(M2,-1)*p_tot - (3.*rho_smg - bra*rho_smg + 3.*p_smg)*pow(H,-2)*D*l11)*pow(k/a/H,2);
 
           g9 = 2.*D*(bra_p*l9 - bra*l9_p)/a/H - (bra*D + 2.*bra*run*D - 2.*kin*l2 - 9.*bra*D*(p_tot + p_smg)*pow(H,-2))*l9 + (2.*D*(bra*l11_p + bra*l2_p - (l11 + l2)*bra_p)/a/H + (l11 + l2)*(3.*bra*D + 2.*bra*run*D - 2.*kin*l2 - 3.*bra*D*(p_tot + p_smg)*pow(H,-2)))*pow(k/a/H,2);
 
@@ -6382,7 +6383,7 @@ int perturb_einstein(
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace_smg];
         }
         else{
-          ppw->pvecmetric[ppw->index_mt_h_prime] = (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*bra*pow(k,2) + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2) + (18.*(1. - M2) + 15.*bra*M2 + 2.*kin*M2)*rho_tot*pow(M2,-1)*pow(a,2) + (2. - 2.*M2 + bra*M2)*9.*pow(M2,-1)*p_tot*pow(a,2) + 9.*(-2. + bra)*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
+          ppw->pvecmetric[ppw->index_mt_h_prime] = (- 4.*pow(H,-1)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-1) - 6.*pow(H,-1)*pow(M2,-1)*ppw->delta_rho*a + (3.*bra + kin)*2.*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + (2.*bra*pow(k,2) + (-18. + 15.*bra + 2.*kin)*rho_smg*pow(a,2) + (-18.*DelM2 + 15.*bra*M2 + 2.*kin*M2)*rho_tot*pow(M2,-1)*pow(a,2) + (-2.*DelM2 + bra*M2)*9.*pow(M2,-1)*p_tot*pow(a,2) + 9.*(-2. + bra)*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg])*pow(-2. + bra,-1);
         }
 
         /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
@@ -6408,7 +6409,7 @@ int perturb_einstein(
 
 
         /* second equation involving total velocity */
-        ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (3. + (-3.)*M2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + ((-1.) + M2)*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
+        ppw->pvecmetric[ppw->index_mt_eta_prime] = 1./2.*bra*H*ppw->pvecmetric[ppw->index_mt_vx_prime_smg]*a + 3./2.*pow(k,-2)*pow(M2,-1)*ppw->rho_plus_p_theta*pow(a,2) + (((-3.) + bra)*1./2.*rho_smg*pow(a,2) + (-3.*DelM2 + bra*M2)*1./2.*rho_tot*pow(M2,-1)*pow(a,2) + DelM2*(-3.)/2.*pow(M2,-1)*p_tot*pow(a,2) + (-3.)/2.*p_smg*pow(a,2))*ppw->pvecmetric[ppw->index_mt_vx_smg];  /* eta' */
 
 
         /* third equation involving total pressure */
@@ -10442,7 +10443,7 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
   bra = pvecback[pba->index_bg_braiding_smg];
   run = pvecback[pba->index_bg_mpl_running_smg];
   ten = pvecback[pba->index_bg_tensor_excess_smg];
-  DelM2 = pvecback[pba->index_bg_M2_smg]-1.;
+  DelM2 = pvecback[pba->index_bg_delta_M2_smg];//M2-1
 
   /* Determine the solutions
    *
@@ -10642,7 +10643,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   bra = pvecback[pba->index_bg_braiding_smg];
   run = pvecback[pba->index_bg_mpl_running_smg];
   ten = pvecback[pba->index_bg_tensor_excess_smg];
-  DelM2 = pvecback[pba->index_bg_M2_smg]-1.;
+  DelM2 = pvecback[pba->index_bg_delta_M2_smg];//M2-1
   l1 = pvecback[pba->index_bg_lambda_1_smg];
   l2 = pvecback[pba->index_bg_lambda_2_smg];
   l3 = pvecback[pba->index_bg_lambda_3_smg];
