@@ -674,7 +674,7 @@ int background_init(
   /** - if shooting failed during input, catch the error here */
   class_test_except(pba->shooting_failed == _TRUE_,
              pba->error_message,
-             background_free(pba),
+             background_free_input(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
 
