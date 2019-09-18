@@ -674,7 +674,7 @@ int background_init(
   /** - if shooting failed during input, catch the error here */
   class_test_except(pba->shooting_failed == _TRUE_,
              pba->error_message,
-             background_free(pba),
+             background_free_input(pba),
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
 
@@ -1781,7 +1781,7 @@ int background_solve(
 
     class_test_except((tau_end-tau_start)/tau_start < ppr->smallest_allowed_variation,
                pba->error_message,
-               gt_free(&gTable);cleanup_generic_integrator(&gi);background_free(pba);free(pvecback_integration);free(pvecback),
+               gt_free(&gTable);cleanup_generic_integrator(&gi);background_free_input(pba);free(pvecback_integration);free(pvecback),
                "integration step: relative change in time =%e < machine precision : leads either to numerical error or infinite loop",(tau_end-tau_start)/tau_start);
 
     /* -> save data in growTable */
