@@ -60,6 +60,12 @@ cdef extern from "class.h":
         double w0_fld
         double wa_fld
         double cs2_fld
+        short shooting_failed
+        int parameters_size_smg
+        int parameters_2_size_smg
+        double * parameters_smg
+        double * parameters_2_smg
+        int tuning_index_smg
         double Omega0_ur
         double Omega0_dcdmdr
         double Omega0_scf

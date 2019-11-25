@@ -1721,11 +1721,35 @@ cdef class Class:
                 value = self.sp.sigma8
             elif name == 'sigma8_cb':
                 value = self.sp.sigma8_cb
+            elif name == 'Omega0_smg' or name == 'Omega_smg':
+                value = self.Omega0_smg()
+            elif 'parameters_smg_real' in name:
+                value = self.__MontePython_ask_for_array_component(name, self.ba.parameters_smg, self.ba.parameters_size_smg)
+            elif 'parameters_2_smg_real' in name:
+                value = self.__MontePython_ask_for_array_component(name, self.ba.parameters_2_smg, self.ba.parameters_2_size_smg)
+            elif name == 'tuning_parameter':
+                value = self.ba.parameters_smg[self.ba.tuning_index_smg]
             else:
                 raise CosmoSevereError("%s was not recognized as a derived parameter" % name)
             derived[name] = value
         return derived
 
+    cdef __MontePython_ask_for_array_component(self, name, double * carray, carray_size):
+
+        try:
+            index = int(name.split('_')[-1])
+        except:
+            print "Index not given or not an interger: printing the whole array"
+            array = []
+            for i in range(carray_size):
+                array.append(carray[i])
+            return array
+
+        if index <= carray_size:
+            return carray[index-1]
+        else:
+            raise CosmoSevereError("%s index is greater than array length" % name)
+        
     def nonlinear_scale(self, np.ndarray[DTYPE_t,ndim=1] z, int z_size):
         """
         nonlinear_scale(z, z_size)
