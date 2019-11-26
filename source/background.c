@@ -3477,7 +3477,7 @@ int background_gravity_functions(
     if (pba->initial_conditions_set_smg == _FALSE_ || pba->hubble_evolution == _FALSE_){
       class_test_except(E3*pow(E0,1./2.) > 1e-10 && pba->initial_conditions_set_smg == _FALSE_,
 		  pba->error_message,
-      background_free(pba);free(pvecback);free(pvecback_B),
+      free(pvecback);free(pvecback_B),
            " E3=%e is large in Friedmann constraint when setting ICs ",  E3);
       /* Use Newton's method */
       x = sqrt(E0);
@@ -3508,7 +3508,7 @@ int background_gravity_functions(
 
     class_test_except(isnan(pvecback[pba->index_bg_H]),
 	       pba->error_message,
-         background_free(pba);free(pvecback);free(pvecback_B),
+         free(pvecback);free(pvecback_B),
                " H=%e is not a number at a = %e. phi = %e, phi_prime = %e, E0=%e, E1=%e, E2=%e, E3=%e, M_*^2 = %e ",
 	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3,pvecback[pba->index_bg_M2_smg]);
 
@@ -3542,7 +3542,7 @@ int background_gravity_functions(
 
     class_test_except((A*M - B*F) == 0 ,
 	       pba->error_message,
-         background_free(pba);free(pvecback);free(pvecback_B),
+         free(pvecback);free(pvecback_B),
                "scalar field mixing with metric has degenerate denominator at a = %e, phi = %e, phi_prime = %e \n with A = %e, M =%e, B=%e, F=%e, \n H=%e, E0=%e, E1=%e, E2=%e, E3=%e \n M_*^2 = %e Kineticity = %e, Braiding = %e",
 	       a,phi,phi_prime, A, M, B, F,
 	       pvecback[pba->index_bg_H],E0,E1,E2,E3,
