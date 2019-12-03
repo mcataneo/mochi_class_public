@@ -5027,11 +5027,11 @@ int perturb_initial_conditions(struct precision * ppr,
 
 
               calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                              l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                              l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                             &amplitude);
 
               ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*ktau_two*tau*(ppr->curvature_ini);
-              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = nexpo*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
 
 
               if(ppt->perturbations_verbose > 5)
@@ -5219,7 +5219,7 @@ int perturb_initial_conditions(struct precision * ppr,
         coeff_isocurv_smg = ppr->entropy_ini*fraccdm*om;
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                         &amplitude),
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
@@ -5274,7 +5274,7 @@ int perturb_initial_conditions(struct precision * ppr,
         coeff_isocurv_smg = ppr->entropy_ini*fracb*om;
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                         &amplitude),
                   ppt->error_message,ppt->error_message);
         amplitude *=2;  //calc_extfld_ampl assumes h normalised to 1/2.
@@ -5331,7 +5331,7 @@ int perturb_initial_conditions(struct precision * ppr,
         coeff_isocurv_smg = ppr->entropy_ini * fracb*fracnu/fracg/10.*k*k * om/4;
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                         &amplitude),
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
@@ -5345,7 +5345,7 @@ int perturb_initial_conditions(struct precision * ppr,
                             (-32.*k*k/(15.+4.*fracnu)- 9.*fracb*(fracb+fracg)*om*om/fracg/fracg);
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                         &amplitude),
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
@@ -5402,7 +5402,7 @@ int perturb_initial_conditions(struct precision * ppr,
         coeff_isocurv_smg = ppr->entropy_ini * 9./32. *k*om*fracnu*fracb/fracg;
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                         &amplitude),
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
@@ -5416,7 +5416,7 @@ int perturb_initial_conditions(struct precision * ppr,
                             ( -3.*om*om*k/160.*fracb*(3*fracb+5*fracg)/fracg/fracg -4*k*k*k/15./(5.+4.*fracnu) );
 
         class_call(calc_extfld_ampl(nexpo,  kin, bra, dbra, run, ten, DelM2, Omx, wx,
-                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd,
+                         l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                         &amplitude),
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
@@ -10701,7 +10701,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
 int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run, double ten, double DelM2,
                         double Omx, double wx, double l1, double l2, double l3, double l4,
                         double l5, double l6,double l7,double l8, double cs2num, double Dd,
-                        double * amplitude){
+                        double ic_regulator_smg, double * amplitude){
 
         /* Solutions assuming the alphas are small, i.e. Vx does not gravitate but moves
          * on an attractor provided by collapsing radiation. (w!=1/3 terms included properly here!)
@@ -10731,12 +10731,26 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
 
 
         double B1_smg, B2_smg, B3_smg, B3num_smg, B3denom_smg;
+        double den1, den2, den3, den4, reg_rescaled;
 
-        B1_smg = (bra/Dd)*(bra/(2.*(-2 + bra)*(kin + l1)))*((-6 + kin)*l1 + 3*l4);
-        B1_smg +=  (3*pow(bra,3))*(l1/Dd)/(2.*(-2 + bra)*(kin + l1));
+        reg_rescaled = ic_regulator_smg*(fabs(bra)+fabs(kin)+fabs(l1)); //rescale the regulator to be proportional to the alphas
+
+
+        den1 = (2.*(-2 + bra)*(kin + l1));
+        if(reg_rescaled>0 && (fabs(den1)<reg_rescaled)){
+              den1 = copysign(reg_rescaled,den1);
+        }
+        
+        B1_smg = (bra/Dd)*(bra/den1)*((-6 + kin)*l1 + 3*l4);
+        B1_smg +=  (3*pow(bra,3))*(l1/Dd)/den1;
         B1_smg += 2*(cs2num/Dd)*(3*bra*kin + pow(kin,2) - 3*l4)/(2.*(-2. + bra)*(kin + l1));
-        B1_smg += 2*(3*l2*l4/Dd + (kin/Dd)*(l1*l2 - 8*l7) - 8*l1/Dd*l7)/(2.*(-2 + bra)*(kin + l1));
+        B1_smg += 2*(3*l2*l4/Dd + (kin/Dd)*(l1*l2 - 8*l7) - 8*l1/Dd*l7)/den1;
         B1_smg -= 2*(bra/Dd)*((kin*l1/(kin + l1) - 3*l1*l2/(kin + l1) + 3*l4/(kin + l1))/(2.*(-2 + bra)));
+
+        den2 = (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
+        if(reg_rescaled>0 && (fabs(den2)<reg_rescaled)){
+                den2 = copysign(reg_rescaled,den2);
+        }
 
         B2_smg =  8*(1 + DelM2)*(3*l2*l6/Dd + 4*kin*l8/Dd);
         B2_smg += 4*(l1/Dd)*(8*(1 + DelM2)*l8 + l2*(12 - 12*Omx + (1 + DelM2)*(-12 + kin + Omx*(3 - 9*wx))));
@@ -10744,19 +10758,32 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
         B2_smg += 3*pow(bra,3)*(1 + DelM2)*(l1/Dd)*(6 + Omx*(-1 + 3*wx));
         B2_smg += 2*(cs2num/Dd)*(2*(1 + DelM2)*pow(kin,2) - 12*(1 + DelM2)*l6 + 3*kin*(8 - 8*Omx + (1 + DelM2)*(-8 + Omx*(2 - 6*wx) + bra*(6 + Omx*(-1 + 3*wx)))));
         B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
-        B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
+        B2_smg /= den2;
 
+
+        den3 = ((2. * Omx)*(kin + l1));
+        reg_rescaled *=Omx;
+        if(reg_rescaled>0 && (fabs(den3)<reg_rescaled)){
+                den3 = copysign(reg_rescaled,den3);
+        }
 	      B3num_smg = ((-(((-2. + bra) * bra + 2 * l2) *
                            ((-2. + bra) * l1 - 4 * l3 + 2 * Dd * (-1. + nexpo))) +
                          cs2num * (-2 * (-2. + bra) * kin - 8 * l3 + 4 * Dd * (-1. + nexpo))) *
-                        nexpo) /
-                       ((2. * Omx)*(kin + l1));
+                        nexpo) / den3;
 
         B3denom_smg = 4*(Dd/Omx)*(-2 + bra);
 
         B3_smg = B3num_smg/B3denom_smg;
 
-        *amplitude = -(B3_smg/(B1_smg + B2_smg + nexpo + B1_smg*nexpo + pow(nexpo,2)));
+        reg_rescaled = ic_regulator_smg*(fabs(B1_smg)+fabs(B2_smg));
+        den4 = B1_smg + B2_smg + nexpo + B1_smg*nexpo + pow(nexpo,2);
+
+        if(reg_rescaled>0 && (fabs(den4)<reg_rescaled)){
+              den4 = copysign(reg_rescaled,den4);
+        }
+
+
+        *amplitude = -B3_smg/den4;
 
         return _SUCCESS_;
 }
