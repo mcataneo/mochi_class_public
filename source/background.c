@@ -284,8 +284,9 @@ int background_functions(
   rho_de = 0.;
   a_rel = a / pba->a_today;
 
-  class_test(a_rel <= 0.,
+  class_test_except(a_rel <= 0.,
              pba->error_message,
+             free(pvecback);free(pvecback_B);background_free_input(pba),
              "a = %e instead of strictly positive",a_rel);
 
   /** - pass value of \f$ a\f$ to output */
