@@ -4902,7 +4902,7 @@ int input_find_root(double *xzero,
 
     if (f1*f2<0.0){
       /** - root has been bracketed */
-      if (1==1){
+      if (1==2){
         printf("Root has been bracketed after %d iterations: [%g, %g].\n",iter,x1,x2);
       }
       break;

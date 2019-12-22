@@ -234,5 +234,3 @@ int rkck(
 
   return _SUCCESS_;
 }
-
-

@@ -1793,16 +1793,17 @@ int background_solve(
 
 
     /* -> perform one step */
-    class_call(generic_integrator(background_derivs,
-                                  tau_start,
-                                  tau_end,
-                                  pvecback_integration,
-                                  &bpaw,
-                                  ppr->tol_background_integration,
-                                  ppr->smallest_allowed_variation,
-                                  &gi),
+    class_call_except(generic_integrator(background_derivs,
+                                         tau_start,
+                                         tau_end,
+                                         pvecback_integration,
+                                         &bpaw,
+                                         ppr->tol_background_integration,
+                                         ppr->smallest_allowed_variation,
+                                         &gi),
                gi.error_message,
-               pba->error_message);
+               pba->error_message,
+               gt_free(&gTable);free(pvecback_integration));
 
     /* -> store value of tau */
     pvecback_integration[pba->index_bi_tau]=tau_end;
