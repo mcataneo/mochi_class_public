@@ -970,7 +970,7 @@ extern "C" {
 
   int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2, 
                         double Omx, double wx, double l1, double l2, double l3, double l4,
-                        double l5, double l6,double l7,double l8, double cs2num, double Dd, 
+                        double l5, double l6,double l7,double l8, double cs2num, double Dd, double ic_regulator_smg,
                         double * amplitude);
 #ifdef __cplusplus
 }
