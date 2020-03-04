@@ -3324,7 +3324,6 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
   if (flag1 == _TRUE_) {
 
     class_test(ppt->has_perturbations == _FALSE_, errmsg, "You requested non linear computation but no linear computation. You must set output to tCl or similar.");
-    class_test(ppt->has_pk_matter == _FALSE_, errmsg, "You requested non linear computation but no matter power spectrum. You must set output to mPk.");
 
     if ((strstr(string1,"halofit") != NULL) || (strstr(string1,"Halofit") != NULL) || (strstr(string1,"HALOFIT") != NULL)) {
       pnl->method=nl_halofit;
