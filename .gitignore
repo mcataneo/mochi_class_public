@@ -13,6 +13,8 @@ ini_files
 .vscode/
 *.pyc
 python/build/
+*.dSYM
 RealSpaceInterface/cache/
 .DS_Store
 doc/manual/html
+doc/manual/latex
