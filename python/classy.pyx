@@ -1829,7 +1829,7 @@ cdef class Class:
         try:
             index = int(name.split('_')[-1])
         except:
-            print "Index not given or not an interger: printing the whole array"
+            print("Index not given or not an interger: printing the whole array")
             array = []
             for i in range(carray_size):
                 array.append(carray[i])
@@ -1839,7 +1839,7 @@ cdef class Class:
             return carray[index-1]
         else:
             raise CosmoSevereError("%s index is greater than array length" % name)
-        
+
     def nonlinear_scale(self, np.ndarray[DTYPE_t,ndim=1] z, int z_size):
         """
         nonlinear_scale(z, z_size)
