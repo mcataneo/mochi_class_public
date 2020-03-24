@@ -178,7 +178,7 @@ int input_init_from_arguments(
              errmsg,
              errmsg);
 
-  class_call(parser_free(&fc),errmsg,errmsg);
+   class_call(parser_free(&fc),errmsg,errmsg);
 
   return _SUCCESS_;
 }
@@ -341,7 +341,7 @@ int input_init(
     memcpy(fzw.fc.value, pfc->value, pfc->size*sizeof(FileArg));
     memcpy(fzw.fc.read, pfc->read, pfc->size*sizeof(short));
 
-    class_alloc(unknown_parameter,
+  class_alloc(unknown_parameter,
                 unknown_parameters_size*sizeof(double),
                 errmsg);
     class_alloc(fzw.unknown_parameters_index,
@@ -1577,7 +1577,7 @@ int input_read_parameters(
 	pba->parameters_2_size_smg = 8;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
       }
-      
+
     if (strncmp("quintessence", string1, strlen("quintessence")) == 0){
           // Check if gravity_model has quintessence as prefix.
           // Add here all variables common to quintessence.
@@ -1590,20 +1590,20 @@ int input_read_parameters(
 	pba->field_evolution_smg = _TRUE_;
     pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
-	
+
 	pba->parameters_size_smg = 4;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
 	/* Guess for the parameter variation range.
      *
      * For the initial parameter one can use:
-	 * 
+	 *
 	 * 	rho_smg = 1/2*a_ini^-2*phi_prime_ini^2 + V0*3*H0^2/h^2*phi_ini^N
-	 * 
+	 *
 	 * However, for the range of variation it is better to use
-	 * 
+	 *
 	 * 	Omega = rho_smg/(rho_smg + rho_m)
-	 * 
+	 *
 	 * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
 	 * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
 	 * where we use rho_m ~ H_0^2
@@ -1617,45 +1617,45 @@ int input_read_parameters(
     double phi_ini_smg =  pba->parameters_smg[3];
 
     double P_ini = pow(phi_ini_smg, N);  // V=cte*P(phi)
-    
+
     double phi_end_guess = fmax(phi_ini_smg,2); //guess the final value of the field
 
     // class_test( ((abs(N)<1) || (abs(N)>7)), errmsg, "Exponent out of range. N must be a interger in (1,7)-range" );
 
 	if (has_tuning_index_smg == _FALSE_)
 	  pba->tuning_index_smg = 1; //use V0 for default tuning
-	
+
 	if (has_dxdy_guess_smg == _FALSE_){
- 
+
 	  if(pba->tuning_index_smg == 1){
 //           if(phi_ini_smg != 0){
-            V0 = pba->Omega0_smg/pow(phi_end_guess,N); 
+            V0 = pba->Omega0_smg/pow(phi_end_guess,N);
             pba->tuning_dxdy_guess_smg = 1./pow(phi_end_guess,N);
             pba->parameters_smg[1] = V0;
 //           }
 //           else{
-//             V0 = pba->Omega0_smg/pow(1.e-40,N); 
-//             pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N); 
+//             V0 = pba->Omega0_smg/pow(1.e-40,N);
+//             pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N);
 //             pba->parameters_smg[1] = V0;
-// 
+//
 //           }
 	  }
 
-	  if(pba->tuning_index_smg == 3){ 
+	  if(pba->tuning_index_smg == 3){
        phi_ini_smg = pow(pba->Omega0_smg/V0, 1./N);
        pba->parameters_smg[3] = phi_ini_smg;
        pba->tuning_dxdy_guess_smg = phi_ini_smg/(pba->Omega0_smg)/N;
 	  }
 	}//end of no has_dxdy_guess_smg
       }//end of quintessence_monomial
-      
-      
+
+
     if (strcmp(string1,"quintessence_tracker") == 0) {
 	pba->gravity_model_smg = quintessence_tracker;
 	pba->field_evolution_smg = _TRUE_;
     pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
-	
+
 	pba->parameters_size_smg = 6;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
@@ -1673,64 +1673,64 @@ int input_read_parameters(
         *
         *  minimum at phi0 = (n/(lambda*m))^(1/m)
         *  -> choose V0 ~ V(phi0)~Omega_smg H_0^2
-        * 
+        *
         * Initial conditions: see background.c
-        *  
+        *
         *  choose phi_ini so V = P_ini*sqrt(rho_rad)
         *  choose phi_prime_ini so K = K_ini*sqrt(rho_rad)
-        * 
+        *
         */
 
     double phi_0 = pow(n/lambda/m,1./m); /* minimum of the potential */
     double v_0_guess = (pow(phi_0,-n) * exp(lambda*pow(phi_0,m))); /*V/V0 at the minimum*/
-     
+
 	if (has_tuning_index_smg == _FALSE_)
 	  pba->tuning_index_smg = 2; //use V0 for default tuning
-	
+
 	if (has_dxdy_guess_smg == _FALSE_){
 	  if(pba->tuning_index_smg == 2){
-              
+
               V0 = 3* pba->h * (pba->Omega0_smg)/v_0_guess;
               pba->tuning_dxdy_guess_smg = 3. * pba->h/ (v_0_guess); //*(1-pba->Omega0_smg) -> removed, lead to instability!
               pba->parameters_smg[2] = V0;
           }
       }//end of no has_dxdy_guess_smg
       } //end of tracker
-      
-      
+
+
       if (strcmp(string1,"alpha_attractor_canonical") == 0) {
 	pba->gravity_model_smg = alpha_attractor_canonical;
 	pba->field_evolution_smg = _TRUE_;
     pba->is_quintessence_smg = _TRUE_;
 	flag2=_TRUE_;
-	
+
 	pba->parameters_size_smg = 6;
 	class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
     class_call(parser_read_string(pfc,"log_10_param_alpha",&string1,&flag1,errmsg),
 	       errmsg,
-	       errmsg);    
+	       errmsg);
 
-      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){ 
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
         pba->parameters_smg[2] = pow(10, pba->parameters_smg[2]);
       }
 
     class_call(parser_read_string(pfc,"use_phi_no_f",&string1,&flag1,errmsg),
 	       errmsg,
-	       errmsg);    
+	       errmsg);
 
-      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){ 
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
         pba->parameters_smg[1] =  pba->parameters_smg[1]/sqrt(pba->parameters_smg[2]);
       }
 
 	/* Guess for the parameter variation range. Copied from galileons.
      *
      * For the initial parameter one can use:
-	 * 
+	 *
 	 * However, for the range of variation it is better to use
-	 * 
+	 *
 	 * 	Omega = rho_smg/(rho_smg + rho_m)
-	 * 
+	 *
 	 * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
 	 * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
 	 * where we use rho_m ~ H_0^2
@@ -1746,14 +1746,14 @@ int input_read_parameters(
         double c = pba->parameters_smg[3];
         double p = pba->parameters_smg[4];
         double n = pba->parameters_smg[5];
-        double x = tanh(f_ini/(sqrt(6))); 
+        double x = tanh(f_ini/(sqrt(6)));
         double v = alpha* pow(x,p)/pow(1+x, 2*n); // v = V/c^2
         double rho_c = pow(pba->H0, 2);
 
 
         if (has_tuning_index_smg == _FALSE_)
           pba->tuning_index_smg = 3; //use V0 for default tuning
-        
+
         if (has_dxdy_guess_smg == _FALSE_){
           if(pba->tuning_index_smg == 3){
               c = sqrt(pba->Omega0_smg * rho_c / v);
@@ -1765,8 +1765,8 @@ int input_read_parameters(
 
       } //endif  alpha_attractor_canonical
 
-      
-      
+
+
       if (strcmp(string1,"galileon") == 0) {
 	pba->gravity_model_smg = galileon;
 	pba->field_evolution_smg = _TRUE_;
@@ -1868,7 +1868,7 @@ int input_read_parameters(
       pba->parameters_smg[6] = phi0;
 
 	}//end of submodels
-	
+
 
 	/* default tuning index is 3 */
 	if (has_tuning_index_smg == _FALSE_){
@@ -1883,8 +1883,8 @@ int input_read_parameters(
 
     class_call(parser_read_string(pfc,"attractor_ic_smg",&string1,&flag1,errmsg),
 	       errmsg,
-	       errmsg);    
-    
+	       errmsg);
+
       if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
           pba->attractor_ic_smg = _TRUE_;
       }
