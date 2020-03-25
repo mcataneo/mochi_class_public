@@ -3122,7 +3122,7 @@ int nonlinear_hmcode(
   double mmin, mmax, nu_min;
 
   double sigma_disp, sigma_disp100, sigma8;
-  double delta_c, Delta_v;
+  double delta_c, Delta_v, Delta_v_0, Delta_v_0_lcdm;
   double fraction;
 
   double sigma_nl, nu_nl, r_nl;
@@ -3248,8 +3248,38 @@ int nonlinear_hmcode(
   delta_c = delta_c*(1.+0.0123*log10(Omega_m)); //Nakamura & Suto (1997) fitting formula for LCDM models (as in Mead 2016)
   delta_c = delta_c*(1.+0.262*fnu); //Mead et al. (2016; arXiv 1602.02154) neutrino addition
 
+  Delta_v_0_lcdm = 418.;
+
+  // If smg, correct the LCDM virialized overdiensity
+  if(pba->has_smg == _TRUE_){
+
+    // Corrections are implemented only for Brans-Dicke
+    if(pba->gravity_model_smg == brans_dicke){
+
+      // Local variables
+      double d0, fac;
+      double omega = pba->parameters_smg[1];
+      if(omega<50.){
+        printf("WARNING: Currently HMcode has been fitted only for omega>50. Setting omega=50.\n");
+        omega = 50.;
+      }
+
+      d0  = 320.0+40.0*pow(z_at_tau, 0.26);
+      fac = atan(pow(abs(omega-50.0)*0.001, 0.2))*2.0/acos(-1.0);
+
+      // Fitting formula based on simulations
+      Delta_v_0 = d0 + (Delta_v_0_lcdm - d0) * fac;
+    }
+    else{
+      printf("WARNING: Currently HMcode is implemented only for Brans-Dicke.\n");
+    }
+  }
+  else{ // end of smg, standard LCDM value
+    Delta_v_0 = Delta_v_0_lcdm;
+  }
+
   // virialized overdensity
-  Delta_v=418.*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
+  Delta_v=Delta_v_0*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
   Delta_v=Delta_v*(1.+0.916*fnu); //Mead et al. (2016; arXiv 1602.02154) neutrino addition
 
   // mass or radius fraction respectively
