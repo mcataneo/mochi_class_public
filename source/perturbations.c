@@ -6538,7 +6538,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
         class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
 
-        ppw->pv->y[ppw->pv->index_pt_delta_fld] += 3*(1.+w_fld)*a_prime_over_a*alpha;
+        ppw->pv->y[ppw->pv->index_pt_delta_fld] -= 3*(1.+w_fld)*a_prime_over_a*alpha;
         ppw->pv->y[ppw->pv->index_pt_theta_fld] += k*k*alpha;
       }
 
@@ -8248,7 +8248,7 @@ int perturb_total_stress_energy(
 
     /* store delta_m in the current gauge. In perturb_einstein, this
        will be transformed later on into the gauge-independent variable D
-       = delta_m - 2H'/H \theta_m/k^2 .  */
+       = delta_m + 3 a H \theta_m/k^2 .  */
 
     if (ppt->has_source_delta_m == _TRUE_)
       ppw->delta_m = delta_rho_m/rho_m;
@@ -8436,7 +8436,7 @@ int perturb_sources(
 
   double a_rel, a2_rel, f_dr;
 
-  double rho_plus_p_tot, H_T_Nb_prime=0., rho_tot;
+  double H_T_Nb_prime=0., rho_tot;
   double theta_over_k2,theta_shift;
 
   /** - rename structure fields (just to avoid heavy notations) */
@@ -8609,9 +8609,8 @@ int perturb_sources(
     /* H_T_prime in N-body gauge. (H_T=3zeta where zeta is the comoving curvature perturbation.).
        See equation A.5 in 1811.00904.*/
     if (ppt->has_source_H_T_Nb_prime == _TRUE_) {
-      rho_plus_p_tot = (pvecback[pba->index_bg_rho_tot]+pvecback[pba->index_bg_p_tot]);
-      H_T_Nb_prime = 3*a_prime_over_a/rho_plus_p_tot*(-ppw->delta_p+
-                                                      pvecback[pba->index_bg_p_tot_prime]*ppw->rho_plus_p_theta/rho_plus_p_tot/k/k+
+      H_T_Nb_prime = 3*a_prime_over_a/ppw->rho_plus_p_tot*(-ppw->delta_p+
+                                                      pvecback[pba->index_bg_p_tot_prime]*ppw->rho_plus_p_theta/ppw->rho_plus_p_tot/k/k+
                                                       ppw->rho_plus_p_shear);
       _set_source_(ppt->index_tp_H_T_Nb_prime) = H_T_Nb_prime;
       /** gamma in Nbody gauge, see Eq. A.2 in 1811.00904. */
@@ -8703,7 +8702,7 @@ int perturb_sources(
 
     /* compute the corrections that have to be applied to each (delta_i, theta_i) in N-body gauge */
 	if (ppt->has_Nbody_gauge_transfers == _TRUE_){
-      theta_over_k2 = ppw->rho_plus_p_theta/(pvecback[pba->index_bg_rho_tot]+pvecback[pba->index_bg_p_tot]);
+      theta_over_k2 = ppw->rho_plus_p_theta/(pvecback[pba->index_bg_rho_tot]+pvecback[pba->index_bg_p_tot])/k/k;
       theta_shift = H_T_Nb_prime;
       if (ppt->gauge == synchronous) theta_shift += pvecmetric[ppw->index_mt_alpha]*k*k;
 	}
