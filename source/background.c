@@ -3387,7 +3387,7 @@ int background_derivs(
     }
     /** - Planck mass equation (if parameterization in terms of alpha_m **/
     if (pba->M_pl_evolution_smg == _TRUE_)
-      dy[pba->index_bi_delta_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*y[pba->index_bi_delta_M_pl_smg];   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
+      dy[pba->index_bi_delta_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg]+1.);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
   }
 
   if (pba->has_fld == _TRUE_) {
@@ -4301,7 +4301,7 @@ int background_output_budget(
       }
     }
 
-    if(pba->has_lambda || pba->has_fld || pba->has_scf || pba->has_curvature){
+    if(pba->has_lambda || pba->has_fld || pba->has_scf || pba->has_smg || pba->has_curvature){
       printf(" ---> Other Content \n");
     }
     if(pba->has_lambda){
@@ -4319,6 +4319,10 @@ int background_output_budget(
     if(pba->has_curvature){
       _class_print_species_("Spatial Curvature",k);
       budget_other+=pba->Omega0_k;
+    }
+    if(pba->has_smg){
+      _class_print_species_("Scalar Modified Gravity",smg);
+      budget_other+=pba->Omega0_smg;
     }
 
     printf(" ---> Total budgets \n");
