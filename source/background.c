@@ -3264,7 +3264,7 @@ int background_derivs(
     }
     /** - Planck mass equation (if parameterization in terms of alpha_m **/
     if (pba->M_pl_evolution_smg == _TRUE_)
-      dy[pba->index_bi_delta_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*y[pba->index_bi_delta_M_pl_smg];   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
+      dy[pba->index_bi_delta_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg]+1.);   //in this case the running has to be integrated (eq 3.4 of 1404.3713 yields M2' = aH\alpha_M M2)
   }
 
   if (pba->has_fld == _TRUE_) {
