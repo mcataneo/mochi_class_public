@@ -7513,15 +7513,6 @@ int perturb_einstein(
             ppt->error_message,
             ppt->error_message);
 
-          /* update total theta given rsa approximation results */
-
-          ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
-
-          if (pba->has_ur == _TRUE_) {
-
-            ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
-
-          }
         }
 
         if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
@@ -7598,15 +7589,6 @@ int perturb_einstein(
 		     ppt->error_message,
 		     ppt->error_message);
 
-	  /* update total theta given rsa approximation results */
-
-	  ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
-
-	  if (pba->has_ur == _TRUE_) {
-
-	    ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
-
-	  }
 	}
 
   if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
