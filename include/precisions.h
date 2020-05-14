@@ -177,9 +177,9 @@ class_precision_parameter(k_bao_center,double,3.0) /**< in ln(k) space, the cent
 
 class_precision_parameter(k_bao_width,double,4.0) /**< in ln(k) space, width of the BAO region where sampling is finer: this number gives roughly the number of BAO oscillations well resolved on both sides of the central value (recommended: 4, i.e. finest sampling from before first up to 3+4=7th peak) */
 
-class_precision_parameter(start_small_k_at_tau_c_over_tau_h,double,0.0015) /**< largest wavelengths start being sampled when universe is sufficiently opaque. This is quantified in terms of the ratio of thermo to hubble time scales, \f$ \tau_c/\tau_H \f$. Start when start_largek_at_tau_c_over_tau_h equals this ratio. Decrease this value to start integrating the wavenumbers earlier in time. */
+class_precision_parameter(start_small_k_at_tau_c_over_tau_h,double,1.e-3) /**< largest wavelengths start being sampled when universe is sufficiently opaque. This is quantified in terms of the ratio of thermo to hubble time scales, \f$ \tau_c/\tau_H \f$. Start when start_largek_at_tau_c_over_tau_h equals this ratio. Decrease this value to start integrating the wavenumbers earlier in time. */
 
-class_precision_parameter(start_large_k_at_tau_h_over_tau_k,double,0.07)  /**< largest wavelengths start being sampled when mode is sufficiently outside Hubble scale. This is quantified in terms of the ratio of hubble time scale to wavenumber time scale, \f$ \tau_h/\tau_k \f$ which is roughly equal to (k*tau). Start when this ratio equals start_large_k_at_tau_k_over_tau_h. Decrease this value to start integrating the wavenumbers earlier in time. */
+class_precision_parameter(start_large_k_at_tau_h_over_tau_k,double,1.e-3)  /**< largest wavelengths start being sampled when mode is sufficiently outside Hubble scale. This is quantified in terms of the ratio of hubble time scale to wavenumber time scale, \f$ \tau_h/\tau_k \f$ which is roughly equal to (k*tau). Start when this ratio equals start_large_k_at_tau_k_over_tau_h. Decrease this value to start integrating the wavenumbers earlier in time. */
 
 /**
  * when to switch off tight-coupling approximation: first condition:
@@ -227,7 +227,7 @@ class_precision_parameter(perturb_integration_stepsize,double,0.5)
 /**
  * default step \f$ d \tau \f$ for sampling the source function, in units of the timescale involved in the sources: \f$ (\dot{\kappa}- \ddot{\kappa}/\dot{\kappa})^{-1} \f$
  */
-class_precision_parameter(perturb_sampling_stepsize,double,0.1)
+class_precision_parameter(perturb_sampling_stepsize,double,0.05)
 
 /**
  * control parameter for the precision of the perturbation integration,
@@ -331,9 +331,9 @@ class_precision_parameter(primordial_inflation_extra_efolds,double,2.0) /**< a s
  * */
 
 
-class_precision_parameter(l_linstep,int,40) /**< factor for logarithmic spacing of values of l over which bessel and transfer functions are sampled */
+class_precision_parameter(l_linstep,int,50) /**< factor for logarithmic spacing of values of l over which bessel and transfer functions are sampled */
 
-class_precision_parameter(l_logstep,double,1.12) /**< maximum spacing of values of l over which Bessel and transfer functions are sampled (so, spacing becomes linear instead of logarithmic at some point) */
+class_precision_parameter(l_logstep,double,1.045) /**< maximum spacing of values of l over which Bessel and transfer functions are sampled (so, spacing becomes linear instead of logarithmic at some point) */
 
 class_precision_parameter(hyper_x_min,double,1.0e-5)  /**< flat case: lower bound on the smallest value of x at which we sample \f$ \Phi_l^{\nu}(x)\f$ or \f$ j_l(x)\f$ */
 class_precision_parameter(hyper_sampling_flat,double,8.0)  /**< flat case: number of sampled points x per approximate wavelength \f$ 2\pi \f$, should remain >7.5 */
