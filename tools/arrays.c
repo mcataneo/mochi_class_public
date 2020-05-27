@@ -782,9 +782,9 @@ int array_derivate_spline(
       (-(3.*a*a-1.)* *(array_splined+inf*n_columns+i) +
        (3.*b*b-1.)* *(array_splined+sup*n_columns+i))*h/6.;
 
-  return _SUCCESS_;    
-} 
- 
+  return _SUCCESS_;
+}
+
 int array_logspline_table_lines(
 			     double * x, /* vector of size x_size */
 			     int x_size,

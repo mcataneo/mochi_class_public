@@ -3272,6 +3272,7 @@ int nonlinear_hmcode(
     }
     else{
       printf("WARNING: Currently HMcode is implemented only for Brans-Dicke.\n");
+      Delta_v_0 = Delta_v_0_lcdm;
     }
   }
   else{ // end of smg, standard LCDM value
