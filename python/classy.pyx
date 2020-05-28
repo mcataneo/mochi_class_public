@@ -1383,7 +1383,7 @@ cdef class Class:
           -) delta_g_00 = -2 Psi
           -) delta_g_ij = -2 Phi delta_ij
         Then:
-        G_light = -2 k^2/a^2 (Phi+Psi)/delta_rho
+        G_light = -2 k^2/a^2 (Phi+Psi)/2/delta_rho
 
         Parameters
         ----------
