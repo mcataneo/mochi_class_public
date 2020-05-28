@@ -57,6 +57,8 @@ cdef extern from "class.h":
         int index_bg_D
         int index_bg_f
         int index_bg_Omega_m
+        int index_bg_G_eff_smg
+        int index_bg_slip_eff_smg
         short long_info
         short inter_normal
         short  has_ncdm

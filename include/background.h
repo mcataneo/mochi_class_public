@@ -332,6 +332,9 @@ struct background
   int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */
   int index_bg_w_smg; /**< equation of state of the scalar field */
 
+  int index_bg_G_eff_smg; /**< G effective in the infinite k limit */
+  int index_bg_slip_eff_smg; /**< slip effective in the infinite k limit */
+
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
   int index_bg_pseudo_p_ncdm1;/**< another statistical momentum useful in ncdma approximation */

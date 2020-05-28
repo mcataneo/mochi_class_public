@@ -1284,6 +1284,118 @@ cdef class Class:
         return Om_m
 
 
+    def G_eff_smg(self, z):
+        """
+        G_eff_smg(z)
+
+        Return G_eff in the k->infinity limit.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_eff = -2 k^2/a^2 Phi/delta_rho
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        cdef double tau
+        cdef int last_index #junk
+        cdef double * pvecback
+
+        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+
+        if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        if background_at_tau(&self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        G_eff = pvecback[self.ba.index_bg_G_eff_smg]
+
+        free(pvecback)
+
+        return G_eff
+
+    def slip_eff_smg(self, z):
+        """
+        slip_eff_smg(z)
+
+        Return slip_eff in the k->infinity limit.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        slip = Phi/Psi
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        cdef double tau
+        cdef int last_index #junk
+        cdef double * pvecback
+
+        pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+
+        if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        if background_at_tau(&self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        slip = pvecback[self.ba.index_bg_slip_eff_smg]
+
+        free(pvecback)
+
+        return slip
+
+    def G_matter_smg(self, z):
+        """
+        G_matter_smg(z)
+
+        Return G_matter in the k->infinity limit.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_matter = -2 k^2/a^2 Psi/delta_rho
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+
+        G_eff = self.G_eff_smg(z)
+        slip = self.slip_eff_smg(z)
+
+        return G_eff/slip
+
+    def G_light_smg(self, z):
+        """
+        G_light_smg(z)
+
+        Return G_light in the k->infinity limit.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_light = -2 k^2/a^2 (Phi+Psi)/delta_rho
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+
+        G_eff = self.G_eff_smg(z)
+        slip = self.slip_eff_smg(z)
+
+        return (slip + 1)*G_eff/slip/2
+
     def ionization_fraction(self, z):
         """
         ionization_fraction(z)
