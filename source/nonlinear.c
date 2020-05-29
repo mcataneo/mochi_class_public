@@ -1651,7 +1651,7 @@ int nonlinear_free(
 
     free(pnl->k);
     free(pnl->ln_k);
-    free(pnl->ln_tau);
+    // free(pnl->ln_tau); // EB_smg
 
     for (index_pk=0; index_pk<pnl->pk_size; index_pk++) {
       free(pnl->ln_pk_ic_l[index_pk]);
@@ -3148,6 +3148,8 @@ int nonlinear_hmcode(
   double * r_virial;
   double * r_real;
   double * nu_arr;
+  double * z_form_array; // EB_smg
+  double * g_form_array; // EB_smg
 
   double * p1h_integrand;
 
@@ -3437,11 +3439,18 @@ int nonlinear_hmcode(
 
   /** Calculate halo concentration-mass relation conc(mass) (Bullock et al. 2001) */
   class_alloc(conc,ppr->nsteps_for_p1h_integral*sizeof(double),pnl->error_message);
+  class_alloc(z_form_array,ppr->nsteps_for_p1h_integral*sizeof(double),pnl->error_message); // EB_smg
+  class_alloc(g_form_array,ppr->nsteps_for_p1h_integral*sizeof(double),pnl->error_message); // EB_smg
 
   for (index_mass=0;index_mass<ppr->nsteps_for_p1h_integral;index_mass++){
     //find growth rate at formation
     g_form = delta_c*growth/sigmaf_r[index_mass];
     if (g_form > 1.) g_form = 1.;
+    /** Here we correct the formation growth for extreme models where it is
+        g_form is very little and outside the precumputed table. */
+    if (pba->has_smg == _TRUE_){ // EB_smg
+      if (g_form < pnw->growtable[0]) g_form = pnw->growtable[0];
+    }
 
     //
     class_call(array_interpolate_two_arrays_one_column(
@@ -3454,6 +3463,8 @@ int nonlinear_hmcode(
                                                        &z_form,
                                                        pnl->error_message),
                pnl->error_message, pnl->error_message);
+    z_form_array[index_mass] = z_form;// EB_smg
+    g_form_array[index_mass] = g_form;// EB_smg
     if (z_form < z_at_tau){
       conc[index_mass] = pnl->c_min;
     } else {
@@ -3587,6 +3598,12 @@ int nonlinear_hmcode(
     fprintf(stdout, "    fdamp:		%e\n", fdamp);
     fprintf(stdout, "    alpha:		%e\n", alpha);
     fprintf(stdout, "    ksize, kmin, kmax:   %d, %e, %e\n", pnl->k_size, pnl->k[0]/pba->h, pnl->k[pnl->k_size-1]/pba->h);
+    if (pnl->nonlinear_verbose){ // EB_smg
+      fprintf(stdout, "    z_form min:		%e\n", z_form_array[ppr->nsteps_for_p1h_integral-1]);
+      fprintf(stdout, "    z_form max:		%e\n", z_form_array[0]);
+      fprintf(stdout, "    g_form min:		%e\n", g_form_array[0]);
+      fprintf(stdout, "    g_form max:		%e\n", g_form_array[ppr->nsteps_for_p1h_integral-1]);
+    }
 
   }
 
@@ -3597,6 +3614,8 @@ int nonlinear_hmcode(
   free(sigma_r);
   free(sigmaf_r);
   free(nu_arr);
+  free(z_form_array); // EB_smg
+  free(g_form_array); // EB_smg
 
   return _SUCCESS_;
 }
