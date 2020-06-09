@@ -14,6 +14,7 @@ extract cosmological parameters.
 from math import exp,log
 import numpy as np
 cimport numpy as np
+import scipy
 from libc.stdlib cimport *
 from libc.stdio cimport *
 from libc.string cimport *
@@ -1393,6 +1394,130 @@ cdef class Class:
 
         G_eff = self.G_eff_smg(z)
         slip = self.slip_eff_smg(z)
+
+        return (slip + 1)*G_eff/slip/2
+
+    def G_eff_at_k_and_z_smg(self, k, z):
+        """
+        G_eff_smg(k, z)
+
+        Return G_eff from the perturbation module directly.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_eff = -2 k^2/a^2 Phi/delta_rho
+
+        Parameters
+        ----------
+        k : float
+                Desired scale
+        z : float
+                Desired redshift
+        """
+
+        # Compute background and perturbations
+        self.set({'output':'mPk, mTk','k_output_values':str(k)})
+        self.compute(['perturb'])
+        back = self.get_background()
+        pts = self.get_perturbations()['scalar'][0]
+        zback = back['z']
+        zpert = 1./pts['a']-1.
+
+        # Get species
+        sps = [x.replace('delta_', '') for x in pts.keys() if 'delta_' in x]
+
+        # Get delta_rho total (the factor 3. comes from the densities normalization)
+        delta_rho = 0.
+        for sp in sps:
+            rho_back = scipy.interpolate.interp1d(zback, back['(.)rho_'+sp])(z)
+            delta = scipy.interpolate.interp1d(zpert, pts['delta_'+sp])(z)
+            delta_rho += 3.*rho_back*delta
+
+        # Get phi
+        phi = scipy.interpolate.interp1d(zpert, pts['phi'])(z)
+
+        G_eff = -2*k**2*(1+z)**2*phi/delta_rho
+
+        return G_eff
+
+    def slip_eff_at_k_and_z_smg(self, k, z):
+        """
+        slip_eff_at_k_and_z_smg(k, z)
+
+        Return slip_eff from the perturbation module directly.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        slip = Phi/Psi
+
+        Parameters
+        ----------
+        k : float
+                Desired scale
+        z : float
+                Desired redshift
+        """
+        # Compute background and perturbations
+        self.set({'output':'mPk, mTk','k_output_values':str(k)})
+        self.compute(['perturb'])
+        pts = self.get_perturbations()['scalar'][0]
+        zpert = 1./pts['a']-1.
+
+        # Get phi and psi
+        phi = scipy.interpolate.interp1d(zpert, pts['phi'])(z)
+        psi = scipy.interpolate.interp1d(zpert, pts['psi'])(z)
+
+        slip = phi/psi
+
+        return slip
+
+    def G_matter_at_k_and_z_smg(self, k, z):
+        """
+        G_matter_at_k_and_z_smg(k, z)
+
+        Return G_matter from the perturbation module directly.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_matter = -2 k^2/a^2 Psi/delta_rho
+
+        Parameters
+        ----------
+        k : float
+                Desired scale
+        z : float
+                Desired redshift
+        """
+
+        G_eff = self.G_eff_at_k_and_z_smg(k, z)
+        slip = self.slip_eff_at_k_and_z_smg(k, z)
+
+        return G_eff/slip
+
+    def G_light_at_k_and_z_smg(self, k, z):
+        """
+        G_light_at_k_and_z_smg(k, z)
+
+        Return G_light from the perturbation module directly.
+        If the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_light = -2 k^2/a^2 (Phi+Psi)/2/delta_rho
+
+        Parameters
+        ----------
+        k : float
+                Desired scale
+        z : float
+                Desired redshift
+        """
+
+        G_eff = self.G_eff_at_k_and_z_smg(k, z)
+        slip = self.slip_eff_at_k_and_z_smg(k, z)
 
         return (slip + 1)*G_eff/slip/2
 
