@@ -2782,7 +2782,25 @@ int background_initial_conditions(
 	  printf(" -> Initial conditions: delta_M_pl = %e \n",pvecback_integration[pba->index_bi_delta_M_pl_smg]);
 
       if (pba->rho_evolution_smg == _TRUE_){
-        pvecback_integration[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_smg];
+
+	//DT: moved here from the definition of wowa_w model, to avoid pvecback[pba->index_bg_rho_smg] mix up
+	if (pba->expansion_model_smg == wowa_w)
+	  {
+	    double Omega_const_smg = pba->parameters_smg[0];
+	    double w0 = pba->parameters_smg[1];
+	    double wa = pba->parameters_smg[2];
+	    
+	    double w_smg = w0+(1.-a)*wa;
+	    double wi = w0+wa;
+	    double wf = w0;
+	    double rho_smg_today = Omega_const_smg * pow(pba->H0,2);
+	    double integral_smg = 3.*((1.+ wi)*log(1./a) + (wi-wf)*(a-1.));
+	    pvecback_integration[pba->index_bi_rho_smg] = rho_smg_today * exp(integral_smg);
+	  }
+        else
+          {
+	    pvecback_integration[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_smg];
+	  }
       }
 
   }//end of smg
@@ -3613,24 +3631,26 @@ int background_gravity_functions(
     }
     if (pba->expansion_model_smg == wowa_w){
 
-      double Omega_const_smg = pba->parameters_smg[0];
+      //double Omega_const_smg = pba->parameters_smg[0];
       double w0 = pba->parameters_smg[1];
       double wa = pba->parameters_smg[2];
 
       pvecback[pba->index_bg_w_smg] = w0+(1-a)*wa;
 
-      if (pba->initial_conditions_set_smg == _FALSE_) {
+      //DT: All commented out parts are now before th definition of pvecback_integration[pba->index_bi_rho_smg] (L2784)
+      
+      //if (pba->initial_conditions_set_smg == _FALSE_) {
         // Here we provide wi wf from w= (1-a)*wi+a*wf.
         // This is useful to set the initial conditions  for the energy density.
         // The value inferred here is just a guess, since then the shooting will modify it.
-        double wi = w0+wa;
-        double wf = w0;
+      //  double wi = w0+wa;
+      //  double wf = w0;
 
-        pvecback[pba->index_bg_rho_smg] = Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1. + wi)) * exp(3.*(wi-wf)*(a-1.));
-      }
-      else {
-        pvecback[pba->index_bg_rho_smg] = pvecback_B[pba->index_bi_rho_smg];
-      }
+      //  pvecback[pba->index_bg_rho_smg] = Omega_const_smg * pow(pba->H0,2)/pow(a,3.*(1. + wi)) * exp(3.*(wi-wf)*(a-1.));
+      //}
+    //else {
+      pvecback[pba->index_bg_rho_smg] = pvecback_B[pba->index_bi_rho_smg];
+      //}
       pvecback[pba->index_bg_p_smg] = pvecback[pba->index_bg_w_smg] * pvecback[pba->index_bg_rho_smg];
 
     }//ILSWEDE
