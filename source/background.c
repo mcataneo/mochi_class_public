@@ -3678,23 +3678,11 @@ int background_gravity_functions(
     /* Rewritten by the constraint if ICs have not been set */
     pvecback[pba->index_bg_H] = H;
 
-    // pvecback[pba->index_bg_M2_smg] = 2.*G4 + (2.*G4_X + H*phi_prime*pow(a,-1)*G5_X + (-1.)*G5_phi)*(-2.)*X;
-    pvecback[pba->index_bg_delta_M2_smg] = 2.*(DG4 - 2.*X*G4_X + X*G5_phi) - 2.*X*H*phi_prime*pow(a,-1)*G5_X;
-    pvecback[pba->index_bg_M2_smg] = 1. + pvecback[pba->index_bg_delta_M2_smg];
-
     class_test_except(isnan(pvecback[pba->index_bg_H]),
 	       pba->error_message,
          free(pvecback);free(pvecback_B),
-               " H=%e is not a number at a = %e. phi = %e, phi_prime = %e, E0=%e, E1=%e, E2=%e, E3=%e, M_*^2 = %e ",
-	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3,pvecback[pba->index_bg_M2_smg]);
-
-
-    /* alpha_K and alpha_B are needed in the equation and do not depend on phi'' */
-    /* alpha_K kineticity */
-    pvecback[pba->index_bg_kineticity_smg] = ((3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*4.*H*phi_prime*pow(a,-1)*X + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*2.*pow(H,-2)*X + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*12.*pow(H,-1)*phi_prime*pow(a,-1)*X + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*12.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
-
-    /* alpha_B braiding */
-    pvecback[pba->index_bg_braiding_smg] = ((3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*8.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
+               " H=%e is not a number at a = %e. phi = %e, phi_prime = %e, E0=%e, E1=%e, E2=%e, E3=%e ",
+	       pvecback[pba->index_bg_H],a,phi,phi_prime,E0,E1,E2,E3);
 
 
     /** TODO: add references
@@ -3736,7 +3724,19 @@ int background_gravity_functions(
     /* Field equation */
     pvecback[pba->index_bg_phi_prime_prime_smg] = (A*P + (-1.)*F*R)*pow(B*F + (-1.)*A*M,-1);
 
-    /* alpha_T, alpha_M depend on phi''... -> computed now */
+
+    /* Computing alphas at the end (alpha_T, alpha_M depend on phi'') */
+
+    /* Planck mass */
+    pvecback[pba->index_bg_delta_M2_smg] = 2.*(DG4 - 2.*X*G4_X + X*G5_phi) - 2.*X*H*phi_prime*pow(a,-1)*G5_X;
+    pvecback[pba->index_bg_M2_smg] = 1. + pvecback[pba->index_bg_delta_M2_smg];
+
+    /* alpha_K kineticity */
+    pvecback[pba->index_bg_kineticity_smg] = ((3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*4.*H*phi_prime*pow(a,-1)*X + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*2.*pow(H,-2)*X + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*12.*pow(H,-1)*phi_prime*pow(a,-1)*X + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*12.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
+
+    /* alpha_B braiding */
+    pvecback[pba->index_bg_braiding_smg] = ((3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*8.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
+
     /* alpha_T: tensor speed excess */
     pvecback[pba->index_bg_tensor_excess_smg] = ((pvecback[pba->index_bg_phi_prime_prime_smg] + (-2.)*H*phi_prime*a)*(-2.)*pow(a,-2)*G5_X + (G4_X + (-1.)*G5_phi)*4.)*pow(pvecback[pba->index_bg_M2_smg],-1)*X;
 
