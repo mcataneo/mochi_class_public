@@ -2907,7 +2907,7 @@ int background_initial_conditions(
 	    double Omega_const_smg = pba->parameters_smg[0];
 	    double w0 = pba->parameters_smg[1];
 	    double wa = pba->parameters_smg[2];
-	    
+
 	    double w_smg = w0+(1.-a)*wa;
 	    double wi = w0+wa;
 	    double wf = w0;
@@ -3489,9 +3489,11 @@ int background_gravity_functions(
     double E0,E1,E2,E3,B,A,R,M,F,P;
     double G2=0, G2_X=0, G2_XX=0, G2_phi=0, G2_Xphi=0;
     double G3_X=0, G3_XX=0, G3_phi=0, G3_phiphi=0, G3_Xphi=0;
-    double G4, G4_smg=0;
+    double G4, DG4=0;
     double G4_phi=0, G4_phiphi=0, G4_X=0, G4_XX=0, G4_XXX=0, G4_Xphi=0, G4_Xphiphi=0, G4_XXphi=0;
     double G5=0, G5_phi=0, G5_phiphi=0, G5_X=0, G5_XX=0, G5_XXX=0, G5_Xphi=0, G5_Xphiphi=0, G5_XXphi=0;
+    double F4=0, F4_X=0;
+    double F5=0, F5_X=0;
 
     a = pvecback_B[pba->index_bi_a];
     if (pba->hubble_evolution == _TRUE_)
@@ -3576,8 +3578,8 @@ int background_gravity_functions(
       /*  G_3 = -2*Lambda3*X */
       G3_X = -2.*Lambda3;
       /* G_4 = 1/2 + Lambda4 X^2 */
-      G4_smg = Lambda4*pow(X,2);
-      G4 = 1/2. + G4_smg;
+      DG4 = Lambda4*pow(X,2);
+      G4 = 1/2. + DG4;
       G4_X = 2.*Lambda4*X;
       G4_XX = 2.*Lambda4;
       /* G_5 = Lambda5*pow(X,2) */
@@ -3598,7 +3600,7 @@ int background_gravity_functions(
       G2_Xphi = -omega/pow(phi,2);
       G2_phi = -omega*X/pow(phi,2);
 
-      G4_smg = (phi-1.)/2.;
+      DG4 = (phi-1.)/2.;
       G4 = phi/2.;
       G4_phi = 1./2.;
 
@@ -3642,10 +3644,10 @@ int background_gravity_functions(
      * NOTE: added rho_smg, p_smg separately
      */
 
-    E0 = (3.*rho_tot + (-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3.;
-    E1 = ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*phi_prime*pow(a,-1);
-    E2 = (G4 + (4.*G4_X + (-3.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*2.*X)*(-1.)*X)*2.;
-    E3 = (5.*G5_X + 2.*X*G5_XX)*2./3.*phi_prime*pow(a,-1)*X;
+    E0 = rho_tot - G2/3. + (G2_X - G3_phi)*2./3.*X;
+    E1 = -2.*(G4_phi - X*(G3_X + 2.*G4_Xphi))*phi_prime/a;
+    E2 = 1. + 2.*DG4 - 2.*X*(4.*G4_X - 3.*G5_phi) - 4.*pow(X,2)*(10.*F4 + 2.*G4_XX - G5_Xphi) - 16.*pow(X,3)*F4_X;
+    E3 = 2./3.*phi_prime/a*X*(5.*G5_X + 2.*X*(G5_XX - 42.*F5) - 24.*pow(X,2)*F5_X);
 
     /* Rewrite if ICs not set or no evolution */
     if (pba->initial_conditions_set_smg == _FALSE_ || pba->hubble_evolution == _FALSE_){
@@ -3677,7 +3679,7 @@ int background_gravity_functions(
     pvecback[pba->index_bg_H] = H;
 
     // pvecback[pba->index_bg_M2_smg] = 2.*G4 + (2.*G4_X + H*phi_prime*pow(a,-1)*G5_X + (-1.)*G5_phi)*(-2.)*X;
-    pvecback[pba->index_bg_delta_M2_smg] = 2.*(G4_smg - 2.*X*G4_X + X*G5_phi) - 2.*X*H*phi_prime*pow(a,-1)*G5_X;
+    pvecback[pba->index_bg_delta_M2_smg] = 2.*(DG4 - 2.*X*G4_X + X*G5_phi) - 2.*X*H*phi_prime*pow(a,-1)*G5_X;
     pvecback[pba->index_bg_M2_smg] = 1. + pvecback[pba->index_bg_delta_M2_smg];
 
     class_test_except(isnan(pvecback[pba->index_bg_H]),
@@ -3742,10 +3744,10 @@ int background_gravity_functions(
     pvecback[pba->index_bg_mpl_running_smg] = ((-2.)*pow(H,-1)*pvecback[pba->index_bg_H_prime]*phi_prime*pow(a,-2)*X*G5_X + (3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((3.*G5_X + 2.*X*G5_XX)*(-2.)*X + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-2.)*pow(H,-1)*phi_prime*pow(a,-1))*pvecback[pba->index_bg_phi_prime_prime_smg]*pow(a,-2) + (G4_X + (-1.)*G5_phi + (G4_XX + (-1.)*G5_Xphi)*2.*X)*4.*X + (G4_phi + ((-2.)*G4_Xphi + G5_phiphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1))*pow(pvecback[pba->index_bg_M2_smg],-1);
 
     /* Energy density of the field */
-    pvecback[pba->index_bg_rho_smg] = (5.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3. + (G4_phi + (G3_X + (-2.)*G4_Xphi)*(-1.)*X)*(-2.)*H*phi_prime*pow(a,-1) + ((-2.)*G4_smg + ((4.*G4_X + (-3.)*G5_phi)*2. + (2.*G4_XX + (-1.)*G5_Xphi)*4.*X)*X)*pow(H,2);
+    pvecback[pba->index_bg_rho_smg] = (5.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3. + (G4_phi + (G3_X + (-2.)*G4_Xphi)*(-1.)*X)*(-2.)*H*phi_prime*pow(a,-1) + ((-2.)*DG4 + ((4.*G4_X + (-3.)*G5_phi)*2. + (2.*G4_XX + (-1.)*G5_Xphi)*4.*X)*X)*pow(H,2);
 
     /* Pressure of the field */
-    pvecback[pba->index_bg_p_smg] = (G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-4.)/3.*H*phi_prime*pow(a,-2)*X*G5_X + (-2.*G4_smg + (2.*G4_X + (-1.)*G5_phi)*2.*X)*(-2.)/3.*pow(a,-1))*pvecback[pba->index_bg_H_prime] + (6.*G4_smg + ((-2.)*G4_X + (-1.)*G5_phi + (4.*G4_XX + (-3.)*G5_Xphi)*2.*X)*2.*X)*1./3.*pow(H,2) + ((3.*G5_X + 2.*X*G5_XX)*(-2.)/3.*pow(H,2)*pow(a,-2)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*(-2.)/3.*pow(a,-2) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-4.)/3.*H*phi_prime*pow(a,-3))*pvecback[pba->index_bg_phi_prime_prime_smg] + (G2 + (G3_phi + (-2.)*G4_phiphi)*(-2.)*X)*1./3. + (G4_phi + (G3_X + (-6.)*G4_Xphi + 2.*G5_phiphi)*X)*2./3.*H*phi_prime*pow(a,-1);
+    pvecback[pba->index_bg_p_smg] = (G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-4.)/3.*H*phi_prime*pow(a,-2)*X*G5_X + (-2.*DG4 + (2.*G4_X + (-1.)*G5_phi)*2.*X)*(-2.)/3.*pow(a,-1))*pvecback[pba->index_bg_H_prime] + (6.*DG4 + ((-2.)*G4_X + (-1.)*G5_phi + (4.*G4_XX + (-3.)*G5_Xphi)*2.*X)*2.*X)*1./3.*pow(H,2) + ((3.*G5_X + 2.*X*G5_XX)*(-2.)/3.*pow(H,2)*pow(a,-2)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*(-2.)/3.*pow(a,-2) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-4.)/3.*H*phi_prime*pow(a,-3))*pvecback[pba->index_bg_phi_prime_prime_smg] + (G2 + (G3_phi + (-2.)*G4_phiphi)*(-2.)*X)*1./3. + (G4_phi + (G3_X + (-6.)*G4_Xphi + 2.*G5_phiphi)*X)*2./3.*H*phi_prime*pow(a,-1);
 
   }// end of if pba->field_evolution_smg
   else{
@@ -3794,7 +3796,7 @@ int background_gravity_functions(
       pvecback[pba->index_bg_w_smg] = w0+(1-a)*wa;
 
       //DT: All commented out parts are now before th definition of pvecback_integration[pba->index_bi_rho_smg] (L2784)
-      
+
       //if (pba->initial_conditions_set_smg == _FALSE_) {
         // Here we provide wi wf from w= (1-a)*wi+a*wf.
         // This is useful to set the initial conditions  for the energy density.
