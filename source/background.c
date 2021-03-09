@@ -1016,8 +1016,6 @@ int background_indices(
   class_define_index(pba->index_bg_phi_smg,pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_phi_prime_smg,pba->field_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_phi_prime_prime_smg,pba->field_evolution_smg,index_bg,1);
-  class_define_index(pba->index_bg_M2_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_delta_M2_smg,pba->has_smg,index_bg,1);
 
   class_define_index(pba->index_bg_rho_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_p_smg,pba->has_smg,index_bg,1);
@@ -1026,11 +1024,18 @@ int background_indices(
   class_define_index(pba->index_bg_current_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_shift_smg,pba->has_smg,index_bg,1);
 
+  class_define_index(pba->index_bg_M2_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_delta_M2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kineticity_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_braiding_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_tensor_excess_smg,pba->has_smg,index_bg,1);
-
   class_define_index(pba->index_bg_mpl_running_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_beyond_horndeski_smg,pba->has_smg,index_bg,1);
+
+  class_define_index(pba->index_bg_kineticity_over_phiphi_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_braiding_over_phi_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_beyond_horndeski_over_phi_smg,pba->has_smg,index_bg,1);
+
   class_define_index(pba->index_bg_kineticity_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_braiding_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_mpl_running_prime_smg,pba->has_smg,index_bg,1);
@@ -3177,6 +3182,7 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"braiding_smg",pba->has_smg);
     class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);
     class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);
+    class_store_columntitle(titles,"beyond_horndeski_smg",pba->has_smg);
     class_store_columntitle(titles,"c_s^2",pba->has_smg);
     class_store_columntitle(titles,"kin (D)",pba->has_smg);
     class_store_columntitle(titles,"Current",pba->has_smg);
@@ -3199,6 +3205,9 @@ int background_output_titles(struct background * pba,
   if (pba->output_background_smg >= 3){
     class_store_columntitle(titles,"kineticity_prime_smg",pba->has_smg);
     class_store_columntitle(titles,"braiding_prime_smg",pba->has_smg);
+    class_store_columntitle(titles,"kineticity_over_phiphi_smg",pba->has_smg);
+    class_store_columntitle(titles,"braiding_over_phi_smg",pba->has_smg);
+    class_store_columntitle(titles,"beyond_horndeski_over_phiphi_smg",pba->has_smg);
     class_store_columntitle(titles,"lambda_1",pba->has_smg);
     class_store_columntitle(titles,"lambda_2",pba->has_smg);
     class_store_columntitle(titles,"lambda_3",pba->has_smg);
@@ -3288,6 +3297,7 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_current_smg],pba->has_smg,storeidx);
@@ -3309,6 +3319,9 @@ int background_output_data(
     if (pba->output_background_smg >= 3){
       class_store_double(dataptr,pvecback[pba->index_bg_kineticity_prime_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_braiding_prime_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_over_phiphi_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_braiding_over_phi_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_over_phi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_1_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_3_smg],pba->has_smg,storeidx);
@@ -3825,20 +3838,67 @@ int background_gravity_functions(
     /* Computing alphas at the end (alpha_T, alpha_M depend on phi'') */
 
     /* Planck mass */
-    pvecback[pba->index_bg_delta_M2_smg] = 2.*(DG4 - 2.*X*G4_X + X*G5_phi) - 2.*X*H*phi_prime*pow(a,-1)*G5_X;
+    pvecback[pba->index_bg_delta_M2_smg] = (DG4 - X*(2.*G4_X - G5_phi) - 4.*F4*pow(X,2))*2.
+      - 2.*X*(G5_X - 12.*F5*X)*H*phi_prime/a;
     pvecback[pba->index_bg_M2_smg] = 1. + pvecback[pba->index_bg_delta_M2_smg];
 
     /* alpha_K kineticity */
-    pvecback[pba->index_bg_kineticity_smg] = ((3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*4.*H*phi_prime*pow(a,-1)*X + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*2.*pow(H,-2)*X + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*12.*pow(H,-1)*phi_prime*pow(a,-1)*X + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*12.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
+    pvecback[pba->index_bg_kineticity_over_phiphi_smg] =
+      (
+        + (G2_X - 2.*G3_phi + 2.*X*(G2_XX - G3_Xphi))
+        + 2.*(
+          + 3.*G5_X + X*(7.*G5_XX - 120.*F5) + 2.*(G5_XXX - 66.*F5_X)*pow(X,2)
+          - 24.*pow(X,3)*F5_XX
+        )*pow(H,3)*phi_prime/a
+        + 6.*(G3_X - 3.*G4_Xphi + X*(G3_XX - 2.*G4_XXphi))*H*phi_prime/a
+        + (
+          + G4_X - G5_phi + X*(8.*G4_XX - 5.*G5_Xphi + 24.*F4)
+          + 2.*(2.*G4_XXX - G5_XXphi + 18.*F4_X)*pow(X,2) + 8.*pow(X,3)*F4_XX
+        )*6.*pow(H,2)
+      )/pvecback[pba->index_bg_M2_smg];
+
+    pvecback[pba->index_bg_kineticity_smg] = 2.*pow(H,-2)*X*pvecback[pba->index_bg_kineticity_over_phiphi_smg];
 
     /* alpha_B braiding */
-    pvecback[pba->index_bg_braiding_smg] = ((3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*8.*X)*pow(pvecback[pba->index_bg_M2_smg],-1);
+    pvecback[pba->index_bg_braiding_over_phi_smg] =
+      2.*(
+        + (X*G3_X - G4_phi - 2.*X*G4_Xphi)
+        + (3.*G5_X + 2.*X*(G5_XX - 30.*F5) - 24.*pow(X,2)*F5_X)*pow(H,2)*X
+        + 2.*(G4_X - G5_phi + X*(2.*G4_XX - G5_Xphi + 8.*F4) + 4.*pow(X,2)*F4_X)*H*phi_prime/a
+      )/pvecback[pba->index_bg_M2_smg];
+
+    pvecback[pba->index_bg_braiding_smg] = phi_prime/a/H*pvecback[pba->index_bg_braiding_over_phi_smg];
 
     /* alpha_T: tensor speed excess */
-    pvecback[pba->index_bg_tensor_excess_smg] = ((pvecback[pba->index_bg_phi_prime_prime_smg] + (-2.)*H*phi_prime*a)*(-2.)*pow(a,-2)*G5_X + (G4_X + (-1.)*G5_phi)*4.)*pow(pvecback[pba->index_bg_M2_smg],-1)*X;
+    pvecback[pba->index_bg_tensor_excess_smg] =
+    2.*X*(
+      + G4_X - G5_phi + 2.*F4*X
+      + 2.*(G5_X - 6.*X*F5)*H*phi_prime/a
+      - G5_X*pow(a,-2)*pvecback[pba->index_bg_phi_prime_prime_smg]
+    )/pvecback[pba->index_bg_M2_smg];
 
     /* alpha_M: Planck mass running */
-    pvecback[pba->index_bg_mpl_running_smg] = ((-2.)*pow(H,-1)*pvecback[pba->index_bg_H_prime]*phi_prime*pow(a,-2)*X*G5_X + (3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((3.*G5_X + 2.*X*G5_XX)*(-2.)*X + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-2.)*pow(H,-1)*phi_prime*pow(a,-1))*pvecback[pba->index_bg_phi_prime_prime_smg]*pow(a,-2) + (G4_X + (-1.)*G5_phi + (G4_XX + (-1.)*G5_Xphi)*2.*X)*4.*X + (G4_phi + ((-2.)*G4_Xphi + G5_phiphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1))*pow(pvecback[pba->index_bg_M2_smg],-1);
+    pvecback[pba->index_bg_mpl_running_smg] =
+    2.*(
+      - X*(G5_X - 12.*F5*X)*pvecback[pba->index_bg_H_prime]*phi_prime*pow(a,-2)/H
+      + X*(3.*G5_X + 2.*X*(G5_XX - 30.*F5) - 24.*pow(X,2)*F5_X)*H*phi_prime/a
+      + 2.*X*(G4_X - G5_phi + 2.*X*(G4_XX - G5_Xphi + 4.*F4) + 4.*pow(X,2)*(F4_X + 3.*F5_phi))
+      - (
+        + (3.*G5_X + 2.*X*(G5_XX - 30.*F5) - 24.*pow(X,2)*F5_X)*X
+        + (G4_X - G5_phi + X*(2.*G4_XX - G5_Xphi + 4.*F4*X) + 4.*pow(X,2)*F4_X)*phi_prime/a/H
+      )*pow(a,-2)*pvecback[pba->index_bg_phi_prime_prime_smg]
+      - (4.*pow(X,2)*F4_phi - G4_phi + 2.*X*G4_Xphi - X*G5_phiphi)*phi_prime/a/H
+    )/pvecback[pba->index_bg_M2_smg];
+
+    /* alpha_H: Beyond Horndeski */
+    pvecback[pba->index_bg_beyond_horndeski_over_phi_smg] =
+    4.*X*(
+      F4*phi_prime/a - 6.*F5*H*X
+    )*H/pvecback[pba->index_bg_M2_smg];
+
+    pvecback[pba->index_bg_beyond_horndeski_smg] = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg]*phi_prime/a/H;
+
+
 
   }// end of if pba->field_evolution_smg
   else{

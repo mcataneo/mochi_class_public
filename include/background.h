@@ -285,17 +285,21 @@ struct background
   int index_bg_phi_smg;       /**< scalar field value */
   int index_bg_phi_prime_smg; /**< scalar field derivative wrt conformal time */
   int index_bg_phi_prime_prime_smg; /**< scalar field second derivative wrt conformal time */
-  int index_bg_M2_smg;   /**< relative Planck mass */
-  int index_bg_delta_M2_smg;   /**< relative Planck mass -1. */
   int index_bg_rho_smg;       /**< scalar field energy density */
   int index_bg_p_smg;         /**< scalar field pressure */
   int index_bg_rho_prime_smg;       /**< derivative of the scalar field energy density */
   int index_bg_current_smg;       /**< scalar field current */
   int index_bg_shift_smg;       /**< scalar field shift */
+  int index_bg_M2_smg;   /**< relative Planck mass */
+  int index_bg_delta_M2_smg;   /**< relative Planck mass -1. */
+  int index_bg_kineticity_over_phiphi_smg;/**< scalar field kineticity alpha_k*(a*H/phi')^2 (BS eq A.8)*/
+  int index_bg_braiding_over_phi_smg;/**< scalar field braiding alpha_b*a*H/phi' (BS eq A.9)*/
+  int index_bg_beyond_horndeski_over_phi_smg;/**<scalar field beyond horndeski alpha_H*a*H/phi'*/
   int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/
   int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/
   int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/
   int index_bg_mpl_running_smg; /**< scalar field relative Planck mass running*/
+  int index_bg_beyond_horndeski_smg;/**<scalar field beyond horndeski alpha_H*/
   int index_bg_kineticity_prime_smg;/**< derivative of kineticity wrt tau (BS eq A.8)*/
   int index_bg_braiding_prime_smg;/**< derivative of braiding wrt tau (BS eq A.9)*/
   int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/
