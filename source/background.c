@@ -1023,6 +1023,8 @@ int background_indices(
   class_define_index(pba->index_bg_p_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_rho_prime_smg,pba->has_smg && pba->rho_evolution_smg,index_bg,1);
   class_define_index(pba->index_bg_w_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_current_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_shift_smg,pba->has_smg,index_bg,1);
 
   class_define_index(pba->index_bg_kineticity_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_braiding_smg,pba->has_smg,index_bg,1);
@@ -3177,6 +3179,8 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);
     class_store_columntitle(titles,"c_s^2",pba->has_smg);
     class_store_columntitle(titles,"kin (D)",pba->has_smg);
+    class_store_columntitle(titles,"Current",pba->has_smg);
+    class_store_columntitle(titles,"Shift",pba->has_smg);
   }
 
   if (pba->output_background_smg >= 2){
@@ -3286,6 +3290,8 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_current_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_shift_smg],pba->has_smg,storeidx);
     }
 
     if (pba->output_background_smg >= 2){
@@ -3486,14 +3492,16 @@ int background_gravity_functions(
     double x,f,df;
     int n, n_max=100;
     double X,rho_tot,p_tot;
-    double E0,E1,E2,E3,B,A,R,M,F,P;
+    double E0,E1,E2,E3;
+    double P0,P1,P2;
+    double R0,R1,R2;
     double G2=0, G2_X=0, G2_XX=0, G2_phi=0, G2_Xphi=0;
-    double G3_X=0, G3_XX=0, G3_phi=0, G3_phiphi=0, G3_Xphi=0;
-    double G4, DG4=0;
-    double G4_phi=0, G4_phiphi=0, G4_X=0, G4_XX=0, G4_XXX=0, G4_Xphi=0, G4_Xphiphi=0, G4_XXphi=0;
-    double G5=0, G5_phi=0, G5_phiphi=0, G5_X=0, G5_XX=0, G5_XXX=0, G5_Xphi=0, G5_Xphiphi=0, G5_XXphi=0;
-    double F4=0, F4_X=0;
-    double F5=0, F5_X=0;
+    double G3_X=0, G3_XX=0, G3_phi=0, G3_Xphi=0, G3_phiphi=0;
+    double G4 = 1./2., DG4=0;
+    double G4_X=0, G4_XX=0, G4_XXX=0, G4_phi=0, G4_Xphi=0, G4_XXphi=0, G4_phiphi=0, G4_Xphiphi=0;
+    double G5_X=0, G5_XX=0, G5_XXX=0, G5_phi=0, G5_Xphi=0, G5_XXphi=0, G5_phiphi=0, G5_Xphiphi=0;
+    double F4=0, F4_X=0, F4_XX=0, F4_phi=0, F4_Xphi=0;
+    double F5=0, F5_X=0, F5_XX=0, F5_phi=0, F5_Xphi=0;
 
     a = pvecback_B[pba->index_bi_a];
     if (pba->hubble_evolution == _TRUE_)
@@ -3505,9 +3513,6 @@ int background_gravity_functions(
     X = 0.5*pow(phi_prime/a,2);
     rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
     p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-
-    /* set default Einstein-Hilbert term (in CLASS units), can be overwritten latter */
-    G4 = 1./2.;
 
     /* Overwrite the Horneski functions and their partial derivatives depending on the model */
     if (pba->gravity_model_smg == quintessence_monomial) {
@@ -3687,33 +3692,50 @@ int background_gravity_functions(
 
     /** TODO: add references
       * - Modified space-space Friedmann equation and scalar field equation
-      * B phi'' + A H' + R = 0
-      * M phi'' + F H' + P = 0
+      * P0 phi'' + P1 H' + P2 = 0
+      * R0 phi'' + R1 H' + R2 = 0
       * They will be mixed in general: write the coefficients and solve for phi'', H'
       */
 
-    B = (3.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,2)*pow(a,-1)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*2./3.*pow(a,-1) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*4./3.*H*phi_prime*pow(a,-2);
+    P0 = - 2./3.*(G4_phi - X*(G3_X - 2.*G4_Xphi))/a
+      + 2.*X*(G5_X + 2./3.*X*(G5_XX - 30.*F5) - 8.*pow(X,2)*F5_X)*pow(H,2)/a
+      + 4./3.*(G4_X - G5_phi + X*(8.*F4 + 2.*G4_XX - G5_Xphi) + 4.*pow(X,2)*F4_X)*H*phi_prime*pow(a,-2);
 
-    A = (-2.)/3.*pvecback[pba->index_bg_M2_smg];
+    P1 = - 2./3.*(1. + 2.*DG4)
+      + 16./3.*pow(X,2)*F4
+      + 4.*X*(G5_X/3. - 4.*F5*X)*phi_prime*H/a
+      + 4./3.*X*(2.*G4_X - G5_phi);
 
-    R = (3.*G5_X + 2.*X*G5_XX)*(-4.)/3.*pow(H,3)*phi_prime*X + (((G4_X + (-1.)*G5_phi)*5. + (5.*G4_XX + (-3.)*G5_Xphi)*2.*X)*(-4.)/3.*pow(H,2)*X + ((-3.)*rho_tot + (-3.)*p_tot + (G2_X + (-2.)*G3_phi + 2.*G4_phiphi)*(-2.)*X)*1./3.)*a + ((-1.)*G4_phi + (2.*G3_X + (-6.)*G4_Xphi + G5_phiphi)*X)*(-4.)/3.*H*phi_prime;
+    P2 = - (rho_tot + p_tot)*a
+      - 2./3.*X*(G2_X - 2.*G3_phi + 2.*G4_phiphi)*a
+      - 4.*X*(G5_X + 4./3.*X*(G5_XX - 30.*F5) - 8.*pow(X,2)*F5_X)*phi_prime*pow(H,3)
+      - 4./3.*X*(5.*(G4_X - G5_phi)  + 2.*X*(5.*G4_XX - 3.*G5_Xphi + 20.*F4) + 4.*pow(X,2)*(5.*F4_X + 3.*F5_phi))*a*pow(H,2)
+      + 4./3.*(G4_phi - X*(2.*G3_X - 6.*G4_Xphi + G5_phiphi) + 4.*pow(X,2)*F4_phi)*phi_prime*H;
 
-    M = (3.*G5_X + (7.*G5_XX + 2.*X*G5_XXX)*X)*2.*pow(H,2)*phi_prime*pow(a,-3) + (G2_X + (-2.)*G3_phi + (G2_XX + (-1.)*G3_Xphi)*2.*X)*pow(H,-1)*pow(a,-2) + (G3_X + (-3.)*G4_Xphi + (G3_XX + (-2.)*G4_XXphi)*X)*6.*phi_prime*pow(a,-3) + (G4_X + (-1.)*G5_phi + (8.*G4_XX + (-5.)*G5_Xphi + (2.*G4_XXX + (-1.)*G5_XXphi)*2.*X)*X)*6.*H*pow(a,-2);
+    R0 = 1./3.*(G2_X - 2.*G3_phi + 2.*X*(G2_XX - G3_Xphi))/a/H
+      + 2.*(G3_X - 3.*G4_Xphi + X*(G3_XX - 2.*G4_XXphi))*phi_prime*pow(a,-2)
+      + 2.*(G5_X + X*(7./3.*G5_XX - 40.*F5) + 2.*(G5_XXX/3. - 22.*F5_X)*pow(X,2) - 8.*pow(X,3)*F5_XX)*pow(H,2)*phi_prime*pow(a,-2)
+      + 2.*(G4_X - G5_phi + X*(8.*G4_XX - 5.*G5_Xphi + 24.*F4) + 2.*(2.*G4_XXX - G5_XXphi + 18.*F4_X)*pow(X,2) + 8.*pow(X,3)*F4_XX)*H/a;
 
-    F = (3.*G5_X + 2.*X*G5_XX)*6.*H*pow(a,-1)*X + (X*G3_X + (-1.)*G4_phi + (-2.)*X*G4_Xphi)*6.*pow(H,-1)*pow(a,-1) + (G4_X + 2.*X*G4_XX + (-1.)*G5_phi + (-1.)*X*G5_Xphi)*12.*phi_prime*pow(a,-2);
+    R1 = 2.*(X*G3_X - G4_phi - 2.*X*G4_Xphi)/H
+      + 6.*X*(G5_X + 2./3.*X*(G5_XX - 30.*F5) - 8.*pow(X,2)*F5_X)*H
+      + 4.*(G4_X - G5_phi + X*(2.*G4_XX - G5_Xphi + 8.*F4) + 4.*pow(X,2)*F4_X)*phi_prime/a;
 
-    P = ((-3.)*G5_X + (2.*G5_XX + X*G5_XXX)*4.*X)*(-2.)*pow(H,3)*X + ((-3.)*G4_X + 3.*G5_phi + (3.*G4_XX + (-4.)*G5_Xphi + (3.*G4_XXX + (-2.)*G5_XXphi)*2.*X)*X)*(-4.)*pow(H,2)*phi_prime*pow(a,-1) + ((-1.)*G2_phi + (G2_Xphi + (-1.)*G3_phiphi)*2.*X)*pow(H,-1) + ((-1.)*G2_X + 2.*G3_phi + (G2_XX + (-4.)*G3_Xphi + 6.*G4_Xphiphi)*X)*(-2.)*phi_prime*pow(a,-1) + (2.*G4_phi + ((-1.)*G3_X + G5_phiphi + (G3_XX + (-4.)*G4_XXphi + G5_Xphiphi)*2.*X)*X)*(-6.)*H;
+    R2 = - 1./3.*(G2_phi - 2.*X*(G2_Xphi - G3_phiphi))*a/H
+      + 2./3.*(G2_X - 2.*G3_phi - X*(G2_XX - 4.*G3_Xphi + 6.*G4_Xphiphi))*phi_prime
+      - 2.*(2.*G4_phi - X*(G3_X - G5_phiphi) + 2.*(G3_XX - 4.*G4_XXphi + G5_Xphiphi - 6.*F4_phi)*pow(X,2) - 8.*pow(X,3)*F4_Xphi)*H*a
+      + 4./3.*(3.*(G4_X - G5_phi) - X*(3.*G4_XX - 4.*G5_Xphi) - 2.*(3.*G4_XXX - 2.*G5_XXphi + 18.*F4_X + 12.*F5_phi)*pow(X,2) - 12.*(F4_XX + F5_Xphi)*pow(X,3))*pow(H,2)*phi_prime
+      + 2./3.*(3.*G5_X - 4.*X*(2.*G5_XX - 15.*F5) - 4.*pow(X,2)*G5_XXX + 192.*pow(X,2)*F5_X + 48.*pow(X,3)*F5_XX)*pow(H,3)*a*X;
 
-    class_test_except((A*M - B*F) == 0 ,
+    class_test_except((P1*R0 - P0*R1) == 0 ,
 	       pba->error_message,
          free(pvecback);free(pvecback_B),
-               "scalar field mixing with metric has degenerate denominator at a = %e, phi = %e, phi_prime = %e \n with A = %e, M =%e, B=%e, F=%e, \n H=%e, E0=%e, E1=%e, E2=%e, E3=%e \n M_*^2 = %e Kineticity = %e, Braiding = %e",
-	       a,phi,phi_prime, A, M, B, F,
-	       pvecback[pba->index_bg_H],E0,E1,E2,E3,
-	       pvecback[pba->index_bg_M2_smg], pvecback[pba->index_bg_kineticity_smg],pvecback[pba->index_bg_braiding_smg]);
+               "scalar field mixing with metric has degenerate denominator at a = %e, phi = %e, phi_prime = %e \n with P1 = %e, R0 =%e, P0=%e, R1=%e, \n H=%e, E0=%e, E1=%e, E2=%e, E3=%e",
+	       a,phi,phi_prime, P1, R0, P0, R1,
+	       pvecback[pba->index_bg_H],E0,E1,E2,E3);
 
     /* Friedmann space-space equation with friction added */
-    pvecback[pba->index_bg_H_prime] = ((-1.)*B*P + M*R)*pow(B*F + (-1.)*A*M,-1);
+    pvecback[pba->index_bg_H_prime] = (R0*P2 - P0*R2)/(P0*R1 - P1*R0);
     /* choose sign for friction depending on the derivative */
     if ((2.*E2*H - E1 - 3*E3*H*H)>=0)
       pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(E2*H*H - E0 - E1*H - E3*H*H*H);
@@ -3722,8 +3744,16 @@ int background_gravity_functions(
     }
 
     /* Field equation */
-    pvecback[pba->index_bg_phi_prime_prime_smg] = (A*P + (-1.)*F*R)*pow(B*F + (-1.)*A*M,-1);
+    pvecback[pba->index_bg_phi_prime_prime_smg] = (P1*R2 - R1*P2)/(P0*R1 - P1*R0);
 
+
+    /* Computing density, pressure (also rewritten as shift and current) */
+
+    /* Energy density of the field */
+    pvecback[pba->index_bg_rho_smg] = (5.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3. + (G4_phi + (G3_X + (-2.)*G4_Xphi)*(-1.)*X)*(-2.)*H*phi_prime*pow(a,-1) + ((-2.)*DG4 + ((4.*G4_X + (-3.)*G5_phi)*2. + (2.*G4_XX + (-1.)*G5_Xphi)*4.*X)*X)*pow(H,2);
+
+    /* Pressure of the field */
+    pvecback[pba->index_bg_p_smg] = (G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-4.)/3.*H*phi_prime*pow(a,-2)*X*G5_X + (-2.*DG4 + (2.*G4_X + (-1.)*G5_phi)*2.*X)*(-2.)/3.*pow(a,-1))*pvecback[pba->index_bg_H_prime] + (6.*DG4 + ((-2.)*G4_X + (-1.)*G5_phi + (4.*G4_XX + (-3.)*G5_Xphi)*2.*X)*2.*X)*1./3.*pow(H,2) + ((3.*G5_X + 2.*X*G5_XX)*(-2.)/3.*pow(H,2)*pow(a,-2)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*(-2.)/3.*pow(a,-2) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-4.)/3.*H*phi_prime*pow(a,-3))*pvecback[pba->index_bg_phi_prime_prime_smg] + (G2 + (G3_phi + (-2.)*G4_phiphi)*(-2.)*X)*1./3. + (G4_phi + (G3_X + (-6.)*G4_Xphi + 2.*G5_phiphi)*X)*2./3.*H*phi_prime*pow(a,-1);
 
     /* Computing alphas at the end (alpha_T, alpha_M depend on phi'') */
 
@@ -3742,12 +3772,6 @@ int background_gravity_functions(
 
     /* alpha_M: Planck mass running */
     pvecback[pba->index_bg_mpl_running_smg] = ((-2.)*pow(H,-1)*pvecback[pba->index_bg_H_prime]*phi_prime*pow(a,-2)*X*G5_X + (3.*G5_X + 2.*X*G5_XX)*2.*H*phi_prime*pow(a,-1)*X + ((3.*G5_X + 2.*X*G5_XX)*(-2.)*X + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-2.)*pow(H,-1)*phi_prime*pow(a,-1))*pvecback[pba->index_bg_phi_prime_prime_smg]*pow(a,-2) + (G4_X + (-1.)*G5_phi + (G4_XX + (-1.)*G5_Xphi)*2.*X)*4.*X + (G4_phi + ((-2.)*G4_Xphi + G5_phiphi)*X)*2.*pow(H,-1)*phi_prime*pow(a,-1))*pow(pvecback[pba->index_bg_M2_smg],-1);
-
-    /* Energy density of the field */
-    pvecback[pba->index_bg_rho_smg] = (5.*G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-1.)*G2 + (G2_X + (-1.)*G3_phi)*2.*X)*1./3. + (G4_phi + (G3_X + (-2.)*G4_Xphi)*(-1.)*X)*(-2.)*H*phi_prime*pow(a,-1) + ((-2.)*DG4 + ((4.*G4_X + (-3.)*G5_phi)*2. + (2.*G4_XX + (-1.)*G5_Xphi)*4.*X)*X)*pow(H,2);
-
-    /* Pressure of the field */
-    pvecback[pba->index_bg_p_smg] = (G5_X + 2.*X*G5_XX)*2./3.*pow(H,3)*phi_prime*pow(a,-1)*X + ((-4.)/3.*H*phi_prime*pow(a,-2)*X*G5_X + (-2.*DG4 + (2.*G4_X + (-1.)*G5_phi)*2.*X)*(-2.)/3.*pow(a,-1))*pvecback[pba->index_bg_H_prime] + (6.*DG4 + ((-2.)*G4_X + (-1.)*G5_phi + (4.*G4_XX + (-3.)*G5_Xphi)*2.*X)*2.*X)*1./3.*pow(H,2) + ((3.*G5_X + 2.*X*G5_XX)*(-2.)/3.*pow(H,2)*pow(a,-2)*X + ((-1.)*G4_phi + (G3_X + (-2.)*G4_Xphi)*X)*(-2.)/3.*pow(a,-2) + (G4_X + (-1.)*G5_phi + (2.*G4_XX + (-1.)*G5_Xphi)*X)*(-4.)/3.*H*phi_prime*pow(a,-3))*pvecback[pba->index_bg_phi_prime_prime_smg] + (G2 + (G3_phi + (-2.)*G4_phiphi)*(-2.)*X)*1./3. + (G4_phi + (G3_X + (-6.)*G4_Xphi + 2.*G5_phiphi)*X)*2./3.*H*phi_prime*pow(a,-1);
 
   }// end of if pba->field_evolution_smg
   else{
