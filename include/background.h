@@ -306,10 +306,31 @@ struct background
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
 
-  int index_bg_E0_smg; /**< Hubble equation */
-  int index_bg_E1_smg; /**< Hubble equation */
-  int index_bg_E2_smg; /**< Hubble equation */
-  int index_bg_E3_smg; /**< Hubble equation */
+  int index_bg_E0_smg; /**< Hubble constraint */
+  int index_bg_E1_smg; /**< Hubble constraint */
+  int index_bg_E2_smg; /**< Hubble constraint */
+  int index_bg_E3_smg; /**< Hubble constraint */
+
+  int index_bg_P0_smg; /**< Hubble dynamical */
+  int index_bg_P1_smg; /**< Hubble dynamical */
+  int index_bg_P2_smg; /**< Hubble dynamical */
+  int index_bg_R0_smg; /**< Klein-Gordon */
+  int index_bg_R1_smg; /**< Klein-Gordon */
+  int index_bg_R2_smg; /**< Klein-Gordon */
+
+  int index_bg_B_0_smg;
+  int index_bg_B_1_smg;
+  int index_bg_B_2_smg;
+  int index_bg_B_3_smg;
+  int index_bg_B_4_smg;
+  int index_bg_B_5_smg;
+  int index_bg_B_6_smg;
+  int index_bg_B_7_smg;
+  int index_bg_B_8_smg;
+  int index_bg_B_9_smg;
+  int index_bg_B_10_smg;
+  int index_bg_B_11_smg;
+  int index_bg_B_12_smg;
 
   int index_bg_kinetic_D_smg;
   int index_bg_kinetic_D_prime_smg;
