@@ -1046,19 +1046,19 @@ int background_indices(
   class_define_index(pba->index_bg_cs2num_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_prime_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_0_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_1_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_2_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_3_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_4_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_5_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_6_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_7_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_8_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_9_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_10_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_11_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B_12_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B0_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B1_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B2_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B3_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B4_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B5_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B6_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B7_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B8_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B9_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B10_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B11_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B12_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_3_smg,pba->has_smg,index_bg,1);
@@ -3234,19 +3234,19 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"kineticity_over_phiphi_smg",pba->has_smg);
     class_store_columntitle(titles,"braiding_over_phi_smg",pba->has_smg);
     class_store_columntitle(titles,"beyond_horndeski_over_phiphi_smg",pba->has_smg);
-    class_store_columntitle(titles,"B_0",pba->has_smg);
-    class_store_columntitle(titles,"B_1",pba->has_smg);
-    class_store_columntitle(titles,"B_2",pba->has_smg);
-    class_store_columntitle(titles,"B_3",pba->has_smg);
-    class_store_columntitle(titles,"B_4",pba->has_smg);
-    class_store_columntitle(titles,"B_5",pba->has_smg);
-    class_store_columntitle(titles,"B_6",pba->has_smg);
-    class_store_columntitle(titles,"B_7",pba->has_smg);
-    class_store_columntitle(titles,"B_8",pba->has_smg);
-    class_store_columntitle(titles,"B_9",pba->has_smg);
-    class_store_columntitle(titles,"B_10",pba->has_smg);
-    class_store_columntitle(titles,"B_11",pba->has_smg);
-    class_store_columntitle(titles,"B_12",pba->has_smg);
+    class_store_columntitle(titles,"B0",pba->has_smg);
+    class_store_columntitle(titles,"B1",pba->has_smg);
+    class_store_columntitle(titles,"B2",pba->has_smg);
+    class_store_columntitle(titles,"B3",pba->has_smg);
+    class_store_columntitle(titles,"B4",pba->has_smg);
+    class_store_columntitle(titles,"B5",pba->has_smg);
+    class_store_columntitle(titles,"B6",pba->has_smg);
+    class_store_columntitle(titles,"B7",pba->has_smg);
+    class_store_columntitle(titles,"B8",pba->has_smg);
+    class_store_columntitle(titles,"B9",pba->has_smg);
+    class_store_columntitle(titles,"B10",pba->has_smg);
+    class_store_columntitle(titles,"B11",pba->has_smg);
+    class_store_columntitle(titles,"B12",pba->has_smg);
     class_store_columntitle(titles,"lambda_1",pba->has_smg);
     class_store_columntitle(titles,"lambda_2",pba->has_smg);
     class_store_columntitle(titles,"lambda_3",pba->has_smg);
@@ -3367,19 +3367,19 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_kineticity_over_phiphi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_braiding_over_phi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_over_phi_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_0_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_1_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_3_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_4_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_5_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_6_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_7_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_8_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_9_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_10_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_11_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B_12_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B0_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B1_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B3_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B4_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B5_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B6_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B7_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B8_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B9_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B10_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B11_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_B12_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_1_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_3_smg],pba->has_smg,storeidx);
@@ -4046,7 +4046,7 @@ int background_gravity_functions(
     /* Computing B functions (intermediate step for perturbations) */
 
     /* B_0 */
-    pvecback[pba->index_bg_B_0_smg] =
+    pvecback[pba->index_bg_B0_smg] =
     (
       + G4_phi - X*(3.*G3_X - 10.*G4_Xphi + 2.*G5_phiphi) + 8.*pow(X,2)*F4_phi
       - 3.*(
@@ -4058,7 +4058,7 @@ int background_gravity_functions(
     )/pvecback[pba->index_bg_M2_smg];
 
     /* B_1 */
-    pvecback[pba->index_bg_B_1_smg] =
+    pvecback[pba->index_bg_B1_smg] =
     6.*(
       + (
         + G4_phi + X*(3.*G3_X - 16.*G4_Xphi + 6.*G5_phiphi)
@@ -4099,7 +4099,7 @@ int background_gravity_functions(
     )/pvecback[pba->index_bg_M2_smg];
 
     /* B_2 */
-    pvecback[pba->index_bg_B_2_smg] =
+    pvecback[pba->index_bg_B2_smg] =
     6.*(
       + (G2_phi/2. - X*(G3_phiphi - 2.*G4_phiphiphi))*pow(H,-2)
       + 3.*G4_phi - X*(2.*G4_Xphi + G5_phiphi)
