@@ -1047,7 +1047,23 @@ int background_indices(
   class_define_index(pba->index_bg_cs2num_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_prime_smg,pba->has_smg,index_bg,1);
-  class_define_index(pba->index_bg_B0_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A0_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A1_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A2_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A3_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A4_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A5_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A6_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A7_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A8_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A9_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A10_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A11_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A12_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A13_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A14_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A15_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A16_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B3_smg,pba->has_smg,index_bg,1);
@@ -2222,7 +2238,135 @@ int background_solve(
       double ten_p = pvecback_derivs[pba->index_bg_tensor_excess_smg];
       double p_tot_p = pvecback_derivs[pba->index_bg_p_tot_wo_smg];
       double p_smg_p = pvecback_derivs[pba->index_bg_p_smg];
-      double D = pvecback[pba->index_bg_kinetic_D_smg];
+
+      // kinetic term D
+      pvecback[pba->index_bg_kinetic_D_smg] = kin + 3./2.*pow(bra,2);
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
+                              &pvecback[pba->index_bg_kinetic_D_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
+                 pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A0
+      pvecback[pba->index_bg_A0_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A0_smg,
+                             &pvecback[pba->index_bg_A0_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A0_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A1
+      pvecback[pba->index_bg_A1_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A1_smg,
+                             &pvecback[pba->index_bg_A1_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A1_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A2
+      pvecback[pba->index_bg_A2_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A2_smg,
+                             &pvecback[pba->index_bg_A2_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A2_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A3
+      pvecback[pba->index_bg_A3_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A3_smg,
+                             &pvecback[pba->index_bg_A3_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A3_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A4
+      pvecback[pba->index_bg_A4_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A4_smg,
+                             &pvecback[pba->index_bg_A4_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A4_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A5
+      pvecback[pba->index_bg_A5_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A5_smg,
+                             &pvecback[pba->index_bg_A5_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A5_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A6
+      pvecback[pba->index_bg_A6_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A6_smg,
+                             &pvecback[pba->index_bg_A6_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A6_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A7
+      pvecback[pba->index_bg_A7_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A7_smg,
+                             &pvecback[pba->index_bg_A7_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A7_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A8
+      pvecback[pba->index_bg_A8_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A8_smg,
+                             &pvecback[pba->index_bg_A8_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A8_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A9
+      pvecback[pba->index_bg_A9_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A9_smg,
+                             &pvecback[pba->index_bg_A9_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A9_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A10
+      pvecback[pba->index_bg_A10_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A10_smg,
+                             &pvecback[pba->index_bg_A10_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A10_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A11
+      pvecback[pba->index_bg_A11_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A11_smg,
+                             &pvecback[pba->index_bg_A11_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A11_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A12
+      pvecback[pba->index_bg_A12_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A12_smg,
+                             &pvecback[pba->index_bg_A12_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A12_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A13
+      pvecback[pba->index_bg_A13_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A13_smg,
+                             &pvecback[pba->index_bg_A13_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A13_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A14
+      pvecback[pba->index_bg_A14_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A14_smg,
+                             &pvecback[pba->index_bg_A14_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A14_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A15
+      pvecback[pba->index_bg_A15_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A15_smg,
+                             &pvecback[pba->index_bg_A15_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A15_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // A16
+      pvecback[pba->index_bg_A16_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A16_smg,
+                             &pvecback[pba->index_bg_A16_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A16_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+
+
 
       pvecback[pba->index_bg_lambda_1_smg] = (run + (-1.)*ten)*(-3.)*bra + (1. + ten)*kin;
 
@@ -2244,7 +2388,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_3_smg] = (2. + run)*(-1.)/2.*D + (-3.)/4.*bra*pvecback[pba->index_bg_lambda_2_smg];
+      pvecback[pba->index_bg_lambda_3_smg] = (2. + run)*(-1.)/2.*pvecback[pba->index_bg_kinetic_D_smg] + (-3.)/4.*bra*pvecback[pba->index_bg_lambda_2_smg];
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_3_smg,
             &pvecback[pba->index_bg_lambda_3_smg],
@@ -2264,7 +2408,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_5_smg] = (bra + 2.*run + (-2.)*ten + bra*ten)*3./2.*bra + (run + (-1.)*ten)*D + 3./2.*bra*pvecback[pba->index_bg_lambda_2_smg];
+      pvecback[pba->index_bg_lambda_5_smg] = (bra + 2.*run + (-2.)*ten + bra*ten)*3./2.*bra + (run + (-1.)*ten)*pvecback[pba->index_bg_kinetic_D_smg] + 3./2.*bra*pvecback[pba->index_bg_lambda_2_smg];
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_5_smg,
             &pvecback[pba->index_bg_lambda_5_smg],
@@ -2274,7 +2418,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_6_smg] = 3./2.*(((9./2.*bra + kin)*dM2*pow(M2,-1) + (-9.)/4.*pow(bra,2) - bra*kin/2. + D*run)*pow(rho_tot,2) + ((9.*bra + kin)*dM2*pow(M2,-1) + (-9.)/2.*pow(bra,2) - bra*kin/2. + D*run)*rho_tot*p_tot + 9./2.*bra*(dM2 - M2*bra/2.)*pow(M2,-1)*pow(p_tot,2) + (kin*dM2*pow(M2,-1) - bra*kin/2. + D*run)*(rho_tot + p_tot)*rho_smg + ((kin - bra*kin/2. + D*run)*rho_smg + ((9.*bra + kin)*(2. - bra)/2. + D*run - 9./2.*bra*pow(M2,-1))*rho_tot + 9.*bra*(1. - bra/2. - pow(M2,-1)/2.)*p_tot)*(rho_smg + p_smg) + 9./2.*bra*(1. - bra/2.)*pow(rho_smg + p_smg,2))*pow(H,-4) + (((9.*bra*(rho_tot + p_tot) - 2.*kin*(rho_tot + rho_smg)) + (rho_smg + p_smg)*9.*bra)*bra_p/2. + (rho_tot + rho_smg)*bra*kin_p + (2.*dM2*kin + 3.*pow(bra,2)*M2)*3./2.*pow(M2,-1)*p_tot_p + 3.*D*p_smg_p)*pow(H,-3)*pow(a,-1)/2.;
+      pvecback[pba->index_bg_lambda_6_smg] = 3./2.*(((9./2.*bra + kin)*dM2*pow(M2,-1) + (-9.)/4.*pow(bra,2) - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*pow(rho_tot,2) + ((9.*bra + kin)*dM2*pow(M2,-1) + (-9.)/2.*pow(bra,2) - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*rho_tot*p_tot + 9./2.*bra*(dM2 - M2*bra/2.)*pow(M2,-1)*pow(p_tot,2) + (kin*dM2*pow(M2,-1) - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*(rho_tot + p_tot)*rho_smg + ((kin - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*rho_smg + ((9.*bra + kin)*(2. - bra)/2. + pvecback[pba->index_bg_kinetic_D_smg]*run - 9./2.*bra*pow(M2,-1))*rho_tot + 9.*bra*(1. - bra/2. - pow(M2,-1)/2.)*p_tot)*(rho_smg + p_smg) + 9./2.*bra*(1. - bra/2.)*pow(rho_smg + p_smg,2))*pow(H,-4) + (((9.*bra*(rho_tot + p_tot) - 2.*kin*(rho_tot + rho_smg)) + (rho_smg + p_smg)*9.*bra)*bra_p/2. + (rho_tot + rho_smg)*bra*kin_p + (2.*dM2*kin + 3.*pow(bra,2)*M2)*3./2.*pow(M2,-1)*p_tot_p + 3.*pvecback[pba->index_bg_kinetic_D_smg]*p_smg_p)*pow(H,-3)*pow(a,-1)/2.;
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_6_smg,
             &pvecback[pba->index_bg_lambda_6_smg],
@@ -2284,7 +2428,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_7_smg] = ((-2.) + bra)*(4. + run)*(-1.)/8.*D + ((-2.)*(2. + dM2) + bra*M2)*(rho_tot + p_tot)*3./16.*pow(H,-2)*D*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*3./16.*pow(H,-2)*D + (D*bra_p + ((-2.) + bra)*((-3.)*bra*bra_p + (-1.)*kin_p))*1./8.*pow(H,-1)*pow(a,-1);
+      pvecback[pba->index_bg_lambda_7_smg] = ((-2.) + bra)*(4. + run)*(-1.)/8.*pvecback[pba->index_bg_kinetic_D_smg] + ((-2.)*(2. + dM2) + bra*M2)*(rho_tot + p_tot)*3./16.*pow(H,-2)*pvecback[pba->index_bg_kinetic_D_smg]*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*3./16.*pow(H,-2)*pvecback[pba->index_bg_kinetic_D_smg] + (pvecback[pba->index_bg_kinetic_D_smg]*bra_p + ((-2.) + bra)*((-3.)*bra*bra_p + (-1.)*kin_p))*1./8.*pow(H,-1)*pow(a,-1);
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_7_smg,
             &pvecback[pba->index_bg_lambda_7_smg],
@@ -2294,7 +2438,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_8_smg] = ((-2.) + bra)*(4. + run)*1./8.*D + 3./8.*(rho_tot + p_tot)*(((-9.)*bra + (-2.)*D*(3. + 2.*dM2 - bra*M2))*(-1.)/2. + (-rho_tot*dM2 - (p_smg + rho_smg*M2))*9.*pow(H,-2)*pow(M2,-1))*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/8.*pow(H,-2)*D + (-2.*dM2 + bra*M2)*(rho_tot + p_tot)*(p_tot + p_smg)*27./16.*pow(H,-4)*pow(M2,-2) + ((-9.)*(rho_tot + p_tot) + (-6.)*bra*pow(H,2)*M2 + 3.*pow(bra,2)*pow(H,2)*M2 + (-1.)*pow(H,2)*D*M2)*1./8.*pow(H,-3)*pow(M2,-1)*bra_p*pow(a,-1) + ((-2.) + bra)*1./8.*pow(H,-1)*kin_p*pow(a,-1) + ((-2.) + bra)*9./16.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
+      pvecback[pba->index_bg_lambda_8_smg] = ((-2.) + bra)*(4. + run)*1./8.*pvecback[pba->index_bg_kinetic_D_smg] + 3./8.*(rho_tot + p_tot)*(((-9.)*bra + (-2.)*pvecback[pba->index_bg_kinetic_D_smg]*(3. + 2.*dM2 - bra*M2))*(-1.)/2. + (-rho_tot*dM2 - (p_smg + rho_smg*M2))*9.*pow(H,-2)*pow(M2,-1))*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/8.*pow(H,-2)*pvecback[pba->index_bg_kinetic_D_smg] + (-2.*dM2 + bra*M2)*(rho_tot + p_tot)*(p_tot + p_smg)*27./16.*pow(H,-4)*pow(M2,-2) + ((-9.)*(rho_tot + p_tot) + (-6.)*bra*pow(H,2)*M2 + 3.*pow(bra,2)*pow(H,2)*M2 + (-1.)*pow(H,2)*pvecback[pba->index_bg_kinetic_D_smg]*M2)*1./8.*pow(H,-3)*pow(M2,-1)*bra_p*pow(a,-1) + ((-2.) + bra)*1./8.*pow(H,-1)*kin_p*pow(a,-1) + ((-2.) + bra)*9./16.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_smg,
             &pvecback[pba->index_bg_lambda_8_smg],
@@ -2304,7 +2448,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_9_smg] = ((-2.) + 3.*bra)*D + 2.*pvecback[pba->index_bg_lambda_3_smg] + (D + (-1.)*pvecback[pba->index_bg_lambda_2_smg])*(((-3.) + 2.*bra)*(-3.)/2. + (p_tot + p_smg)*9./2.*pow(H,-2)) + (3.*bra*bra_p + kin_p)*(-1.)*pow(H,-1)*pow(a,-1) + (-9.)/2.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
+      pvecback[pba->index_bg_lambda_9_smg] = ((-2.) + 3.*bra)*pvecback[pba->index_bg_kinetic_D_smg] + 2.*pvecback[pba->index_bg_lambda_3_smg] + (pvecback[pba->index_bg_kinetic_D_smg] + (-1.)*pvecback[pba->index_bg_lambda_2_smg])*(((-3.) + 2.*bra)*(-3.)/2. + (p_tot + p_smg)*9./2.*pow(H,-2)) + (3.*bra*bra_p + kin_p)*(-1.)*pow(H,-1)*pow(a,-1) + (-9.)/2.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_smg,
             &pvecback[pba->index_bg_lambda_9_smg],
@@ -2314,7 +2458,7 @@ int background_solve(
                 "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_lambda_10_smg] = (D + (-1.)*pvecback[pba->index_bg_lambda_3_smg])*(-2.) + (3.*bra*dM2 + kin*M2)*(rho_tot + p_tot)*3.*pow(H,-2)*pow(M2,-1) + (3.*bra + kin)*(rho_smg + p_smg)*3.*pow(H,-2) + (-1.)*pow(H,-1)*kin_p*pow(a,-1);
+      pvecback[pba->index_bg_lambda_10_smg] = (pvecback[pba->index_bg_kinetic_D_smg] + (-1.)*pvecback[pba->index_bg_lambda_3_smg])*(-2.) + (3.*bra*dM2 + kin*M2)*(rho_tot + p_tot)*3.*pow(H,-2)*pow(M2,-1) + (3.*bra + kin)*(rho_smg + p_smg)*3.*pow(H,-2) + (-1.)*pow(H,-1)*kin_p*pow(a,-1);
 
             memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_10_smg,
             &pvecback[pba->index_bg_lambda_10_smg],
@@ -2344,7 +2488,7 @@ int background_solve(
               "cannot copy data back to pba->background_table");
 
 
-      pvecback[pba->index_bg_cs2_smg] = pvecback[pba->index_bg_cs2num_smg]/D;
+      pvecback[pba->index_bg_cs2_smg] = pvecback[pba->index_bg_cs2num_smg]/pvecback[pba->index_bg_kinetic_D_smg];
 
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2_smg,
             &pvecback[pba->index_bg_cs2_smg],
@@ -2381,8 +2525,8 @@ int background_solve(
        * test will be performed based on the lowest values
        */
       if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
-	if (D < pba->min_D_smg){
-	  pba->min_D_smg = D;
+	if (pvecback[pba->index_bg_kinetic_D_smg] < pba->min_D_smg){
+	  pba->min_D_smg = pvecback[pba->index_bg_kinetic_D_smg];
 	}
 
 	if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
@@ -3243,6 +3387,23 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"kineticity_over_phiphi_smg",pba->has_smg);
     class_store_columntitle(titles,"braiding_over_phi_smg",pba->has_smg);
     class_store_columntitle(titles,"beyond_horndeski_over_phiphi_smg",pba->has_smg);
+    class_store_columntitle(titles,"A0",pba->has_smg);
+    class_store_columntitle(titles,"A1",pba->has_smg);
+    class_store_columntitle(titles,"A2",pba->has_smg);
+    class_store_columntitle(titles,"A3",pba->has_smg);
+    class_store_columntitle(titles,"A4",pba->has_smg);
+    class_store_columntitle(titles,"A5",pba->has_smg);
+    class_store_columntitle(titles,"A6",pba->has_smg);
+    class_store_columntitle(titles,"A7",pba->has_smg);
+    class_store_columntitle(titles,"A8",pba->has_smg);
+    class_store_columntitle(titles,"A9",pba->has_smg);
+    class_store_columntitle(titles,"A10",pba->has_smg);
+    class_store_columntitle(titles,"A11",pba->has_smg);
+    class_store_columntitle(titles,"A12",pba->has_smg);
+    class_store_columntitle(titles,"A13",pba->has_smg);
+    class_store_columntitle(titles,"A14",pba->has_smg);
+    class_store_columntitle(titles,"A15",pba->has_smg);
+    class_store_columntitle(titles,"A16",pba->has_smg);
     class_store_columntitle(titles,"B0",pba->has_smg);
     class_store_columntitle(titles,"B1",pba->has_smg);
     class_store_columntitle(titles,"B2",pba->has_smg);
@@ -3376,6 +3537,23 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_kineticity_over_phiphi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_braiding_over_phi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_over_phi_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A0_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A1_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A3_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A4_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A5_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A6_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A7_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A8_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A9_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A10_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A11_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A12_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A13_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A15_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A16_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_B0_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_B1_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_B2_smg],pba->has_smg,storeidx);
@@ -4657,9 +4835,6 @@ int background_gravity_functions(
   // NOTE: this needs to be done here to avoid interfering with the equations
   pvecback[pba->index_bg_kineticity_smg] += pba->kineticity_safe_smg;
 
-  // kinetic term
-  pvecback[pba->index_bg_kinetic_D_smg] = 3./2.*pow(pvecback[pba->index_bg_braiding_smg],2) + pvecback[pba->index_bg_kineticity_smg];
-
   //Derivatives of the BS functions and others. Set to zero here and computed numerically once the background is integrated (needed so that debuggers don't complain).
 
   pvecback[pba->index_bg_kineticity_prime_smg] = 0.;
@@ -4671,9 +4846,27 @@ int background_gravity_functions(
   pvecback[pba->index_bg_p_tot_wo_prime_smg] = 0.;
   pvecback[pba->index_bg_p_prime_smg] = 0.;
   pvecback[pba->index_bg_cs2_smg] = 0.;
+  pvecback[pba->index_bg_kinetic_D_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_prime_smg] = 0.;
   pvecback[pba->index_bg_cs2num_smg] = 0.;
   pvecback[pba->index_bg_cs2num_prime_smg] = 0.;
+  pvecback[pba->index_bg_A0_smg] = 0.;
+  pvecback[pba->index_bg_A1_smg] = 0.;
+  pvecback[pba->index_bg_A2_smg] = 0.;
+  pvecback[pba->index_bg_A3_smg] = 0.;
+  pvecback[pba->index_bg_A4_smg] = 0.;
+  pvecback[pba->index_bg_A5_smg] = 0.;
+  pvecback[pba->index_bg_A6_smg] = 0.;
+  pvecback[pba->index_bg_A7_smg] = 0.;
+  pvecback[pba->index_bg_A8_smg] = 0.;
+  pvecback[pba->index_bg_A9_smg] = 0.;
+  pvecback[pba->index_bg_A10_smg] = 0.;
+  pvecback[pba->index_bg_A11_smg] = 0.;
+  pvecback[pba->index_bg_A12_smg] = 0.;
+  pvecback[pba->index_bg_A13_smg] = 0.;
+  pvecback[pba->index_bg_A14_smg] = 0.;
+  pvecback[pba->index_bg_A15_smg] = 0.;
+  pvecback[pba->index_bg_A16_smg] = 0.;
   pvecback[pba->index_bg_lambda_1_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_smg] = 0.;
   pvecback[pba->index_bg_lambda_3_smg] = 0.;

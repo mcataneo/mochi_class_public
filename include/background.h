@@ -319,6 +319,24 @@ struct background
   int index_bg_R1_smg; /**< Klein-Gordon */
   int index_bg_R2_smg; /**< Klein-Gordon */
 
+  int index_bg_A0_smg;
+  int index_bg_A1_smg;
+  int index_bg_A2_smg;
+  int index_bg_A3_smg;
+  int index_bg_A4_smg;
+  int index_bg_A5_smg;
+  int index_bg_A6_smg;
+  int index_bg_A7_smg;
+  int index_bg_A8_smg;
+  int index_bg_A9_smg;
+  int index_bg_A10_smg;
+  int index_bg_A11_smg;
+  int index_bg_A12_smg;
+  int index_bg_A13_smg;
+  int index_bg_A14_smg;
+  int index_bg_A15_smg;
+  int index_bg_A16_smg;
+
   int index_bg_B0_smg;
   int index_bg_B1_smg;
   int index_bg_B2_smg;
