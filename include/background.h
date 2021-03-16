@@ -304,6 +304,7 @@ struct background
   int index_bg_braiding_prime_smg;/**< derivative of braiding wrt tau (BS eq A.9)*/
   int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/
+  int index_bg_beyond_horndeski_prime_smg;/**<derivative of beyond horndeski alpha_H*/
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
 
   int index_bg_E0_smg; /**< Hubble constraint */

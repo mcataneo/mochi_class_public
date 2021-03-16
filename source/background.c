@@ -1040,6 +1040,7 @@ int background_indices(
   class_define_index(pba->index_bg_braiding_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_mpl_running_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_tensor_excess_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_beyond_horndeski_prime_smg,pba->has_smg,index_bg,1);
 
   class_define_index(pba->index_bg_cs2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_cs2num_smg,pba->has_smg,index_bg,1);
@@ -2133,6 +2134,14 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_tensor_excess_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
+
+     //Beyond horndeski'
+     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_prime_smg,
+			      &pvecback_derivs[pba->index_bg_beyond_horndeski_smg],
+			      1*sizeof(double));
+     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_prime_smg,
+              pba->error_message,
+              "cannot copy data back to pba->background_table");
 
       //H''
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_H_prime_prime,
@@ -4657,6 +4666,7 @@ int background_gravity_functions(
   pvecback[pba->index_bg_braiding_prime_smg] = 0.;
   pvecback[pba->index_bg_mpl_running_prime_smg] = 0.;
   pvecback[pba->index_bg_tensor_excess_prime_smg] = 0.;
+  pvecback[pba->index_bg_beyond_horndeski_prime_smg] = 0.;
   pvecback[pba->index_bg_H_prime_prime] = 0.;
   pvecback[pba->index_bg_p_tot_wo_prime_smg] = 0.;
   pvecback[pba->index_bg_p_prime_smg] = 0.;
