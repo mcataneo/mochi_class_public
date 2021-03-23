@@ -489,6 +489,11 @@ struct perturbs
 
   //@}
 
+  /*
+  Decide whether to use the equations with Vx (singular when phi_prime=0)
+  or the equations with delta_phi (defined only with covariant theories)
+  */
+  short allow_bg_oscillations_smg;
 
 };
 
@@ -526,6 +531,8 @@ struct perturb_vector
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
   int index_pt_vx_smg;  /**< scalar field density */
   int index_pt_vx_prime_smg;  /**< scalar field velocity */
+  int index_pt_x_smg;  /**< scalar field perturbation */
+  int index_pt_x_prime_smg;  /**< scalar field perturbation derivative */
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */
   int index_pt_theta_ur; /**< velocity of ultra-relativistic neutrinos/relics */
   int index_pt_shear_ur; /**< shear of ultra-relativistic neutrinos/relics */
@@ -591,15 +598,19 @@ struct perturb_workspace
   int index_mt_phi_prime;     /**< (d phi/d conf.time) in longitudinal gauge */
   int index_mt_h_prime;       /**< h' (wrt conf. time) in synchronous gauge */
   int index_mt_h_prime_prime; /**< h'' (wrt conf. time) in synchronous gauge */
+  int index_mt_eta;           /**< eta in synchronous gauge */
   int index_mt_eta_prime;     /**< eta' (wrt conf. time) in synchronous gauge */
   int index_mt_alpha;         /**< \f$ \alpha = (h' + 6 \eta') / (2 k^2) \f$ in synchronous gauge */
   int index_mt_alpha_prime;   /**< \f$ \alpha'\f$ wrt conf. time) in synchronous gauge */
   int index_mt_gw_prime_prime;/**< second derivative wrt conformal time of gravitational wave field, often called h */
   int index_mt_V_prime;       /**< derivative of Newtonian gauge vector metric perturbation V */
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
-  int index_mt_vx_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
-  int index_mt_vx_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_vx_smg;       /**< scalar field perturbation */
+  int index_mt_vx_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
+  int index_mt_vx_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
+  int index_mt_x_smg;       /**< scalar field perturbation */
+  int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
+  int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
   int mt_size;                /**< size of metric perturbation vector */
 
@@ -1073,7 +1084,7 @@ extern "C" {
                             int size_scheme,
                             double * tau_export);
 
-  int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2, 
+  int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2,
                         double Omx, double wx, double l1, double l2, double l3, double l4,
                         double l5, double l6,double l7,double l8, double cs2num, double Dd, double ic_regulator_smg,
                         double * amplitude);
