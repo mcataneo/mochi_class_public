@@ -351,8 +351,28 @@ struct background
   int index_bg_B11_smg;
   int index_bg_B12_smg;
 
+  int index_bg_C0_smg;
+  int index_bg_C1_smg;
+  int index_bg_C2_smg;
+  int index_bg_C3_smg;
+  int index_bg_C4_smg;
+  int index_bg_C5_smg;
+  int index_bg_C6_smg;
+  int index_bg_C7_smg;
+  int index_bg_C8_smg;
+  int index_bg_C9_smg;
+  int index_bg_C10_smg;
+  int index_bg_C11_smg;
+  int index_bg_C12_smg;
+  int index_bg_C13_smg;
+  int index_bg_C14_smg;
+  int index_bg_C15_smg;
+  int index_bg_C16_smg;
+
+
   int index_bg_kinetic_D_smg;
   int index_bg_kinetic_D_prime_smg;
+  int index_bg_kinetic_D_over_phiphi_smg;
   int index_bg_lambda_1_smg;
   int index_bg_lambda_2_smg;
   int index_bg_lambda_3_smg;

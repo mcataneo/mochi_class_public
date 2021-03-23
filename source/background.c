@@ -1047,6 +1047,7 @@ int background_indices(
   class_define_index(pba->index_bg_cs2num_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_kinetic_D_over_phiphi_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A0_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A2_smg,pba->has_smg,index_bg,1);
@@ -1076,6 +1077,23 @@ int background_indices(
   class_define_index(pba->index_bg_B10_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B11_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B12_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C0_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C1_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C2_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C3_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C4_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C5_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C6_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C7_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C8_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C9_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C10_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C11_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C12_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C13_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C14_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C15_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C16_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_3_smg,pba->has_smg,index_bg,1);
@@ -2183,14 +2201,6 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
-      //D'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-			      &pvecback_derivs[pba->index_bg_kinetic_D_smg],
-			      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-               pba->error_message,
-               "cannot copy data back to pba->background_table");
-
       // Planck's mass running
       // Only need to compute it if neither self consistent field evolution nor evolving M_pl in terms of alpha_M
       // check equation 3.3 of Bellini & Sawicki 2014
@@ -2248,6 +2258,14 @@ int background_solve(
                               &pvecback[pba->index_bg_kinetic_D_smg], 1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
                  pba->error_message, "cannot copy data back to pba->background_table");
+
+       // kinetic term D_prime
+       pvecback[pba->index_bg_kinetic_D_prime_smg] = kin_p + 3.*bra*bra_p;
+       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
+                               &pvecback[pba->index_bg_kinetic_D_prime_smg], 1*sizeof(double));
+       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
+                  pba->error_message, "cannot copy data back to pba->background_table");
+
 
       // A0
       pvecback[pba->index_bg_A0_smg] =
@@ -2460,6 +2478,131 @@ int background_solve(
                 pba->error_message, "cannot copy data back to pba->background_table");
 
 
+      // kinetic term D over phiphi
+      pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
+                              &pvecback[pba->index_bg_kinetic_D_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
+                 pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C0
+      pvecback[pba->index_bg_C0_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C0_smg,
+                             &pvecback[pba->index_bg_C0_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C0_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C1
+      pvecback[pba->index_bg_C1_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C1_smg,
+                             &pvecback[pba->index_bg_C1_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C1_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C2
+      pvecback[pba->index_bg_C2_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C2_smg,
+                             &pvecback[pba->index_bg_C2_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C2_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C3
+      pvecback[pba->index_bg_C3_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C3_smg,
+                             &pvecback[pba->index_bg_C3_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C3_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C4
+      pvecback[pba->index_bg_C4_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C4_smg,
+                             &pvecback[pba->index_bg_C4_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C4_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C5
+      pvecback[pba->index_bg_C5_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C5_smg,
+                             &pvecback[pba->index_bg_C5_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C5_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C6
+      pvecback[pba->index_bg_C6_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C6_smg,
+                             &pvecback[pba->index_bg_C6_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C6_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C7
+      pvecback[pba->index_bg_C7_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C7_smg,
+                             &pvecback[pba->index_bg_C7_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C7_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C8
+      pvecback[pba->index_bg_C8_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C8_smg,
+                             &pvecback[pba->index_bg_C8_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C8_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C9
+      pvecback[pba->index_bg_C9_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C9_smg,
+                             &pvecback[pba->index_bg_C9_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C9_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C10
+      pvecback[pba->index_bg_C10_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C10_smg,
+                             &pvecback[pba->index_bg_C10_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C10_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C11
+      pvecback[pba->index_bg_C11_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C11_smg,
+                             &pvecback[pba->index_bg_C11_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C11_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C12
+      pvecback[pba->index_bg_C12_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C12_smg,
+                             &pvecback[pba->index_bg_C12_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C12_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C13
+      pvecback[pba->index_bg_C13_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C13_smg,
+                             &pvecback[pba->index_bg_C13_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C13_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C14
+      pvecback[pba->index_bg_C14_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C14_smg,
+                             &pvecback[pba->index_bg_C14_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C14_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C15
+      pvecback[pba->index_bg_C15_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C15_smg,
+                             &pvecback[pba->index_bg_C15_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C15_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
+
+      // C16
+      pvecback[pba->index_bg_C16_smg] = 0.;
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C16_smg,
+                             &pvecback[pba->index_bg_C16_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C16_smg,
+                pba->error_message, "cannot copy data back to pba->background_table");
 
 
       pvecback[pba->index_bg_lambda_1_smg] = (run + (-1.)*ten)*(-3.)*bra + (1. + ten)*kin;
@@ -3481,6 +3624,7 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"kineticity_over_phiphi_smg",pba->has_smg);
     class_store_columntitle(titles,"braiding_over_phi_smg",pba->has_smg);
     class_store_columntitle(titles,"beyond_horndeski_over_phiphi_smg",pba->has_smg);
+    class_store_columntitle(titles,"kin_over_phiphi (D)",pba->has_smg);
     class_store_columntitle(titles,"A0",pba->has_smg);
     class_store_columntitle(titles,"A1",pba->has_smg);
     class_store_columntitle(titles,"A2",pba->has_smg);
@@ -3511,6 +3655,23 @@ int background_output_titles(struct background * pba,
     class_store_columntitle(titles,"B10",pba->has_smg);
     class_store_columntitle(titles,"B11",pba->has_smg);
     class_store_columntitle(titles,"B12",pba->has_smg);
+    class_store_columntitle(titles,"C0",pba->has_smg);
+    class_store_columntitle(titles,"C1",pba->has_smg);
+    class_store_columntitle(titles,"C2",pba->has_smg);
+    class_store_columntitle(titles,"C3",pba->has_smg);
+    class_store_columntitle(titles,"C4",pba->has_smg);
+    class_store_columntitle(titles,"C5",pba->has_smg);
+    class_store_columntitle(titles,"C6",pba->has_smg);
+    class_store_columntitle(titles,"C7",pba->has_smg);
+    class_store_columntitle(titles,"C8",pba->has_smg);
+    class_store_columntitle(titles,"C9",pba->has_smg);
+    class_store_columntitle(titles,"C10",pba->has_smg);
+    class_store_columntitle(titles,"C11",pba->has_smg);
+    class_store_columntitle(titles,"C12",pba->has_smg);
+    class_store_columntitle(titles,"C13",pba->has_smg);
+    class_store_columntitle(titles,"C14",pba->has_smg);
+    class_store_columntitle(titles,"C15",pba->has_smg);
+    class_store_columntitle(titles,"C16",pba->has_smg);
     class_store_columntitle(titles,"lambda_1",pba->has_smg);
     class_store_columntitle(titles,"lambda_2",pba->has_smg);
     class_store_columntitle(titles,"lambda_3",pba->has_smg);
@@ -3631,6 +3792,7 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_kineticity_over_phiphi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_braiding_over_phi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_over_phi_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_over_phiphi_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A0_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A1_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A2_smg],pba->has_smg,storeidx);
@@ -3661,6 +3823,23 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_B10_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_B11_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_B12_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C0_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C1_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C2_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C3_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C4_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C5_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C6_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C7_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C8_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C9_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C10_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C11_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C12_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C13_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C15_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_C16_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_1_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_lambda_3_smg],pba->has_smg,storeidx);
@@ -4942,6 +5121,7 @@ int background_gravity_functions(
   pvecback[pba->index_bg_cs2_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_prime_smg] = 0.;
+  pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] = 0.;
   pvecback[pba->index_bg_cs2num_smg] = 0.;
   pvecback[pba->index_bg_cs2num_prime_smg] = 0.;
   pvecback[pba->index_bg_A0_smg] = 0.;
@@ -4961,6 +5141,23 @@ int background_gravity_functions(
   pvecback[pba->index_bg_A14_smg] = 0.;
   pvecback[pba->index_bg_A15_smg] = 0.;
   pvecback[pba->index_bg_A16_smg] = 0.;
+  pvecback[pba->index_bg_C0_smg] = 0.;
+  pvecback[pba->index_bg_C1_smg] = 0.;
+  pvecback[pba->index_bg_C2_smg] = 0.;
+  pvecback[pba->index_bg_C3_smg] = 0.;
+  pvecback[pba->index_bg_C4_smg] = 0.;
+  pvecback[pba->index_bg_C5_smg] = 0.;
+  pvecback[pba->index_bg_C6_smg] = 0.;
+  pvecback[pba->index_bg_C7_smg] = 0.;
+  pvecback[pba->index_bg_C8_smg] = 0.;
+  pvecback[pba->index_bg_C9_smg] = 0.;
+  pvecback[pba->index_bg_C10_smg] = 0.;
+  pvecback[pba->index_bg_C11_smg] = 0.;
+  pvecback[pba->index_bg_C12_smg] = 0.;
+  pvecback[pba->index_bg_C13_smg] = 0.;
+  pvecback[pba->index_bg_C14_smg] = 0.;
+  pvecback[pba->index_bg_C15_smg] = 0.;
+  pvecback[pba->index_bg_C16_smg] = 0.;
   pvecback[pba->index_bg_lambda_1_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_smg] = 0.;
   pvecback[pba->index_bg_lambda_3_smg] = 0.;
