@@ -2345,32 +2345,34 @@ int background_solve(
 
       // A6
       pvecback[pba->index_bg_A6_smg] =
-      + 27./4.*bra*(3. - bra)*(
-          + 2.*DelM2/M2 - bra + 2.*pow(H,-2)*(rho_smg - p_tot)/M2
-      )
-      + 9.*(kin + 3./2.*pow(bra,2))*(
-        + DelM2/M2 - bra/2. + run + (rho_smg - p_tot)*pow(H,-2)/M2
-      )
-      + 9./2.*(
-        + (kin + 3./2.*pow(bra,2))*(2. - bra + 2.*run)
-        + 3./2.*bra*(
-          + 6.*(1. + 2.*DelM2)/M2
-          - bra*(8. - bra)
-          + 6.*(rho_smg - p_tot)*pow(H,-2)/M2
+        + 9./4.*(
+          + (2.*kin + 9.*bra)*(2.*DelM2/M2 - bra)
+          + 4.*(kin + 3./2.*pow(bra,2))*run
         )
-      )*pow(H,-2)*(p_tot + p_smg)
-      + 81./4.*bra*(2. - bra)*pow(H,-4)*pow(p_tot + p_smg,2)
-      + 9./2.*(
-        + bra*(3. + bra)
-        - 2./3.*(kin + 3./2.*pow(bra,2))
-        + 3.*bra*(p_tot + p_smg)*pow(H,-2)
-      )*bra_p/a/H
-      + 3.*bra*kin_p/a/H
-      + 9.*(
-        + 3./2.*pow(bra,2)
-        + (kin + 3./2.*pow(bra,2))*DelM2
-      )*pow(H,-3)*p_tot_p/a/M2
-      + 9.*(kin + 3./2.*pow(bra,2))*pow(H,-3)*p_smg_p/a;
+        + 9.*(kin + 9./2.*bra)*rho_smg*pow(H,-2)/M2
+        + 9./2.*(
+          + (kin + 9.*bra)*(2.*DelM2/M2 - bra)
+          + 2.*(kin + 3./2.*pow(bra,2))*run
+        )*pow(H,-2)*p_tot
+        + 81./4.*bra*(
+          + 2.*rho_smg*(p_tot + p_smg)/M2
+          - 2.*(1./M2 - 2. + bra)*p_tot*p_smg
+          + (2. - bra)*pow(p_smg,2)
+          + (2.*DelM2 - bra*M2)*pow(p_tot,2)/M2
+        )*pow(H,-4)
+        + 9./2.*(
+          - 9.*bra*(1./M2 - 2. + bra)
+          + kin*(2. - bra)
+          + 2.*(kin + 3./2.*pow(bra,2))*run
+        )*pow(H,-2)*p_smg
+        + 3.*(
+          + bra*kin_p
+          - (kin - 9./2.*bra - 9./2.*bra*pow(H,-2)*(p_tot + p_smg))*bra_p
+        )/a/H
+        + 9.*(
+          + (kin*DelM2/M2 + 3./2.*pow(bra,2))*p_tot_p
+          + (kin + 3./2.*pow(bra,2))*p_smg_p
+        )*pow(H,-3)/a;
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A6_smg,
                              &pvecback[pba->index_bg_A6_smg], 1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A6_smg,
@@ -4918,6 +4920,7 @@ int background_gravity_functions(
     pvecback[pba->index_bg_kineticity_smg] = 0;
     pvecback[pba->index_bg_braiding_smg] = 0.;
     pvecback[pba->index_bg_tensor_excess_smg] = 0.;
+    pvecback[pba->index_bg_beyond_horndeski_smg] = 0.;
     pvecback[pba->index_bg_M2_smg] = 1.;
     pvecback[pba->index_bg_delta_M2_smg] = 0.;
     pvecback[pba->index_bg_mpl_running_smg] = 0.;
