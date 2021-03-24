@@ -2435,24 +2435,26 @@ int background_solve(
 
       // A12
       pvecback[pba->index_bg_A12_smg] =
-      + 1./2.*(kin + 3./2.*pow(bra,2))*(1. - 2.*run)
-      - 9./4.*(3. - bra)*(2. - bra)
-      + 9./4.*(
-        + 2.*(3. - bra)*(rho_tot + p_tot)/M2
-        + (
-          - (6. - bra)*(2. - bra)
-          + 2.*(kin + 3./2.*pow(bra,2))
-          + 6.*rho_tot*pow(H,-2)/M2
-        )*(p_tot + p_smg)
-        + 3.*(
-          + 2.*p_tot/M2 - (2. - bra)*(p_tot + p_smg)
-        )*(p_tot + p_smg)*pow(H,-2)
-        - 2.*bra*p_tot_p/a/H/M2
-      )*pow(H,-2)
-      - 3./2.*(
-        + 3. + bra + 3.*(p_tot + p_smg)*pow(H,-2)
-      )*bra_p/a/H
-      - kin_p/a/H;
+      + kin/2. - 3.*bra*(3./2. - bra) - run*(kin + 3./2.*pow(bra,2))
+      - 9./4.*(
+        + (6.*DelM2/M2 + bra*(2./M2 - 7. + 2.*bra))*pow(H,-2)*rho_tot
+        + (6.*DelM2/M2  - 2.*kin + bra*(2./M2 - 5. - 2.*bra))*pow(H,-2)*p_tot
+        + (6. - 5.*bra - 2.*pow(bra,2) - 2.*kin)*pow(H,-2)*p_smg
+        - 6.*(1./M2 - 2. + bra)*pow(H,-4)*p_tot*p_smg
+        + 3.*(2. - bra)*pow(H,-4)*pow(p_smg,2)
+        + 3.*(2.*DelM2/M2 - bra)*(
+          + rho_tot*p_tot + pow(p_tot,2) + rho_tot*p_smg
+        )*pow(H,-4)
+        + (2. - bra)*(
+          + 3. - 2.*bra + 3.*pow(H,-2)*(p_tot + p_smg)
+        )*pow(H,-2)*rho_smg
+        + 2.*bra*pow(H,-3)*p_tot_p/a/M2
+      )
+      - (
+        + kin_p
+        + 3./2.*(3. + bra + 3.*pow(H,-2)*(p_tot + p_smg))*bra_p
+      )/a/H;
+
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A12_smg,
                              &pvecback[pba->index_bg_A12_smg], 1*sizeof(double));
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A12_smg,
