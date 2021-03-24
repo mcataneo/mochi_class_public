@@ -3819,7 +3819,6 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_A0_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A1_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A2_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A3_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A4_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A5_smg],pba->has_smg,storeidx);
@@ -3831,6 +3830,7 @@ int background_output_data(
       class_store_double(dataptr,pvecback[pba->index_bg_A11_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A12_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A13_smg],pba->has_smg,storeidx);
+      class_store_double(dataptr,pvecback[pba->index_bg_A14_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A15_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_A16_smg],pba->has_smg,storeidx);
       class_store_double(dataptr,pvecback[pba->index_bg_B0_smg],pba->has_smg,storeidx);
