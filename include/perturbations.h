@@ -612,6 +612,10 @@ struct perturb_workspace
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
+  /* TODO_EB: uncomment this if you want to check what happens with the hiamiltonian constraint */
+  // int index_mt_test1_smg;
+  // int index_mt_test2_smg;
+  // int index_mt_test3_smg;
   int mt_size;                /**< size of metric perturbation vector */
 
   //@}
@@ -1088,6 +1092,20 @@ extern "C" {
                         double Omx, double wx, double l1, double l2, double l3, double l4,
                         double l5, double l6,double l7,double l8, double cs2num, double Dd, double ic_regulator_smg,
                         double * amplitude);
+
+  int get_gravity_coefficients_smg(
+                                 struct background * pba,
+                                 struct perturbs * ppt,
+                                 struct perturb_workspace * ppw,
+                                 double * M2, double * kin, double * bra, double * ten,
+                                 double * run, double * beh, double * res, double * cD,
+                                 double * cK, double * cB, double * cH, double * c0,
+                                 double * c1, double * c2, double * c3, double * c4,
+                                 double * c5, double * c6, double * c7, double * c8,
+                                 double * c9, double * c10, double * c11, double * c12,
+                                 double * c13, double * c14, double * c15, double * c16
+                               );
+
 #ifdef __cplusplus
 }
 #endif

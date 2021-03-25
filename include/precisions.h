@@ -505,7 +505,7 @@ class_precision_parameter(trigger_mass_qs_smg,double,1.e3) /**< if the mass is a
 class_precision_parameter(trigger_rad_qs_smg,double,1.e3) /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
 class_precision_parameter(eps_s_qs_smg,double,0.01) /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
-class_precision_parameter(get_h_from_trace_smg,int,_FALSE_) /* Get h' from Einstein trace rather than 00 */
+class_precision_parameter(get_h_from_trace_smg,int,_TRUE_) /* Get h' from Einstein trace rather than 00 */
 
 
 class_precision_parameter(min_a_pert_smg,double,1.) /**< minimum value of scale factor to start integration (important to test some ede models */

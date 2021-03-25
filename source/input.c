@@ -247,6 +247,20 @@ int input_init(
              errmsg,
              errmsg);
 
+  /* Here we put a warning as we want to encourage hi_class users to get
+  h_prime from the trace of the Einstein ij equation than from the Einstein 00
+  equation. This is because the Einstein 00 equation has a gauge dependent
+  singularity that can be removed using the trace of the Einstein ij equation.
+  */
+  if (pba->has_smg == _FALSE_ && ppr->get_h_from_trace_smg == _FALSE_) {
+    printf("WARNING: you set get_h_from_trace_smg to False.\n");
+    printf("While this is still accepted in hi_class, it can cause gauge dependent\n");
+    printf("singularities if your model crosses alphaB=2. For this reason in\n");
+    printf("future versions of the code this option will be removed and the\n");
+    printf("Einstein 00 equation will be used only to set the initial conditions\n");
+    printf("for h_prime and as a test to check that it is satisfied during the evolution.\n");
+    printf("\n");
+  }
 
 
   /**
