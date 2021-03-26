@@ -11925,7 +11925,6 @@ int sample_mass_qs_smg(
     friction = - (c11 - c3*k2*pow(a*H,-2))/cD;
 
     slope = - 1./4.*(1. - 2.*friction + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_p/mass2/a/H);
-    printf("mass=%e, massp=%e, rad=%e, fric=%e, slope=%e\n", mass2, mass2_p, rad2, friction, slope);
 
 //     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
 //     double x = (tau - tau_ini)/(tau_end - tau_ini);

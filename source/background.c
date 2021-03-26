@@ -2304,14 +2304,6 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
                  pba->error_message, "cannot copy data back to pba->background_table");
 
-       // kinetic term D_prime
-       pvecback[pba->index_bg_kinetic_D_prime_smg] = kin_p + 3.*bra*bra_p;
-       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-                               &pvecback[pba->index_bg_kinetic_D_prime_smg], 1*sizeof(double));
-       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-                  pba->error_message, "cannot copy data back to pba->background_table");
-
-
       // A0
       pvecback[pba->index_bg_A0_smg] =
       1./2.*(
@@ -2895,6 +2887,14 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
+
+       //D'
+       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
+  			      &pvecback_derivs[pba->index_bg_kinetic_D_smg],
+  			      1*sizeof(double));
+       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
+                pba->error_message,
+                "cannot copy data back to pba->background_table");
 
        //D_over_phiphi'
        memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
