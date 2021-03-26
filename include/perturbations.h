@@ -1094,17 +1094,26 @@ extern "C" {
                         double * amplitude);
 
   int get_gravity_coefficients_smg(
-                                 struct background * pba,
                                  struct perturbs * ppt,
-                                 struct perturb_workspace * ppw,
+                                 struct background * pba,
+                                 double * pvecback,
                                  double * M2, double * kin, double * bra, double * ten,
                                  double * run, double * beh, double * res, double * cD,
                                  double * cK, double * cB, double * cH, double * c0,
                                  double * c1, double * c2, double * c3, double * c4,
                                  double * c5, double * c6, double * c7, double * c8,
                                  double * c9, double * c10, double * c11, double * c12,
-                                 double * c13, double * c14, double * c15, double * c16
+                                 double * c13, double * c14, double * c15, double * c16,
+                                 double * res_p, double *  cD_p, double *  cB_p, double *  cH_p,
+                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p
                                );
+
+  int get_x_x_prime_qs_smg(
+                          struct background * pba,
+                          struct perturbs * ppt,
+                          struct perturb_workspace * ppw,
+                          double k, double * x_qs_smg, double * x_prime_qs_smg
+                          );
 
 #ifdef __cplusplus
 }

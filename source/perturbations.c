@@ -3095,7 +3095,7 @@ int perturb_solve(
     if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
     class_call(perturb_find_scheme_qs_smg(ppr,
                                          pba,
-				         ppt,
+				                                 ppt,
                                          k,
                                          tau,
                                          ppt->tau_sampling[tau_actual_size-1],
@@ -7407,47 +7407,32 @@ int perturb_einstein(
 
       if (pba->has_smg == _TRUE_) {
 
+        int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+
         double H, M2, kin, bra, ten, run, beh;
         double res, cD, cK, cB, cH;
         double c0, c1, c2, c3, c4, c5, c6, c7, c8;
         double c9, c10, c11, c12, c13, c14, c15, c16;
+        double c9_p, c10_p, c12_p, c13_p;
+        double res_p, cD_p, cB_p, cH_p;
         double checkeinsteinfirst;
 
         H = ppw->pvecback[pba->index_bg_H];
-
-        int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
         /* Define background coefficients. This function uses
         allow_bg_oscillations_smg to decide which coefficients to output.
         */
         class_call(
           get_gravity_coefficients_smg(
-            pba, ppt, ppw,
+            ppt, pba, ppw->pvecback,
             & M2, & kin, & bra, & ten, & run, & beh, & res,
             & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
-            & c4, & c5, & c6, & c7, & c8, & c9, & c10,
-            & c11, & c12, & c13, & c14, & c15, & c16
+            & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
+            & c12, & c13, & c14, & c15, & c16,  & res_p, & cD_p, & cB_p,
+            & cH_p, & c9_p, & c10_p, & c12_p, & c13_p
           ),
           ppt->error_message,
           ppt->error_message);
-
-
-        /* Get scalar field perturbations */
-        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
-          /* Get scalar field perturbations from QS expressions */
-          /* TODO_EB: write the quasi-statc equatins here */
-          ppw->pvecmetric[ppw->index_mt_x_smg] = 0.;
-          ppw->pvecmetric[ppw->index_mt_x_prime_smg] = 0.;
-        }
-        else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
-          /* Get scalar field perturbations from the integrator */
-          ppw->pvecmetric[ppw->index_mt_x_smg] = y[ppw->pv->index_pt_x_smg];
-          ppw->pvecmetric[ppw->index_mt_x_prime_smg] = y[ppw->pv->index_pt_x_prime_smg];
-        }
-        else {
-          printf("Scalar field equation: qs_smg approximation mode %i not recognized. should be quasi_static or fully_dynamic.\n",ppw->approx[ppw->index_ap_qs_smg]);
-          return _FAILURE_;
-        }
 
 
         /* Get metric perturbations from the integrator */
@@ -7469,26 +7454,50 @@ int perturb_einstein(
         }
 
 
+        /* Get scalar field perturbations */
+        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
+          /* Get scalar field perturbations from QS expressions */
+          class_call(
+            get_x_x_prime_qs_smg(
+              pba, ppt, ppw, k,
+              & ppw->pvecmetric[ppw->index_mt_x_smg],
+              & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+            ),
+            ppt->error_message,
+            ppt->error_message);
+        }
+        else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
+          /* Get scalar field perturbations from the integrator */
+          ppw->pvecmetric[ppw->index_mt_x_smg] = y[ppw->pv->index_pt_x_smg];
+          ppw->pvecmetric[ppw->index_mt_x_prime_smg] = y[ppw->pv->index_pt_x_prime_smg];
+        }
+        else {
+          printf("Scalar field equation: qs_smg approximation mode %i not recognized. should be quasi_static or fully_dynamic.\n",ppw->approx[ppw->index_ap_qs_smg]);
+          return _FAILURE_;
+        }
+
+
         /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
         if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
 
           /* correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times */
-          /* TODO_EB: calculate this */
-          double l1, l3, l4, l5, l6, D, kin;
-          D = ppw->pvecback[pba->index_bg_kinetic_D_smg];
-          kin = ppw->pvecback[pba->index_bg_kineticity_smg];
-          l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
-          l3 = ppw->pvecback[pba->index_bg_lambda_3_smg];
-          l4 = ppw->pvecback[pba->index_bg_lambda_4_smg];
-          l5 = ppw->pvecback[pba->index_bg_lambda_5_smg];
-          l6 = ppw->pvecback[pba->index_bg_lambda_6_smg];
-          ppw->pvecmetric[ppw->index_mt_rsa_p_smg] = 0.;
-          ppw->pvecmetric[ppw->index_mt_rsa_p_smg] = (kin/(D*M2) - 1.)*ppw->delta_p - 1./3.*pow(H,2)*pow(D,-1)*l4*ppw->pvecmetric[ppw->index_mt_x_prime_smg] + 2./9.*(1. - l1/D)*pow(k,2)*y[ppw->pv->index_pt_eta]*pow(a,-2) - 2./9.*(1. + l3/D)*H*ppw->pvecmetric[ppw->index_mt_h_prime]*pow(a,-1) - 2./9.*(H*pow(D,-1)*pow(k,2)*l5*pow(a,-1) + 3.*pow(H,3)*pow(D,-1)*l6*a)*ppw->pvecmetric[ppw->index_mt_x_smg];
+          ppw->pvecmetric[ppw->index_mt_rsa_p_smg] =
+          (
+            + (cK/M2 - cD)*ppw->delta_p
+            + 1./9.*(
+              - H*(c3*k2*pow(a*H,-2) + c2 + 2.*cD)*ppw->pvecmetric[ppw->index_mt_h_prime]/a
+              + res*pow(H,2)*(c7*k2*pow(a*H,-2) + c6)*ppw->pvecmetric[ppw->index_mt_x_smg]
+              + res*H*(2.*c5*k2*pow(a*H,-2) + c4)*ppw->pvecmetric[ppw->index_mt_x_prime_smg]/a
+            )
+            + 2./9.*(
+              + c3*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H
+              + k2*(cD - c1)*ppw->pvecmetric[ppw->index_mt_eta]
+            )*pow(a,-2)
+          )/cD;
 
           class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
             ppt->error_message,
             ppt->error_message);
-
         }
 
         if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
@@ -9021,7 +9030,6 @@ int perturb_sources(
     }
 
     /* phi_smg TODO: either change the name of the source or write delta_phi_dot */
-    /* TODO_EB: check this */
     if (ppt->has_source_phi_smg == _TRUE_) {
       _set_source_(ppt->index_tp_phi_smg) = pvecmetric[ppw->index_mt_x_smg];
     }
@@ -11873,37 +11881,51 @@ int sample_mass_qs_smg(
                pba->error_message,
                ppt->error_message);
 
-    double bra = pvecback[pba->index_bg_braiding_smg];
-    double bra_p = pvecback[pba->index_bg_braiding_prime_smg];
+   double M2, kin, bra, ten, run, beh;
+   double res, cD, cK, cB, cH;
+   double c0, c1, c2, c3, c4, c5, c6, c7, c8;
+   double c9, c10, c11, c12, c13, c14, c15, c16;
+   double c9_p, c10_p, c12_p, c13_p;
+   double res_p, cD_p, cB_p, cH_p;
+   double x_prime_qs_smg_num, x_prime_qs_smg_den;
+   double a, H, rho_tot, p_tot, rho_smg, p_smg, rho_r;
+   double k2 = k*k;
 
-    double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
-    double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-    double rho_smg = pvecback[pba->index_bg_rho_smg];
-    double p_smg = pvecback[pba->index_bg_p_smg];
-    double rho_ur = pvecback[pba->index_bg_rho_ur];
-    double rho_g = pvecback[pba->index_bg_rho_g];
+   a = pvecback[pba->index_bg_a];
+   H = pvecback[pba->index_bg_H];
+   rho_r = pvecback[pba->index_bg_rho_g] + pvecback[pba->index_bg_rho_ur];
+   rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
+   p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
+   rho_smg = pvecback[pba->index_bg_rho_smg];
+   p_smg = pvecback[pba->index_bg_p_smg];
 
-    double a = pvecback[pba->index_bg_a];
-    double H = pvecback[pba->index_bg_H];
+   class_call(
+     get_gravity_coefficients_smg(
+       ppt, pba, pvecback,
+       & M2, & kin, & bra, & ten, & run, & beh, & res,
+       & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
+       & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
+       & c12, & c13, & c14, & c15, & c16, & res_p, & cD_p, & cB_p,
+       & cH_p, & c9_p, & c10_p, & c12_p, & c13_p
+     ),
+     ppt->error_message,
+     ppt->error_message);
 
-    double l7 = pvecback[pba->index_bg_lambda_7_smg];
-    double l8 = pvecback[pba->index_bg_lambda_8_smg];
-    double l8_p = pvecback[pba->index_bg_lambda_8_prime_smg];
 
-    double cs2num = pvecback[pba->index_bg_cs2num_smg];
-    double cs2num_p = pvecback[pba->index_bg_cs2num_prime_smg];
-    double D = pvecback[pba->index_bg_kinetic_D_smg];
-    double D_p = pvecback[pba->index_bg_kinetic_D_prime_smg];
+    mass2 = - (c12 + c13*k2*pow(a*H,-2))/cD;
 
-    mass2 = 2.*(cs2num*pow(k/(a*H),2) - 4.*l8)/(2. - bra)/D;
+    mass2_p =
+    - (
+      + c12_p - c12*cD_p/cD
+      + (c13_p - c13*cD_p/cD + (rho_tot + rho_smg + 3.*p_tot + 3.*p_smg)*c13*a/H)*pow(a*H,-2)*k2
+    )/cD;
 
-    mass2_p = 2.*(4.*(D_p/D - bra_p/(2. - bra))*l8 - 4.*l8_p + (cs2num_p - (D_p/D - bra_p/(2. - bra))*cs2num + (rho_tot + rho_smg + 3.*(p_tot + p_smg))*cs2num*a/H)*pow(k/(a*H),2))/(2. - bra)/D;
+    rad2 = 3.*mass2*pow(H,4)*pow(rho_r,-2)*pow(a*H,2)/k2;
 
-    rad2 = 3.*mass2*pow((a*H/k)*H*H/(rho_g + rho_ur),2);
+    friction = - (c11 - c3*k2*pow(a*H,-2))/cD;
 
-    friction = 8.*pow(2.-bra,-1)*pow(D,-1)*l7;
-
-    slope = (-1. + 2.*friction - 3.*(p_tot + p_smg)/(rho_tot + rho_smg) + mass2_p/(mass2*a*H))/4.;
+    slope = - 1./4.*(1. - 2.*friction + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_p/mass2/a/H);
+    printf("mass=%e, massp=%e, rad=%e, fric=%e, slope=%e\n", mass2, mass2_p, rad2, friction, slope);
 
 //     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
 //     double x = (tau - tau_ini)/(tau_end - tau_ini);
@@ -12691,16 +12713,18 @@ int perturb_rsa_idr_delta_and_theta(
 }
 
 int get_gravity_coefficients_smg(
-                               struct background * pba,
                                struct perturbs * ppt,
-                               struct perturb_workspace * ppw,
+                               struct background * pba,
+                               double * pvecback,
                                double * M2, double * kin, double * bra, double * ten,
                                double * run, double * beh, double * res, double * cD,
                                double * cK, double * cB, double * cH, double * c0,
                                double * c1, double * c2, double * c3, double * c4,
                                double * c5, double * c6, double * c7, double * c8,
                                double * c9, double * c10, double * c11, double * c12,
-                               double * c13, double * c14, double * c15, double * c16
+                               double * c13, double * c14, double * c15, double * c16,
+                               double * res_p, double * cD_p, double * cB_p, double * cH_p,
+                               double * c9_p, double * c10_p, double * c12_p, double * c13_p
                              ){
   /* It returns the alphas and the coefficients of the Einstein equations
   that will be used to evaluate the perturbations and their initial
@@ -12708,65 +12732,190 @@ int get_gravity_coefficients_smg(
   coefficients to output.
   */
 
-  *M2 = ppw->pvecback[pba->index_bg_M2_smg];
-  *kin = ppw->pvecback[pba->index_bg_kineticity_smg];
-  *bra = ppw->pvecback[pba->index_bg_braiding_smg];
-  *ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
-  *run = ppw->pvecback[pba->index_bg_mpl_running_smg];
-  *beh = ppw->pvecback[pba->index_bg_beyond_horndeski_smg];
+  double a = pvecback[pba->index_bg_a];
+  double H = pvecback[pba->index_bg_H];
+  double Hp = pvecback[pba->index_bg_H_prime];
+
+  *M2 = pvecback[pba->index_bg_M2_smg];
+  *kin = pvecback[pba->index_bg_kineticity_smg];
+  *bra = pvecback[pba->index_bg_braiding_smg];
+  *ten = pvecback[pba->index_bg_tensor_excess_smg];
+  *run = pvecback[pba->index_bg_mpl_running_smg];
+  *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
 
   if (ppt->allow_bg_oscillations_smg == _TRUE_) {
     *res = 1.;
-    *cD  = ppw->pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
-    *cK  = ppw->pvecback[pba->index_bg_kineticity_over_phiphi_smg];
-    *cB  = ppw->pvecback[pba->index_bg_braiding_over_phi_smg];
-    *cH  = ppw->pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
-    *c0  = ppw->pvecback[pba->index_bg_C0_smg];
-    *c1  = ppw->pvecback[pba->index_bg_C1_smg];
-    *c2  = ppw->pvecback[pba->index_bg_C2_smg];
-    *c3  = ppw->pvecback[pba->index_bg_C3_smg];
-    *c4  = ppw->pvecback[pba->index_bg_C4_smg];
-    *c5  = ppw->pvecback[pba->index_bg_C5_smg];
-    *c6  = ppw->pvecback[pba->index_bg_C6_smg];
-    *c7  = ppw->pvecback[pba->index_bg_C7_smg];
-    *c8  = ppw->pvecback[pba->index_bg_C8_smg];
-    *c9  = ppw->pvecback[pba->index_bg_C9_smg];
-    *c10 = ppw->pvecback[pba->index_bg_C10_smg];
-    *c11 = ppw->pvecback[pba->index_bg_C11_smg];
-    *c12 = ppw->pvecback[pba->index_bg_C12_smg];
-    *c14 = ppw->pvecback[pba->index_bg_C14_smg];
-    *c13 = ppw->pvecback[pba->index_bg_C13_smg];
-    *c15 = ppw->pvecback[pba->index_bg_C15_smg];
-    *c16 = ppw->pvecback[pba->index_bg_C16_smg];
+    *cD  = pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
+    *cK  = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
+    *cB  = pvecback[pba->index_bg_braiding_over_phi_smg];
+    *cH  = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
+    *c0  = pvecback[pba->index_bg_C0_smg];
+    *c1  = pvecback[pba->index_bg_C1_smg];
+    *c2  = pvecback[pba->index_bg_C2_smg];
+    *c3  = pvecback[pba->index_bg_C3_smg];
+    *c4  = pvecback[pba->index_bg_C4_smg];
+    *c5  = pvecback[pba->index_bg_C5_smg];
+    *c6  = pvecback[pba->index_bg_C6_smg];
+    *c7  = pvecback[pba->index_bg_C7_smg];
+    *c8  = pvecback[pba->index_bg_C8_smg];
+    *c9  = pvecback[pba->index_bg_C9_smg];
+    *c10 = pvecback[pba->index_bg_C10_smg];
+    *c11 = pvecback[pba->index_bg_C11_smg];
+    *c12 = pvecback[pba->index_bg_C12_smg];
+    *c13 = pvecback[pba->index_bg_C13_smg];
+    *c14 = pvecback[pba->index_bg_C14_smg];
+    *c15 = pvecback[pba->index_bg_C15_smg];
+    *c16 = pvecback[pba->index_bg_C16_smg];
+    *res_p = 0.;
+    *cD_p  = pvecback[pba->index_bg_kinetic_D_over_phiphi_prime_smg];
+    *cB_p  = pvecback[pba->index_bg_braiding_over_phi_prime_smg];
+    *cH_p  = pvecback[pba->index_bg_beyond_horndeski_over_phi_prime_smg];
+    *c9_p  = pvecback[pba->index_bg_C9_prime_smg];
+    *c10_p = pvecback[pba->index_bg_C10_prime_smg];
+    *c12_p = pvecback[pba->index_bg_C12_prime_smg];
+    *c13_p = pvecback[pba->index_bg_C13_prime_smg];
   }
   else if (ppt->allow_bg_oscillations_smg == _FALSE_) {
-    *res = - ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H];
-    *cD  = ppw->pvecback[pba->index_bg_kinetic_D_smg];
-    *cK  = ppw->pvecback[pba->index_bg_kineticity_smg];
-    *cB  = ppw->pvecback[pba->index_bg_braiding_smg];
-    *cH  = ppw->pvecback[pba->index_bg_beyond_horndeski_smg];
-    *c0  = ppw->pvecback[pba->index_bg_A0_smg];
-    *c1  = ppw->pvecback[pba->index_bg_A1_smg];
-    *c2  = ppw->pvecback[pba->index_bg_A2_smg];
-    *c3  = ppw->pvecback[pba->index_bg_A3_smg];
-    *c4  = ppw->pvecback[pba->index_bg_A4_smg];
-    *c5  = ppw->pvecback[pba->index_bg_A5_smg];
-    *c6  = ppw->pvecback[pba->index_bg_A6_smg];
-    *c7  = ppw->pvecback[pba->index_bg_A7_smg];
-    *c8  = ppw->pvecback[pba->index_bg_A8_smg];
-    *c9  = ppw->pvecback[pba->index_bg_A9_smg];
-    *c10 = ppw->pvecback[pba->index_bg_A10_smg];
-    *c11 = ppw->pvecback[pba->index_bg_A11_smg];
-    *c12 = ppw->pvecback[pba->index_bg_A12_smg];
-    *c13 = ppw->pvecback[pba->index_bg_A13_smg];
-    *c14 = ppw->pvecback[pba->index_bg_A14_smg];
-    *c15 = ppw->pvecback[pba->index_bg_A15_smg];
-    *c16 = ppw->pvecback[pba->index_bg_A16_smg];
+    *res = - a*H;
+    *cD  = pvecback[pba->index_bg_kinetic_D_smg];
+    *cK  = pvecback[pba->index_bg_kineticity_smg];
+    *cB  = pvecback[pba->index_bg_braiding_smg];
+    *cH  = pvecback[pba->index_bg_beyond_horndeski_smg];
+    *c0  = pvecback[pba->index_bg_A0_smg];
+    *c1  = pvecback[pba->index_bg_A1_smg];
+    *c2  = pvecback[pba->index_bg_A2_smg];
+    *c3  = pvecback[pba->index_bg_A3_smg];
+    *c4  = pvecback[pba->index_bg_A4_smg];
+    *c5  = pvecback[pba->index_bg_A5_smg];
+    *c6  = pvecback[pba->index_bg_A6_smg];
+    *c7  = pvecback[pba->index_bg_A7_smg];
+    *c8  = pvecback[pba->index_bg_A8_smg];
+    *c9  = pvecback[pba->index_bg_A9_smg];
+    *c10 = pvecback[pba->index_bg_A10_smg];
+    *c11 = pvecback[pba->index_bg_A11_smg];
+    *c12 = pvecback[pba->index_bg_A12_smg];
+    *c13 = pvecback[pba->index_bg_A13_smg];
+    *c14 = pvecback[pba->index_bg_A14_smg];
+    *c15 = pvecback[pba->index_bg_A15_smg];
+    *c16 = pvecback[pba->index_bg_A16_smg];
+    *res_p = - a*(Hp + a*H);
+    *cD_p  = pvecback[pba->index_bg_kinetic_D_prime_smg];
+    *cB_p  = pvecback[pba->index_bg_braiding_prime_smg];
+    *cH_p  = pvecback[pba->index_bg_beyond_horndeski_prime_smg];
+    *c9_p  = pvecback[pba->index_bg_A9_prime_smg];
+    *c10_p = pvecback[pba->index_bg_A10_prime_smg];
+    *c12_p = pvecback[pba->index_bg_A12_prime_smg];
+    *c13_p = pvecback[pba->index_bg_A13_prime_smg];
   }
   else {
     printf("It was not possible to determine if oscillations of the background scalar field should be allowed or not.\n");
     return _FAILURE_;
   }
+
+  return _SUCCESS_;
+}
+
+int get_x_x_prime_qs_smg(
+                        struct background * pba,
+                        struct perturbs * ppt,
+                        struct perturb_workspace * ppw,
+                        double k, double * x_qs_smg, double * x_prime_qs_smg
+                      ){
+                        /* TODO_EB: write the quasi-statc equatins here */
+
+  double k2 = k*k;
+  double rho_r, p_tot, p_smg;
+  double a, H, M2, kin, bra, ten, run, beh;
+  double res, cD, cK, cB, cH;
+  double c0, c1, c2, c3, c4, c5, c6, c7, c8;
+  double c9, c10, c11, c12, c13, c14, c15, c16;
+  double c9_p, c10_p, c12_p, c13_p;
+  double res_p, cD_p, cB_p, cH_p;
+  double x_prime_qs_smg_num, x_prime_qs_smg_den;
+
+  a = ppw->pvecback[pba->index_bg_a];
+  H = ppw->pvecback[pba->index_bg_H];
+  rho_r = ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_ur];
+  p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
+  p_smg = ppw->pvecback[pba->index_bg_p_smg];
+
+  class_call(
+    get_gravity_coefficients_smg(
+      ppt, pba, ppw->pvecback,
+      & M2, & kin, & bra, & ten, & run, & beh, & res,
+      & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
+      & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
+      & c12, & c13, & c14, & c15, & c16, & res_p, & cD_p, & cB_p,
+      & cH_p, & c9_p, & c10_p, & c12_p, & c13_p
+    ),
+    ppt->error_message,
+    ppt->error_message);
+
+  /* This is the expression for the scalar field in the quasi static approximation */
+  *x_qs_smg =
+  + 1./res*(
+    - 9./2.*cB*pow(a,2)*ppw->delta_p/M2
+    + c10*k2*ppw->pvecmetric[ppw->index_mt_eta]
+    + (c9*pow(a*H,2) - 1./3.*cH*k2)*ppw->pvecmetric[ppw->index_mt_h_prime]/a/H
+    + 2./3.*cH*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H
+  )/(c13*k2 + c12*pow(a*H,2));
+
+
+  /* scalar field derivative equation
+   * In order to estimate it we followed this procedure:
+   * - we calculated analytically the time derivative of the vx equation
+   * - we used delta_p' = delta_rho_r'/3 (radiation is the only component that contributes to delta_p')
+   * - we used the conservation equation for radiation to get rid of delta_rho_r'
+   * - we used the Einstein equations to get rid of eta', h'', alpha'
+   * The result is approximated when rsa is on since the velocity of radiation gets updated only after
+   * this call in perturb_einstein */
+
+   x_prime_qs_smg_num =
+   + 3.*(
+     + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
+     - 2.*cH*cK*pow(a*H,-2)*k2
+   )*ppw->delta_rho_r*a/H/M2
+   + 9.*(
+     + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
+     - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+     - 2.*c3*cH*k2*pow(a*H,-2)
+   )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
+   + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
+   + 4.*k2*pow(a*H,-2)*(
+     + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
+     - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
+   )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
+   + 3.*(
+     + 2.*cD*(c9*res_p/res - c9_p)/a/H - 2.*c2*c9 + c9*cD
+     - cD*(2.*cB*rho_r/M2 - 3.*c9*(p_tot + p_smg))*pow(H,-2)
+     + 2./3.*cH*(c2 + 2.*cD + run*cD)*k2*pow(a*H,-2)
+   )*ppw->pvecmetric[ppw->index_mt_h_prime]
+   + 6.*a*H*res*(
+     + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
+     - (
+       + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
+       + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
+       + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+     )*k2*pow(a*H,-2)
+     + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
+   )*ppw->pvecmetric[ppw->index_mt_x_smg]
+   ;
+
+  x_prime_qs_smg_den =
+  - 6.*res*(
+    + c4*c9 + c12*cD
+    - k2*(
+      + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
+      - 12.*c9*(c5 - 3./2.*c3*cB)
+      - 3.*cD*(c10*cB + 2.*c13)
+      + 2.*c4*cH
+      + 3.*cB*cD*cH*(3. + 2.*run)
+      - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+    )/6.*pow(a*H,-2)
+    - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
+  );
+
+  *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
 
   return _SUCCESS_;
 }

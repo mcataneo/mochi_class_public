@@ -1035,6 +1035,8 @@ int background_indices(
   class_define_index(pba->index_bg_kineticity_over_phiphi_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_braiding_over_phi_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_beyond_horndeski_over_phi_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_braiding_over_phi_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_beyond_horndeski_over_phi_prime_smg,pba->has_smg,index_bg,1);
 
   class_define_index(pba->index_bg_kineticity_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_braiding_prime_smg,pba->has_smg,index_bg,1);
@@ -1048,6 +1050,7 @@ int background_indices(
   class_define_index(pba->index_bg_kinetic_D_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_kinetic_D_over_phiphi_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_kinetic_D_over_phiphi_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A0_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A2_smg,pba->has_smg,index_bg,1);
@@ -1065,6 +1068,10 @@ int background_indices(
   class_define_index(pba->index_bg_A14_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A15_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A16_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A9_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A10_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A12_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_A13_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B3_smg,pba->has_smg,index_bg,1);
@@ -1094,6 +1101,10 @@ int background_indices(
   class_define_index(pba->index_bg_C14_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_C15_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_C16_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C9_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C10_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C12_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_C13_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_lambda_3_smg,pba->has_smg,index_bg,1);
@@ -2177,6 +2188,22 @@ int background_solve(
               pba->error_message,
               "cannot copy data back to pba->background_table");
 
+      //Braiding_over_phi'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
+			      &pvecback_derivs[pba->index_bg_braiding_over_phi_smg],
+			      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
+               pba->error_message,
+               "cannot copy data back to pba->background_table");
+
+     //Beyond_horndeski_over_phi'
+     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
+			      &pvecback_derivs[pba->index_bg_beyond_horndeski_over_phi_smg],
+			      1*sizeof(double));
+     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
+              pba->error_message,
+              "cannot copy data back to pba->background_table");
+
       //H''
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_H_prime_prime,
          		&pvecback_derivs[pba->index_bg_H_prime],
@@ -2868,6 +2895,78 @@ int background_solve(
       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
+
+       //D_over_phiphi'
+       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
+  			      &pvecback_derivs[pba->index_bg_kinetic_D_over_phiphi_smg],
+  			      1*sizeof(double));
+       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
+                pba->error_message,
+                "cannot copy data back to pba->background_table");
+
+       //A9'
+       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A9_prime_smg,
+       	      &pvecback_derivs[pba->index_bg_A9_smg],
+       	      1*sizeof(double));
+       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A9_prime_smg,
+              pba->error_message,
+              "cannot copy data back to pba->background_table");
+
+      //A10'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A10_prime_smg,
+      	      &pvecback_derivs[pba->index_bg_A10_smg],
+      	      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A10_prime_smg,
+             pba->error_message,
+             "cannot copy data back to pba->background_table");
+
+     //A12'
+     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A12_prime_smg,
+     	      &pvecback_derivs[pba->index_bg_A12_smg],
+     	      1*sizeof(double));
+     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A12_prime_smg,
+            pba->error_message,
+            "cannot copy data back to pba->background_table");
+
+      //A13'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A13_prime_smg,
+      	      &pvecback_derivs[pba->index_bg_A13_smg],
+      	      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A13_prime_smg,
+             pba->error_message,
+             "cannot copy data back to pba->background_table");
+
+       //C9'
+       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C9_prime_smg,
+       	      &pvecback_derivs[pba->index_bg_C9_smg],
+       	      1*sizeof(double));
+       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C9_prime_smg,
+              pba->error_message,
+              "cannot copy data back to pba->background_table");
+
+      //C10'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C10_prime_smg,
+      	      &pvecback_derivs[pba->index_bg_C10_smg],
+      	      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C10_prime_smg,
+             pba->error_message,
+             "cannot copy data back to pba->background_table");
+
+      //C12'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C12_prime_smg,
+      	      &pvecback_derivs[pba->index_bg_C12_smg],
+      	      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C12_prime_smg,
+            pba->error_message,
+            "cannot copy data back to pba->background_table");
+
+      //C13'
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C13_prime_smg,
+      	      &pvecback_derivs[pba->index_bg_C13_smg],
+      	      1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C13_prime_smg,
+             pba->error_message,
+             "cannot copy data back to pba->background_table");
 
       //lambda_2'
       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
@@ -5146,6 +5245,7 @@ int background_gravity_functions(
   pvecback[pba->index_bg_kinetic_D_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_prime_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] = 0.;
+  pvecback[pba->index_bg_kinetic_D_over_phiphi_prime_smg] = 0.;
   pvecback[pba->index_bg_cs2num_smg] = 0.;
   pvecback[pba->index_bg_cs2num_prime_smg] = 0.;
   pvecback[pba->index_bg_A0_smg] = 0.;
@@ -5165,6 +5265,10 @@ int background_gravity_functions(
   pvecback[pba->index_bg_A14_smg] = 0.;
   pvecback[pba->index_bg_A15_smg] = 0.;
   pvecback[pba->index_bg_A16_smg] = 0.;
+  pvecback[pba->index_bg_A9_prime_smg] = 0.;
+  pvecback[pba->index_bg_A10_prime_smg] = 0.;
+  pvecback[pba->index_bg_A12_prime_smg] = 0.;
+  pvecback[pba->index_bg_A13_prime_smg] = 0.;
   pvecback[pba->index_bg_C0_smg] = 0.;
   pvecback[pba->index_bg_C1_smg] = 0.;
   pvecback[pba->index_bg_C2_smg] = 0.;
@@ -5182,6 +5286,10 @@ int background_gravity_functions(
   pvecback[pba->index_bg_C14_smg] = 0.;
   pvecback[pba->index_bg_C15_smg] = 0.;
   pvecback[pba->index_bg_C16_smg] = 0.;
+  pvecback[pba->index_bg_C9_prime_smg] = 0.;
+  pvecback[pba->index_bg_C10_prime_smg] = 0.;
+  pvecback[pba->index_bg_C12_prime_smg] = 0.;
+  pvecback[pba->index_bg_C13_prime_smg] = 0.;
   pvecback[pba->index_bg_lambda_1_smg] = 0.;
   pvecback[pba->index_bg_lambda_2_smg] = 0.;
   pvecback[pba->index_bg_lambda_3_smg] = 0.;

@@ -295,6 +295,8 @@ struct background
   int index_bg_kineticity_over_phiphi_smg;/**< scalar field kineticity alpha_k*(a*H/phi')^2 (BS eq A.8)*/
   int index_bg_braiding_over_phi_smg;/**< scalar field braiding alpha_b*a*H/phi' (BS eq A.9)*/
   int index_bg_beyond_horndeski_over_phi_smg;/**<scalar field beyond horndeski alpha_H*a*H/phi'*/
+  int index_bg_braiding_over_phi_prime_smg;/**< scalar field braiding alpha_b*a*H/phi' derivative*/
+  int index_bg_beyond_horndeski_over_phi_prime_smg;/**<scalar field beyond horndeski alpha_H*a*H/phi' derivative*/
   int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/
   int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/
   int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/
@@ -336,6 +338,10 @@ struct background
   int index_bg_A14_smg;
   int index_bg_A15_smg;
   int index_bg_A16_smg;
+  int index_bg_A9_prime_smg;
+  int index_bg_A10_prime_smg;
+  int index_bg_A12_prime_smg;
+  int index_bg_A13_prime_smg;
 
   int index_bg_B0_smg;
   int index_bg_B1_smg;
@@ -368,11 +374,16 @@ struct background
   int index_bg_C14_smg;
   int index_bg_C15_smg;
   int index_bg_C16_smg;
+  int index_bg_C9_prime_smg;
+  int index_bg_C10_prime_smg;
+  int index_bg_C12_prime_smg;
+  int index_bg_C13_prime_smg;
 
 
   int index_bg_kinetic_D_smg;
   int index_bg_kinetic_D_prime_smg;
   int index_bg_kinetic_D_over_phiphi_smg;
+  int index_bg_kinetic_D_over_phiphi_prime_smg;
   int index_bg_lambda_1_smg;
   int index_bg_lambda_2_smg;
   int index_bg_lambda_3_smg;
