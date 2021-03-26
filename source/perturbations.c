@@ -11859,7 +11859,7 @@ int sample_mass_qs_smg(
                       int *size_sample) {
 
   /* Definition of local variables */
-  double mass2, mass2_p, rad2, friction, slope;
+  double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
   double tau = tau_ini;
   double delta_tau = (tau_end - tau_ini)/ppr->n_max_qs_smg;
   double * pvecback;
@@ -11912,32 +11912,32 @@ int sample_mass_qs_smg(
      ppt->error_message);
 
 
-    mass2 = - (c12 + c13*k2*pow(a*H,-2))/cD;
+    mass2_qs = - (c12 + c13*k2*pow(a*H,-2))/cD;
 
-    mass2_p =
+    mass2_qs_p =
     - (
       + c12_p - c12*cD_p/cD
       + (c13_p - c13*cD_p/cD + (rho_tot + rho_smg + 3.*p_tot + 3.*p_smg)*c13*a/H)*pow(a*H,-2)*k2
     )/cD;
 
-    rad2 = 3.*mass2*pow(H,4)*pow(rho_r,-2)*pow(a*H,2)/k2;
+    rad2_qs = 3.*mass2_qs*pow(H,4)*pow(rho_r,-2)*pow(a*H,2)/k2;
 
-    friction = - (c11 - c3*k2*pow(a*H,-2))/cD;
+    friction_qs = - (c11 - c3*k2*pow(a*H,-2))/cD;
 
-    slope = - 1./4.*(1. - 2.*friction + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_p/mass2/a/H);
+    slope_qs = - 1./4.*(1. - 2.*friction_qs + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_qs_p/mass2_qs/a/H);
 
 //     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
 //     double x = (tau - tau_ini)/(tau_end - tau_ini);
-//     mass2 = 1.5 + cos(10*_PI_*x);
-//     rad2 = 1.;
-//     slope = 1.;
+//     mass2_qs = 1.5 + cos(10*_PI_*x);
+//     rad2_qs = 1.;
+//     slope_qs = 1.;
 
     tau_sample[count] = tau;
-    mass2_sample[count] = mass2;
-    rad2_sample[count] = rad2;
-    slope_sample[count] = slope;
+    mass2_sample[count] = mass2_qs;
+    rad2_sample[count] = rad2_qs;
+    slope_sample[count] = slope_qs;
 
-    delta_tau = fabs(2.*mass2/mass2_p)/sqrt(ppr->n_min_qs_smg*ppr->n_max_qs_smg);
+    delta_tau = fabs(2.*mass2_qs/mass2_qs_p)/sqrt(ppr->n_min_qs_smg*ppr->n_max_qs_smg);
     delta_tau = MIN(delta_tau, (tau_end - tau_ini)/ppr->n_min_qs_smg);
     delta_tau = MAX(delta_tau, (tau_end - tau_ini)/ppr->n_max_qs_smg);
 
