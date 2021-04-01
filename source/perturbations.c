@@ -7396,7 +7396,6 @@ int perturb_einstein(
         double c9, c10, c11, c12, c13, c14, c15, c16;
         double c9_p, c10_p, c12_p, c13_p;
         double res_p, cD_p, cB_p, cH_p;
-        double checkeinsteinfirst;
 
         H = ppw->pvecback[pba->index_bg_H];
 

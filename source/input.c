@@ -1971,6 +1971,10 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
     }
     else { //if no self-consistent evolution, need a parameterization for Omega_smg
 
+      class_test(ppt->use_pert_var_deltaphi==_TRUE_,
+        errmsg,
+        "It is not consistent to evolve delta_phi_smg and choose parametrized models.");
+
       class_call(parser_read_string(pfc,"expansion_model",&string1,&flag1,errmsg),
 		 errmsg,
 		 errmsg);
