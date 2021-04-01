@@ -3369,9 +3369,16 @@ int perturb_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "rho_plus_p_theta_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "delta_p_fld", pba->has_fld);
       /* Scalar field smg */
-      class_store_columntitle(ppt->scalar_titles, "x_smg", pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles, "x_prime_smg", pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles, "x_prime_prime_smg", pba->has_smg);
+      if (ppt->use_pert_var_deltaphi==_TRUE_) {
+        class_store_columntitle(ppt->scalar_titles, "delta_phi_smg", pba->has_smg);
+        class_store_columntitle(ppt->scalar_titles, "delta_phi_prime_smg", pba->has_smg);
+        class_store_columntitle(ppt->scalar_titles, "delta_phi_prime_prime_smg", pba->has_smg);
+      }
+      else {
+        class_store_columntitle(ppt->scalar_titles, "V_x_smg", pba->has_smg);
+        class_store_columntitle(ppt->scalar_titles, "V_x_prime_smg", pba->has_smg);
+        class_store_columntitle(ppt->scalar_titles, "V_x_prime_prime_smg", pba->has_smg);
+      }
 
       class_store_columntitle(ppt->scalar_titles,"h_prime",pba->has_smg);
       class_store_columntitle(ppt->scalar_titles,"h_prime_prime",pba->has_smg);
