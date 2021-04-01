@@ -529,8 +529,6 @@ struct perturb_vector
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
-  int index_pt_vx_smg;  /**< scalar field density */
-  int index_pt_vx_prime_smg;  /**< scalar field velocity */
   int index_pt_x_smg;  /**< scalar field perturbation */
   int index_pt_x_prime_smg;  /**< scalar field perturbation derivative */
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */
@@ -605,9 +603,6 @@ struct perturb_workspace
   int index_mt_gw_prime_prime;/**< second derivative wrt conformal time of gravitational wave field, often called h */
   int index_mt_V_prime;       /**< derivative of Newtonian gauge vector metric perturbation V */
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
-  int index_mt_vx_smg;       /**< scalar field perturbation */
-  int index_mt_vx_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
-  int index_mt_vx_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_x_smg;       /**< scalar field perturbation */
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */

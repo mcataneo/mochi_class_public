@@ -2669,12 +2669,9 @@ int perturb_workspace_init(
       class_define_index(ppw->index_mt_eta_prime,_TRUE_,index_mt,1);     /* eta' */
       class_define_index(ppw->index_mt_alpha,_TRUE_,index_mt,1);         /* alpha = (h' + 6 tau') / (2 k**2) */
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
-      class_define_index(ppw->index_mt_vx_smg,pba->has_smg,index_mt,1);   /* vx_smg (can be dynamical or not) */
-      class_define_index(ppw->index_mt_vx_prime_smg,pba->has_smg,index_mt,1);   /* vx_smg' (can be dynamical or not) */
-      class_define_index(ppw->index_mt_vx_prime_prime_smg,pba->has_smg,index_mt,1);   /* vx_smg'' (passed to integrator) */
-      class_define_index(ppw->index_mt_x_smg,pba->has_smg,index_mt,1);   /* vx_smg (can be dynamical or not) */
-      class_define_index(ppw->index_mt_x_prime_smg,pba->has_smg,index_mt,1);   /* vx_smg' (can be dynamical or not) */
-      class_define_index(ppw->index_mt_x_prime_prime_smg,pba->has_smg,index_mt,1);   /* vx_smg'' (passed to integrator) */
+      class_define_index(ppw->index_mt_x_smg,pba->has_smg,index_mt,1);   /* x_smg (can be dynamical or not) */
+      class_define_index(ppw->index_mt_x_prime_smg,pba->has_smg,index_mt,1);   /* x_smg' (can be dynamical or not) */
+      class_define_index(ppw->index_mt_x_prime_prime_smg,pba->has_smg,index_mt,1);   /* x_smg'' (passed to integrator) */
       class_define_index(ppw->index_mt_rsa_p_smg,pba->has_smg,index_mt,1);   /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
       class_define_index(ppw->index_mt_checkeinstein00_smg,pba->has_smg,index_mt,1);
     }
@@ -3995,8 +3992,6 @@ int perturb_vector_init(
     /* scalar field: integration indices are assigned only if fd (0) */
 
     if ((pba->has_smg == _TRUE_) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
-      class_define_index(ppv->index_pt_vx_smg,_TRUE_,index_pt,1); /* dynamical scalar field perturbation */
-      class_define_index(ppv->index_pt_vx_prime_smg,_TRUE_,index_pt,1); /* dynamical scalar field velocity */
       class_define_index(ppv->index_pt_x_smg,_TRUE_,index_pt,1); /* dynamical scalar field perturbation */
       class_define_index(ppv->index_pt_x_prime_smg,_TRUE_,index_pt,1); /* dynamical scalar field velocity */
     }
@@ -4489,10 +4484,6 @@ int perturb_vector_init(
 
         // TODO: Check this. I am not sure I am passing the correct values
         if ((qs_array_smg[pa_old[ppw->index_ap_qs_smg]] == _TRUE_) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_)) {
-          ppv->y[ppv->index_pt_vx_smg] =
-            ppw->pvecmetric[ppw->index_mt_vx_smg];
-          ppv->y[ppv->index_pt_vx_prime_smg] =
-            ppw->pvecmetric[ppw->index_mt_vx_prime_smg];
           ppv->y[ppv->index_pt_x_smg] =
             ppw->pvecmetric[ppw->index_mt_x_smg];
           ppv->y[ppv->index_pt_x_prime_smg] =
@@ -4500,10 +4491,6 @@ int perturb_vector_init(
 
         }
         else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
-          ppv->y[ppv->index_pt_vx_smg] =
-            ppw->pv->y[ppw->pv->index_pt_vx_smg];
-          ppv->y[ppv->index_pt_vx_prime_smg] =
-            ppw->pv->y[ppw->pv->index_pt_vx_prime_smg];
           ppv->y[ppv->index_pt_x_smg] =
             ppw->pv->y[ppw->pv->index_pt_x_smg];
           ppv->y[ppv->index_pt_x_prime_smg] =
@@ -5394,7 +5381,7 @@ int perturb_initial_conditions(struct precision * ppr,
   double B1_smg, B2_smg, B3_smg, B3num_smg, B3denom_smg, amplitude;
   double rho_smg=0., rho_tot=0., p_tot=0., p_smg=0., H=0.,Hprime=0;
   double g1=0., g2=0., g3=0.;
-  double vx_smg=0.,vxp_smg=0.,delta_rho_r=0.;
+  double x_smg=0.,xp_smg=0.,delta_rho_r=0.;
 
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
   double coeff_isocurv_smg;
@@ -5677,21 +5664,21 @@ int perturb_initial_conditions(struct precision * ppr,
         *    so we recompute eta and the velocities of the UR matter
         *
         * 2) Single clock
-          * v_X = delta_phi/phi_dot
+          * x_smg = delta_phi/phi_dot
         * phi(t,x) = phi(tau+delta tau(x))
         * This leads to very simple expressions:
-        * v_X = delta tau = delta_cdm/a_prime_over_a and v_X_prime = 0
+        * x_smg = delta tau = delta_cdm/a_prime_over_a and x_prime_smg = 0
         *
-        * 3) kineticity only IC: Vx = (k tau)^2
-        * from Vx'' = 2 (a H)^2 Vx
+        * 3) kineticity only IC: x_smg = (k tau)^2
+        * from x_smg'' = 2 (a H)^2 x_smg
         *
-        * 4) zero IC: Vx = 0, Vx'= 0. Good for checking the relevance of ICs.
+        * 4) zero IC: x_smg = 0, x_smg'= 0. Good for checking the relevance of ICs.
         *
         * 5) ext_field_attr: External-field Attractor
         *    This assumes that OmX and all the alphas are small initially,
         *    so we are allowed arbitrary w. The scalar does not influence
         *    the gravitational potentials early on (i.e. evolves in an external field), so we only need to set the
-        *    initial condition for Vx but not the other fields.
+        *    initial condition for x_smg but not the other fields.
         *    Appropriate for usual MG with no contribution at early times.
         */
 
@@ -5705,7 +5692,7 @@ int perturb_initial_conditions(struct precision * ppr,
              *  Large alphas => large fifth forces, which can backreact on gravitiational potential.
              *  General soluton has
 
-                     h = (k tau)^(2+dnh);  Vx = amplitude * (k tau)^2 tau^dnv
+                     h = (k tau)^(2+dnh);  x_smg = amplitude * (k tau)^2 tau^dnv
 
              *  If run=0, there is a solution with dnh = dnv = 0, but there may be faster-growing modes,
              *  which will end up dominating and do not conserve curvature superhorizon.
@@ -5721,15 +5708,15 @@ int perturb_initial_conditions(struct precision * ppr,
              *  Note that zeta is not conserved when Planck mass evolves!
              */
 
-              //  Calculate the coefficients of polynomial for exponent of the h and Vx evolution:
-              //  These parts are common to the coefficients coming from both the Vx and h equations.
+              //  Calculate the coefficients of polynomial for exponent of the h and x_smg evolution:
+              //  These parts are common to the coefficients coming from both the x_smg and h equations.
 
               // Note: The denominators in the expressions below can be zero. We try to trap this and regulate.
               // We assume that M*^2>0 and D>0 which are tested for in the background routine.
               // Doing this gives wrong ICs, but it's better than segmentation faults.
 
               // declare additional vars for grac attr initial conditions
-              double A_Vx_smg, A_v_nu_smg, A_sigma_nu_smg, A1_eta_smg, A2_eta_smg;
+              double A_x_smg, A_v_nu_smg, A_sigma_nu_smg, A1_eta_smg, A2_eta_smg;
               double n_nosource_smg, n_fastest_smg, dnv, dnh, dn, eps_smg;
               double c0, c1, c2, c3, c0hp, c1hp, c2hp, c0vp, c1vp, c2vp;
               double sols[3];
@@ -5760,8 +5747,8 @@ int perturb_initial_conditions(struct precision * ppr,
                       2*kin*(-2 + Omx)*ten + 6*bra*(-1 + Omx)*ten))/(pow(1 + DelM2,2)*(3*pow(bra,2) + 2*kin)*den1);
 
 
-              // When run!=0, h and Vx do not evolve with the same power law. There are O(run) differences to the
-              // coefficients when the smg + radiation system at k->0 is expressed purely as an ODE for Vx vs the ODE for h.
+              // When run!=0, h and x_smg do not evolve with the same power law. There are O(run) differences to the
+              // coefficients when the smg + radiation system at k->0 is expressed purely as an ODE for x_smg vs the ODE for h.
               // The corrections to the above are below.
 
               den2 =   ((-6*bra*(1 + DelM2) + pow(bra,2)*(1 + DelM2) + 8*(DelM2 + Omx))*(4*(DelM2 + Omx) - 2*(2 + DelM2 - Omx)*ten +
@@ -5836,7 +5823,7 @@ int perturb_initial_conditions(struct precision * ppr,
                       383*pow(ten,2) + 18*pow(ten,3))))))/(2.*(1 + DelM2)*(3*pow(bra,2) + 2*kin)*den1*den2);
 
 
-              // Solve cubic to find exponents for h and Vx. Find mode closest to adiabatic.
+              // Solve cubic to find exponents for h and x_smg. Find mode closest to adiabatic.
               // Ignore any new faster modes, since they will have appeared at some point since
               // the inital test and therefore we should accept the slow leakage into them
               // as part of the actual solution.
@@ -5863,9 +5850,9 @@ int perturb_initial_conditions(struct precision * ppr,
             if (ppt->perturbations_verbose > 6)
                 printf("Mode k=%e: ICs: grows with tau^3+nv with approx. nv=%f, while h -- with nh=%f at a=%e. dM=%f\n",k,dnv,dnh,a,DelM2);
 
-            // Now we can set the initial ratio of amplitudes for Vx and h.The expression is left with dnh/dnv terms implicit.
+            // Now we can set the initial ratio of amplitudes for x_smg and h.The expression is left with dnh/dnv terms implicit.
 
-            //  The amplitude of Vx and other field seems to be better approximated by using a weighed average
+            //  The amplitude of x_smg and other field seems to be better approximated by using a weighed average
             //  between dnh and dnv, instead of the initial estimate. Store the dnv in dn for setting V_prime.
             //  Note that this is totally empirical.
 
@@ -5923,7 +5910,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
             /* eta (grav. potential) = curvature perturbation on super-horizon scales.
             * When h is normalised to C (ktau)^2+dnh we actually have
-            * eta = 2C(A1_eta_smg + A2_eta_smg*(k tau)^2)tau^dnh since the Vx perturbation gravitates
+            * eta = 2C(A1_eta_smg + A2_eta_smg*(k tau)^2)tau^dnh since the x_smg perturbation gravitates
             * We are going to redefine the amplitude of h and all the other species by dividing
             * by A1_eta_smg to keep eta equal to thecurvature perturbation at large scales, curv,
             * to avoid degeneracy betwen early modified gravity and A_S.
@@ -5965,8 +5952,8 @@ int perturb_initial_conditions(struct precision * ppr,
             // Initial conditions for MG scalar assuming that we have standard adiabatic attractor
             //  Note thatthe derivative is set using the real dnv calculated initially.
 
-            ppw->pv->y[ppw->pv->index_pt_vx_smg]  = 0.5*amplitude*ktau_two*tau*(ppr->curvature_ini)/A1_eta_smg;
-	          ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (3+dn)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+            ppw->pv->y[ppw->pv->index_pt_x_smg]  = 0.5*amplitude*ktau_two*tau*(ppr->curvature_ini)/A1_eta_smg;
+	          ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = (3+dn)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
 
             // Correct all shear-free species by reducing amplitude by A1_eta_smg and  the velocities for dn
@@ -6015,11 +6002,11 @@ int perturb_initial_conditions(struct precision * ppr,
               l3_ur = ktau_three/A1_eta_smg*2./7./(12.*fracnu+45.)* ppr->curvature_ini;//ILS
 
               if(ppt->perturbations_verbose > 8)
-                  printf("       fracnu = %e, A_v_nu = %e (%e), A_sigma_nu = %e (%e), th_ur/th_g = %e, Vx/vm = %e\n", fracnu, A_v_nu_smg,
+                  printf("       fracnu = %e, A_v_nu = %e (%e), A_sigma_nu = %e (%e), th_ur/th_g = %e, x_smg/vm = %e\n", fracnu, A_v_nu_smg,
                            -1./36./(4.*fracnu+15.) * (4.*fracnu+11.+12.*s2_squared-3.*(8.*fracnu*fracnu+50.*fracnu+275.)/20./(2.*fracnu+15.)*tau*om),
                            A_sigma_nu_smg,
                            1./(45.+12.*fracnu) * (3.*s2_squared-1.) * (1.+(4.*fracnu-5.)/4./(2.*fracnu+15.)*tau*om),
-                           theta_ur/ppw->pv->y[ppw->pv->index_pt_theta_g],k*k*ppw->pv->y[ppw->pv->index_pt_vx_smg]/ppw->pv->y[ppw->pv->index_pt_theta_g]);
+                           theta_ur/ppw->pv->y[ppw->pv->index_pt_theta_g],k*k*ppw->pv->y[ppw->pv->index_pt_x_smg]/ppw->pv->y[ppw->pv->index_pt_theta_g]);
               if(pba->has_dr == _TRUE_) delta_dr = delta_ur;
               }// end neutrino part
               if(ppt->perturbations_verbose > 5)
@@ -6029,8 +6016,8 @@ int perturb_initial_conditions(struct precision * ppr,
 
           if (ppt->pert_initial_conditions_smg == kin_only)
           {
-            ppw->pv->y[ppw->pv->index_pt_vx_smg] = ktau_two * dt;
-            ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 2 * k * k * tau * dt;
+            ppw->pv->y[ppw->pv->index_pt_x_smg] = ktau_two * dt;
+            ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = 2 * k * k * tau * dt;
             if (ppt->perturbations_verbose > 5)
               printf("Mode k=%e: Adiabatic mode kin_only IC for smg: ", k);
           }
@@ -6038,17 +6025,15 @@ int perturb_initial_conditions(struct precision * ppr,
           if (ppt->pert_initial_conditions_smg == single_clock)
           {
             // single_clock IC given with respect to photons (because there are always photons)
-            ppw->pv->y[ppw->pv->index_pt_vx_smg] = -1 / (4. * ppw->pvecback[pba->index_bg_H]) * ppw->pv->y[ppw->pv->index_pt_delta_g];
-            // Single clock IC => v_x^prime = 0
-            ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0.;
+            ppw->pv->y[ppw->pv->index_pt_x_smg] = -1 / (4. * ppw->pvecback[pba->index_bg_H]) * ppw->pv->y[ppw->pv->index_pt_delta_g];
+            // Single clock IC => x^prime = 0
+            ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = 0.;
             if (ppt->perturbations_verbose > 5)
-              printf("Mode k=%e: Adioabatic mode single clock IC for smg: ", k);
+              printf("Mode k=%e: Adiabatic mode single clock IC for smg: ", k);
           }
 
           if (ppt->pert_initial_conditions_smg == zero)
           {
-            ppw->pv->y[ppw->pv->index_pt_vx_smg] = 0.;
-            ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = 0. ;
             ppw->pv->y[ppw->pv->index_pt_x_smg] = 0.;
             ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = 0. ;
 
@@ -6067,8 +6052,8 @@ int perturb_initial_conditions(struct precision * ppr,
                               l1, l2, l3, l4, l5, l6,l7,l8, cs2num, Dd, ppr->pert_ic_regulator_smg,
                             &amplitude);
 
-              ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*ktau_two*tau*(ppr->curvature_ini);
-              ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+              ppw->pv->y[ppw->pv->index_pt_x_smg]  = amplitude*ktau_two*tau*(ppr->curvature_ini);
+              ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
 
               if(ppt->perturbations_verbose > 5)
@@ -6078,8 +6063,8 @@ int perturb_initial_conditions(struct precision * ppr,
           }// End external-field attractor ICs
 
 
-          vx_smg = ppw->pv->y[ppw->pv->index_pt_vx_smg];
-          vxp_smg = ppw->pv->y[ppw->pv->index_pt_vx_prime_smg];
+          x_smg = ppw->pv->y[ppw->pv->index_pt_x_smg];
+          xp_smg = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
           delta_rho_r = rho_r * ppw->pv->y[ppw->pv->index_pt_delta_g];
 
         } //end adiabatic mode dynamical ICs for smg
@@ -6094,23 +6079,23 @@ int perturb_initial_conditions(struct precision * ppr,
           that the curvature perturbation is conserved and therefore cannot connect
           the amplitude at initialisation with that of primordial power spectrum.
 
-          Roughly, the QS solution for V_X is given by
+          Roughly, the QS solution for x_smg is given by
 
-            ((D cs^2 k^2 +M^2 a^2 )V_X_QS = coeff1 * k^2 eta + coeff2 * delta_rad
+            ((D cs^2 k^2 +M^2 a^2 )x_smg_QS = coeff1 * k^2 eta + coeff2 * delta_rad
 
           while the effect of this is given by the (0i) Einstein equation
 
-          eta' = theta_rad + coeff3* V_X
+          eta' = theta_rad + coeff3* x_smg
 
           We know that the standard solution for eta' is k^2*tau, so we will require that the QS solution
           at the scale of initialisation is no more than an order 1 correction to that. If this test is failed
           then quit with error. If it is passed, we don't actually change any ICs, since all matter species are standard
-          and the Vx/Vx' are assigned in perturb_einstein
+          and the x_smg/x_smg' are assigned in perturb_einstein
           */
 
           double delta_g = 0., delta_rho = 0., delta_rho_r = 0., delta_p = 0;
           double rho_plus_p_theta = 0., rho_plus_p_theta_r = 0.;
-          double contribfromvx = 0., contribfromtheta = 0., contribratio = 0.;
+          double contribfromx = 0., contribfromtheta = 0., contribratio = 0.;
 
           // Approximate that all radiation has same delta/theta as photons and that pressure is 1/3 of radiation density
 
@@ -6124,7 +6109,7 @@ int perturb_initial_conditions(struct precision * ppr,
           // Below QS equations are copied from perturb_einstein: make sure any changes there are reflected
           // QS-IC-change
 
-          vx_smg = (4. * cs2num * pow(k, 2) * M2 * eta + 6. * l2 * delta_rho * pow(a, 2) +
+          x_smg = (4. * cs2num * pow(k, 2) * M2 * eta + 6. * l2 * delta_rho * pow(a, 2) +
                     ((-2.) + bra) * 9. * bra * delta_p * pow(a, 2)) *
                    1. / 4. * pow(H, -1) * pow(M2, -1) * pow(a, -1) * pow(cs2num * pow(k, 2) + (-4.) * pow(H, 2) * l8 * pow(a, 2), -1);
 
@@ -6138,7 +6123,7 @@ int perturb_initial_conditions(struct precision * ppr,
                 2. * bra * pow(k / (a * H), 2)) * pow(H, -2) * pow(M2, -1) + 2. * (2. - bra) * cs2num * (5. - bra - 3. * (rho_tot + p_tot) * pow(M2, -1) * pow(H, -2) + 9. * (p_tot + p_smg) * pow(H, -2)) * pow(k / (a * H), 2) +
                 4. * (2. - bra) * (pow(k / (a * H), 2) * cs2num_p - 4. * l8_p) / (a * H);
 
-          vxp_smg = 3. / 2. * (pow(2. - bra, 2) * bra * pow(H, -2) * pow(M2, -1) * delta_rho_r +
+          xp_smg = 3. / 2. * (pow(2. - bra, 2) * bra * pow(H, -2) * pow(M2, -1) * delta_rho_r +
                     (3. / 2. * (2. - bra) * cs2num * (p_tot + p_smg) * pow(H, -2) - pow(H, -2) * l2 * (p_tot + rho_tot) / M2 +
                     (2. - bra) * pow(H, -1) * cs2num_p / a / 3. + (2. - bra) * cs2num / 2. - cs2num * g3 / g1 / 12. +
                     2. / 3. * (2. - bra) * bra * rho_r * pow(H, -2) / M2) * pow(k / (a * H), 2) * eta + (2. - bra) * (cs2num - l2) * pow(M2 * a, -1) * pow(H, -3) * rho_plus_p_theta / 2. +
@@ -6148,20 +6133,20 @@ int perturb_initial_conditions(struct precision * ppr,
                     3. / 4. * (2. / M2 - 6. + 3. * bra) * pow(H, -2) * l2 * p_tot + 9. / 4. * (2. - bra) * pow(H, -2) * l2 * p_smg + (2. - bra) / 2. * pow(H, -1) * l2_p * pow(a, -1)) * pow(M2, -1) * pow(H, -2) * delta_rho +
                     pow(2. - bra, 2) * bra * pow(H, -3) * pow(M2 * a, -1) * rho_plus_p_theta_r / 4.) * pow(g2, -1);
 
-          // Now test to make sure that vx_QS contribution to (0i) equation is small compared with that from radiation
+          // Now test to make sure that x_smg_QS contribution to (0i) equation is small compared with that from radiation
           // If fail -> quit
 
-          contribfromvx = a * H / 2. * bra * vxp_smg + (a * Hprime + pow(a_prime_over_a, 2) / 2. * bra +
-                          3. * a * a / (2. * M2) * 4. / 3. * rho_r) * vx_smg;
+          contribfromx = a * H / 2. * bra * xp_smg + (a * Hprime + pow(a_prime_over_a, 2) / 2. * bra +
+                          3. * a * a / (2. * M2) * 4. / 3. * rho_r) * x_smg;
           contribfromtheta = 3. * a * a * rho_plus_p_theta / (2. * k * k * M2);
-          contribratio = fabs(contribfromvx / contribfromtheta);
+          contribratio = fabs(contribfromx / contribfromtheta);
 
           class_test(ppr->pert_qs_ic_tolerance_test_smg > 0 && (contribratio > ppr->pert_qs_ic_tolerance_test_smg),
                       ppt->error_message,
                       "\n     Cannot set adiabatic initial conditions for smg pertubations: quasi-static configuration with large correction of gravity required superhorizon. Loss of connection to priordial power spectrum. \n");
 
           // If contribratio small enough, don't fail and start evolving perturbations.
-          // vx/vxp get set in perturbeinstein!
+          // x_smg/x_smg' get set in perturbeinstein!
 
           if (ppt->perturbations_verbose > 5)
           {
@@ -6171,7 +6156,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
         //print the scalar's IC values, whatever the ICs
         if(ppt->perturbations_verbose > 5)
-          printf(" Vx = %e, Vx'= %e \n", vx_smg,vxp_smg);
+          printf(" x_smg = %e, x_smg'= %e \n", x_smg,xp_smg);
 
         // Define initial condition for h^\prime evolved from the Einstein trace equation
         // We should take into account also matter density otherwise we get percent differences
@@ -6181,7 +6166,7 @@ int perturb_initial_conditions(struct precision * ppr,
           + ppw->pvecback[pba->index_bg_rho_b]*ppw->pv->y[ppw->pv->index_pt_delta_b]
           + ppw->pvecback[pba->index_bg_rho_cdm]*ppw->pv->y[ppw->pv->index_pt_delta_cdm];
         /* TODO_EB: rewrite this equation with new variables */
-        ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace_smg] = (-4. * pow(H, -1) * pow(k, 2) * eta / a - 6. * pow(H, -1) * pow(M2, -1) * delta_rho_tot * a + 2. * H * (3. * bra + kin) * vxp_smg * a + (2. * bra * pow(k, 2) + (-18. + 15. * bra + 2. * kin) * rho_smg * pow(a, 2) + (-18. * DelM2 + 15. * bra * M2 + 2. * kin * M2) * rho_tot * pow(M2, -1) * pow(a, 2) + (-2. * DelM2 + bra * M2) * 9. * pow(M2, -1) * p_tot * pow(a, 2) + 9. * (-2. + bra) * p_smg * pow(a, 2)) * vx_smg) * pow(-2. + bra, -1);
+        ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace_smg] = (-4. * pow(H, -1) * pow(k, 2) * eta / a - 6. * pow(H, -1) * pow(M2, -1) * delta_rho_tot * a + 2. * H * (3. * bra + kin) * xp_smg * a + (2. * bra * pow(k, 2) + (-18. + 15. * bra + 2. * kin) * rho_smg * pow(a, 2) + (-18. * DelM2 + 15. * bra * M2 + 2. * kin * M2) * rho_tot * pow(M2, -1) * pow(a, 2) + (-2. * DelM2 + bra * M2) * 9. * pow(M2, -1) * p_tot * pow(a, 2) + 9. * (-2. + bra) * p_smg * pow(a, 2)) * x_smg) * pow(-2. + bra, -1);
 
       } // end SMG adiabatic ICs
     }   //end adiabatic ICs
@@ -6196,23 +6181,23 @@ int perturb_initial_conditions(struct precision * ppr,
        with the CAMB formulas. */
 
     /*  SMG and isocurvature:
-        *   if we have "zero" or "single_clock" ICs for SMG, then  leave vx
-            and vxp at the initalisation value of 0
+        *   if we have "zero" or "single_clock" ICs for SMG, then  leave x_smg
+            and x_prime_smg at the initalisation value of 0
             and let it find a proper solution.
         *   grav_attr isocurvature would backreact and has NOT been implemented.
             We have already failed earlier if it is asked for.
 
         *   Only need to implement ext_field_attr.
-            We assume that there is no backreaction of vx onto the other species
+            We assume that there is no backreaction of x_smg onto the other species
             and therefore the other species' isocurvature ICs do not change.
-            However, vx is determined by a particular solution of the
+            However, x_smg is determined by a particular solution of the
             evolution equation with a source h scaling with a different exponent
             for each isocurvature mode type
 
             We only take the leading-order power-law in om
             since we start very deep in RD
 
-            The calc_extfld_ampl function produces the amplitude for v_X
+            The calc_extfld_ampl function produces the amplitude for x_smg
             on the assumption that the normalisation is  h = 1/2 * tau^n
             We correct for this normalisation by using coeff_isocurv_smg
             defining is according to the normalisation in BMT99
@@ -6273,13 +6258,13 @@ int perturb_initial_conditions(struct precision * ppr,
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
 
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+        ppw->pv->y[ppw->pv->index_pt_x_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
         if(ppt->perturbations_verbose > 5)
         {
           printf("Mode k=%e: CDI mode ext_field_attr IC for smg: ",k);
-          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+          printf(" x_smg = %e, x_smg'= %e \n",ppw->pv->y[ppw->pv->index_pt_x_smg],ppw->pv->y[ppw->pv->index_pt_x_prime_smg]);
         }
       }
 
@@ -6331,15 +6316,15 @@ int perturb_initial_conditions(struct precision * ppr,
                   ppt->error_message,ppt->error_message);
         amplitude *=2;  //calc_extfld_ampl assumes h normalised to 1/2.
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+        ppw->pv->y[ppw->pv->index_pt_x_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
 
 
         if(ppt->perturbations_verbose > 5)
         {
           printf("Mode k=%e: BI mode ext_field_attr IC for smg: ",k);
-          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+          printf(" x_smg = %e, x_smg'= %e \n",ppw->pv->y[ppw->pv->index_pt_x_smg],ppw->pv->y[ppw->pv->index_pt_x_prime_smg]);
         }
       }
 
@@ -6391,8 +6376,8 @@ int perturb_initial_conditions(struct precision * ppr,
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+        ppw->pv->y[ppw->pv->index_pt_x_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
         nexpo=4; //next-order term (tau^4) similar in size for h as tau^3 if start late
 
@@ -6405,14 +6390,14 @@ int perturb_initial_conditions(struct precision * ppr,
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  += amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+        ppw->pv->y[ppw->pv->index_pt_x_smg]  += amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] += (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
 
         if(ppt->perturbations_verbose > 5)
         {
           printf("Mode k=%e: NID mode ext_field_attr IC for smg: ",k);
-          printf(" Vx = %e, Vx'= %e \n", ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+          printf(" x_smg = %e, x_smg'= %e \n", ppw->pv->y[ppw->pv->index_pt_x_smg],ppw->pv->y[ppw->pv->index_pt_x_prime_smg]);
         }
       }
     }
@@ -6466,8 +6451,8 @@ int perturb_initial_conditions(struct precision * ppr,
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+        ppw->pv->y[ppw->pv->index_pt_x_smg]  = amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] = (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
         nexpo=3; //next-order term (tau^3) similar in size for h as tau^2 if start late
 
@@ -6480,13 +6465,13 @@ int perturb_initial_conditions(struct precision * ppr,
                   ppt->error_message,ppt->error_message);
         amplitude *=2; //calc_extfld_ampl assumes h normalised to 1/2
 
-        ppw->pv->y[ppw->pv->index_pt_vx_smg]  += amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_vx_smg];
+        ppw->pv->y[ppw->pv->index_pt_x_smg]  += amplitude*coeff_isocurv_smg*pow(tau,nexpo+1);
+	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] += (nexpo+1)*a*ppw->pvecback[pba->index_bg_H]*ppw->pv->y[ppw->pv->index_pt_x_smg];
 
         if(ppt->perturbations_verbose > 5)
         {
           printf("Mode k=%e: NIV mode ext_field_attr IC for smg: ",k);
-          printf(" Vx = %e, Vx'= %e \n",ppw->pv->y[ppw->pv->index_pt_vx_smg],ppw->pv->y[ppw->pv->index_pt_vx_prime_smg]);
+          printf(" x_smg = %e, x_smg'= %e \n",ppw->pv->y[ppw->pv->index_pt_x_smg],ppw->pv->y[ppw->pv->index_pt_x_prime_smg]);
         }
       }
 
@@ -6587,8 +6572,6 @@ int perturb_initial_conditions(struct precision * ppr,
 
       /* scalar field: TODO: add gauge transformations (when we add Newtonian gauge) */
       if ((pba->has_smg == _TRUE_) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
-	      ppw->pv->y[ppw->pv->index_pt_vx_smg] += 0.;
-	      ppw->pv->y[ppw->pv->index_pt_vx_prime_smg] += 0.;
         ppw->pv->y[ppw->pv->index_pt_x_smg] += 0.;
 	      ppw->pv->y[ppw->pv->index_pt_x_prime_smg] += 0.;
       }
@@ -10288,11 +10271,9 @@ int perturb_derivs(double tau,
 	if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
 
 	  /** ---> scalar field velocity */
-	  dy[pv->index_pt_vx_smg] =  pvecmetric[ppw->index_mt_vx_prime_smg];
     dy[pv->index_pt_x_smg] =  pvecmetric[ppw->index_mt_x_prime_smg];
 
 	  /** ---> Scalar field acceleration (passes the value obtained in perturb_einstein) */
-	  dy[pv->index_pt_vx_prime_smg] =  pvecmetric[ppw->index_mt_vx_prime_prime_smg];
     dy[pv->index_pt_x_prime_smg] =  pvecmetric[ppw->index_mt_x_prime_prime_smg];
 
 	}
@@ -12227,7 +12208,7 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
 }
 
 /*
- * Test for tachyonic instability of Vx in RD before initialisation of
+ * Test for tachyonic instability of x_smg in RD before initialisation of
  * perturbations: if not stable, cannot set ICs properly.
  */
 int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
@@ -12239,7 +12220,7 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   double l1,l2, l3, l4,l5,l6,l7,l8, cs2num, Dd;
   double B1_smg, B2_smg;
   double tau_ini, z_ref;
-  double vx_growth_smg;
+  double x_growth_smg;
   double * pvecback;
   int first_index_back;
 
@@ -12293,24 +12274,24 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
   B2_smg -= 2*(bra/Dd)*(12*(1 + DelM2)*l6 + l1*(24 - 24*Omx + (1 + DelM2)*(2*kin - 3*(8 + 2*Omx*(-1 + 3*wx) + l2*(6 + Omx*(-1 + 3*wx))))));
   B2_smg /= (4.*(-2 + bra)*(1 + DelM2)*(kin + l1));
 
-  vx_growth_smg = 0.5*(1.-B1_smg);
+  x_growth_smg = 0.5*(1.-B1_smg);
 
   if (1.-2.*B1_smg + B1_smg*B1_smg -4.*B2_smg >=0){
-    vx_growth_smg += 0.5*sqrt(1. -2.*B1_smg + B1_smg*B1_smg -4.*B2_smg);
+    x_growth_smg += 0.5*sqrt(1. -2.*B1_smg + B1_smg*B1_smg -4.*B2_smg);
   }
 
   if (ppt->perturbations_verbose > 1){
     printf("\nExternal field attractor ICs at z=%e. Standard solution for grav. field, h = (k tau)^2.\n",z_ref);
-    if(vx_growth_smg<=3){
-      printf("  smg evolves on standard attractor in external field with Vx = k^2 tau^3;\n\n");
+    if(x_growth_smg<=3){
+      printf("  smg evolves on standard attractor in external field with x_smg = k^2 tau^3;\n\n");
     }
     else{
-      printf("  tachyonic instability in smg dominates, Vx = k^2 tau^n with n=%f.\n",vx_growth_smg);
+      printf("  tachyonic instability in smg dominates, x_smg = k^2 tau^n with n=%f.\n",x_growth_smg);
       printf("  smg is sensitive to its initial conditions at end of inflation.\n");
     }
   }
 
-  class_test_except(ppr->pert_ic_tolerance_smg>0 && (vx_growth_smg > 3.+ppr->pert_ic_tolerance_smg),
+  class_test_except(ppr->pert_ic_tolerance_smg>0 && (x_growth_smg > 3.+ppr->pert_ic_tolerance_smg),
           ppt->error_message,
           free(pvecback),
           "\n   Cannot set initial conditions for smg: tachyonic instability dominates superhorizon attractor.\n");
@@ -12327,13 +12308,13 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
                         double l5, double l6,double l7,double l8, double cs2num, double Dd,
                         double ic_regulator_smg, double * amplitude){
 
-        /* Solutions assuming the alphas are small, i.e. Vx does not gravitate but moves
+        /* Solutions assuming the alphas are small, i.e. x_smg does not gravitate but moves
          * on an attractor provided by collapsing radiation. (w!=1/3 terms included properly here!)
         // We have already tested for an RD tachyon at z=pert_ic_ini_z_ref_smg and it wasn't there.
          * We can thus assume that h has the standard solution (tau^2 for adiabatic)
-         * and solve the Vx e.o.m. assuming C1=C2=0.
+         * and solve the x_smg e.o.m. assuming C1=C2=0.
          *
-	       *   Vx = C1 tau^n1 + C2 tau^n2 + A k^2 tau^n
+	       *   x_smg = C1 tau^n1 + C2 tau^n2 + A k^2 tau^n
          *
          * This requires that if the tachyon has appeared at some later time, the system will be moving into it slowly.
          *
@@ -12341,7 +12322,7 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
          * here, but not in the calculation of the exponent. If this is importnant, use gravitating_attr ICs.
          *
 	       *
-         * The on-attractor solution for the scalar velocity Vx is Vx = amplitude * k^2 tau^n * ppr->curvature_ini
+         * The on-attractor solution for the scalar velocity x_smg is x_smg = amplitude * k^2 tau^n * ppr->curvature_ini
          * with amplitude = -B3/(6 + 3*B1 + B2).
          */
 
@@ -12349,7 +12330,7 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
 
 
 
-  // Calculate the amplitude of v_x in ext_field_attr ICs, both for adiabatic and isocurvature
+  // Calculate the amplitude of x_smg in ext_field_attr ICs, both for adiabatic and isocurvature
   // Since the scalar does not backreact, the different Ad and ISOcurv solutions differ
   // only by the exponent in h, h = C*tau^n. The only n-dependent terms are in B3 and amplitude
 
@@ -12623,7 +12604,7 @@ int get_x_x_prime_qs_smg(
 
   /* scalar field derivative equation
    * In order to estimate it we followed this procedure:
-   * - we calculated analytically the time derivative of the vx equation
+   * - we calculated analytically the time derivative of the x_smg equation
    * - we used delta_p' = delta_rho_r'/3 (radiation is the only component that contributes to delta_p')
    * - we used the conservation equation for radiation to get rid of delta_rho_r'
    * - we used the Einstein equations to get rid of eta', h'', alpha'
