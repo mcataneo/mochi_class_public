@@ -506,6 +506,8 @@ class_precision_parameter(trigger_rad_qs_smg,double,1.e3) /**< if the radiation 
 class_precision_parameter(eps_s_qs_smg,double,0.01) /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
 class_precision_parameter(get_h_from_trace_smg,int,_TRUE_) /* Get h' from Einstein trace rather than 00 */
+/* TODO: check that this value makes sense */
+class_precision_parameter(einstein00_reldev_tolerance_smg,double,1.e-3) /**< tolerance to deviations w.r.t. the Einstein 00 equation. Useful if get_h_from_trace_smg,int==_TRUE_. */
 
 
 class_precision_parameter(min_a_pert_smg,double,1.) /**< minimum value of scale factor to start integration (important to test some ede models */

@@ -612,10 +612,7 @@ struct perturb_workspace
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
-  /* TODO_EB: uncomment this if you want to check what happens with the hiamiltonian constraint */
-  // int index_mt_test1_smg;
-  // int index_mt_test2_smg;
-  // int index_mt_test3_smg;
+  int index_mt_checkeinstein00_smg; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace_smg == _TRUE_ */
   int mt_size;                /**< size of metric perturbation vector */
 
   //@}
