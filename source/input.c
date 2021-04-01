@@ -746,7 +746,7 @@ int input_read_parameters(
   }
 
     class_call(parser_read_string(pfc,
-        "allow_bg_oscillations_smg",
+        "use_pert_var_deltaphi",
         &string1,
         &flag1,
         errmsg),
@@ -755,10 +755,10 @@ int input_read_parameters(
 
   if (flag1 == _TRUE_){
     if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-      ppt->allow_bg_oscillations_smg = _TRUE_;
+      ppt->use_pert_var_deltaphi = _TRUE_;
     }
     else{
-      ppt->allow_bg_oscillations_smg = _FALSE_;
+      ppt->use_pert_var_deltaphi = _FALSE_;
     }
   }
 
@@ -4116,7 +4116,7 @@ int input_default_params(
   ppt->method_qs_smg=fully_dynamic;
   ppt->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
 
-  ppt->allow_bg_oscillations_smg=_FALSE_;
+  ppt->use_pert_var_deltaphi=_FALSE_;
 
   ppt->idr_nature=idr_free_streaming;
 

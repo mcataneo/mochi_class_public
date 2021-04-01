@@ -493,7 +493,7 @@ struct perturbs
   Decide whether to use the equations with Vx (singular when phi_prime=0)
   or the equations with delta_phi (defined only with covariant theories)
   */
-  short allow_bg_oscillations_smg;
+  short use_pert_var_deltaphi;
 
 };
 

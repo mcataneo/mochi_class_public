@@ -7418,7 +7418,7 @@ int perturb_einstein(
         H = ppw->pvecback[pba->index_bg_H];
 
         /* Define background coefficients. This function uses
-        allow_bg_oscillations_smg to decide which coefficients to output.
+        use_pert_var_deltaphi to decide which coefficients to output.
         */
         class_call(
           get_gravity_coefficients_smg(
@@ -12489,7 +12489,7 @@ int get_gravity_coefficients_smg(
                              ){
   /* It returns the alphas and the coefficients of the Einstein equations
   that will be used to evaluate the perturbations and their initial
-  conditions. This function uses allow_bg_oscillations_smg to decide which
+  conditions. This function uses use_pert_var_deltaphi to decide which
   coefficients to output.
   */
 
@@ -12504,7 +12504,7 @@ int get_gravity_coefficients_smg(
   *run = pvecback[pba->index_bg_mpl_running_smg];
   *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
 
-  if (ppt->allow_bg_oscillations_smg == _TRUE_) {
+  if (ppt->use_pert_var_deltaphi == _TRUE_) {
     *res = 1.;
     *cD  = pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
     *cK  = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
@@ -12536,7 +12536,7 @@ int get_gravity_coefficients_smg(
     *c12_p = pvecback[pba->index_bg_C12_prime_smg];
     *c13_p = pvecback[pba->index_bg_C13_prime_smg];
   }
-  else if (ppt->allow_bg_oscillations_smg == _FALSE_) {
+  else if (ppt->use_pert_var_deltaphi == _FALSE_) {
     *res = - a*H;
     *cD  = pvecback[pba->index_bg_kinetic_D_smg];
     *cK  = pvecback[pba->index_bg_kineticity_smg];
