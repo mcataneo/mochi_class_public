@@ -6,6 +6,7 @@ class
 *.prof
 libclass.a
 *out
+*.gch
 python/classy.c
 python/*.pyc
 python/build/i
