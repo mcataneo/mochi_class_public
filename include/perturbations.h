@@ -781,15 +781,15 @@ extern "C" {
                    );
 
   int perturb_free_nosource(
-                            struct perturbs * ppt
-                            );
+                           struct perturbs * ppt
+                           );
 
-  int perturb_indices_of_perturbs(
-                                  struct precision * ppr,
-                                  struct background * pba,
-                                  struct thermo * pth,
-                                  struct perturbs * ppt
-                                  );
+  int perturb_indices(
+                      struct precision * ppr,
+                      struct background * pba,
+                      struct thermo * pth,
+                      struct perturbs * ppt
+                      );
 
   int perturb_timesampling_for_sources(
                                        struct precision * ppr,
