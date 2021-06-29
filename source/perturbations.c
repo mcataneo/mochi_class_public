@@ -7559,7 +7559,7 @@ int perturb_einstein(
 
 
         /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
-        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
+        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
           ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
           (
             + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
