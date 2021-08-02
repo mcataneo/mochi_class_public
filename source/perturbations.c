@@ -8504,10 +8504,12 @@ int perturb_sources(
                ppt->error_message,
                error_message);
 
-    class_test(
-      fabs(pvecmetric[ppw->index_mt_checkeinstein00_smg])>ppr->einstein00_reldev_tolerance_smg,
-      ppt->error_message,
-      "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace_smg==FALSE to get a consistent evolution. Otherwise you can increase einstein00_reldev_tolerance_smg if you can tolerate larger deviations to this equation.", a_rel, k);
+    if (pba->has_smg) {
+      class_test(
+        fabs(pvecmetric[ppw->index_mt_checkeinstein00_smg])>ppr->einstein00_reldev_tolerance_smg,
+        ppt->error_message,
+        "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace_smg==FALSE to get a consistent evolution. Otherwise you can increase einstein00_reldev_tolerance_smg if you can tolerate larger deviations to this equation.", a_rel, k);
+    }
 
     /** - --> compute quantities depending on approximation schemes */
 
