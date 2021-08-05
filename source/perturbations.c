@@ -7422,28 +7422,22 @@ int perturb_einstein(
           ppt->error_message);
 
 
-        /* Get metric perturbations from the integrator */
+        /* Get eta from the integrator */
         ppw->pvecmetric[ppw->index_mt_eta] = y[ppw->pv->index_pt_eta];
+
+        /* Get h' from the integrator. This is the right place because in QS
+        the scalar field depends on h' (only if h' comes from the integrator,
+        otherwise it has been diagonalised) */
         if (ppr->get_h_from_trace_smg == _TRUE_) {
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace_smg];
         }
-        else{
-          /* It is still possible to get h_prime through th 00 Einstein equation,
-          but this generates a warning as it will be removed in future versions
-          of hi_class. */
-          ppw->pvecmetric[ppw->index_mt_h_prime] =
-          + 4.*(
-            + 3./2.*ppw->delta_rho*a/H/M2
-            + (1. + beh)*k2*ppw->pvecmetric[ppw->index_mt_eta]/a/H
-            - c14*res*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-            - res/a/H*(c15*k2 + c16*pow(a*H,2))*ppw->pvecmetric[ppw->index_mt_x_smg]
-          )/(2. - bra);
-        }
-
 
         /* Get scalar field perturbations */
         if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
-          /* Get scalar field perturbations from QS expressions */
+          /* Get scalar field perturbations from QS expressions. This function
+          hides a bit of complexity. If (ppr->get_h_from_trace_smg == _TRUE_),
+          both x and x' depend on h' (simpler non-divergent expressions), otherwise
+          they have been diagonalised (longer divergent expressions). */
           class_call(
             get_x_x_prime_qs_smg(
               pba, ppt, ppw, k,
@@ -7461,6 +7455,19 @@ int perturb_einstein(
         else {
           printf("Scalar field equation: qs_smg approximation mode %i not recognized. should be quasi_static or fully_dynamic.\n",ppw->approx[ppw->index_ap_qs_smg]);
           return _FAILURE_;
+        }
+
+        if (ppr->get_h_from_trace_smg == _FALSE_) {
+          /* It is still possible to get h_prime through th 00 Einstein equation,
+          but this generates a warning as it will be removed in future versions
+          of hi_class. This is the right place, since h' depends on x and x'. */
+          ppw->pvecmetric[ppw->index_mt_h_prime] =
+          + 4.*(
+            + 3./2.*ppw->delta_rho*a/H/M2
+            + (1. + beh)*k2*ppw->pvecmetric[ppw->index_mt_eta]/a/H
+            - c14*res*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+            - res/a/H*(c15*k2 + c16*pow(a*H,2))*ppw->pvecmetric[ppw->index_mt_x_smg]
+          )/(2. - bra);
         }
 
 
@@ -12601,13 +12608,37 @@ int get_x_x_prime_qs_smg(
     ppt->error_message);
 
   /* This is the expression for the scalar field in the quasi static approximation */
-  *x_qs_smg =
-  + 1./res*(
-    - 9./2.*cB*pow(a,2)*ppw->delta_p/M2
-    + c10*k2*ppw->pvecmetric[ppw->index_mt_eta]
-    + (c9*pow(a*H,2) - 1./3.*cH*k2)*ppw->pvecmetric[ppw->index_mt_h_prime]/a/H
-    + 2./3.*cH*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H
-  )/(c13*k2 + c12*pow(a*H,2));
+  if (ppr->get_h_from_trace_smg == _TRUE_) {
+    *x_qs_smg =
+    + 1./res*(
+      - 9./2.*cB*pow(a,2)*ppw->delta_p/M2
+      + c10*k2*ppw->pvecmetric[ppw->index_mt_eta]
+      + (c9*pow(a*H,2) - 1./3.*cH*k2)*ppw->pvecmetric[ppw->index_mt_h_prime]/a/H
+      + 2./3.*cH*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H
+    )/(c13*k2 + c12*pow(a*H,2));
+  }
+  else {
+    *x_qs_smg =
+    1./2.*(
+      + 2.*M2*k2*(
+        + 4.*(1. + beh)*cH*k2
+        - 3.*pow(a*H,2)*((2. - bra)*c10 + 4.*(1. + beh)*c9)
+      )*ppw->pvecmetric[ppw->index_mt_eta]
+
+      - 4.*(2. - bra)*cH*H*pow(k2,2)*M2*a*ppw->pvecmetric[ppw->index_mt_alpha]
+
+      + 12.*(cH*k2 - 3.*c9*pow(a*H,2))*pow(a,2)*ppw->delta_rho
+      + 27.*cB*(2. - bra)*pow(a*H,2)*pow(a,2)*ppw->delta_p
+    )/M2/res/(
+      + 4.*c15*cH*pow(k2,2)
+      + k2*pow(a*H,2)*(
+        - 3.*c13*(2. - bra) - 12.*c15*c9 + 4.*c16*cH
+      )
+      - 3.*pow(a*H,4)*(
+        + c12*(2. - bra) + 4.*c16*c9
+      )
+    );
+  }
 
 
   /* scalar field derivative equation
@@ -12619,50 +12650,93 @@ int get_x_x_prime_qs_smg(
    * The result is approximated when rsa is on since the velocity of radiation gets updated only after
    * this call in perturb_einstein */
 
-   x_prime_qs_smg_num =
-   + 3.*(
-     + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
-     - 2.*cH*cK*pow(a*H,-2)*k2
-   )*ppw->delta_rho_r*a/H/M2
-   + 9.*(
-     + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
-     - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
-     - 2.*c3*cH*k2*pow(a*H,-2)
-   )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
-   + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
-   + 4.*k2*pow(a*H,-2)*(
-     + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
-     - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
-   )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
-   + 3.*(
-     + 2.*cD*(c9*res_p/res - c9_p)/a/H - 2.*c2*c9 + c9*cD
-     - cD*(2.*cB*rho_r/M2 - 3.*c9*(p_tot + p_smg))*pow(H,-2)
-     + 2./3.*cH*(c2 + 2.*cD + run*cD)*k2*pow(a*H,-2)
-   )*ppw->pvecmetric[ppw->index_mt_h_prime]
-   + 6.*a*H*res*(
-     + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
-     - (
-       + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
-       + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
-       + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
-     )*k2*pow(a*H,-2)
-     + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
-   )*ppw->pvecmetric[ppw->index_mt_x_smg]
-   ;
+   if (ppr->get_h_from_trace_smg == _TRUE_) {
+     x_prime_qs_smg_num =
+     + 3.*(
+       + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
+       - 2.*cH*cK*pow(a*H,-2)*k2
+     )*ppw->delta_rho_r*a/H/M2
+     + 9.*(
+       + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
+       - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+       - 2.*c3*cH*k2*pow(a*H,-2)
+     )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
+     + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
+     + 4.*k2*pow(a*H,-2)*(
+       + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
+       - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
+     )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
+     + 3.*(
+       + 2.*cD*(c9*res_p/res - c9_p)/a/H - 2.*c2*c9 + c9*cD
+       - cD*(2.*cB*rho_r/M2 - 3.*c9*(p_tot + p_smg))*pow(H,-2)
+       + 2./3.*cH*(c2 + 2.*cD + run*cD)*k2*pow(a*H,-2)
+     )*ppw->pvecmetric[ppw->index_mt_h_prime]
+     + 6.*a*H*res*(
+       + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
+       - (
+         + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
+         + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
+         + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+       )*k2*pow(a*H,-2)
+       + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
+     )*x_qs_smg
+     ;
 
-  x_prime_qs_smg_den =
-  - 6.*res*(
-    + c4*c9 + c12*cD
-    - k2*(
-      + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
-      - 12.*c9*(c5 - 3./2.*c3*cB)
-      - 3.*cD*(c10*cB + 2.*c13)
-      + 2.*c4*cH
-      + 3.*cB*cD*cH*(3. + 2.*run)
-      - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
-    )/6.*pow(a*H,-2)
-    - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
-  );
+    x_prime_qs_smg_den =
+    - 6.*res*(
+      + c4*c9 + c12*cD
+      - k2*(
+        + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
+        - 12.*c9*(c5 - 3./2.*c3*cB)
+        - 3.*cD*(c10*cB + 2.*c13)
+        + 2.*c4*cH
+        + 3.*cB*cD*cH*(3. + 2.*run)
+        - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+      )/6.*pow(a*H,-2)
+      - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
+    );
+   }
+   else {
+     x_prime_qs_smg_num =
+     + 3.*(
+       + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
+       - 2.*cH*cK*pow(a*H,-2)*k2
+     )*ppw->delta_rho_r*a/H/M2
+     + 9.*(
+       + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
+       - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+       - 2.*c3*cH*k2*pow(a*H,-2)
+     )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
+     + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
+     + 4.*k2*pow(a*H,-2)*(
+       + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
+       - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
+     )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
+     + 6.*a*H*res*(
+       + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
+       - (
+         + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
+         + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
+         + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+       )*k2*pow(a*H,-2)
+       + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
+     )*x_qs_smg
+     ;
+
+    x_prime_qs_smg_den =
+    - 6.*res*(
+      + c4*c9 + c12*cD
+      - k2*(
+        + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
+        - 12.*c9*(c5 - 3./2.*c3*cB)
+        - 3.*cD*(c10*cB + 2.*c13)
+        + 2.*c4*cH
+        + 3.*cB*cD*cH*(3. + 2.*run)
+        - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+      )/6.*pow(a*H,-2)
+      - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
+    );
+   }
 
   *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
 
