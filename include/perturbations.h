@@ -1089,9 +1089,9 @@ extern "C" {
                                  struct perturbs * ppt,
                                  struct background * pba,
                                  double * pvecback,
-                                 double * M2, double * kin, double * bra, double * ten,
-                                 double * run, double * beh, double * res, double * cD,
-                                 double * cK, double * cB, double * cH, double * c0,
+                                 double * delM2, double * M2, double * kin, double * bra,
+                                 double * ten, double * run, double * beh, double * res,
+                                 double * cD, double * cK, double * cB, double * cH, double * c0,
                                  double * c1, double * c2, double * c3, double * c4,
                                  double * c5, double * c6, double * c7, double * c8,
                                  double * c9, double * c10, double * c11, double * c12,
@@ -1101,6 +1101,7 @@ extern "C" {
                                );
 
   int get_x_x_prime_qs_smg(
+                          struct precision * ppr,
                           struct background * pba,
                           struct perturbs * ppt,
                           struct perturb_workspace * ppw,

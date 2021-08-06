@@ -7397,7 +7397,7 @@ int perturb_einstein(
 
         int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
-        double H, M2, kin, bra, ten, run, beh;
+        double H, delM2, M2, kin, bra, ten, run, beh;
         double res, cD, cK, cB, cH;
         double c0, c1, c2, c3, c4, c5, c6, c7, c8;
         double c9, c10, c11, c12, c13, c14, c15, c16;
@@ -7412,7 +7412,7 @@ int perturb_einstein(
         class_call(
           get_gravity_coefficients_smg(
             ppt, pba, ppw->pvecback,
-            & M2, & kin, & bra, & ten, & run, & beh, & res,
+            & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
             & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
             & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
             & c12, & c13, & c14, & c15, & c16,  & res_p, & cD_p, & cB_p,
@@ -7440,7 +7440,7 @@ int perturb_einstein(
           they have been diagonalised (longer divergent expressions). */
           class_call(
             get_x_x_prime_qs_smg(
-              pba, ppt, ppw, k,
+              ppr, pba, ppt, ppw, k,
               & ppw->pvecmetric[ppw->index_mt_x_smg],
               & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
             ),
@@ -11639,7 +11639,7 @@ int sample_mass_qs_smg(
                pba->error_message,
                ppt->error_message);
 
-   double M2, kin, bra, ten, run, beh;
+   double delM2, M2, kin, bra, ten, run, beh;
    double res, cD, cK, cB, cH;
    double c0, c1, c2, c3, c4, c5, c6, c7, c8;
    double c9, c10, c11, c12, c13, c14, c15, c16;
@@ -11660,7 +11660,7 @@ int sample_mass_qs_smg(
    class_call(
      get_gravity_coefficients_smg(
        ppt, pba, pvecback,
-       & M2, & kin, & bra, & ten, & run, & beh, & res,
+       & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
        & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
        & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
        & c12, & c13, & c14, & c15, & c16, & res_p, & cD_p, & cB_p,
@@ -12473,9 +12473,9 @@ int get_gravity_coefficients_smg(
                                struct perturbs * ppt,
                                struct background * pba,
                                double * pvecback,
-                               double * M2, double * kin, double * bra, double * ten,
-                               double * run, double * beh, double * res, double * cD,
-                               double * cK, double * cB, double * cH, double * c0,
+                               double * delM2, double * M2, double * kin, double * bra,
+                               double * ten, double * run, double * beh, double * res,
+                               double * cD, double * cK, double * cB, double * cH, double * c0,
                                double * c1, double * c2, double * c3, double * c4,
                                double * c5, double * c6, double * c7, double * c8,
                                double * c9, double * c10, double * c11, double * c12,
@@ -12493,6 +12493,7 @@ int get_gravity_coefficients_smg(
   double H = pvecback[pba->index_bg_H];
   double Hp = pvecback[pba->index_bg_H_prime];
 
+  *delM2 = pvecback[pba->index_bg_delta_M2_smg];
   *M2 = pvecback[pba->index_bg_M2_smg];
   *kin = pvecback[pba->index_bg_kineticity_smg];
   *bra = pvecback[pba->index_bg_braiding_smg];
@@ -12573,6 +12574,7 @@ int get_gravity_coefficients_smg(
 }
 
 int get_x_x_prime_qs_smg(
+                        struct precision * ppr,
                         struct background * pba,
                         struct perturbs * ppt,
                         struct perturb_workspace * ppw,
@@ -12581,7 +12583,7 @@ int get_x_x_prime_qs_smg(
 
   double k2 = k*k;
   double rho_r, p_tot, p_smg;
-  double a, H, M2, kin, bra, ten, run, beh;
+  double a, H, delM2, M2, kin, bra, ten, run, beh;
   double res, cD, cK, cB, cH;
   double c0, c1, c2, c3, c4, c5, c6, c7, c8;
   double c9, c10, c11, c12, c13, c14, c15, c16;
@@ -12598,7 +12600,7 @@ int get_x_x_prime_qs_smg(
   class_call(
     get_gravity_coefficients_smg(
       ppt, pba, ppw->pvecback,
-      & M2, & kin, & bra, & ten, & run, & beh, & res,
+      & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
       & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
       & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
       & c12, & c13, & c14, & c15, & c16, & res_p, & cD_p, & cB_p,
@@ -12609,6 +12611,7 @@ int get_x_x_prime_qs_smg(
 
   /* This is the expression for the scalar field in the quasi static approximation */
   if (ppr->get_h_from_trace_smg == _TRUE_) {
+    /* Scalar field in QS with h' */
     *x_qs_smg =
     + 1./res*(
       - 9./2.*cB*pow(a,2)*ppw->delta_p/M2
@@ -12618,25 +12621,22 @@ int get_x_x_prime_qs_smg(
     )/(c13*k2 + c12*pow(a*H,2));
   }
   else {
+    /* Scalar field in QS without h' */
     *x_qs_smg =
-    1./2.*(
-      + 2.*M2*k2*(
+    1./res*(
+      + k2*(
         + 4.*(1. + beh)*cH*k2
         - 3.*pow(a*H,2)*((2. - bra)*c10 + 4.*(1. + beh)*c9)
       )*ppw->pvecmetric[ppw->index_mt_eta]
-
-      - 4.*(2. - bra)*cH*H*pow(k2,2)*M2*a*ppw->pvecmetric[ppw->index_mt_alpha]
-
-      + 12.*(cH*k2 - 3.*c9*pow(a*H,2))*pow(a,2)*ppw->delta_rho
-      + 27.*cB*(2. - bra)*pow(a*H,2)*pow(a,2)*ppw->delta_p
-    )/M2/res/(
+      - 2.*(2. - bra)*cH*H*pow(k2,2)*a*ppw->pvecmetric[ppw->index_mt_alpha]
+      + 6.*(
+        + (cH*k2 - 3.*c9*pow(a*H,2))*ppw->delta_rho
+        + 9./4.*cB*(2. - bra)*pow(a*H,2)*ppw->delta_p
+      )*pow(a,2)/M2
+    )/(
       + 4.*c15*cH*pow(k2,2)
-      + k2*pow(a*H,2)*(
-        - 3.*c13*(2. - bra) - 12.*c15*c9 + 4.*c16*cH
-      )
-      - 3.*pow(a*H,4)*(
-        + c12*(2. - bra) + 4.*c16*c9
-      )
+      - k2*pow(a*H,2)*(3.*c13*(2. - bra) + 12.*c15*c9 - 4.*c16*cH)
+      - 3.*pow(a*H,4)*(c12*(2. - bra) + 4.*c16*c9)
     );
   }
 
@@ -12651,6 +12651,7 @@ int get_x_x_prime_qs_smg(
    * this call in perturb_einstein */
 
    if (ppr->get_h_from_trace_smg == _TRUE_) {
+     /* Numerator of the scalar field derivative in QS with h' */
      x_prime_qs_smg_num =
      + 3.*(
        + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
@@ -12679,9 +12680,9 @@ int get_x_x_prime_qs_smg(
          + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
        )*k2*pow(a*H,-2)
        + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
-     )*x_qs_smg
-     ;
+     )*ppw->pvecmetric[ppw->index_mt_x_smg];
 
+     /* Denominator of the scalar field derivative in QS with h' */
     x_prime_qs_smg_den =
     - 6.*res*(
       + c4*c9 + c12*cD
@@ -12697,45 +12698,101 @@ int get_x_x_prime_qs_smg(
     );
    }
    else {
-     x_prime_qs_smg_num =
-     + 3.*(
-       + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
-       - 2.*cH*cK*pow(a*H,-2)*k2
-     )*ppw->delta_rho_r*a/H/M2
-     + 9.*(
-       + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
-       - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
-       - 2.*c3*cH*k2*pow(a*H,-2)
-     )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
-     + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
-     + 4.*k2*pow(a*H,-2)*(
-       + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
-       - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
-     )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
-     + 6.*a*H*res*(
-       + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
-       - (
-         + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
-         + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
-         + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
-       )*k2*pow(a*H,-2)
-       + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
-     )*x_qs_smg
-     ;
+     /* Numerator of the scalar field derivative in QS without h' */
+    x_prime_qs_smg_num =
+    - 18.*(2. - bra)*cD*cH*pow(H,-3)*k2*ppw->rho_plus_p_shear/a/M2
+    + (2. - bra)*(
+      + 6.*cH*cK*pow(H,-3)*k2/a
+      + 9.*(
+        + cD*(cB*res_p - cB_p*res)
+        + ((2. + run)*cB*cD - 2.*c9*cK)*H*res*a
+      )*pow(H,-2)/res
+    )*ppw->delta_rho_r/M2
+    + 9.*(2. - bra)*(
+      + 2.*c3*cH*pow(H,-4)*pow(a,-2)*k2
+      - (
+        + 2.*cD*H*(cH*res_p - cH_p*res)/a/res
+        + (6.*c3*c9 - c10*cD - cB*cD + 3.*cD*cH + 2.*run*cD*cH)*pow(H,2)
+        - 3.*cD*cH*(p_tot + p_smg)
+      )*pow(H,-4)
+    )/M2*ppw->rho_plus_p_theta_r
+    - (
+      + 12.*(c2 + 2.*cD + run*cD)*cH*pow(H,-3)*k2/a
+      + 18.*(
+        + 2.*cD*H*(c9*res_p/res - c9_p)
+        - 2.*cB*cD*rho_r*a/M2
+        + c9*(cD - 2.*c2)*pow(H,2)*a
+        + 3.*c9*cD*(p_tot + p_smg)*a
+      )*pow(H,-3)
+    )/M2*ppw->delta_rho
+    + (
+      + 4.*cH*(
+        + (2. - bra)*(cD + ten*cD - c1)
+        - 2.*(c2 + 2.*cD + run*cD)*(1. + beh)
+      )*pow(k2,2)*pow(a*H,-3)
+      - 6.*(
+        + (2. - bra)*(cD*(c10*res_p/res - c10_p)/a/H - 2.*c1*c9)
+        + 2.*(1. + beh)*(
+          + 2.*cD*(c9*res_p/res - c9_p)/a/H
+          + c9*(cD - 2.*c2)
+          - 2.*cB*cD*rho_r*pow(H,-2)/M2
+          + 3.*c9*cD*(p_tot + p_smg)*pow(H,-2)
+        )
+      )*k2/a/H
+    )*ppw->pvecmetric[ppw->index_mt_eta]
+    + (
+      + (
+        - (2. - bra)*(6.*c0*c3 - c7 + 2.*c8*cD)
+        + 4.*c15*(c2 + 2.*cD + run*cD)
+      )*2.*cH*pow(k2,2)*res*pow(a*H,-3)
+      + 6.*(
+        + cD*H*(
+          + 4.*c16*c9*res_p/res
+          - c12_p*(2. - bra)
+          - 4.*c16*c9_p
+        )/a
+        - 4.*c16*cB*cD*rho_r/M2
+        - 4.*c16*c2*c9*pow(H,2)
+        - c6*c9*(2. - bra)*pow(H,2)
+        + cD*((2. - bra)*c12 + 2.*c16*c9)*(pow(H,2) + 3.*(p_tot + p_smg))
+      )*res*a/H
+      + 2.*(
+        + 12.*cD*c15*(c9*res_p/res - c9_p)/H/a
+        - 12.*c15*cB*cD*rho_r/M2*pow(H,-2)
+        + 2.*(
+          + 3.*c15*c9*(cD - 2.*c2)
+          + 2.*cH*c16*(c2 + 2.*cD + run*cD)
+        )
+        + (2. - bra)*(
+          - 3.*cD*(2.*c0*cH_p - 2.*c0*cH*res_p/res + c13_p)/a/H
+          + 18.*c0*c3*c9 - 3.*c7*c9
+          - 3.*c0*c10*cD + c6*cH
+          + 6.*(3./2. + run)*c0*cD*cH
+        )
+        - 9.*cD*((2. - bra)*c0*cH - 2.*c15*c9)*(p_tot + p_smg)*pow(H,-2)
+      )*res*k2/a/H
+    )*ppw->pvecmetric[ppw->index_mt_x_smg];
 
+
+    /* Denominator of the scalar field derivative in QS without h' */
     x_prime_qs_smg_den =
-    - 6.*res*(
-      + c4*c9 + c12*cD
-      - k2*(
-        + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
-        - 12.*c9*(c5 - 3./2.*c3*cB)
-        - 3.*cD*(c10*cB + 2.*c13)
-        + 2.*c4*cH
-        + 3.*cB*cD*cH*(3. + 2.*run)
-        - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
-      )/6.*pow(a*H,-2)
-      - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
-    );
+    - 2.*cH*res*(2. - bra)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)*pow(a*H,-4)*pow(k2,2)
+    + a*(
+      - 6.*cB*cD*(2. - bra)*(cH*res_p - cH_p*res)*H
+      + (2. - bra)*(
+        + 12.*c5*c9 - 18.*c3*c9*cB
+        + 6.*c13*cD + 3.*c10*cB*cD - 2.*c4*cH
+        - 3.*(3. + 2.*run)*cB*cD*cH
+        + 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+      )*res*a*pow(H,2)
+      - 8.*(c2 + 2.*cD + run*cD)*c14*cH*pow(H,2)*res*a
+    )*k2*pow(a*H,-4)
+    + 6.*(
+      - 4.*c14*cD*H*(c9*res_p - c9_p*res)
+      + 4.*c14*(cB*cD*rho_r/M2 + c2*c9*pow(H,2))*res*a
+      + (2. - bra)*(c4*c9 + c12*cD)*pow(H,2)*res*a
+      - 2.*c14*c9*cD*(pow(H,2) + 3.*(p_tot + p_smg))*res*a
+    )*pow(H,-2)/a;
    }
 
   *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
