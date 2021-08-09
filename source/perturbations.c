@@ -653,7 +653,7 @@ int perturb_init(
     if ( ppt->pert_initial_conditions_smg == gravitating_attr ){
       class_test_except((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
                  ppt->error_message,
-                 background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt),
+                 perturb_free_nosource(ppt),
                  "Isocurvature initial conditions for early modified gravity (Gravitating Attractor) not implemented.");
     }
 
@@ -670,7 +670,7 @@ int perturb_init(
                                                ppr->a_ini_over_a_today_default),
                  ppt->error_message,
                  ppt->error_message,
-                 background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+                 perturb_free_nosource(ppt));
     }
 
     if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==1))) {
@@ -688,7 +688,7 @@ int perturb_init(
             ppt),
           ppt->error_message,
           ppt->error_message,
-        background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+        perturb_free_nosource(ppt));
       }
 
       if( ppt->pert_initial_conditions_smg == ext_field_attr){
@@ -700,7 +700,7 @@ int perturb_init(
                                                          ppt),
                 ppt->error_message,
                 ppt->error_message,
-                background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+                perturb_free_nosource(ppt));
       }
     }
   }
@@ -732,7 +732,7 @@ int perturb_init(
                                                      ppt),
              ppt->error_message,
              ppt->error_message,
-             background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+             perturb_free_nosource(ppt));
 
   /** - if we want to store perturbations for given k values, write titles and allocate storage */
 
@@ -863,8 +863,6 @@ int perturb_init(
       } /* end of parallel region */
 
       if (abort == _TRUE_) {
-        background_free(pba);
-        thermodynamics_free(pth);
         perturb_free(ppt);
         int t;
         for (t = 0; t < number_of_threads; t++) {
