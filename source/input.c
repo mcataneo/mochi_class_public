@@ -252,8 +252,8 @@ int input_init(
   equation. This is because the Einstein 00 equation has a gauge dependent
   singularity that can be removed using the trace of the Einstein ij equation.
   */
-  if (pba->has_smg == _FALSE_ && ppr->get_h_from_trace_smg == _FALSE_) {
-    printf("WARNING: you set get_h_from_trace_smg to False.\n");
+  if (pba->has_smg == _TRUE_ && ppr->get_h_from_trace == _FALSE_) {
+    printf("WARNING: you set get_h_from_trace to False.\n");
     printf("While this is still accepted in hi_class, it can cause gauge dependent\n");
     printf("singularities if your model crosses alphaB=2. For this reason in\n");
     printf("future versions of the code this option will be removed and the\n");
@@ -745,11 +745,7 @@ int input_read_parameters(
     }
   }
 
-    class_call(parser_read_string(pfc,
-        "use_pert_var_deltaphi",
-        &string1,
-        &flag1,
-        errmsg),
+    class_call(parser_read_string(pfc, "use_pert_var_deltaphi", &string1, &flag1, errmsg),
       errmsg,
       errmsg);
 
