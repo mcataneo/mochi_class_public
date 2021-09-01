@@ -493,7 +493,10 @@ struct perturbs
   Decide whether to use the equations with Vx (singular when phi_prime=0)
   or the equations with delta_phi (defined only with covariant theories)
   */
-  short use_pert_var_deltaphi;
+  short use_pert_var_deltaphi_smg;
+
+  /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
+  short get_h_from_trace;
 
 };
 

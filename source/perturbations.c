@@ -3377,7 +3377,7 @@ int perturb_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles,"einstein00",ppt->gauge == synchronous);
 
       /* Scalar field smg */
-      if (ppt->use_pert_var_deltaphi==_TRUE_) {
+      if (ppt->use_pert_var_deltaphi_smg==_TRUE_) {
         class_store_columntitle(ppt->scalar_titles, "delta_phi_smg", pba->has_smg);
         class_store_columntitle(ppt->scalar_titles, "delta_phi_prime_smg", pba->has_smg);
         class_store_columntitle(ppt->scalar_titles, "delta_phi_prime_prime_smg", pba->has_smg);
@@ -4073,7 +4073,7 @@ int perturb_vector_init(
 
     /* metric perturbation eta of synchronous gauge */
     class_define_index(ppv->index_pt_eta,ppt->gauge == synchronous,index_pt,1);
-    if (ppr->get_h_from_trace == _TRUE_) {
+    if (ppt->get_h_from_trace == _TRUE_) {
       class_define_index(ppv->index_pt_h_prime_from_trace,ppt->gauge == synchronous,index_pt,1);
     }
 
@@ -4510,7 +4510,7 @@ int perturb_vector_init(
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
 
-      if ((ppt->gauge == synchronous) && (ppr->get_h_from_trace == _TRUE_))
+      if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_))
         ppv->y[ppv->index_pt_h_prime_from_trace] =
           ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace];
 
@@ -6482,7 +6482,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
       ppw->pv->y[ppw->pv->index_pt_eta] = eta;
 
-      if (ppr->get_h_from_trace == _TRUE_) {
+      if (ppt->get_h_from_trace == _TRUE_) {
         // Define initial condition for h^\prime evolved from the Einstein trace equation
         // We should take into account also matter density otherwise we get percent differences
         /* TODO: think of adding all species in a more sysyematic way */
@@ -7417,7 +7417,7 @@ int perturb_einstein(
         H = ppw->pvecback[pba->index_bg_H];
 
         /* Define background coefficients. This function uses
-        use_pert_var_deltaphi to decide which coefficients to output.
+        use_pert_var_deltaphi_smg to decide which coefficients to output.
         */
         class_call(
           get_gravity_coefficients_smg(
@@ -7438,14 +7438,14 @@ int perturb_einstein(
         /* Get h' from the integrator. This is the right place because in QS
         the scalar field depends on h' (only if h' comes from the integrator,
         otherwise it has been diagonalised) */
-        if (ppr->get_h_from_trace == _TRUE_) {
+        if (ppt->get_h_from_trace == _TRUE_) {
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
         }
 
         /* Get scalar field perturbations */
         if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
           /* Get scalar field perturbations from QS expressions. This function
-          hides a bit of complexity. If (ppr->get_h_from_trace == _TRUE_),
+          hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
           both x and x' depend on h' (simpler non-divergent expressions), otherwise
           they have been diagonalised (longer divergent expressions). */
           class_call(
@@ -7467,7 +7467,7 @@ int perturb_einstein(
           return _FAILURE_;
         }
 
-        if (ppr->get_h_from_trace == _FALSE_) {
+        if (ppt->get_h_from_trace == _FALSE_) {
           /* It is still possible to get h_prime through th 00 Einstein equation,
           but this generates a warning as it will be removed in future versions
           of hi_class. This is the right place, since h' depends on x and x'. */
@@ -7553,9 +7553,9 @@ int perturb_einstein(
         /* This corrects the third equation using the Einstein 00. It has to be
         read as a friction term that vanishes whenever the Hamiltonian constraint
         is satisfied. */
-        if (ppr->get_h_from_trace == _TRUE_) {
+        if (ppt->get_h_from_trace == _TRUE_) {
           ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
-            a*a/cD*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+            a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
         }
 
 
@@ -7621,7 +7621,7 @@ int perturb_einstein(
       else {// Standard equations
 
         /* first equation involving total density fluctuation */
-        if (ppr->get_h_from_trace == _TRUE_) {
+        if (ppt->get_h_from_trace == _TRUE_) {
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
         }
         else {
@@ -7667,6 +7667,14 @@ int perturb_einstein(
 	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
 	  + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
 	  - 9. * a2 * ppw->delta_p;
+
+  /* This corrects the third equation using the Einstein 00. It has to be
+  read as a friction term that vanishes whenever the Hamiltonian constraint
+  is satisfied. */
+  if (ppt->get_h_from_trace == _TRUE_) {
+    ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
+      a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+  }
 
 	/* alpha = (h'+6eta')/2k^2 */
 	ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
@@ -8543,7 +8551,7 @@ int perturb_sources(
                ppt->error_message,
                error_message);
 
-    if ((ppt->gauge == synchronous) && (ppr->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0)) {
+    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0)) {
       check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
       class_test(
         fabs(check_einstein00)>ppr->tol_einstein00_reldev,
@@ -10562,7 +10570,7 @@ int perturb_derivs(double tau,
 
     }
 
-    if ((ppt->gauge == synchronous) && (ppr->get_h_from_trace == _TRUE_)) {
+    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) {
 
       dy[pv->index_pt_h_prime_from_trace] = pvecmetric[ppw->index_mt_h_prime_prime];
 
@@ -12523,7 +12531,7 @@ int get_gravity_coefficients_smg(
                              ){
   /* It returns the alphas and the coefficients of the Einstein equations
   that will be used to evaluate the perturbations and their initial
-  conditions. This function uses use_pert_var_deltaphi to decide which
+  conditions. This function uses use_pert_var_deltaphi_smg to decide which
   coefficients to output.
   */
 
@@ -12539,7 +12547,7 @@ int get_gravity_coefficients_smg(
   *run = pvecback[pba->index_bg_mpl_running_smg];
   *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
 
-  if (ppt->use_pert_var_deltaphi == _TRUE_) {
+  if (ppt->use_pert_var_deltaphi_smg == _TRUE_) {
     *res = 1.;
     *cD  = pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
     *cK  = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
@@ -12571,7 +12579,7 @@ int get_gravity_coefficients_smg(
     *c12_p = pvecback[pba->index_bg_C12_prime_smg];
     *c13_p = pvecback[pba->index_bg_C13_prime_smg];
   }
-  else if (ppt->use_pert_var_deltaphi == _FALSE_) {
+  else if (ppt->use_pert_var_deltaphi_smg == _FALSE_) {
     *res = - a*H;
     *cD  = pvecback[pba->index_bg_kinetic_D_smg];
     *cK  = pvecback[pba->index_bg_kineticity_smg];
@@ -12648,7 +12656,7 @@ int get_x_x_prime_qs_smg(
     ppt->error_message);
 
   /* This is the expression for the scalar field in the quasi static approximation */
-  if (ppr->get_h_from_trace == _TRUE_) {
+  if (ppt->get_h_from_trace == _TRUE_) {
     /* Scalar field in QS with h' */
     *x_qs_smg =
     + 1./res*(
@@ -12688,7 +12696,7 @@ int get_x_x_prime_qs_smg(
    * The result is approximated when rsa is on since the velocity of radiation gets updated only after
    * this call in perturb_einstein */
 
-   if (ppr->get_h_from_trace == _TRUE_) {
+   if (ppt->get_h_from_trace == _TRUE_) {
      /* Numerator of the scalar field derivative in QS with h' */
      x_prime_qs_smg_num =
      + 3.*(

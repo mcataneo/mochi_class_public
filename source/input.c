@@ -247,22 +247,6 @@ int input_init(
              errmsg,
              errmsg);
 
-  /* Here we put a warning as we want to encourage hi_class users to get
-  h_prime from the trace of the Einstein ij equation than from the Einstein 00
-  equation. This is because the Einstein 00 equation has a gauge dependent
-  singularity that can be removed using the trace of the Einstein ij equation.
-  */
-  if (pba->has_smg == _TRUE_ && ppr->get_h_from_trace == _FALSE_) {
-    printf("WARNING: you set get_h_from_trace to False.\n");
-    printf("While this is still accepted in hi_class, it can cause gauge dependent\n");
-    printf("singularities if your model crosses alphaB=2. For this reason in\n");
-    printf("future versions of the code this option will be removed and the\n");
-    printf("Einstein 00 equation will be used only to set the initial conditions\n");
-    printf("for h_prime and as a test to check that it is satisfied during the evolution.\n");
-    printf("\n");
-  }
-
-
   /**
    * In CLASS, we can do something we call 'shooting', where a variable,
    *  which is not directly given is calculated by another variable
@@ -576,6 +560,35 @@ int input_init(
   /* Now Horndeski should be tuned */
   pba->parameters_tuned_smg = _TRUE_;
 
+
+  /* Here we put a warning as we want to encourage hi_class users to get
+  h_prime from the trace of the Einstein ij equation than from the Einstein 00
+  equation. This is because the Einstein 00 equation has a gauge dependent
+  singularity that can be removed using the trace of the Einstein ij equation.
+  */
+  if ((pba->has_smg == _TRUE_) && (ppt->get_h_from_trace == _FALSE_)) {
+    printf("\n");
+    printf("WARNING: you set get_h_from_trace to False.\n");
+    printf("While this is still accepted in hi_class, it can cause gauge dependent\n");
+    printf("singularities if your model crosses alphaB=2. For this reason in\n");
+    printf("future versions of the code this option will be removed and the\n");
+    printf("Einstein 00 equation will be used only to set the initial conditions\n");
+    printf("for h_prime and as a test to check that it is satisfied during the evolution.\n");
+    printf("On the other hand this is a safe choice if you want very large k modes\n");
+    printf("(typically k>10 Mpc^-1), where the constraint and the dynamical equations\n");
+    printf("disagree by a non negligible amount in some of the models studied.\n");
+    printf("\n");
+  }
+  else if ((pba->has_smg == _TRUE_) && (ppt->get_h_from_trace == _TRUE_)) {
+    printf("\n");
+    printf("WARNING: you set get_h_from_trace to True.\n");
+    printf("While this will be the default option in future versions of hi_class it might\n");
+    printf("be safer to set get_h_from_trace to False if you want very large k modes\n");
+    printf("(typically k>10 Mpc^-1). In this regime the constraint and the dynamical \n");
+    printf("equations disagree by a non negligible amount some of the models studied.\n");
+    printf("\n");
+  }
+
   return _SUCCESS_;
 
 }
@@ -745,19 +758,31 @@ int input_read_parameters(
     }
   }
 
-    class_call(parser_read_string(pfc, "use_pert_var_deltaphi", &string1, &flag1, errmsg),
+    class_call(parser_read_string(pfc, "use_pert_var_deltaphi_smg", &string1, &flag1, errmsg),
       errmsg,
       errmsg);
 
   if (flag1 == _TRUE_){
     if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-      ppt->use_pert_var_deltaphi = _TRUE_;
+      ppt->use_pert_var_deltaphi_smg = _TRUE_;
     }
     else{
-      ppt->use_pert_var_deltaphi = _FALSE_;
+      ppt->use_pert_var_deltaphi_smg = _FALSE_;
     }
   }
 
+  class_call(parser_read_string(pfc, "get_h_from_trace", &string1, &flag1, errmsg),
+    errmsg,
+    errmsg);
+
+if (flag1 == _TRUE_){
+  if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+    ppt->get_h_from_trace = _TRUE_;
+  }
+  else{
+    ppt->get_h_from_trace = _FALSE_;
+  }
+}
 
   /** (a) background parameters */
 
@@ -1967,7 +1992,7 @@ if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string
     }
     else { //if no self-consistent evolution, need a parameterization for Omega_smg
 
-      class_test(ppt->use_pert_var_deltaphi==_TRUE_,
+      class_test(ppt->use_pert_var_deltaphi_smg==_TRUE_,
         errmsg,
         "It is not consistent to evolve delta_phi_smg and choose parametrized models.");
 
@@ -4113,10 +4138,12 @@ int input_default_params(
 
   ppt->gauge=synchronous;
 
+  ppt->get_h_from_trace=_TRUE_; /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
+
   ppt->method_qs_smg=fully_dynamic;
   ppt->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
 
-  ppt->use_pert_var_deltaphi=_FALSE_;
+  ppt->use_pert_var_deltaphi_smg=_FALSE_;
 
   ppt->idr_nature=idr_free_streaming;
 

@@ -303,8 +303,6 @@ class_precision_parameter(neglect_CMB_sources_below_visibility,double,1.0e-3)
 class_type_parameter(evolver,int,enum evolver_type,ndf15)
 
 
-class_precision_parameter(get_h_from_trace,int,_TRUE_) /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
-
 class_precision_parameter(tol_einstein00_reldev,double,1.e-3) /**< tolerance to deviations w.r.t. the Einstein 00 equation. Useful if get_h_from_trace,int==_TRUE_. (not only _smg!!) */
 
 class_precision_parameter(einstein00_friction,double,1.) /**< friction term muliplying the Einstein 00 equation to correct for h''. (not only _smg!!) */
