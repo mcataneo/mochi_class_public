@@ -3387,6 +3387,12 @@ int perturb_prepare_k_output(struct background * pba,
         class_store_columntitle(ppt->scalar_titles, "V_x_prime_smg", pba->has_smg);
         class_store_columntitle(ppt->scalar_titles, "V_x_prime_prime_smg", pba->has_smg);
       }
+      /* Quasi-static functions smg*/
+      class_store_columntitle(ppt->scalar_titles, "mass2_qs", pba->has_smg);
+      class_store_columntitle(ppt->scalar_titles, "mass2_qs_p", pba->has_smg);
+      class_store_columntitle(ppt->scalar_titles, "rad2_qs", pba->has_smg);
+      class_store_columntitle(ppt->scalar_titles, "friction_qs", pba->has_smg);
+      class_store_columntitle(ppt->scalar_titles, "slope_qs", pba->has_smg);
 
       ppt->number_of_scalar_titles =
         get_number_of_titles(ppt->scalar_titles);
@@ -9103,6 +9109,7 @@ int perturb_print_variables(double tau,
   double alpha_mt_prime=0., alpha_mt=0.;
   double einstein00=0.;
   double x_smg=0., x_prime_smg=0., x_prime_prime_smg=0.;
+  double mass2_qs=0., mass2_qs_p=0., rad2_qs=0., friction_qs=0., slope_qs=0.;
   /** - ncdm sector begins */
   int n_ncdm;
   double *delta_ncdm=NULL, *theta_ncdm=NULL, *shear_ncdm=NULL, *delta_p_over_delta_rho_ncdm=NULL;
@@ -9400,6 +9407,17 @@ int perturb_print_variables(double tau,
       x_smg = ppw->pvecmetric[ppw->index_mt_x_smg];
       x_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
       x_prime_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg];
+
+      functions_at_tau_qs_smg(
+                             pba,
+                             ppt,
+                             k,
+                             tau,
+                             &mass2_qs,
+                             &mass2_qs_p,
+                             &rad2_qs,
+                             &friction_qs,
+                             &slope_qs);
     }
 
     /* converting synchronous variables to newtonian ones */
@@ -9552,6 +9570,12 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, x_smg, pba->has_smg, storeidx);
     class_store_double(dataptr, x_prime_smg, pba->has_smg, storeidx);
     class_store_double(dataptr, x_prime_prime_smg, pba->has_smg, storeidx);
+    /* Quasi-static functions smg*/
+    class_store_double(dataptr, mass2_qs, pba->has_smg, storeidx);
+    class_store_double(dataptr, mass2_qs_p, pba->has_smg, storeidx);
+    class_store_double(dataptr, rad2_qs, pba->has_smg, storeidx);
+    class_store_double(dataptr, friction_qs, pba->has_smg, storeidx);
+    class_store_double(dataptr, slope_qs, pba->has_smg, storeidx);
 
 
   }
