@@ -1005,6 +1005,16 @@ extern "C" {
 			  struct background * pba,
 			  struct perturbs * ppt);
 
+  int functions_at_tau_qs_smg(struct background * pba,
+                             struct perturbs * ppt,
+                             double k,
+                             double tau,
+                             double *mass2,
+                             double *mass2_p,
+                             double *rad2,
+                             double *friction,
+                             double *slope);
+
   int perturb_test_at_k_qs_smg(struct precision * ppr,
                               struct background * pba,
                               struct perturbs * ppt,
@@ -1027,28 +1037,28 @@ extern "C" {
                                 double tau_end,
                                 double * tau_scheme_qs_smg);
 
-  int sample_mass_qs_smg(struct precision * ppr,
-                        struct background * pba,
-                        struct perturbs * ppt,
-                        double k,
-                        double tau_ini,
-                        double tau_end,
-                        double * tau_sample,
-                        double * mass_sample,
-                        double * rad_sample,
-                        double * slope_sample,
-                        int *size_sample);
+  int sample_functions_qs_smg(struct precision * ppr,
+                             struct background * pba,
+                             struct perturbs * ppt,
+                             double k,
+                             double tau_ini,
+                             double tau_end,
+                             double * tau_sample,
+                             double * mass2_sample,
+                             double * rad2_sample,
+                             double * slope_sample,
+                             int *size_sample);
 
-  int mass_to_approx_qs_smg(struct precision * ppr,
-                           struct background * pba,
-                           struct perturbs * ppt,
-                           double tau_ini,
-                           double tau_end,
-                           double * tau_sample,
-                           double * mass_sample,
-                           double * rad_sample,
-                           int * approx_sample,
-                           int size_sample);
+  int functions_to_approx_qs_smg(struct precision * ppr,
+                                struct background * pba,
+                                struct perturbs * ppt,
+                                double tau_ini,
+                                double tau_end,
+                                double * tau_sample,
+                                double * mass_sample,
+                                double * rad_sample,
+                                int * approx_sample,
+                                int size_sample);
 
   int shorten_first_qs_smg(double * tau_sample,
                           double * slope_sample,
