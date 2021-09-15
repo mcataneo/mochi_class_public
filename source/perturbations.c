@@ -9408,16 +9408,16 @@ int perturb_print_variables(double tau,
       x_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
       x_prime_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg];
 
-      functions_at_tau_qs_smg(
-                             pba,
-                             ppt,
-                             k,
-                             tau,
-                             &mass2_qs,
-                             &mass2_qs_p,
-                             &rad2_qs,
-                             &friction_qs,
-                             &slope_qs);
+      perturb_qs_functions_at_tau_and_k_qs_smg(
+                                              pba,
+                                              ppt,
+                                              k,
+                                              tau,
+                                              &mass2_qs,
+                                              &mass2_qs_p,
+                                              &rad2_qs,
+                                              &friction_qs,
+                                              &slope_qs);
     }
 
     /* converting synchronous variables to newtonian ones */
@@ -11393,16 +11393,16 @@ int perturb_rsa_delta_and_theta(
 
 }
 
-int functions_at_tau_qs_smg(
-                           struct background * pba,
-                           struct perturbs * ppt,
-                           double k,
-                           double tau,
-                           double *mass2,
-                           double *mass2_p,
-                           double *rad2,
-                           double *friction,
-                           double *slope) {
+int perturb_qs_functions_at_tau_and_k_qs_smg(
+                                            struct background * pba,
+                                            struct perturbs * ppt,
+                                            double k,
+                                            double tau,
+                                            double *mass2,
+                                            double *mass2_p,
+                                            double *rad2,
+                                            double *friction,
+                                            double *slope) {
 
   /* Definition of local variables */
   double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
@@ -11486,16 +11486,16 @@ int perturb_test_at_k_qs_smg(struct precision * ppr,
   //Define local variables
   double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
 
-  functions_at_tau_qs_smg(
-                         pba,
-                         ppt,
-                         k,
-                         tau,
-                         &mass2_qs,
-                         &mass2_qs_p,
-                         &rad2_qs,
-                         &friction_qs,
-                         &slope_qs);
+  perturb_qs_functions_at_tau_and_k_qs_smg(
+                                          pba,
+                                          ppt,
+                                          k,
+                                          tau,
+                                          &mass2_qs,
+                                          &mass2_qs_p,
+                                          &rad2_qs,
+                                          &friction_qs,
+                                          &slope_qs);
 
   double tau_fd;
   short proposal;
@@ -11765,16 +11765,16 @@ int sample_functions_qs_smg(
    * interesting quantities for the quasi-static approximation */
   while (tau < tau_end) {
 
-    functions_at_tau_qs_smg(
-                           pba,
-                           ppt,
-                           k,
-                           tau,
-                           &mass2_qs,
-                           &mass2_qs_p,
-                           &rad2_qs,
-                           &friction_qs,
-                           &slope_qs);
+    perturb_qs_functions_at_tau_and_k_qs_smg(
+                                            pba,
+                                            ppt,
+                                            k,
+                                            tau,
+                                            &mass2_qs,
+                                            &mass2_qs_p,
+                                            &rad2_qs,
+                                            &friction_qs,
+                                            &slope_qs);
 
 //     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
 //     double x = (tau - tau_ini)/(tau_end - tau_ini);

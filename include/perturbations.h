@@ -1005,15 +1005,15 @@ extern "C" {
 			  struct background * pba,
 			  struct perturbs * ppt);
 
-  int functions_at_tau_qs_smg(struct background * pba,
-                             struct perturbs * ppt,
-                             double k,
-                             double tau,
-                             double *mass2,
-                             double *mass2_p,
-                             double *rad2,
-                             double *friction,
-                             double *slope);
+  int perturb_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
+                                              struct perturbs * ppt,
+                                              double k,
+                                              double tau,
+                                              double *mass2,
+                                              double *mass2_p,
+                                              double *rad2,
+                                              double *friction,
+                                              double *slope);
 
   int perturb_test_at_k_qs_smg(struct precision * ppr,
                               struct background * pba,

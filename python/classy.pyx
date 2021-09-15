@@ -1521,6 +1521,43 @@ cdef class Class:
 
         return (slip + 1)*G_eff/slip/2
 
+    def get_qs_functions_at_k_and_z_qs_smg(self, k, z):
+        """
+        get_qs_functions_at_k_and_z_qs_smg(k, z)
+
+        Return the quasi-static (QS) functions
+          -) mass2_qs
+          -) mass2_qs_p
+          -) rad2_qs
+          -) friction_qs
+          -) slope_qs
+        at a given scale (k) and time (z).
+        These functions are the same used in the QS
+        automatic algorithm to determine at which times
+        and scales the system can be safely treated as
+        QS (mass2_qs_p and friction_qs are intermediate
+        steps to calculate slope_qs). They are useful to
+        inspect suspicious results and the validity of the QS.
+
+        Parameters
+        ----------
+        k : float
+                Desired scale
+        z : float
+                Desired redshift
+        """
+        cdef double tau
+        cdef double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
+
+        if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
+
+        if perturb_qs_functions_at_tau_and_k_qs_smg(&self.ba,&self.pt, k, tau,
+          &mass2_qs, &mass2_qs_p, &rad2_qs, &friction_qs, &slope_qs)==_FAILURE_:
+            raise CosmoSevereError(self.pt.error_message)
+
+        return mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
+
     def ionization_fraction(self, z):
         """
         ionization_fraction(z)
