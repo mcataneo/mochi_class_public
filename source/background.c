@@ -2523,9 +2523,9 @@ int background_solve(
       // kinetic term D over phiphi
       pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] =
        + kin_ss + 3./2.*pow(bra_s,2);
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
-                              &pvecback[pba->index_bg_kinetic_D_smg], 1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_smg,
+      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_smg,
+                              &pvecback[pba->index_bg_kinetic_D_over_phiphi_smg], 1*sizeof(double));
+      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_smg,
                  pba->error_message, "cannot copy data back to pba->background_table");
 
       // C0
