@@ -649,6 +649,9 @@ int perturb_init(
                ppt->error_message,
                "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
 
+    class_test(ppr->a_ini_test_qs_smg < ppr->a_ini_over_a_today_default,
+              ppt->error_message,
+              "The initial time for testing the QS approximation (qs_smg) must be bigger than the background initial time (a_ini_test_qs_smg>=a_ini_over_a_today_default).");
 
     if ( ppt->pert_initial_conditions_smg == gravitating_attr ){
       class_test_except((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
@@ -667,13 +670,13 @@ int perturb_init(
                                                ppt,
                                                ppt->k[ppt->index_md_scalars][0],
                                                ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
-                                               ppr->a_ini_over_a_today_default),
+                                               ppr->a_ini_test_qs_smg),
                  ppt->error_message,
                  ppt->error_message,
                  perturb_free_nosource(ppt));
     }
 
-    if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==1))) {
+    if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==_TRUE_))) {
 
       // if scalar is dynamical or always quasi-static, test for stability at the initial time.
       // Only in the case it is QS because of a trigger test (through "automatic" method_qs),
@@ -690,8 +693,7 @@ int perturb_init(
           ppt->error_message,
         perturb_free_nosource(ppt));
       }
-
-      if( ppt->pert_initial_conditions_smg == ext_field_attr){
+      else if( ppt->pert_initial_conditions_smg == ext_field_attr){
       //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
       // If have it, fail, because we can't set the ICs properly
 
@@ -3057,7 +3059,11 @@ int perturb_solve(
   if (pba->has_smg == _TRUE_) {
     if (ppt->method_qs_smg == automatic) {
       tau_upper = tau;
-      tau_lower = pba->tau_table[0];
+      class_call(background_tau_of_z(pba,
+                                     1./ppr->a_ini_test_qs_smg-1.,
+                                     &tau_lower),
+                 pba->error_message,
+                 ppt->error_message);
       is_early_enough = _FALSE_;
       while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
         int approx;
@@ -11507,16 +11513,16 @@ int perturb_test_at_k_qs_smg(struct precision * ppr,
              ppt->error_message);
   //Approximation
   if ((mass2_qs > pow(ppr->trigger_mass_qs_smg,2)) && (rad2_qs > pow(ppr->trigger_rad_qs_smg,2))) {
-    proposal = 1;
+    proposal = _TRUE_;
   }
   else {
-    proposal = 0;
+    proposal = _FALSE_;
   }
   if (tau <= tau_fd) {
     *approx = proposal;
   }
   else {
-    *approx = 0;
+    *approx = _FALSE_;
   }
 
   return _SUCCESS_;

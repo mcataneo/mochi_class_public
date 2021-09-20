@@ -503,6 +503,10 @@ class_precision_parameter(tol_gauss_legendre,double,ppr->smallest_allowed_variat
  * hi_class (_smg) parameters
  * */
 
+/* This is the time at which we test for the initial value of the QS approximation.
+It has to be at least a_ini_over_a_today_default */
+class_precision_parameter(a_ini_test_qs_smg,double,1.e-14)
+
 class_precision_parameter(n_min_qs_smg,int,1e2) /**< minimum number of steps used to sample the quantities in the quasi-static approximation (qs_smg) */
 class_precision_parameter(n_max_qs_smg,int,1e4) /**< maximum number of steps used to sample the quantities in the quasi-static approximation (qs_smg) */
 class_precision_parameter(z_fd_qs_smg,double,10.) /**< minimum redshift after which the user requires the full-dynamic evolution */
