@@ -80,6 +80,10 @@
 
 #include "background.h"
 
+#ifdef HI_CLASS
+#include "hi_class.h"
+#endif
+
 /**
  * Background quantities at given conformal time tau.
  *
@@ -479,6 +483,9 @@ int background_functions(
       pvecback[pba->index_bg_p_tot_wo_smg] = p_tot;
       //NOTE: add the field energy and pressure after the debug has been added
 
+    class_call(test_function_smg(1),//TODO_EB
+	       pba->error_message,
+               pba->error_message);
     class_call(background_gravity_functions(pba,
 					    pvecback_B,
 					    return_format,
@@ -678,6 +685,11 @@ int background_init(
   /** - in verbose mode, provide some information */
   if (pba->background_verbose > 0) {
     printf("Running CLASS version %s\n",_VERSION_);
+    #ifdef HI_CLASS
+    printf("Running hi_class version %s\n",_HI_CLASS_VERSION_);
+    #endif
+
+
     printf("Computing background\n");
 
     /* below we want to inform the user about ncdm species and/or the total N_eff */

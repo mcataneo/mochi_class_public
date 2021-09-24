@@ -50,6 +50,10 @@ LDFLAG = -g -fPIC
 # (with no slash at the end: e.g. hyrec or ../hyrec)
 HYREC = hyrec
 
+# path to hi_class external modules (with no slash at the end).
+# leave blank if you want to compile vanilla Class
+HI_CLASS = gravity_smg
+
 ########################################################
 ###### IN PRINCIPLE THE REST SHOULD BE LEFT UNCHANGED ##
 ########################################################
@@ -70,6 +74,15 @@ CCFLAG += -DHYREC
 #LDFLAGS += -DHYREC
 INCLUDES += -I../hyrec
 EXTERNAL += hyrectools.o helium.o hydrogen.o history.o
+endif
+
+# eventually update flags for including gravity_smg
+ifneq ($(HI_CLASS),)
+vpath %.c $(HI_CLASS)
+CCFLAG += -DHI_CLASS
+#LDFLAGS += -DHI_CLASS
+INCLUDES += -I../gravity_smg
+EXTERNAL += gravity_functions_smg.o
 endif
 
 %.o:  %.c .base
