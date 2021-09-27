@@ -82,7 +82,7 @@ vpath %.c $(HAS_HI_CLASS_SMG)
 CCFLAG += -DHAS_HI_CLASS_SMG
 #LDFLAGS += -DHAS_HI_CLASS_SMG
 INCLUDES += -I../gravity_smg
-EXTERNAL += gravity_functions_smg.o
+EXTERNAL += input_smg.o background_smg.o perturbations_smg.o nonlinear_smg.o gravity_functions_smg.o gravity_models_smg.o
 endif
 
 %.o:  %.c .base

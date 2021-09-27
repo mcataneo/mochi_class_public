@@ -1,5 +1,5 @@
-#ifndef __GRAVITY_FUNCTIONS_SMG__
-#define __GRAVITY_FUNCTIONS_SMG__
+#ifndef __GRAVITY_MODELS_SMG__
+#define __GRAVITY_MODELS_SMG__
 
 #include "common.h"
 

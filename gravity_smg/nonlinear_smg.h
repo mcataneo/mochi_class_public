@@ -1,5 +1,5 @@
-#ifndef __GRAVITY_FUNCTIONS_SMG__
-#define __GRAVITY_FUNCTIONS_SMG__
+#ifndef __NONLINEAR_SMG__
+#define __NONLINEAR_SMG__
 
 #include "common.h"
 
