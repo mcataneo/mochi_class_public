@@ -52,7 +52,7 @@ HYREC = hyrec
 
 # path to hi_class external modules (with no slash at the end).
 # leave blank if you want to compile vanilla Class
-HI_CLASS = gravity_smg
+HAS_HI_CLASS_SMG = gravity_smg
 
 ########################################################
 ###### IN PRINCIPLE THE REST SHOULD BE LEFT UNCHANGED ##
@@ -77,10 +77,10 @@ EXTERNAL += hyrectools.o helium.o hydrogen.o history.o
 endif
 
 # eventually update flags for including gravity_smg
-ifneq ($(HI_CLASS),)
-vpath %.c $(HI_CLASS)
-CCFLAG += -DHI_CLASS
-#LDFLAGS += -DHI_CLASS
+ifneq ($(HAS_HI_CLASS_SMG),)
+vpath %.c $(HAS_HI_CLASS_SMG)
+CCFLAG += -DHAS_HI_CLASS_SMG
+#LDFLAGS += -DHAS_HI_CLASS_SMG
 INCLUDES += -I../gravity_smg
 EXTERNAL += gravity_functions_smg.o
 endif

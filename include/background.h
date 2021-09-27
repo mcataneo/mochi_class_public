@@ -710,14 +710,6 @@ extern "C" {
 					int species
 				    );
 
-  int background_gravity_functions(
-				  struct background *pba,
-				  double * pvecback_B,
-				  short return_format,
-				  double * pvecback
-				  );
-
-
   int background_gravity_parameters(
 				  struct background *pba
 				  );

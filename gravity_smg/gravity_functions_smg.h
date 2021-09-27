@@ -2,6 +2,7 @@
 #define __GRAVITY_FUNCTIONS_SMG__
 
 #include "common.h"
+#include "background.h"
 
 /**
  * Boilerplate for C++
@@ -10,7 +11,12 @@
 extern "C" {
 #endif
 
-int test_function_smg(int a);
+int background_gravity_functions_smg(
+        struct background *pba,
+        double * pvecback_B,
+        short return_format,
+        double * pvecback
+        );
 
 #ifdef __cplusplus
 }
