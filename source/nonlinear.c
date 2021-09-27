@@ -1651,7 +1651,7 @@ int nonlinear_free(
 
     free(pnl->k);
     free(pnl->ln_k);
-    // free(pnl->ln_tau); // EB_smg
+    free(pnl->ln_tau);
 
     for (index_pk=0; index_pk<pnl->pk_size; index_pk++) {
       free(pnl->ln_pk_ic_l[index_pk]);
@@ -3148,8 +3148,6 @@ int nonlinear_hmcode(
   double * r_virial;
   double * r_real;
   double * nu_arr;
-  double * z_form_array; // EB_smg
-  double * g_form_array; // EB_smg
 
   double * p1h_integrand;
 
@@ -3252,34 +3250,23 @@ int nonlinear_hmcode(
 
   Delta_v_0_lcdm = 418.;
 
-  // If smg, correct the LCDM virialized overdiensity
+  #ifdef HAS_HI_CLASS_SMG
+  // If smg, correct the LCDM virialized overdensity
   if(pba->has_smg == _TRUE_){
-
-    // Corrections are implemented only for Brans-Dicke
-    if(pba->gravity_model_smg == brans_dicke){
-
-      // Local variables
-      double d0, fac;
-      double omega = pba->parameters_smg[1];
-      if(omega<50.){
-        printf("WARNING: Currently HMcode has been fitted only for omega>50. Setting omega=50.\n");
-        omega = 50.;
-      }
-
-      d0  = 320.0+40.0*pow(z_at_tau, 0.26);
-      fac = atan(pow(abs(omega-50.0)*0.001, 0.2))*2.0/acos(-1.0);
-
-      // Fitting formula based on simulations
-      Delta_v_0 = d0 + (Delta_v_0_lcdm - d0) * fac;
-    }
-    else{
-      printf("WARNING: Currently HMcode is implemented only for Brans-Dicke.\n");
-      Delta_v_0 = Delta_v_0_lcdm;
-    }
+    class_call(nonlinear_hmcode_correct_Delta_v_0_smg(
+        pba,
+        z_at_tau,
+        Delta_v_0_lcdm,
+        & Delta_v_0
+        ),
+        pnl->error_message, pnl->error_message);
   }
-  else{ // end of smg, standard LCDM value
+  else{
+  #endif
     Delta_v_0 = Delta_v_0_lcdm;
+  #ifdef HAS_HI_CLASS_SMG
   }
+  #endif
 
   // virialized overdensity
   Delta_v=Delta_v_0*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
@@ -3439,18 +3426,18 @@ int nonlinear_hmcode(
 
   /** Calculate halo concentration-mass relation conc(mass) (Bullock et al. 2001) */
   class_alloc(conc,ppr->nsteps_for_p1h_integral*sizeof(double),pnl->error_message);
-  class_alloc(z_form_array,ppr->nsteps_for_p1h_integral*sizeof(double),pnl->error_message); // EB_smg
-  class_alloc(g_form_array,ppr->nsteps_for_p1h_integral*sizeof(double),pnl->error_message); // EB_smg
 
   for (index_mass=0;index_mass<ppr->nsteps_for_p1h_integral;index_mass++){
     //find growth rate at formation
     g_form = delta_c*growth/sigmaf_r[index_mass];
     if (g_form > 1.) g_form = 1.;
+    #ifdef HAS_HI_CLASS_SMG
     /** Here we correct the formation growth for extreme models where it is
         g_form is very little and outside the precumputed table. */
-    if (pba->has_smg == _TRUE_){ // EB_smg
+    if (pba->has_smg == _TRUE_){
       if (g_form < pnw->growtable[0]) g_form = pnw->growtable[0];
     }
+    #endif
 
     //
     class_call(array_interpolate_two_arrays_one_column(
@@ -3463,8 +3450,6 @@ int nonlinear_hmcode(
                                                        &z_form,
                                                        pnl->error_message),
                pnl->error_message, pnl->error_message);
-    z_form_array[index_mass] = z_form;// EB_smg
-    g_form_array[index_mass] = g_form;// EB_smg
     if (z_form < z_at_tau){
       conc[index_mass] = pnl->c_min;
     } else {
@@ -3598,13 +3583,6 @@ int nonlinear_hmcode(
     fprintf(stdout, "    fdamp:		%e\n", fdamp);
     fprintf(stdout, "    alpha:		%e\n", alpha);
     fprintf(stdout, "    ksize, kmin, kmax:   %d, %e, %e\n", pnl->k_size, pnl->k[0]/pba->h, pnl->k[pnl->k_size-1]/pba->h);
-    if (pnl->nonlinear_verbose){ // EB_smg
-      fprintf(stdout, "    z_form min:		%e\n", z_form_array[ppr->nsteps_for_p1h_integral-1]);
-      fprintf(stdout, "    z_form max:		%e\n", z_form_array[0]);
-      fprintf(stdout, "    g_form min:		%e\n", g_form_array[0]);
-      fprintf(stdout, "    g_form max:		%e\n", g_form_array[ppr->nsteps_for_p1h_integral-1]);
-    }
-
   }
 
   free(conc);
@@ -3614,8 +3592,6 @@ int nonlinear_hmcode(
   free(sigma_r);
   free(sigmaf_r);
   free(nu_arr);
-  free(z_form_array); // EB_smg
-  free(g_form_array); // EB_smg
 
   return _SUCCESS_;
 }
