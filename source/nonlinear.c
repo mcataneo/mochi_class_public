@@ -13,6 +13,10 @@
 
 #include "nonlinear.h"
 
+#ifdef HAS_HI_CLASS_SMG
+#include "hi_class.h"
+#endif
+
 /**
  * Return the P(k,z) for a given redshift z and pk type (_m, _cb)
  * (linear if pk_output = pk_linear, nonlinear if pk_output = pk_nonlinear)

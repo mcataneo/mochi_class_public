@@ -2,7 +2,7 @@
 #define __NONLINEAR_SMG__
 
 #include "common.h"
-#include "background.h"
+#include "nonlinear.h"
 
 /**
  * Boilerplate for C++

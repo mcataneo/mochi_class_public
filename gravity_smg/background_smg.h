@@ -1,8 +1,8 @@
 #ifndef __BACKGROUND_SMG__
 #define __BACKGROUND_SMG__
 
-#include "background.h"
 #include "common.h"
+#include "background.h"
 
 /**
  * Boilerplate for C++
