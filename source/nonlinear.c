@@ -3252,7 +3252,7 @@ int nonlinear_hmcode(
   delta_c = delta_c*(1.+0.0123*log10(Omega_m)); //Nakamura & Suto (1997) fitting formula for LCDM models (as in Mead 2016)
   delta_c = delta_c*(1.+0.262*fnu); //Mead et al. (2016; arXiv 1602.02154) neutrino addition
 
-  Delta_v_0_lcdm = 418.;
+  Delta_v_0 = 418.;
 
   #ifdef HAS_HI_CLASS_SMG
   // If smg, correct the LCDM virialized overdensity
@@ -3260,15 +3260,9 @@ int nonlinear_hmcode(
     class_call(nonlinear_hmcode_correct_Delta_v_0_smg(
         pba,
         z_at_tau,
-        Delta_v_0_lcdm,
         & Delta_v_0
         ),
         pnl->error_message, pnl->error_message);
-  }
-  else{
-  #endif
-    Delta_v_0 = Delta_v_0_lcdm;
-  #ifdef HAS_HI_CLASS_SMG
   }
   #endif
 

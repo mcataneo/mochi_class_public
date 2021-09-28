@@ -644,71 +644,18 @@ int perturb_init(
              ppt->error_message);
 
 
+  #ifdef HAS_HI_CLASS_SMG
   //Here we do the smg tests. It is important to have them after perturb_indices_of_perturbs because we need
   //quantities as k_min and k_max.
   if (pba->has_smg == _TRUE_) {
-
-    class_test(ppt->gauge == newtonian,
-               ppt->error_message,
-               "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
-
-    class_test(ppr->a_ini_test_qs_smg < ppr->a_ini_over_a_today_default,
-              ppt->error_message,
-              "The initial time for testing the QS approximation (qs_smg) must be bigger than the background initial time (a_ini_test_qs_smg>=a_ini_over_a_today_default).");
-
-    if ( ppt->pert_initial_conditions_smg == gravitating_attr ){
-      class_test_except((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
-                 ppt->error_message,
-                 perturb_free_nosource(ppt),
-                 "Isocurvature initial conditions for early modified gravity (Gravitating Attractor) not implemented.");
-    }
-
-
-    // TODO: think of some suitable tests for the scalar field
-
-    if (ppt->method_qs_smg == automatic) {
-      //Check if at the initial time all the k modes start with the same kind of qs_smg approximation
-      class_call_except(perturb_test_ini_qs_smg(ppr,
-                                               pba,
-                                               ppt,
-                                               ppt->k[ppt->index_md_scalars][0],
-                                               ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
-                                               ppr->a_ini_test_qs_smg),
-                 ppt->error_message,
-                 ppt->error_message,
-                 perturb_free_nosource(ppt));
-    }
-
-    if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==_TRUE_))) {
-
-      // if scalar is dynamical or always quasi-static, test for stability at the initial time.
-      // Only in the case it is QS because of a trigger test (through "automatic" method_qs),
-      // we already know mass is positive and therefore can assume it is stable, so skip this.
-
-      if( ppt->pert_initial_conditions_smg == gravitating_attr){
-      // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
-      // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and
-      // the initial amplitude supplied to hi_class.
-        class_call_except(perturb_test_ini_grav_ic_smg(ppr,
-            pba,
-            ppt),
-          ppt->error_message,
-          ppt->error_message,
-        perturb_free_nosource(ppt));
-      }
-      else if( ppt->pert_initial_conditions_smg == ext_field_attr){
-      //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
-      // If have it, fail, because we can't set the ICs properly
-
-        class_call_except(perturb_test_ini_extfld_ic_smg(ppr,
-                                                         pba,
-                                                         ppt),
-                ppt->error_message,
-                ppt->error_message,
-                perturb_free_nosource(ppt));
-      }
-    }
+    class_call_except(perturb_tests_smg(ppr,
+        pba,
+        ppt),
+      ppt->error_message,
+      ppt->error_message,
+    perturb_free_nosource(ppt));
   }
+  #endif
 
   if (ppt->z_max_pk > pth->z_rec) {
 
@@ -1175,7 +1122,6 @@ int perturb_indices_of_perturbs(
   ppt->has_source_delta_dcdm = _FALSE_;
   ppt->has_source_delta_fld = _FALSE_;
   ppt->has_source_delta_scf = _FALSE_;
-  ppt->has_source_phi_smg = _FALSE_;  //scalar field
   ppt->has_source_delta_dr = _FALSE_;
   ppt->has_source_delta_ur = _FALSE_;
   ppt->has_source_delta_idr = _FALSE_;
@@ -1190,7 +1136,6 @@ int perturb_indices_of_perturbs(
   ppt->has_source_theta_dcdm = _FALSE_;
   ppt->has_source_theta_fld = _FALSE_;
   ppt->has_source_theta_scf = _FALSE_;
-  ppt->has_source_phi_prime_smg = _FALSE_;  //scalar field
   ppt->has_source_theta_dr = _FALSE_;
   ppt->has_source_theta_ur = _FALSE_;
   ppt->has_source_theta_idr = _FALSE_;
@@ -1206,6 +1151,10 @@ int perturb_indices_of_perturbs(
   ppt->has_source_eta_prime = _FALSE_;
   ppt->has_source_H_T_Nb_prime = _FALSE_;
   ppt->has_source_k2gamma_Nb = _FALSE_;
+  #ifdef HAS_HI_CLASS_SMG
+  ppt->has_source_phi_smg = _FALSE_;
+  ppt->has_source_phi_prime_smg = _FALSE_;
+  #endif
 
   /** - source flags and indices, for sources that all modes have in
       common (temperature, polarization, ...). For temperature, the
@@ -1284,8 +1233,6 @@ int perturb_indices_of_perturbs(
           ppt->has_source_delta_scf = _TRUE_;
         if (pba->has_ur == _TRUE_)
           ppt->has_source_delta_ur = _TRUE_;
-	    if (pba->has_smg == _TRUE_)
-	      ppt->has_source_phi_smg = _TRUE_;
         if (pba->has_idr == _TRUE_)
           ppt->has_source_delta_idr = _TRUE_;
         if (pba->has_idm_dr == _TRUE_)
@@ -1294,6 +1241,10 @@ int perturb_indices_of_perturbs(
           ppt->has_source_delta_dr = _TRUE_;
         if (pba->has_ncdm == _TRUE_)
           ppt->has_source_delta_ncdm = _TRUE_;
+        #ifdef HAS_HI_CLASS_SMG
+        if (pba->has_smg == _TRUE_)
+	        ppt->has_source_phi_smg = _TRUE_;
+        #endif
         // Thanks to the following lines, (phi,psi) are also stored as sources
         // (Obtained directly in newtonian gauge, infereed from (h,eta) in synchronous gauge).
         // If density transfer functions are requested in the (default) CLASS format,
@@ -1315,8 +1266,6 @@ int perturb_indices_of_perturbs(
           ppt->has_source_theta_fld = _TRUE_;
         if (pba->has_scf == _TRUE_)
           ppt->has_source_theta_scf = _TRUE_;
-	if (pba->has_smg == _TRUE_)
-          ppt->has_source_phi_prime_smg = _TRUE_;
         if (pba->has_ur == _TRUE_)
           ppt->has_source_theta_ur = _TRUE_;
         if (pba->has_idr == _TRUE_)
@@ -1327,6 +1276,10 @@ int perturb_indices_of_perturbs(
           ppt->has_source_theta_dr = _TRUE_;
         if (pba->has_ncdm == _TRUE_)
           ppt->has_source_theta_ncdm = _TRUE_;
+        #ifdef HAS_HI_CLASS_SMG
+	      if (pba->has_smg == _TRUE_)
+          ppt->has_source_phi_prime_smg = _TRUE_;
+        #endif
       }
 
       if (ppt->has_cl_number_count == _TRUE_) {
@@ -1392,7 +1345,6 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_delta_dcdm, ppt->has_source_delta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_delta_fld,  ppt->has_source_delta_fld, index_type,1);
       class_define_index(ppt->index_tp_delta_scf,  ppt->has_source_delta_scf, index_type,1);
-      class_define_index(ppt->index_tp_phi_smg,    ppt->has_source_phi_smg,   index_type,1);
       class_define_index(ppt->index_tp_delta_dr,   ppt->has_source_delta_dr, index_type,1);
       class_define_index(ppt->index_tp_delta_ur,   ppt->has_source_delta_ur,  index_type,1);
       class_define_index(ppt->index_tp_delta_idr,  ppt->has_source_delta_idr, index_type,1);
@@ -1407,7 +1359,6 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_theta_dcdm, ppt->has_source_theta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_theta_fld,  ppt->has_source_theta_fld, index_type,1);
       class_define_index(ppt->index_tp_theta_scf,  ppt->has_source_theta_scf, index_type,1);
-      class_define_index(ppt->index_tp_phi_prime_smg,  ppt->has_source_phi_prime_smg, index_type,1);
       class_define_index(ppt->index_tp_theta_dr,   ppt->has_source_theta_dr,  index_type,1);
       class_define_index(ppt->index_tp_theta_ur,   ppt->has_source_theta_ur,  index_type,1);
       class_define_index(ppt->index_tp_theta_idr,  ppt->has_source_theta_idr, index_type,1);
@@ -1423,6 +1374,10 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_eta_prime,  ppt->has_source_eta_prime, index_type,1);
       class_define_index(ppt->index_tp_H_T_Nb_prime,ppt->has_source_H_T_Nb_prime,index_type,1);
       class_define_index(ppt->index_tp_k2gamma_Nb, ppt->has_source_k2gamma_Nb,index_type,1);
+      #ifdef HAS_HI_CLASS_SMG
+      class_define_index(ppt->index_tp_phi_smg,    ppt->has_source_phi_smg,   index_type,1);
+      class_define_index(ppt->index_tp_phi_prime_smg,  ppt->has_source_phi_prime_smg, index_type,1);
+      #endif
       ppt->tp_size[index_md] = index_type;
 
       class_test(index_type == 0,
@@ -2673,10 +2628,12 @@ int perturb_workspace_init(
       class_define_index(ppw->index_mt_alpha,_TRUE_,index_mt,1);         /* alpha = (h' + 6 tau') / (2 k**2) */
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
       class_define_index(ppw->index_mt_einstein00,_TRUE_,index_mt,1);
+      #ifdef HAS_HI_CLASS_SMG
       class_define_index(ppw->index_mt_x_smg,pba->has_smg,index_mt,1);   /* x_smg (can be dynamical or not) */
       class_define_index(ppw->index_mt_x_prime_smg,pba->has_smg,index_mt,1);   /* x_smg' (can be dynamical or not) */
       class_define_index(ppw->index_mt_x_prime_prime_smg,pba->has_smg,index_mt,1);   /* x_smg'' (passed to integrator) */
       class_define_index(ppw->index_mt_rsa_p_smg,pba->has_smg,index_mt,1);   /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
+      #endif
     }
 
   }
@@ -2726,7 +2683,9 @@ int perturb_workspace_init(
     class_define_index(ppw->index_ap_tca_idm_dr,pba->has_idm_dr,index_ap,1);
     class_define_index(ppw->index_ap_rsa_idr,pba->has_idr,index_ap,1);
 
+    #ifdef HAS_HI_CLASS_SMG
     class_define_index(ppw->index_ap_qs_smg,pba->has_smg,index_ap,1);
+    #endif
 
 }
 
@@ -2755,9 +2714,11 @@ int perturb_workspace_init(
     if (pba->has_ncdm == _TRUE_) {
       ppw->approx[ppw->index_ap_ncdmfa]=(int)ncdmfa_off;
     }
+    #ifdef HAS_HI_CLASS_SMG
     if (pba->has_smg == _TRUE_) {
       ppw->approx[ppw->index_ap_qs_smg]=(int)qs_smg_fd_0;
     }
+    #endif
   }
 
   if (_tensors_) {

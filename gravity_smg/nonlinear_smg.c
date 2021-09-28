@@ -3,7 +3,6 @@
 int nonlinear_hmcode_correct_Delta_v_0_smg(
   struct background *pba,
   double z_at_tau,
-  double Delta_v_0_lcdm,
   double * Delta_v_0
 ) {
 
@@ -22,11 +21,10 @@ int nonlinear_hmcode_correct_Delta_v_0_smg(
     fac = atan(pow(abs(omega-50.0)*0.001, 0.2))*2.0/acos(-1.0);
 
     // Fitting formula based on simulations
-    *Delta_v_0 = d0 + (Delta_v_0_lcdm - d0) * fac;
+    *Delta_v_0 = d0 + (*Delta_v_0 - d0) * fac;
   }
   else{
     printf("WARNING: Currently HMcode is implemented only for Brans-Dicke.\n");
-    *Delta_v_0 = Delta_v_0_lcdm;
   }
 
   return _SUCCESS_;

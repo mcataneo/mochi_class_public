@@ -11,6 +11,10 @@
 extern "C" {
 #endif
 
+int perturb_tests_smg(struct precision * ppr,
+                     struct background * pba,
+                     struct perturbs * ppt);
+
 int perturb_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
                                             struct perturbs * ppt,
                                             double k,
