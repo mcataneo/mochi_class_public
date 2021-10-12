@@ -3254,17 +3254,14 @@ int nonlinear_hmcode(
 
   Delta_v_0 = 418.;
 
-  #ifdef HAS_HI_CLASS_SMG
-  // If smg, correct the LCDM virialized overdensity
-  if(pba->has_smg == _TRUE_){
-    class_call(nonlinear_hmcode_correct_Delta_v_0_smg(
-        pba,
-        z_at_tau,
-        & Delta_v_0
-        ),
-        pnl->error_message, pnl->error_message);
-  }
-  #endif
+  // Correct the LCDM virialized overdensity
+  hi_class_call(
+    nonlinear_hmcode_correct_Delta_v_0_smg(
+      pba,
+      z_at_tau,
+      & Delta_v_0
+    ),
+    pnl->error_message, pnl->error_message, pba->has_smg == _TRUE_);
 
   // virialized overdensity
   Delta_v=Delta_v_0*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
@@ -3429,13 +3426,12 @@ int nonlinear_hmcode(
     //find growth rate at formation
     g_form = delta_c*growth/sigmaf_r[index_mass];
     if (g_form > 1.) g_form = 1.;
-    #ifdef HAS_HI_CLASS_SMG
     /** Here we correct the formation growth for extreme models where it is
         g_form is very little and outside the precumputed table. */
-    if (pba->has_smg == _TRUE_){
-      if (g_form < pnw->growtable[0]) g_form = pnw->growtable[0];
-    }
-    #endif
+    hi_class_exec_if(
+      g_form = pnw->growtable[0];,
+      (pba->has_smg == _TRUE_) && (g_form < pnw->growtable[0])
+    );
 
     //
     class_call(array_interpolate_two_arrays_one_column(
