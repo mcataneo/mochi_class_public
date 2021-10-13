@@ -3255,13 +3255,14 @@ int nonlinear_hmcode(
   Delta_v_0 = 418.;
 
   // Correct the LCDM virialized overdensity
-  hi_class_call(
+  hi_class_call_if(
     nonlinear_hmcode_correct_Delta_v_0_smg(
       pba,
       z_at_tau,
       & Delta_v_0
     ),
-    pnl->error_message, pnl->error_message, pba->has_smg == _TRUE_);
+    pnl->error_message, pnl->error_message,
+    pba->has_smg == _TRUE_);
 
   // virialized overdensity
   Delta_v=Delta_v_0*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)

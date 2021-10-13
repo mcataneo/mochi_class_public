@@ -124,52 +124,34 @@ int get_number_of_titles(char * titlestring);
   }                                                                                                              \
 }
 
-
-/* macros for calling hi_class code */
+/* main macro to execute hi_class code */
 #ifdef HAS_HI_CLASS_SMG
-
-/* macro for executing hi_class code */
 #define hi_class_exec(list_of_commands) {list_of_commands}
-
-/* macro for executing hi_class code if condition is satisfied */
-#define hi_class_exec_if(list_of_commands, condition) { \
-  if(condition) {list_of_commands} \
-}
-
-#define hi_class_call(function, error_message_from_function, error_message_output, condition) { \
-  hi_class_exec_if(                                                                             \
-    class_call(function, error_message_from_function, error_message_output),                    \
-    condition                                                                                   \
-  )                                                                                             \
-}
-
 #else
-
-/* if the code is compiled without hi_class these macro should be empty */
 #define hi_class_exec(list_of_commands)
-#define hi_class_exec_if(list_of_commands, condition)
-#define hi_class_call(function, error_message_from_function, error_message_output, condition)
-
 #endif
 
-// /* macro executing for calling function and returning error if it failed */
-// #define hi_class_exec_if_smg(list_of_commands, condition) { \
-//   if(condition) {list_of_commands}  \
-// }
-//
-// #define hi_class_exec_smg(list_of_commands, condition) {}
-// #ifdef HAS_HI_CLASS_SMG
-// #define _PIPPO_ 2.
-// #endif
+/* macro to execute hi_class code with condition */
+#define hi_class_exec_if(list_of_commands, condition) { \
+  hi_class_exec(                                        \
+    if(condition) {list_of_commands}                    \
+  )                                                     \
+}
 
-// #ifdef HAS_HI_CLASS_SMG                                                                                        \
-// #define hi_class_call_smg(function, condition, error_message_from_function, error_message_output) {              \
-//   if(condition){                                                                                                 \
-//     class_call(function, error_message_from_function, error_message_output);                                     \
-//   }                                                                                                              \
-// }
-// #endif                                                                                                         \
+/* macro to properly call an hi_class function with error handling */
+#define hi_class_call(function, error_message_from_function, error_message_output) { \
+  hi_class_exec(                                                                     \
+    class_call(function, error_message_from_function, error_message_output)          \
+  )                                                                                  \
+}
 
+/* macro to properly call an hi_class function with error handling and with condition */
+#define hi_class_call_if(function, error_message_from_function, error_message_output, condition) { \
+  hi_class_exec_if(                                                                                \
+    class_call(function, error_message_from_function, error_message_output),                       \
+    condition                                                                                      \
+  )                                                                                                \
+}
 
 
 // Alloc

@@ -946,13 +946,13 @@ int background_indices(
   pba->has_dcdm = _FALSE_;
   pba->has_dr = _FALSE_;
   pba->has_scf = _FALSE_;
-  pba->has_smg = _FALSE_; /*Scalar field*/
   pba->has_lambda = _FALSE_;
   pba->has_fld = _FALSE_;
   pba->has_ur = _FALSE_;
   pba->has_idr = _FALSE_;
   pba->has_idm_dr = _FALSE_;
   pba->has_curvature = _FALSE_;
+  hi_class_exec(pba->has_smg = _FALSE_; /*Scalar field*/);
 
   if (pba->Omega0_cdm != 0.)
     pba->has_cdm = _TRUE_;
@@ -965,9 +965,6 @@ int background_indices(
     if (pba->Gamma_dcdm != 0.)
       pba->has_dr = _TRUE_;
   }
-
-  if (pba->Omega0_smg != 0.)
-    pba->has_smg = _TRUE_;
 
   if (pba->Omega0_lambda != 0.)
     pba->has_lambda = _TRUE_;
@@ -986,6 +983,8 @@ int background_indices(
 
   if (pba->sgnK != 0)
     pba->has_curvature = _TRUE_;
+
+  hi_class_exec_if(pba->has_smg = _TRUE_;, pba->Omega0_smg != 0.);
 
   /** - initialize all indices */
 
@@ -1024,7 +1023,7 @@ int background_indices(
   class_define_index(pba->index_bg_rho_dr,pba->has_dr,index_bg,1);
 
   /* - indices for scalar field (modified gravity) */
-  hi_class_call(hi_class_define_indices_bg(pba, &index_bg),
+  hi_class_call_if(hi_class_define_indices_bg(pba, &index_bg),
     pba->error_message,
     pba->error_message,
     pba->has_smg == _TRUE_
@@ -1136,7 +1135,7 @@ int background_indices(
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
 
   /* - indices for scalar field (modified gravity) */
-  hi_class_call(hi_class_define_indices_bi(pba, &index_bi),
+  hi_class_call_if(hi_class_define_indices_bi(pba, &index_bi),
     pba->error_message,
     pba->error_message,
     pba->has_smg == _TRUE_
@@ -1976,239 +1975,23 @@ int background_solve(
              pba->error_message,
              pba->error_message);
 
-/** - second loop over lines, overwrite derivatives that can't be analytically computed from background_functions
-   * Fill the derivatives of the Bellini-Sawicki functions in pvecback
-   * This is done just by overwriting the pvecback entries corresponding to the relevant indice
-   */
+  hi_class_call_if(background_hi_class_second_loop(pba,pvecback),
+   pba->error_message,
+   pba->error_message,
+   pba->has_smg == _TRUE_
+  );
 
-  double * pvecback_derivs;
-  class_alloc(pvecback_derivs,pba->bg_size*sizeof(double),pba->error_message);
+  hi_class_call_if(background_stability_tests_smg(pba,pvecback,pvecback_integration),
+    pba->error_message,
+    pba->error_message,
+    pba->has_smg == _TRUE_
+  );
 
-  for (i=0; i < pba->bt_size; i++) {
-
-    // write the derivatives in the structure
-    class_call(array_derivate_spline(pba->tau_table, // x_array
-				     pba->bt_size, // int n_lines
-				     pba->background_table, // array
-				     pba->d2background_dtau2_table, // double * array_splined
-				     pba->bg_size, // n_columns
-				     pba->tau_table[i], // double x -> tau
-				     &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
-				     pvecback_derivs, // double * result
-				     pba->bg_size, //result_size, from 1 to n_columns
-				     pba->error_message),
-		pba->error_message,
-		pba->error_message);
-
-    /* - indices for scalar field (modified gravity) */
-    hi_class_call(background_derivs_smg(pba, pvecback, pvecback_derivs, i),
-      pba->error_message,
-      pba->error_message,
-      pba->has_smg == _TRUE_
-    );
-
-    hi_class_call(background_gravity_functions_A_C_smg(pba,pvecback,pvecback_derivs,i),
-      pba->error_message,
-      pba->error_message,
-      pba->has_smg == _TRUE_
-    );
-
-  }
-
-  /* Horndeski stability tests
-  * only if not overriden
-  * and model is tuned!
-  */
-  if ((pba->has_smg == _TRUE_) &&
-      (pba->parameters_tuned_smg == _TRUE_) &&
-      (pba->skip_stability_tests_smg == _FALSE_)){
-
-    class_test_except(pba->min_D_smg <= -fabs(pba->D_safe_smg),
-        pba->error_message,
-        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
-        "Ghost instability for scalar field perturbations with minimum D=%g \n",pba->min_D_smg);
-    class_test_except(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
-        pba->error_message,
-        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
-        "Gradient instability for scalar field perturbations with minimum c_s^2=%g \n",pba->min_cs2_smg);
-    class_test_except(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
-        pba->error_message,
-        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
-        "Ghost instability for metric tensor perturbations with minimum M*^2=%g \n",pba->min_M2_smg);
-    class_test_except(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
-        pba->error_message,
-        free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
-        "Gradient instability for metric tensor perturbations with minimum c_t^2=%g \n",pba->min_ct2_smg);
-
-   }
-
-   /* Yet another (third!) loop to make sure the background table makes sense
-   */
-  for (i=0; i < pba->bt_size; i++) {
-
-    if (pba->has_smg == _TRUE_){
-
-
-      //write the derivatives in the structure
-      class_call(array_derivate_spline(pba->tau_table, // x_array
-				       pba->bt_size, // int n_lines
-				       pba->background_table, // array
-				       pba->d2background_dtau2_table, // double * array_splined
-				       pba->bg_size, // n_columns
-				       pba->tau_table[i], // double x -> tau
-				       &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
-				       pvecback_derivs, // double * result
-				       pba->bg_size, //result_size, from 1 to n_columns
-				       pba->error_message),
-		  pba->error_message,
-		  pba->error_message);
-
-      //cs2num'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
-			      &pvecback_derivs[pba->index_bg_cs2num_smg],
-			      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
-               pba->error_message,
-               "cannot copy data back to pba->background_table");
-
-       //D'
-       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-  			      &pvecback_derivs[pba->index_bg_kinetic_D_smg],
-  			      1*sizeof(double));
-       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-                pba->error_message,
-                "cannot copy data back to pba->background_table");
-
-       //D_over_phiphi'
-       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
-  			      &pvecback_derivs[pba->index_bg_kinetic_D_over_phiphi_smg],
-  			      1*sizeof(double));
-       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
-                pba->error_message,
-                "cannot copy data back to pba->background_table");
-
-       //A9'
-       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A9_prime_smg,
-       	      &pvecback_derivs[pba->index_bg_A9_smg],
-       	      1*sizeof(double));
-       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A9_prime_smg,
-              pba->error_message,
-              "cannot copy data back to pba->background_table");
-
-      //A10'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A10_prime_smg,
-      	      &pvecback_derivs[pba->index_bg_A10_smg],
-      	      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A10_prime_smg,
-             pba->error_message,
-             "cannot copy data back to pba->background_table");
-
-     //A12'
-     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A12_prime_smg,
-     	      &pvecback_derivs[pba->index_bg_A12_smg],
-     	      1*sizeof(double));
-     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A12_prime_smg,
-            pba->error_message,
-            "cannot copy data back to pba->background_table");
-
-      //A13'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A13_prime_smg,
-      	      &pvecback_derivs[pba->index_bg_A13_smg],
-      	      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A13_prime_smg,
-             pba->error_message,
-             "cannot copy data back to pba->background_table");
-
-       //C9'
-       memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C9_prime_smg,
-       	      &pvecback_derivs[pba->index_bg_C9_smg],
-       	      1*sizeof(double));
-       class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C9_prime_smg,
-              pba->error_message,
-              "cannot copy data back to pba->background_table");
-
-      //C10'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C10_prime_smg,
-      	      &pvecback_derivs[pba->index_bg_C10_smg],
-      	      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C10_prime_smg,
-             pba->error_message,
-             "cannot copy data back to pba->background_table");
-
-      //C12'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C12_prime_smg,
-      	      &pvecback_derivs[pba->index_bg_C12_smg],
-      	      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C12_prime_smg,
-            pba->error_message,
-            "cannot copy data back to pba->background_table");
-
-      //C13'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C13_prime_smg,
-      	      &pvecback_derivs[pba->index_bg_C13_smg],
-      	      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C13_prime_smg,
-             pba->error_message,
-             "cannot copy data back to pba->background_table");
-
-      //lambda_2'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
-      	      &pvecback_derivs[pba->index_bg_lambda_2_smg],
-      	      1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
-             pba->error_message,
-             "cannot copy data back to pba->background_table");
-
-      //lambda_8'
-      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
-            &pvecback_derivs[pba->index_bg_lambda_8_smg],
-            1*sizeof(double));
-      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
-            pba->error_message,
-           "cannot copy data back to pba->background_table");
-
-           //lambda_9'
-           memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
-           	      &pvecback_derivs[pba->index_bg_lambda_9_smg],
-           	      1*sizeof(double));
-           class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
-                  pba->error_message,
-                  "cannot copy data back to pba->background_table");
-
-          //lambda_11'
-          memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_prime_smg,
-          	      &pvecback_derivs[pba->index_bg_lambda_11_smg],
-          	      1*sizeof(double));
-          class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_prime_smg,
-                 pba->error_message,
-                 "cannot copy data back to pba->background_table");
-
-    }
-
-
-     class_call(background_at_tau(pba,
-				   pba->tau_table[i],
-				   pba->long_info,
-				   pba->inter_normal,
-				   &last_index, //should be no problem to use the same one as for the derivatives
-				   pvecback),
-		 pba->error_message,
-		 pba->error_message);
-
-     // check if any of the values becomes nan
-    int j = 0;
-    while (j < pba->bg_size){
-	  class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
-               pba->error_message,
-               free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
-               "pvecback[%i] = %e at a = %e in background!",j,pvecback[j],pvecback[pba->index_bg_a]);
-	 j++;
-	}
-
-  }
-
-  free(pvecback_derivs);  //free the structure
-
+  hi_class_call_if(background_hi_class_third_loop(pba,pvecback,pvecback_integration),
+   pba->error_message,
+   pba->error_message,
+   pba->has_smg == _TRUE_
+  );
 
   /** - compute remaining "related parameters"
    *     - so-called "effective neutrino number", computed at earliest
@@ -2299,7 +2082,6 @@ int background_initial_conditions(
   double scf_lambda;
   double rho_fld_today;
   double w_fld,dw_over_da_fld,integral_fld;
-  double phi_scale, V_scale,p1,p2,p3; //smg related variables
   int i = 0;
 
   /** - fix initial value of \f$ a \f$ */
@@ -2386,264 +2168,11 @@ int background_initial_conditions(
     }
   }
 
-/** - fix initial value of modified gravity
-   * run over all possible model cases
-   */
-  if(pba->has_smg == _TRUE_){
-
-    pba->initial_conditions_set_smg = _FALSE_;
-
-    //default value, can override later
-    if (pba->M_pl_evolution_smg ==_TRUE_){
-      pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
-    }
-
-    switch (pba->gravity_model_smg) {
-
-      case quintessence_monomial:
-	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[3];
-	  pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[2]*pba->H0;
-	break;
-
-    case quintessence_tracker:
-
-        /* Tracker quintessence at early times
-        *  V = H0^2/h^2* V0 * phi^-n exp(lambda*phi^m)
-        *
-        *  log(V/V0) = lambda phi^m - n log (phi)
-        *
-        *  choose phi_ini so V = P_ini*sqrt(rho_rad)
-        *  choose phi_prime_ini so K = K_ini*sqrt(rho_rad)
-        *
-        * initial guess: phi_ini = (log(rho_rad/H0^2)/lambda)^(1/m))
-        * then adjust to the right potential using Newton's method
-        *
-        */
-
-        p1 = pba->parameters_smg[3];// n
-        p2 = pba->parameters_smg[4]; //m
-        p3 = pba->parameters_smg[5]; //lambda
-//         phi_scale = gsl_sf_lambert_W0(10);
-
-        //initial guess
-        phi_scale = pow(log(rho_rad/pba->parameters_smg[2]/pow(pba->H0/pba->h,2)/p3), 1./pba->parameters_smg[4]);
-
-        //log of the potential
-        V_scale =100;//start off at a high value
-
-        //do a newton root finding
-        while (i < 100){
-
-            V_scale = p3*pow(phi_scale,p2) - p1*log(phi_scale) - pba->parameters_smg[1]*log(rho_rad/pba->parameters_smg[2]/pow(pba->H0/pba->h,2));
-
-            if (fabs(V_scale) < 1e-5)
-                break;
-
-            phi_scale -= (V_scale)/((p3*p2*pow(phi_scale,p2)-p1)/phi_scale);
-            i++;
-        }
-//         printf("V_scale %e, i %i \n",V_scale,i);
-
-        pvecback_integration[pba->index_bi_phi_smg] = phi_scale;
-        pvecback_integration[pba->index_bi_phi_prime_smg] = -a*sqrt(pba->parameters_smg[0]*2*rho_rad);
-
-	break;
-
-      case alpha_attractor_canonical:
-    // Note: we are using as input parameters f = phi/sqrt(alpha)
-	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[1]*sqrt(pba->parameters_smg[2]);
-	  pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[0]*pba->H0;
-	break;
-
-
-      /* Attractor IC: H\dot\phi = constant = H_0^2 \xi
-       * phi_prime = xi*a*H_0^2/H (\dot\phi = phi_prime/a)
-       * assumes H = sqrt(rho_rad) initially
-       *
-       * if attractor ICs change xi to fit some attractor value n = 0 with
-       *
-       * n/H0 = xi(c2 - 6c3 xi + 18c4 xi^2 + 5c5 xi^4)
-       *
-       * This is done at the level of background_initial_conditions
-       * (this function does not seem to get access to the parameter being varied!)
-       *
-       * We pick the nonzero xi closest to the user's given value!
-       */
-
-      case galileon:
-
-	if(pba->attractor_ic_smg == _TRUE_){
-
-	  double xi = pba->parameters_smg[0];
-	  double c2 = pba->parameters_smg[2];
-	  double c3 = pba->parameters_smg[3];
-	  double c4 = pba->parameters_smg[4];
-	  double c5 = pba->parameters_smg[5];
-
-	  double x[3];
-	  double Omega_smg;
-	  int complex;
-	  int i;
-	  double mindiff = 1e100;
-
-	  double xi_start = xi;
-
-	  //Don't use poly_3_split, is bad unless c3 tiny!
-	  rf_solve_poly_3(5.*c5,18.*c4,-6.*c3,1.*c2,x,&complex);
-
-	  if (pba->background_verbose > 2)
-	  {
-	    printf(" galileon attractor \n");
-	    printf(" c5 = %.2e, c4 = %.2e, c3 = %.3e, c2 = %.3e \n ",c5,c4,c3,c2);
-	    printf(" Solutions (complex = %i): \n",complex);
-	  }
-
-	  for (i=0; i<3;i+=1){
-	    Omega_smg = pow(x[i],2)*(c2/6. -2.*c3*x[i] +15./2.*c4*pow(x[i],2) + 7./3.*c5*pow(x[i],3));
-	    if (x[i]!=0 && fabs(x[i]-xi)<mindiff){
-	      xi_start = x[i];
-	      mindiff = fabs(x[i]-xi);
-	    }
-	    if (pba->background_verbose > 2)
-	      printf("  xi_%i = %e, Omega_* = %.2e \n",i, x[i],Omega_smg);
-	  }
-	  if (pba->background_verbose > 2)
-	    printf(" Dealer's pick: xi = %e (wish = %e) \n",xi_start,xi);
-	  pvecback_integration[pba->index_bi_phi_prime_smg] = a*xi_start*pow(pba->H0,2)/sqrt(rho_rad);
-	}
-	else
-    {/* non attractor ICs */
-	  pvecback_integration[pba->index_bi_phi_prime_smg] = a*pba->parameters_smg[0]*pow(pba->H0,2)/sqrt(rho_rad);
-	}
-	//phi is irrelevant
-	  pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[6];
-
-	break;
-      /* BD IC: note that the field value is basically the planck mass,
-       * so its initial value should be around 1
-       * the derivative we take to be zero, but this can be extended
-       */
-      case brans_dicke:
-	pvecback_integration[pba->index_bi_phi_smg] = pba->parameters_smg[2];
-	pvecback_integration[pba->index_bi_phi_prime_smg] = pba->parameters_smg[3];
-	break;
-
-    case nkgb:
-      {
-      /* Action is
-
-        -X + 1/n * g^[(2n-1)/2] Lambda (X/Lambda^4)^n box(phi)
-
-        with Lambda^(4n-1)=MPl^(2n-1)*H0^2n
-
-        g was picked like this so that it approx. remains g*Omega_smg0 ~ O(1) for all n
-
-        Since the energy density in KGB must be >0, then -inf<xi0<1 and the combination xicomb>0
-        The alpha descrition breaks down for phidot=0, so we assume this is never crossed
-
-        This all implies that phidot on the attractor has the same sign as g, and therefore
-        phi dot always has the same sign as g.
-
-        Rshift0 = (phidot0*J0)/rho_smg0, i.e. fraction of the DE energy-density today in the shift-charge as opposed to the vacuum part
-
-      */
-
-        double g = pba->parameters_smg[0];
-        double n = pba->parameters_smg[1];
-        double Rshift0 = pba->parameters_smg[2];
-
-        double H = sqrt(rho_rad); //TODO: for low n -> need to solve tracker + Constraint simultaneously. Increasing H (e.g. double H = 10*sqrt(rho_rad);) works for n~0.65.
-        double H0 = pba->H0;
-
-        double signg = copysign(1.,g);
-        g=fabs(g);
-        double Rshiftcomb = (2.-Rshift0)/(2.*(1.-Rshift0));
-
-        double phidot0=0., phidot_attr_init= 0., charge_init=0., phidot_init=0.;
-
-        phidot0 = signg * sqrt(2./g)*H0 * pow(Rshiftcomb/(3*sqrt(2)),1./(2.*n-1.));             // value of phidot today, if xi0=0, then this is attractor
-        phidot_attr_init = signg * sqrt(2./g)*H0 * pow(H0/(3.*sqrt(2.)*H),1./(2.*n-1.));    // value of phidot on attractor at initial time
-        charge_init  = phidot0*Rshift0/(2*(1-Rshift0))*pow(a,-3);    // implied value of required shift charge initially
-
-        if(fabs(charge_init/phidot_attr_init)<1.){
-          /* test if initial shift charge is large c.f. the on-attractor phidot. If no, we are nearly on attractor
-          at initial time anyway, so just correct the attractor solution slightly
-          if yes, then we are off-attractor and then we have approximate analytic solution in limit of
-          n_init >> phidot. For the range n_init ~ phidot just use the solution for large shift charge.
-          by the late universe, this will be an irrelevant error. */
-
-          phidot_init = phidot_attr_init + charge_init/(2.*n-1.);
-        }
-        else{
-          phidot_init = signg * pow( fabs(charge_init) * pow(fabs(phidot_attr_init),2.*n-1.),1./(2.*n));
-        }
-
-        pvecback_integration[pba->index_bi_phi_smg] = 0.0; //shift-symmetric, i.e. this is irrelevant
-        pvecback_integration[pba->index_bi_phi_prime_smg] = a*phidot_init ;
-      }
-      break;
-
-      case propto_omega:
-	pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
-	break;
-
-      case propto_scale:
-	pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
-	break;
-
-      case constant_alphas:
-	pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
-	break;
-
-      case eft_alphas_power_law:
-	pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
-	break;
-
-      case eft_gammas_power_law:
-	pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
-	break;
-      case eft_gammas_exponential:
-	pvecback_integration[pba->index_bi_delta_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -2.;
-	break;
-    }
-
-    if (pba->field_evolution_smg == _TRUE_){
-      if (pba->background_verbose>3)
-	printf(" -> Initial conditions: phi = %e, phi' = %e \n",pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_prime_smg]);
-
-      class_test_except(!isfinite(pvecback_integration[pba->index_bi_phi_smg]) || !isfinite(pvecback_integration[pba->index_bi_phi_smg]),
-		 pba->error_message,
-     free(pvecback);free(pvecback_integration);background_free(pba),
-		 "initial phi = %e phi_prime = %e -> check initial conditions",
-		 pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_smg]);
-   }
-      if (pba->M_pl_evolution_smg == _TRUE_)
-	if (pba->background_verbose>3)
-	  printf(" -> Initial conditions: delta_M_pl = %e \n",pvecback_integration[pba->index_bi_delta_M_pl_smg]);
-
-      if (pba->rho_evolution_smg == _TRUE_){
-
-	//DT: moved here from the definition of wowa_w model, to avoid pvecback[pba->index_bg_rho_smg] mix up
-	if (pba->expansion_model_smg == wowa_w)
-	  {
-	    double Omega_const_smg = pba->parameters_smg[0];
-	    double w0 = pba->parameters_smg[1];
-	    double wa = pba->parameters_smg[2];
-
-	    double w_smg = w0+(1.-a)*wa;
-	    double wi = w0+wa;
-	    double wf = w0;
-	    double rho_smg_today = Omega_const_smg * pow(pba->H0,2);
-	    double integral_smg = 3.*((1.+ wi)*log(1./a) + (wi-wf)*(a-1.));
-	    pvecback_integration[pba->index_bi_rho_smg] = rho_smg_today * exp(integral_smg);
-	  }
-        else
-          {
-	    pvecback_integration[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_smg];
-	  }
-      }
-
-  }//end of smg
+  hi_class_call_if(background_initial_conditions_smg(pba, pvecback, pvecback_integration,rho_rad),
+    pba->error_message,
+    pba->error_message,
+    pba->has_smg == _TRUE_
+  );
 
   if (pba->has_fld == _TRUE_){
 
@@ -2886,116 +2415,11 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"gr.fac. D",_TRUE_);
   class_store_columntitle(titles,"gr.fac. f",_TRUE_);
 
-  class_store_columntitle(titles,"(.)rho_smg",pba->has_smg);
-  class_store_columntitle(titles,"(.)p_smg",pba->has_smg);
-
-
-  if (pba->output_background_smg >= 1){
-    class_store_columntitle(titles,"M*^2_smg",pba->has_smg);
-    class_store_columntitle(titles,"D_M*^2_smg",pba->has_smg);
-    class_store_columntitle(titles,"kineticity_smg",pba->has_smg);
-    class_store_columntitle(titles,"braiding_smg",pba->has_smg);
-    class_store_columntitle(titles,"tensor_excess_smg",pba->has_smg);
-    class_store_columntitle(titles,"Mpl_running_smg",pba->has_smg);
-    class_store_columntitle(titles,"beyond_horndeski_smg",pba->has_smg);
-    class_store_columntitle(titles,"c_s^2",pba->has_smg);
-    class_store_columntitle(titles,"kin (D)",pba->has_smg);
-    class_store_columntitle(titles,"Current",pba->field_evolution_smg);
-    class_store_columntitle(titles,"Shift",pba->field_evolution_smg);
-  }
-
-  if (pba->output_background_smg >= 2){
-    class_store_columntitle(titles,"phi_smg",pba->field_evolution_smg);
-    class_store_columntitle(titles,"phi'",pba->field_evolution_smg);
-    class_store_columntitle(titles,"phi''",pba->field_evolution_smg);
-    class_store_columntitle(titles,"E0",pba->field_evolution_smg);
-    class_store_columntitle(titles,"E1",pba->field_evolution_smg);
-    class_store_columntitle(titles,"E2",pba->field_evolution_smg);
-    class_store_columntitle(titles,"E3",pba->field_evolution_smg);
-    class_store_columntitle(titles,"P0",pba->field_evolution_smg);
-    class_store_columntitle(titles,"P1",pba->field_evolution_smg);
-    class_store_columntitle(titles,"P2",pba->field_evolution_smg);
-    class_store_columntitle(titles,"R0",pba->field_evolution_smg);
-    class_store_columntitle(titles,"R1",pba->field_evolution_smg);
-    class_store_columntitle(titles,"R2",pba->field_evolution_smg);
-    class_store_columntitle(titles,"G_eff_smg",pba->has_smg);
-    class_store_columntitle(titles,"slip_eff_smg",pba->has_smg);
-  }
-
-  //TODO: add in output background trigger
-  if (pba->output_background_smg >= 3){
-    class_store_columntitle(titles,"kineticity_prime_smg",pba->has_smg);
-    class_store_columntitle(titles,"braiding_prime_smg",pba->has_smg);
-    class_store_columntitle(titles,"kineticity_over_phiphi_smg",pba->field_evolution_smg);
-    class_store_columntitle(titles,"braiding_over_phi_smg",pba->field_evolution_smg);
-    class_store_columntitle(titles,"beyond_horndeski_over_phi_smg",pba->field_evolution_smg);
-    class_store_columntitle(titles,"kin_over_phiphi (D)",pba->field_evolution_smg);
-    class_store_columntitle(titles,"A0",pba->has_smg);
-    class_store_columntitle(titles,"A1",pba->has_smg);
-    class_store_columntitle(titles,"A2",pba->has_smg);
-    class_store_columntitle(titles,"A3",pba->has_smg);
-    class_store_columntitle(titles,"A4",pba->has_smg);
-    class_store_columntitle(titles,"A5",pba->has_smg);
-    class_store_columntitle(titles,"A6",pba->has_smg);
-    class_store_columntitle(titles,"A7",pba->has_smg);
-    class_store_columntitle(titles,"A8",pba->has_smg);
-    class_store_columntitle(titles,"A9",pba->has_smg);
-    class_store_columntitle(titles,"A10",pba->has_smg);
-    class_store_columntitle(titles,"A11",pba->has_smg);
-    class_store_columntitle(titles,"A12",pba->has_smg);
-    class_store_columntitle(titles,"A13",pba->has_smg);
-    class_store_columntitle(titles,"A14",pba->has_smg);
-    class_store_columntitle(titles,"A15",pba->has_smg);
-    class_store_columntitle(titles,"A16",pba->has_smg);
-    class_store_columntitle(titles,"B0",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B1",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B2",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B3",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B4",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B5",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B6",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B7",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B8",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B9",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B10",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B11",pba->field_evolution_smg);
-    class_store_columntitle(titles,"B12",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C0",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C1",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C2",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C3",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C4",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C5",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C6",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C7",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C8",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C9",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C10",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C11",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C12",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C13",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C14",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C15",pba->field_evolution_smg);
-    class_store_columntitle(titles,"C16",pba->field_evolution_smg);
-    class_store_columntitle(titles,"lambda_1",pba->has_smg);
-    class_store_columntitle(titles,"lambda_2",pba->has_smg);
-    class_store_columntitle(titles,"lambda_3",pba->has_smg);
-    class_store_columntitle(titles,"lambda_4",pba->has_smg);
-    class_store_columntitle(titles,"lambda_5",pba->has_smg);
-    class_store_columntitle(titles,"lambda_6",pba->has_smg);
-    class_store_columntitle(titles,"lambda_7",pba->has_smg);
-    class_store_columntitle(titles,"lambda_8",pba->has_smg);
-    class_store_columntitle(titles,"lambda_9",pba->has_smg);
-    class_store_columntitle(titles,"lambda_10",pba->has_smg);
-    class_store_columntitle(titles,"lambda_11",pba->has_smg);
-    class_store_columntitle(titles,"lambda_2_p",pba->has_smg);
-    class_store_columntitle(titles,"lambda_8_p",pba->has_smg);
-    class_store_columntitle(titles,"lambda_9_p",pba->has_smg);
-    class_store_columntitle(titles,"lambda_11_p",pba->has_smg);
-    class_store_columntitle(titles,"cs2num",pba->has_smg);
-    class_store_columntitle(titles,"cs2num_p",pba->has_smg);
-  }
-
+  hi_class_call_if(hi_class_store_columntitles(pba, titles),
+    pba->error_message,
+    pba->error_message,
+    pba->has_smg == _TRUE_
+  );
 
   return _SUCCESS_;
 }
@@ -3056,113 +2480,11 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_D],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_f],_TRUE_,storeidx);
 
-    class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],pba->has_smg,storeidx);
-    class_store_double(dataptr,pvecback[pba->index_bg_p_smg],pba->has_smg,storeidx);
-
-    if (pba->output_background_smg >= 1){
-      class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_delta_M2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_current_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_shift_smg],pba->field_evolution_smg,storeidx);
-    }
-
-    if (pba->output_background_smg >= 2){
-      class_store_double(dataptr,pvecback[pba->index_bg_phi_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_phi_prime_prime_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_E0_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_E1_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_E2_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_E3_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_P0_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_P1_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_P2_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_R0_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_R1_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_R2_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_G_eff_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_slip_eff_smg],pba->has_smg,storeidx);
-    }
-
-    if (pba->output_background_smg >= 3){
-      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_prime_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_braiding_prime_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_kineticity_over_phiphi_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_braiding_over_phi_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_over_phi_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_over_phiphi_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A0_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A1_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A3_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A4_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A5_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A6_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A7_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A8_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A9_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A10_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A11_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A12_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A13_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A14_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A15_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_A16_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B0_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B1_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B2_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B3_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B4_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B5_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B6_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B7_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B8_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B9_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B10_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B11_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_B12_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C0_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C1_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C2_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C2_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C3_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C4_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C5_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C6_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C7_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C8_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C9_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C10_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C11_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C12_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C13_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C15_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_C16_smg],pba->field_evolution_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_1_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_3_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_4_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_5_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_6_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_7_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_9_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_10_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_11_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_2_prime_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_8_prime_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_9_prime_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_lambda_11_prime_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_cs2num_smg],pba->has_smg,storeidx);
-      class_store_double(dataptr,pvecback[pba->index_bg_cs2num_prime_smg],pba->has_smg,storeidx);
-    }
+    hi_class_call_if(hi_class_store_doubles(pba, pvecback, dataptr, &storeidx),
+      pba->error_message,
+      pba->error_message,
+      pba->has_smg == _TRUE_
+    );
 
   }
 
