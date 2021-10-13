@@ -5,6 +5,10 @@
 
 #include "input.h"
 
+#ifdef HAS_HI_CLASS_SMG
+#include "hi_class.h"
+#endif
+
 /**
  * Use this routine to extract initial parameters from files 'xxx.ini'
  * and/or 'xxx.pre'. They can be the arguments of the main() routine.
