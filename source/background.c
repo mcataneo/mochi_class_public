@@ -464,7 +464,17 @@ int background_functions(
       that densities are all expressed in units of \f$ [3c^2/8\pi G] \f$, ie
       \f$ \rho_{class} = [8 \pi G \rho_{physical} / 3 c^2]\f$
       NOTE: different computation if scalar field is present */
-  if (pba->has_smg == _FALSE_){
+  if_hi_class_exec_else(pba->has_smg == _TRUE_,
+
+    class_call(background_gravity_functions_smg(pba,
+              pvecback_B,
+              return_format,
+              pvecback,
+              &rho_tot,
+              &p_tot,
+              &rho_de),
+      pba->error_message,
+      pba->error_message);, // end of hi_class
 
     if (pba->hubble_evolution == _TRUE_)
       pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H]; //sqrt(rho_tot-pba->K/a/a);
@@ -473,39 +483,7 @@ int background_functions(
 
     /** - compute derivative of H with respect to conformal time: friction added */
     pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a - a* pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - (rho_tot-pba->K/a/a) );
-  }
-  /* Scalar field */
-  /** if (has_smg) do all the mess to compute the Hubble rate, etc... */
-  else{
-
-//       /** - save rho_tot and p_tot without smg (it is important that smg is the last thing to be computed) */
-      pvecback[pba->index_bg_rho_tot_wo_smg] = rho_tot;
-      pvecback[pba->index_bg_p_tot_wo_smg] = p_tot;
-      //NOTE: add the field energy and pressure after the debug has been added
-
-      #ifdef HAS_HI_CLASS_SMG
-      class_call(background_gravity_functions_smg(pba,
-  					    pvecback_B,
-  					    return_format,
-  					    pvecback),
-  	    pba->error_message,
-        pba->error_message);
-      #endif
-
-    rho_tot += pvecback[pba->index_bg_rho_smg];
-    p_tot += pvecback[pba->index_bg_p_smg];
-    //divide relativistic & nonrelativistic (not very meaningful for oscillatory models)
-
-    //TODO: need to define menaingfully -> separate early universe (IC, BBN...) from late (Halofit...)
-    //BUG: causes problem with halofit!, if not, causes bug with Brans-Dicke
-    rho_de += pvecback[pba->index_bg_rho_smg];
-
-    /** - compute w_smg */
-    if (pba->rho_evolution_smg == _FALSE_) {
-      pvecback[pba->index_bg_w_smg] = pvecback[pba->index_bg_p_smg] / pvecback[pba->index_bg_rho_smg];
-    }
-
-}
+  );
 
   /* Total energy density*/
   pvecback[pba->index_bg_rho_tot] = rho_tot;
@@ -539,7 +517,8 @@ int background_functions(
 
     /** - compute critical density */
     pvecback[pba->index_bg_rho_crit] = rho_tot-pba->K/a/a;
-    class_test(pvecback[pba->index_bg_rho_crit] <= 0. && (pba->has_smg == _FALSE_),
+    class_test(pvecback[pba->index_bg_rho_crit] <= 0.
+      hi_class_exec(&& (pba->has_smg == _FALSE_)),
                pba->error_message,
                "rho_crit = %e instead of strictly positive",pvecback[pba->index_bg_rho_crit]);
 
@@ -909,13 +888,9 @@ int background_free_input(
     if (pba->scf_parameters != NULL)
       free(pba->scf_parameters);
   }
-  if (pba->Omega0_smg != 0.){
-    if (pba->parameters_smg != NULL)
-      free(pba->parameters_smg);
-    //dealocate parameters_2_smg only for parameterizations
-    if (pba->field_evolution_smg == _FALSE_ && pba->parameters_2_smg != NULL)
-      free(pba->parameters_2_smg);
-  }
+  hi_class_exec_if(pba->Omega0_smg != 0.,
+    background_free_smg(pba);
+  );
   return _SUCCESS_;
 }
 
@@ -984,7 +959,7 @@ int background_indices(
   if (pba->sgnK != 0)
     pba->has_curvature = _TRUE_;
 
-  hi_class_exec_if(pba->has_smg = _TRUE_;, pba->Omega0_smg != 0.);
+  hi_class_exec_if(pba->Omega0_smg != 0., pba->has_smg = _TRUE_;);
 
   /** - initialize all indices */
 
@@ -1023,10 +998,10 @@ int background_indices(
   class_define_index(pba->index_bg_rho_dr,pba->has_dr,index_bg,1);
 
   /* - indices for scalar field (modified gravity) */
-  hi_class_call_if(hi_class_define_indices_bg(pba, &index_bg),
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    hi_class_define_indices_bg(pba, &index_bg),
     pba->error_message,
-    pba->error_message,
-    pba->has_smg == _TRUE_
+    pba->error_message
   );
 
   /* - indices for scalar field */
@@ -1135,10 +1110,10 @@ int background_indices(
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
 
   /* - indices for scalar field (modified gravity) */
-  hi_class_call_if(hi_class_define_indices_bi(pba, &index_bi),
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    hi_class_define_indices_bi(pba, &index_bi),
     pba->error_message,
-    pba->error_message,
-    pba->has_smg == _TRUE_
+    pba->error_message
   );
 
   /* -> energy density in fluid */
@@ -1975,22 +1950,22 @@ int background_solve(
              pba->error_message,
              pba->error_message);
 
-  hi_class_call_if(background_hi_class_second_loop(pba,pvecback),
-   pba->error_message,
-   pba->error_message,
-   pba->has_smg == _TRUE_
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    background_hi_class_second_loop(pba, pvecback),
+    pba->error_message,
+    pba->error_message
   );
 
-  hi_class_call_if(background_stability_tests_smg(pba,pvecback,pvecback_integration),
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    background_stability_tests_smg(pba, pvecback, pvecback_integration),
     pba->error_message,
-    pba->error_message,
-    pba->has_smg == _TRUE_
+    pba->error_message
   );
 
-  hi_class_call_if(background_hi_class_third_loop(pba,pvecback,pvecback_integration),
-   pba->error_message,
-   pba->error_message,
-   pba->has_smg == _TRUE_
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    background_hi_class_third_loop(pba, pvecback, pvecback_integration),
+    pba->error_message,
+    pba->error_message
   );
 
   /** - compute remaining "related parameters"
@@ -2021,23 +1996,11 @@ int background_solve(
              pba->Omega0_dr+pba->Omega0_dcdm,pba->Omega0_dcdmdr);
       printf("     -> Omega_ini_dcdm/Omega_b = %f\n",pba->Omega_ini_dcdm/pba->Omega0_b);
     }
-    if (pba->has_smg == _TRUE_){
-      printf(" -> Omega_smg = %f, wanted %f ",pvecback[pba->index_bg_rho_smg]/pvecback[pba->index_bg_rho_crit], pba->Omega0_smg);
-      if(pba->has_lambda == _TRUE_)
-	printf(", Omega_Lambda = %f", pba->Omega0_lambda);
-      printf("\n");
-      if (pba->background_verbose > 3) {
-	printf("Minimal stability values: cs2 = %g, ct2 = %g, D = %g, M2 = %g \n",pba->min_cs2_smg,pba->min_ct2_smg,pba->min_D_smg,pba->min_M2_smg);
-      }
-
-      if (pba->field_evolution_smg == _TRUE_){
-          pba->xi_0_smg = pvecback_integration[pba->index_bi_phi_prime_smg]*pvecback[pba->index_bg_H]/pow(pba->H0,2);
-          pba->phi_0_smg = pvecback_integration[pba->index_bi_phi_smg];
-      }
-
-      background_gravity_parameters(pba);
-
-    }
+    hi_class_call_if(pba->has_smg == _TRUE_,
+      background_print_smg(pba, pvecback, pvecback_integration),
+      pba->error_message,
+      pba->error_message
+    );
   }
 
   /**  - total matter, radiation, dark energy today */
@@ -2168,10 +2131,10 @@ int background_initial_conditions(
     }
   }
 
-  hi_class_call_if(background_initial_conditions_smg(pba, pvecback, pvecback_integration,rho_rad),
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    background_initial_conditions_smg(pba, pvecback, pvecback_integration,&rho_rad),
     pba->error_message,
-    pba->error_message,
-    pba->has_smg == _TRUE_
+    pba->error_message
   );
 
   if (pba->has_fld == _TRUE_){
@@ -2231,18 +2194,16 @@ int background_initial_conditions(
 
   /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation */
   if (pba->hubble_evolution == _TRUE_){
-   if(pba->has_smg == _TRUE_){
-     pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];
-    }
-    else {
+    if_hi_class_exec_else(pba->has_smg == _TRUE_,
+      pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];,
+
       pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
       pvecback_integration[pba->index_bi_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
-    }
+    );
   }
 
   /* Declare the smg initial conditions as set */
-  if (pba->has_smg)
-    pba->initial_conditions_set_smg = _TRUE_;
+  hi_class_exec_if(pba->has_smg, pba->initial_conditions_set_smg = _TRUE_;);
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
@@ -2415,10 +2376,10 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"gr.fac. D",_TRUE_);
   class_store_columntitle(titles,"gr.fac. f",_TRUE_);
 
-  hi_class_call_if(hi_class_store_columntitles(pba, titles),
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    hi_class_store_columntitles(pba, titles),
     pba->error_message,
-    pba->error_message,
-    pba->has_smg == _TRUE_
+    pba->error_message
   );
 
   return _SUCCESS_;
@@ -2480,10 +2441,10 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_D],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_f],_TRUE_,storeidx);
 
-    hi_class_call_if(hi_class_store_doubles(pba, pvecback, dataptr, &storeidx),
+    hi_class_call_if(pba->has_smg == _TRUE_,
+      hi_class_store_doubles(pba, pvecback, dataptr, &storeidx),
       pba->error_message,
-      pba->error_message,
-      pba->has_smg == _TRUE_
+      pba->error_message
     );
 
   }
@@ -2557,11 +2518,6 @@ int background_derivs(
   /** - calculate /f$ t' = a /f$ */
   dy[pba->index_bi_time] = y[pba->index_bi_a];
 
-  /** - calculate /f$ \rho'= -3aH (1+w) \rho /f$ */
-  if (pba->rho_evolution_smg == _TRUE_){
-    dy[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_prime_smg];
-  }
-
   class_test(pvecback[pba->index_bg_rho_g] <= 0.,
              error_message,
              "rho_g = %e instead of strictly positive",pvecback[pba->index_bg_rho_g]);
@@ -2591,16 +2547,11 @@ int background_derivs(
       y[pba->index_bi_a]*pba->Gamma_dcdm*y[pba->index_bi_rho_dcdm];
   }
 
-  /** - Scalar field equation: \f$ \phi'' + 2 a H \phi' + a^2 dV = 0 \f$  (note H is wrt cosmic time)**/
-  if (pba->has_smg == _TRUE_){
-    if(pba->field_evolution_smg){
-      dy[pba->index_bi_phi_smg] = y[pba->index_bi_phi_prime_smg];
-      dy[pba->index_bi_phi_prime_smg] = pvecback[pba->index_bg_phi_prime_prime_smg];
-    }
-    /** - Planck mass equation (if parameterization in terms of alpha_m **/
-    if (pba->M_pl_evolution_smg == _TRUE_)
-      dy[pba->index_bi_delta_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
-  }
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    background_derivs_smg(pba, pvecback, y, dy),
+    pba->error_message,
+    pba->error_message
+  );
 
   if (pba->has_fld == _TRUE_) {
     /** - Compute fld density \f$ \rho' = -3aH (1+w_{fld}(a)) \rho \f$ */
@@ -2613,135 +2564,6 @@ int background_derivs(
     dy[pba->index_bi_phi_prime_scf] = - y[pba->index_bi_a]*
       (2*pvecback[pba->index_bg_H]*y[pba->index_bi_phi_prime_scf]
        + y[pba->index_bi_a]*dV_scf(pba,y[pba->index_bi_phi_scf])) ;
-  }
-
-  return _SUCCESS_;
-
-}
-
-
-int background_gravity_parameters(
-				  struct background *pba
-				  ){
-
-  switch (pba->gravity_model_smg) {
-
-   case quintessence_monomial:
-     printf("Modified gravity: quintessence_monomial with parameters: \n");
-     printf("-> N = %g, V0 = %g, V0* = %g, phi_prime_ini = %g, phi_ini = %g \n",
-	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[1]*pow(pba->H0/pba->h,2),
-	    pba->parameters_smg[2], pba->parameters_smg[3]);
-     break;
-
-   case quintessence_tracker:
-     printf("Modified gravity: quintessence_tracker with parameters: \n");
-     printf("-> K_ini = %g, P_ini = %g, V0 = %g, V0* = %g, n = %g, m = %g, lambda=%g  \n",
-	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[2]*pow(pba->H0/pba->h,2),
-	    pba->parameters_smg[2], pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]);
-     break;
-
-   case alpha_attractor_canonical:
-     printf("Modified gravity: alpha_attractor_canonical with parameters: \n");
-     printf("-> f = phi/sqrt(alpha) \n");
-     printf("-> phi_prime_ini = %g, f_ini = %g, alpha = %g, c = %g, p = %g, n = %g \n",
-	    pba->parameters_smg[0], pba->parameters_smg[1], pba->parameters_smg[2],
-	    pba->parameters_smg[3], pba->parameters_smg[4], pba->parameters_smg[5]);
-     break;
-
-   case galileon:
-     printf("Modified gravity: covariant Galileon with parameters: \n");
-     printf(" -> c_1 = %g, c_2 = %g, c_3 = %g \n    c_4 = %g, c_5 = %g, xi_ini = %g (xi_end = %g) \n",
-	    pba->parameters_smg[1],pba->parameters_smg[2],pba->parameters_smg[3],pba->parameters_smg[4],pba->parameters_smg[5],pba->parameters_smg[0], pba->xi_0_smg);
-     break;
-
-   case brans_dicke:
-     printf("Modified gravity: Brans Dicke with parameters: \n");
-     printf(" -> Lambda = %g, omega_BD = %g, \n    phi_ini = %g (phi_0 = %g), phi_prime_ini = %g \n",
-	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2],pba->phi_0_smg,pba->parameters_smg[3]);
-     break;
-
-    case nkgb:
-     printf("Modified gravity: Kinetic Gravity Braiding with K=-X and G=1/n g^(2n-1)/2 * X^n with parameters: \n");
-     printf(" -> g = %g, n = %g, phi_ini = 0.0, smg density fraction from shift charge term = %g. \n",
-	    pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
-     break;
-
-   case propto_omega:
-     printf("Modified gravity: propto_omega with parameters: \n");
-     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
-	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
-	    pba->parameters_2_smg[4]);
-     break;
-
-   case propto_scale:
-     printf("Modified gravity: propto_scale with parameters: \n");
-     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
-	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
-	    pba->parameters_2_smg[4]);
-     break;
-
-   case constant_alphas:
-     printf("Modified gravity: constant_alphas with parameters: \n");
-     printf(" -> c_K = %g, c_B = %g, c_M = %g, c_T = %g, M_*^2_init = %g \n",
-	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
-	    pba->parameters_2_smg[4]);
-     break;
-
-   case eft_alphas_power_law:
-     printf("Modified gravity: eft_alphas_power_law with parameters: \n");
-     printf(" -> M_*^2_0 = %g, c_K = %g, c_B = %g, c_T = %g, M_*^2_exp = %g, c_K_exp = %g, c_B_exp = %g, c_T_exp = %g\n",
-	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],
-	    pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
-     break;
-
-   case eft_gammas_power_law:
-     printf("Modified gravity: eft_gammas_power_law with parameters: \n");
-     printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
-	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
-     break;
-
-   case eft_gammas_exponential:
-     printf("Modified gravity: eft_gammas_exponential with parameters: \n");
-     printf(" -> Omega_0 = %g, gamma_1 = %g, gamma_2 = %g, gamma_3 = %g, Omega_0_exp = %g, gamma_1_exp = %g, gamma_2_exp = %g, gamma_3_exp = %g \n",
-	    pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
-     break;
-
-   default:
-       printf("Modified gravity: output not implemented in background_gravity_parameters() \n");
-
-
-  }
-
-  if(pba->field_evolution_smg==_FALSE_) {
-    switch (pba->expansion_model_smg) {
-
-    case lcdm:
-      printf("Parameterized model with LCDM expansion \n");
-      printf("-> Omega_smg = %f \n",pba->parameters_smg[0]);
-      break;
-
-      case wowa:
-      printf("Parameterized model with CPL expansion \n");
-      printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
-	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
-      break;
-
-      case wowa_w:
-      printf("Parameterized model with CPL expansion \n");
-      printf("-> Omega_smg = %f, w0 = %f, wa = %e \n",
-	     pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
-      break;
-
-      case wede:    //ILSWEDE
-      printf("Parameterized model with variable EoS + Early DE \n");
-      printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
-      break;
-
-      default:
-       printf("Parameterized model: expansion hisotry output not implemented in background_gravity_parameters() \n");
-
-    }
-
   }
 
   return _SUCCESS_;
@@ -2944,7 +2766,9 @@ int background_output_budget(
       }
     }
 
-    if(pba->has_lambda || pba->has_fld || pba->has_scf || pba->has_smg || pba->has_curvature){
+    if(pba->has_lambda || pba->has_fld || pba->has_scf || pba->has_curvature
+      hi_class_exec(|| pba->has_smg)
+    ){
       printf(" ---> Other Content \n");
     }
     if(pba->has_lambda){
@@ -2963,10 +2787,10 @@ int background_output_budget(
       _class_print_species_("Spatial Curvature",k);
       budget_other+=pba->Omega0_k;
     }
-    if(pba->has_smg){
+    hi_class_exec_if(pba->has_smg == _TRUE_,
       _class_print_species_("Scalar Modified Gravity",smg);
       budget_other+=pba->Omega0_smg;
-    }
+    );
 
     printf(" ---> Total budgets \n");
     printf(" Radiation                        Omega = %-15g , omega = %-15g \n",budget_radiation,budget_radiation*pba->h*pba->h);

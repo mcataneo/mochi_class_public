@@ -15,7 +15,10 @@ int background_gravity_functions_smg(
         struct background *pba,
         double * pvecback_B,
         short return_format,
-        double * pvecback
+        double * pvecback,
+        double * ptr_rho_tot,
+        double * ptr_p_tot,
+        double * ptr_rho_de
         );
 
 int hi_class_define_indices_bg(
@@ -28,7 +31,7 @@ int hi_class_define_indices_bi(
 				int * index_bi
 			  );
 
-int background_derivs_smg(
+int background_derivs_alphas_smg(
 				struct background *pba,
         double * pvecback,
         double * pvecback_derivs,
@@ -63,7 +66,7 @@ int background_initial_conditions_smg(
         struct background *pba,
         double * pvecback,
         double * pvecback_integration,
-        double rho_rad
+        double * ptr_rho_rad
         );
 
 int hi_class_store_columntitles(
@@ -75,9 +78,29 @@ int hi_class_store_doubles(
 				struct background *pba,
         double * pvecback,
         double * dataptr,
-        int * storeidx
+        int * ptr_storeidx
 			  );
 
+int background_gravity_parameters(
+			  struct background *pba
+			  );
+
+int background_free_smg(
+			  struct background *pba
+			  );
+
+int background_print_smg(
+			  struct background *pba,
+				double * pvecback,
+        double * pvecback_integration
+			);
+
+int background_derivs_smg(
+			  struct background *pba,
+				double * pvecback,
+				double * y,
+				double * dy
+			);
 
 #ifdef __cplusplus
 }

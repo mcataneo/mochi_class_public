@@ -710,10 +710,6 @@ extern "C" {
 					int species
 				    );
 
-  int background_gravity_parameters(
-				  struct background *pba
-				  );
-
   int background_solve(
 		       struct precision *ppr,
 		       struct background *pba

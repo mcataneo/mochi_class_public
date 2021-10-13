@@ -126,13 +126,13 @@ int get_number_of_titles(char * titlestring);
 
 /* main macro to execute hi_class code */
 #ifdef HAS_HI_CLASS_SMG
-#define hi_class_exec(list_of_commands) {list_of_commands}
+#define hi_class_exec(list_of_commands) list_of_commands
 #else
 #define hi_class_exec(list_of_commands)
 #endif
 
 /* macro to execute hi_class code with condition */
-#define hi_class_exec_if(list_of_commands, condition) { \
+#define hi_class_exec_if(condition, list_of_commands) { \
   hi_class_exec(                                        \
     if(condition) {list_of_commands}                    \
   )                                                     \
@@ -146,11 +146,20 @@ int get_number_of_titles(char * titlestring);
 }
 
 /* macro to properly call an hi_class function with error handling and with condition */
-#define hi_class_call_if(function, error_message_from_function, error_message_output, condition) { \
+#define hi_class_call_if(condition, function, error_message_from_function, error_message_output) { \
   hi_class_exec_if(                                                                                \
-    class_call(function, error_message_from_function, error_message_output),                       \
-    condition                                                                                      \
+    condition,                                                                                     \
+    class_call(function, error_message_from_function, error_message_output)                        \
   )                                                                                                \
+}
+
+/* macro to execute hi_class code with condition (this should switch on hi_class) and else */
+// TODO_EB: think of a better name and structure. This way the code is prone to bugs, e.g.
+// if someone decides to have pba->has_smg == _FALSE_ as their condition
+#define if_hi_class_exec_else(condition, list_of_commands_hiclass, list_of_commands_else) { \
+  hi_class_exec(if(condition) {list_of_commands_hiclass})                                        \
+  hi_class_exec(else {) list_of_commands_else                                        \
+  hi_class_exec(}) \
 }
 
 
