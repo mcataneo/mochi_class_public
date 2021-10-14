@@ -263,10 +263,10 @@ int perturb_test_ini_qs_smg(struct precision * ppr,
 int perturb_find_scheme_qs_smg(struct precision * ppr,
                                struct background * pba,
                                struct perturbs * ppt,
+                               struct perturb_workspace * ppw,
                                double k,
                                double tau_ini,
-                               double tau_end,
-                               double * tau_export) {
+                               double tau_end) {
 
         int size_sample = ppr->n_max_qs_smg;
 
@@ -400,14 +400,14 @@ int perturb_find_scheme_qs_smg(struct precision * ppr,
 
         /**
          * Input: real approx_scheme and tau_scheme
-         * Output: approx scheme (tau_export) adjusted to fit the implemented one
+         * Output: approx scheme (ppw->tau_scheme_qs_smg) adjusted to fit the implemented one
          **/
         fit_real_scheme_qs_smg(
                 tau_end,
                 approx_scheme,
                 tau_scheme,
                 size_scheme,
-                tau_export
+                ppw->tau_scheme_qs_smg
                 );
 
         free(tau_scheme);

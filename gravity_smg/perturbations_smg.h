@@ -42,10 +42,10 @@ int perturb_test_ini_qs_smg(struct precision * ppr,
 int perturb_find_scheme_qs_smg(struct precision * ppr,
                               struct background * pba,
                               struct perturbs * ppt,
+                              struct perturb_workspace * ppw,
                               double k,
                               double tau_ini,
-                              double tau_end,
-                              double * tau_scheme_qs_smg);
+                              double tau_end);
 
 int sample_functions_qs_smg(struct precision * ppr,
                            struct background * pba,

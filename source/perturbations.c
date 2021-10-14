@@ -2865,9 +2865,6 @@ int perturb_solve(
 
   int n_ncdm,is_early_enough;
 
-  /* array that contains the quasi-static approximation scheme */
-  double * tau_scheme_qs_smg;
-
   /* function pointer to ODE evolver and names of possible evolvers */
 
   extern int evolver_rk();
@@ -3051,17 +3048,17 @@ int perturb_solve(
   /** - find the intervals over which the approximation scheme for qs_smg is constant */
 
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
-  class_alloc(tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
+  class_alloc(ppw->tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
 
   if (pba->has_smg == _TRUE_) {
     if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
     class_call(perturb_find_scheme_qs_smg(ppr,
                                          pba,
 				                                 ppt,
+                                         ppw,
                                          k,
                                          tau,
-                                         ppt->tau_sampling[tau_actual_size-1],
-                                         tau_scheme_qs_smg),
+                                         ppt->tau_sampling[tau_actual_size-1]),
                ppt->error_message,
                ppt->error_message);
     }
@@ -3083,8 +3080,7 @@ int perturb_solve(
                                                tau,
                                                ppt->tau_sampling[tau_actual_size-1],
                                                &interval_number,
-                                               interval_number_of,
-                                               tau_scheme_qs_smg),
+                                               interval_number_of),
              ppt->error_message,
              ppt->error_message);
 
@@ -3108,13 +3104,12 @@ int perturb_solve(
                                                  interval_number,
                                                  interval_number_of,
                                                  interval_limit,
-                                                 interval_approx,
-                                                 tau_scheme_qs_smg),
+                                                 interval_approx),
              ppt->error_message,
              ppt->error_message);
 
   free(interval_number_of);
-  free(tau_scheme_qs_smg);
+  free(ppw->tau_scheme_qs_smg);
 
   /** - fill the structure containing all fixed parameters, indices
       and workspaces needed by perturb_derivs */
@@ -3436,8 +3431,7 @@ int perturb_find_approximation_number(
                                       double tau_ini,
                                       double tau_end,
                                       int * interval_number,
-                                      int * interval_number_of, /* interval_number_of[index_ap] (already allocated) */
-                                      double * tau_scheme_qs_smg
+                                      int * interval_number_of /* interval_number_of[index_ap] (already allocated) */
                                       ){
 
   /** Summary: */
@@ -3462,8 +3456,7 @@ int perturb_find_approximation_number(
                                       index_md,
                                       k,
                                       tau_ini,
-                                      ppw,
-                                      tau_scheme_qs_smg),
+                                      ppw),
                ppt->error_message,
                ppt->error_message);
 
@@ -3476,8 +3469,7 @@ int perturb_find_approximation_number(
                                       index_md,
                                       k,
                                       tau_end,
-                                      ppw,
-                                      tau_scheme_qs_smg),
+                                      ppw),
                ppt->error_message,
                ppt->error_message);
 
@@ -3531,8 +3523,7 @@ int perturb_find_approximation_switches(
                                         int interval_number,
                                         int * interval_number_of,
                                         double * interval_limit, /* interval_limit[index_interval] (already allocated) */
-                                        int ** interval_approx,   /* interval_approx[index_interval][index_ap] (already allocated) */
-                                        double * tau_scheme_qs_smg
+                                        int ** interval_approx   /* interval_approx[index_interval][index_ap] (already allocated) */
                                         ){
 
   /** Summary: */
@@ -3560,8 +3551,7 @@ int perturb_find_approximation_switches(
                                     index_md,
                                     k,
                                     tau_ini,
-                                    ppw,
-                                    tau_scheme_qs_smg),
+                                    ppw),
              ppt->error_message,
              ppt->error_message);
 
@@ -3611,8 +3601,7 @@ int perturb_find_approximation_switches(
                                               index_md,
                                               k,
                                               mid,
-                                              ppw,
-                                              tau_scheme_qs_smg),
+                                              ppw),
                        ppt->error_message,
                        ppt->error_message);
 
@@ -3675,8 +3664,7 @@ int perturb_find_approximation_switches(
                                         index_md,
                                         k,
                                         0.5*(interval_limit[index_switch]+interval_limit[index_switch+1]),
-                                        ppw,
-                                        tau_scheme_qs_smg),
+                                        ppw),
 
                  ppt->error_message,
                  ppt->error_message);
@@ -3784,8 +3772,7 @@ int perturb_find_approximation_switches(
                                       index_md,
                                       k,
                                       tau_end,
-                                      ppw,
-                                      tau_scheme_qs_smg),
+                                      ppw),
 
                ppt->error_message,
                ppt->error_message);
@@ -6831,8 +6818,7 @@ int perturb_approximations(
                            int index_md,
                            double k,
                            double tau,
-                           struct perturb_workspace * ppw,
-                           double * tau_scheme_qs_smg
+                           struct perturb_workspace * ppw
                            ) {
   /** Summary: */
 
@@ -7018,25 +7004,25 @@ int perturb_approximations(
      if (pba->has_smg == _TRUE_){
        if (ppt->method_qs_smg == automatic) {
 
-         if (tau >= tau_scheme_qs_smg[6]) {
+         if (tau >= ppw->tau_scheme_qs_smg[6]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_6;
          }
-         else if (tau >= tau_scheme_qs_smg[5]) {
+         else if (tau >= ppw->tau_scheme_qs_smg[5]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_5;
          }
-         else if (tau >= tau_scheme_qs_smg[4]) {
+         else if (tau >= ppw->tau_scheme_qs_smg[4]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_4;
          }
-         else if (tau >= tau_scheme_qs_smg[3]) {
+         else if (tau >= ppw->tau_scheme_qs_smg[3]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_3;
          }
-         else if (tau >= tau_scheme_qs_smg[2]) {
+         else if (tau >= ppw->tau_scheme_qs_smg[2]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_2;
          }
-         else if (tau >= tau_scheme_qs_smg[1]) {
+         else if (tau >= ppw->tau_scheme_qs_smg[1]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_qs_1;
          }
-         else if (tau >= tau_scheme_qs_smg[0]) {
+         else if (tau >= ppw->tau_scheme_qs_smg[0]) {
            ppw->approx[ppw->index_ap_qs_smg] = (int)qs_smg_fd_0;
          }
        }
