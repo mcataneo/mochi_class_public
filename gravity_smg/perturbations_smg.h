@@ -267,6 +267,49 @@ int perturb_get_h_prime_ic_from_00(
   double delta_rho_tot
 			 );
 
+int perturb_approximations_smg(
+  struct perturbs * ppt,
+  struct perturb_workspace * ppw,
+  double tau
+);
+
+int perturb_einstein_smg(
+  struct precision * ppr,
+  struct background * pba,
+  struct thermo * pth,
+  struct perturbs * ppt,
+  struct perturb_workspace * ppw,
+  double k,
+  double tau,
+  double * y
+);
+
+int perturb_einstein_tensor_smg(
+  struct background * pba,
+  struct perturb_workspace * ppw,
+  double k,
+  double tau,
+  double * y
+);
+
+int perturb_print_variables_smg(
+  struct background * pba,
+  struct perturbs * ppt,
+  struct perturb_workspace * ppw,
+  double k,
+  double tau,
+  double * dataptr,
+  int * ptr_storeidx
+);
+
+int perturb_derivs_smg(
+  struct perturbs * ppt,
+  struct perturb_workspace * ppw,
+  struct perturb_vector * pv,
+  double * dy,
+  double * pvecmetric
+);
+
 #ifdef __cplusplus
 }
 #endif
