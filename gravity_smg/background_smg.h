@@ -69,12 +69,12 @@ int background_initial_conditions_smg(
         double * ptr_rho_rad
         );
 
-int hi_class_store_columntitles(
+int background_store_columntitles_smg(
 				struct background *pba,
 				char titles[_MAXTITLESTRINGLENGTH_]
 			  );
 
-int hi_class_store_doubles(
+int background_store_doubles_smg(
 				struct background *pba,
         double * pvecback,
         double * dataptr,

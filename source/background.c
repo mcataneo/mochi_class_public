@@ -2377,7 +2377,7 @@ int background_output_titles(struct background * pba,
   class_store_columntitle(titles,"gr.fac. f",_TRUE_);
 
   hi_class_call_if(pba->has_smg == _TRUE_,
-    hi_class_store_columntitles(pba, titles),
+    background_store_columntitles_smg(pba, titles),
     pba->error_message,
     pba->error_message
   );
@@ -2442,7 +2442,7 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_f],_TRUE_,storeidx);
 
     hi_class_call_if(pba->has_smg == _TRUE_,
-      hi_class_store_doubles(pba, pvecback, dataptr, &storeidx),
+      background_store_doubles_smg(pba, pvecback, dataptr, &storeidx),
       pba->error_message,
       pba->error_message
     );

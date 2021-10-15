@@ -153,6 +153,14 @@ int get_number_of_titles(char * titlestring);
   )                                                                                                \
 }
 
+/* macro to properly call an hi_class function with error handling and with condition */
+#define hi_class_call_if_except(condition, function, error_message_from_function, error_message_output, list_of_excepts) { \
+  hi_class_exec_if(                                                                                \
+    condition,                                                                                     \
+    class_call_except(function, error_message_from_function, error_message_output, list_of_excepts)                        \
+  )                                                                                                \
+}
+
 /* macro to execute hi_class code with condition (this should switch on hi_class) and else */
 // TODO_EB: think of a better name and structure. This way the code is prone to bugs, e.g.
 // if someone decides to have pba->has_smg == _FALSE_ as their condition

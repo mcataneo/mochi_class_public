@@ -139,6 +139,134 @@ int get_x_x_prime_qs_smg(
                         double k, double * x_qs_smg, double * x_prime_qs_smg
                         );
 
+int hi_class_define_indices_tp(
+         struct perturbs * ppt,
+				 int * index_type
+			 );
+
+int hi_class_define_indices_mt(
+        struct perturb_workspace * ppw,
+				int * index_mt
+			 );
+
+int perturb_hi_class_qs(struct precision * ppr,
+                       struct background * pba,
+                       struct perturbs * ppt,
+                       struct perturb_workspace * ppw,
+                       double k,
+                       double * tau_ini,
+                       double tau_end);
+
+int perturb_store_columntitles_smg(
+				struct perturbs * ppt
+			  );
+
+// int perturb_store_doubles_smg(
+// 				struct background *pba,
+//        double * pvecback,
+//        double * dataptr,
+//        int * ptr_storeidx
+// 			  );
+
+int perturb_verbose_qs_smg(
+				struct perturbs * ppt,
+        struct perturb_workspace * ppw,
+        double k,
+        double tau_switch,
+        int * ap_ini,
+        int * ap_end
+			  );
+
+int hi_class_define_indices_pt(
+      struct perturb_workspace * ppw,
+      struct perturb_vector * ppv,
+			int * index_pt
+			);
+
+int perturb_vector_init_smg(
+      struct perturb_workspace * ppw,
+      struct perturb_vector * ppv,
+      int * pa_old
+			);
+
+int perturb_adiabatic_ic_smg(
+      struct precision * ppr,
+      struct background * pba,
+      struct perturbs * ppt,
+      struct perturb_workspace * ppw,
+      double * ptr_eta,
+      double * ptr_delta_ur,
+      double * ptr_theta_ur,
+      double * ptr_shear_ur,
+      double * ptr_l3_ur,
+      double * ptr_delta_dr,
+      double tau,
+      double k,
+      double fracnu,
+      double om,
+      double rho_r
+			 );
+
+int perturb_isocurvature_cdm_ic_smg(
+     struct precision * ppr,
+     struct background * pba,
+     struct perturbs * ppt,
+     struct perturb_workspace * ppw,
+     double tau,
+     double k,
+     double fraccdm,
+     double om
+			 );
+
+int perturb_isocurvature_b_ic_smg(
+    struct precision * ppr,
+    struct background * pba,
+    struct perturbs * ppt,
+    struct perturb_workspace * ppw,
+    double tau,
+    double k,
+    double fracb,
+    double om
+			 );
+
+int perturb_isocurvature_urd_ic_smg(
+   struct precision * ppr,
+   struct background * pba,
+   struct perturbs * ppt,
+   struct perturb_workspace * ppw,
+   double tau,
+   double k,
+   double fracnu,
+   double fracg,
+   double fracb,
+   double om
+			 );
+
+int perturb_isocurvature_urv_ic_smg(
+  struct precision * ppr,
+  struct background * pba,
+  struct perturbs * ppt,
+  struct perturb_workspace * ppw,
+  double tau,
+  double k,
+  double fracnu,
+  double fracg,
+  double fracb,
+  double om
+			 );
+
+int perturb_get_x_x_prime_newtonian(
+ struct perturb_workspace * ppw
+			 );
+
+int perturb_get_h_prime_ic_from_00(
+  struct background * pba,
+  struct perturb_workspace * ppw,
+  double k,
+  double eta,
+  double delta_rho_tot
+			 );
+
 #ifdef __cplusplus
 }
 #endif
