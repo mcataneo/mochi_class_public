@@ -278,10 +278,17 @@ int input_init(
    *
    */
 
+  #ifdef HAS_HI_CLASS_SMG
   char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
                                        "Omega_scf","Omega_smg","M_pl_today_smg","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
   char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
                                         "scf_shooting_parameter","shooting_parameter_smg","param_shoot_M_pl_smg","Omega_dcdmdr","omega_dcdmdr","A_s"};
+  #else
+  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
+                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
+  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
+                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s"};
+  #endif
   enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
                                         cs_background, cs_background, cs_background, cs_nonlinear};
 
@@ -291,7 +298,7 @@ int input_init(
   if (input_verbose >0) printf("Reading input parameters\n");
 
   /* for smg: no tuned parameters yet */
-  pba->parameters_tuned_smg = _FALSE_;
+  hi_class_exec(pba->parameters_tuned_smg = _FALSE_;);
 
   /** - Do we need to fix unknown parameters? */
   unknown_parameters_size = 0;
@@ -562,38 +569,14 @@ int input_init(
   }
 
   /* Now Horndeski should be tuned */
-  pba->parameters_tuned_smg = _TRUE_;
+  hi_class_exec(pba->parameters_tuned_smg = _TRUE_;);
 
 
-  /* Here we put a warning as we want to encourage hi_class users to get
-  h_prime from the trace of the Einstein ij equation than from the Einstein 00
-  equation. This is because the Einstein 00 equation has a gauge dependent
-  singularity that can be removed using the trace of the Einstein ij equation.
-  */
-  if (input_verbose > 0) {
-    if ((pba->has_smg == _TRUE_) && (ppt->get_h_from_trace == _FALSE_)) {
-      printf("\n");
-      printf("WARNING: you set get_h_from_trace to False.\n");
-      printf("While this is still accepted in hi_class, it can cause gauge dependent\n");
-      printf("singularities if your model crosses alphaB=2. For this reason in\n");
-      printf("future versions of the code this option will be removed and the\n");
-      printf("Einstein 00 equation will be used only to set the initial conditions\n");
-      printf("for h_prime and as a test to check that it is satisfied during the evolution.\n");
-      printf("On the other hand this is a safe choice if you want very large k modes\n");
-      printf("(typically k>10 Mpc^-1), where the constraint and the dynamical equations\n");
-      printf("disagree by a non negligible amount in some of the models studied.\n");
-      printf("\n");
-    }
-    else if ((pba->has_smg == _TRUE_) && (ppt->get_h_from_trace == _TRUE_)) {
-      printf("\n");
-      printf("WARNING: you set get_h_from_trace to True.\n");
-      printf("While this will be the default option in future versions of hi_class it might\n");
-      printf("be safer to set get_h_from_trace to False if you want very large k modes\n");
-      printf("(typically k>10 Mpc^-1). In this regime the constraint and the dynamical \n");
-      printf("equations disagree by a non negligible amount some of the models studied.\n");
-      printf("\n");
-    }
-  }
+  hi_class_call_if(pba->has_smg == _TRUE_,
+    input_warnings_smg(ppt->get_h_from_trace, input_verbose),
+    errmsg,
+    errmsg
+  );
 
   return _SUCCESS_;
 

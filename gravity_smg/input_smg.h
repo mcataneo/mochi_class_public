@@ -10,6 +10,12 @@
 extern "C" {
 #endif
 
+int input_warnings_smg(
+  int get_h_from_trace,
+  int input_verbose
+  );
+
+
 #ifdef __cplusplus
 }
 #endif
