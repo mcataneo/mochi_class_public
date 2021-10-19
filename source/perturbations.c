@@ -3956,9 +3956,9 @@ int perturb_vector_init(
 
     /* metric perturbation eta of synchronous gauge */
     class_define_index(ppv->index_pt_eta,ppt->gauge == synchronous,index_pt,1);
-    if (ppt->get_h_from_trace == _TRUE_) {
+    hi_class_exec_if(ppt->get_h_from_trace == _TRUE_,
       class_define_index(ppv->index_pt_h_prime_from_trace,ppt->gauge == synchronous,index_pt,1);
-    }
+    );
 
     /* metric perturbation phi of newtonian gauge ( we could fix it
        using Einstein equations as a constraint equation for phi, but
@@ -4383,9 +4383,10 @@ int perturb_vector_init(
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
 
-      if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_))
+      hi_class_exec_if((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_),
         ppv->y[ppv->index_pt_h_prime_from_trace] =
           ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace];
+      );
 
       if (ppt->gauge == newtonian)
         ppv->y[ppv->index_pt_phi] =
@@ -5653,7 +5654,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
       ppw->pv->y[ppw->pv->index_pt_eta] = eta;
 
-      if (ppt->get_h_from_trace == _TRUE_) {
+      hi_class_exec_if(ppt->get_h_from_trace == _TRUE_,
         // Define initial condition for h^\prime evolved from the Einstein trace equation
         // We should take into account also matter density otherwise we get percent differences
         /* TODO: think of adding all species in a more sysyematic way */
@@ -5666,7 +5667,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
           ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace] = (2.*pow(k, 2)*eta + 3.*a*a*delta_rho_tot)/a/ppw->pvecback[pba->index_bg_H];
         );
-      }
+      );
     }
 
 
@@ -6537,7 +6538,9 @@ int perturb_einstein(
     if (ppt->gauge == synchronous) {
 
       if_hi_class_exec_else(pba->has_smg == _TRUE_,
+
         perturb_einstein_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
+
         , // Standard equations
 
         /* first equation involving total density fluctuation */
@@ -6621,6 +6624,7 @@ int perturb_einstein(
       	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
       	  + y[ppw->pv->index_pt_eta]
       	  - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
+
       );
 
     } // end of synchronous
@@ -7465,13 +7469,13 @@ int perturb_sources(
                ppt->error_message,
                error_message);
 
-    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0)) {
+    hi_class_exec_if((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0),
       check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
       class_test(
         fabs(check_einstein00)>ppr->tol_einstein00_reldev,
         ppt->error_message,
         "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace==FALSE to get a consistent evolution. Otherwise you can increase tol_einstein00_reldev if you can tolerate larger deviations to this equation.", a_rel, k);
-    }
+    );
 
     /** - --> compute quantities depending on approximation schemes */
 
@@ -9463,11 +9467,9 @@ int perturb_derivs(double tau,
 
     }
 
-    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) {
-
+    hi_class_exec_if((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_),
       dy[pv->index_pt_h_prime_from_trace] = pvecmetric[ppw->index_mt_h_prime_prime];
-
-    }
+    );
 
     if (ppt->gauge == newtonian) {
 

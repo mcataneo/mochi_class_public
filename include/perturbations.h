@@ -513,10 +513,10 @@ struct perturbs
   or the equations with delta_phi (defined only with covariant theories)
   */
   short use_pert_var_deltaphi_smg;
-  #endif
 
   /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
   short get_h_from_trace;
+  #endif
 
 };
 
@@ -627,12 +627,12 @@ struct perturb_workspace
   int index_mt_eta_prime;     /**< eta' (wrt conf. time) in synchronous gauge */
   int index_mt_alpha;         /**< \f$ \alpha = (h' + 6 \eta') / (2 k^2) \f$ in synchronous gauge */
   int index_mt_alpha_prime;   /**< \f$ \alpha'\f$ wrt conf. time) in synchronous gauge */
-  int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_gw_prime_prime;/**< second derivative wrt conformal time of gravitational wave field, often called h */
   int index_mt_V_prime;       /**< derivative of Newtonian gauge vector metric perturbation V */
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
 
   #ifdef HAS_HI_CLASS_SMG
+  int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_x_smg;       /**< scalar field perturbation */
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */

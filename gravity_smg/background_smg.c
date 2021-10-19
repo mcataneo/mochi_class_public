@@ -1386,17 +1386,22 @@ int hi_class_define_indices_bi(
 				 int * index_bi
 			 ) {
 
-	/* -> scalar field and its derivative wrt conformal time (only if needs to evolve the field)
-	* plus other parameters that might be integrated in certain parameterizations
-	*/
-	class_define_index(pba->index_bi_phi_smg, pba->field_evolution_smg,*index_bi,1);
-	class_define_index(pba->index_bi_phi_prime_smg, pba->field_evolution_smg,*index_bi,1);
+	 /* index for Hubble rate */
+   class_define_index(pba->index_bi_H,pba->hubble_evolution,*index_bi,1);
 
-	//if model needs to integrate M_pl from alpha_M, declare an index
-	class_define_index(pba->index_bi_delta_M_pl_smg, pba->M_pl_evolution_smg,*index_bi,1);
+	if (pba->has_smg) {
+		/* -> scalar field and its derivative wrt conformal time (only if needs to evolve the field)
+		* plus other parameters that might be integrated in certain parameterizations
+		*/
+		class_define_index(pba->index_bi_phi_smg, pba->field_evolution_smg,*index_bi,1);
+		class_define_index(pba->index_bi_phi_prime_smg, pba->field_evolution_smg,*index_bi,1);
 
-	/* index for the smg energy density */
-	class_define_index(pba->index_bi_rho_smg, pba->rho_evolution_smg,*index_bi,1);
+		//if model needs to integrate M_pl from alpha_M, declare an index
+		class_define_index(pba->index_bi_delta_M_pl_smg, pba->M_pl_evolution_smg,*index_bi,1);
+
+		/* index for the smg energy density */
+		class_define_index(pba->index_bi_rho_smg, pba->rho_evolution_smg,*index_bi,1);
+	}
 
   return _SUCCESS_;
 }

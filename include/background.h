@@ -123,10 +123,10 @@ struct background
 
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$ : curvature contribution */
 
+  #ifdef HAS_HI_CLASS_SMG
   double hubble_friction; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
   int hubble_evolution; /** whether to evolve H' from the equation */
 
-  #ifdef HAS_HI_CLASS_SMG
   enum gravity_model gravity_model_smg; /** Horndeski model */
   //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
   enum expansion_model expansion_model_smg; /* choice of expansion rate */
@@ -484,7 +484,6 @@ struct background
   //@{
 
   int index_bi_a;       /**< {B} scale factor */
-  int index_bi_H;       /**< {B} Hubble rate factor */
   int index_bi_rho_dcdm;/**< {B} dcdm density */
   int index_bi_rho_dr;  /**< {B} dr density */
   int index_bi_rho_fld; /**< {B} fluid density */
@@ -492,6 +491,7 @@ struct background
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 
   #ifdef HAS_HI_CLASS_SMG
+  int index_bi_H;       /**< {B} Hubble rate factor */
   int index_bi_phi_smg;   /**< scalar field */
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
   int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/

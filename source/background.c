@@ -474,15 +474,24 @@ int background_functions(
               &p_tot,
               &rho_de),
       pba->error_message,
-      pba->error_message);, // end of hi_class
+      pba->error_message);
 
-    if (pba->hubble_evolution == _TRUE_)
-      pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H]; //sqrt(rho_tot-pba->K/a/a);
-    else
+    ,// Standard equations
+
+    hi_class_exec(
+      if (pba->hubble_evolution == _TRUE_)
+        pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H]; //sqrt(rho_tot-pba->K/a/a);
+      else
+    );
       pvecback[pba->index_bg_H] = sqrt(rho_tot - pba->K/a/a);
 
     /** - compute derivative of H with respect to conformal time: friction added */
-    pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a - a* pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - (rho_tot-pba->K/a/a) );
+    pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+    hi_class_exec(
+      if (pba->hubble_evolution == _TRUE_)
+        pvecback[pba->index_bg_H_prime] += - a* pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - (rho_tot-pba->K/a/a) );
+    );
+
   );
 
   /* Total energy density*/
@@ -1096,9 +1105,6 @@ int background_indices(
   /* -> scale factor */
   class_define_index(pba->index_bi_a,_TRUE_,index_bi,1);
 
-  /* index for Hubble rate */
-  class_define_index(pba->index_bi_H,pba->hubble_evolution,index_bi,1);
-
   /* -> energy density in DCDM */
   class_define_index(pba->index_bi_rho_dcdm,pba->has_dcdm,index_bi,1);
 
@@ -1110,7 +1116,7 @@ int background_indices(
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
 
   /* - indices for scalar field (modified gravity) */
-  hi_class_call_if(pba->has_smg == _TRUE_,
+  hi_class_call(
     hi_class_define_indices_bi(pba, &index_bi),
     pba->error_message,
     pba->error_message
@@ -2191,19 +2197,23 @@ int background_initial_conditions(
 	     pba->error_message,
 	     pba->error_message);
 
+  hi_class_exec(
+    /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation */
+    if (pba->hubble_evolution == _TRUE_){
+      if (pba->has_smg == _TRUE_) {
+        pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];
+      }
+      else {
+        pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
+        pvecback_integration[pba->index_bi_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
+      }
+    }
 
-  /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation */
-  if (pba->hubble_evolution == _TRUE_){
-    if_hi_class_exec_else(pba->has_smg == _TRUE_,
-      pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];,
-
-      pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
-      pvecback_integration[pba->index_bi_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
-    );
-  }
-
-  /* Declare the smg initial conditions as set */
-  hi_class_exec_if(pba->has_smg, pba->initial_conditions_set_smg = _TRUE_;);
+    /* Declare the smg initial conditions as set */
+    if (pba->has_smg) {
+      pba->initial_conditions_set_smg = _TRUE_;
+    }
+  );
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
@@ -2512,8 +2522,9 @@ int background_derivs(
   dy[pba->index_bi_a] = y[pba->index_bi_a] * y[pba->index_bi_a] * pvecback[pba->index_bg_H];
 
   /** - calculate /f$ H'= (...) + stabilization /f$ */
-  if (pba->hubble_evolution == _TRUE_)
+  hi_class_exec_if(pba->hubble_evolution == _TRUE_,
     dy[pba->index_bi_H] = pvecback[pba->index_bg_H_prime];
+  );
 
   /** - calculate /f$ t' = a /f$ */
   dy[pba->index_bi_time] = y[pba->index_bi_a];
