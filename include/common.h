@@ -127,8 +127,12 @@ int get_number_of_titles(char * titlestring);
 /* main macro to execute hi_class code */
 #ifdef HAS_HI_CLASS_SMG
 #define hi_class_exec(list_of_commands) list_of_commands
+#define hi_class_brace_it(list_of_commands) {list_of_commands}
+#define hi_class_dont_exec(list_of_commands) list_of_commands
 #else
 #define hi_class_exec(list_of_commands)
+#define hi_class_brace_it(list_of_commands) list_of_commands
+#define hi_class_dont_exec(list_of_commands) list_of_commands
 #endif
 
 /* macro to execute hi_class code with condition */

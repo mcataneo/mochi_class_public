@@ -135,7 +135,7 @@
  */
 
 #ifdef HAS_HI_CLASS_SMG
-enum target_names {theta_s, Omega_dcdmdr, omega_dcdmdr, Omega_scf, Omega_smg, M_pl_today_smg, Omega_ini_dcdm, omega_ini_dcdm, sigma8};
+enum target_names {theta_s, Omega_dcdmdr, omega_dcdmdr, Omega_scf, Omega_ini_dcdm, omega_ini_dcdm, sigma8, Omega_smg, M_pl_today_smg};
 #define _NUM_TARGETS_ 9 //Keep this number as number of target_names
 #else
 enum target_names {theta_s, Omega_dcdmdr, omega_dcdmdr, Omega_scf, Omega_ini_dcdm, omega_ini_dcdm, sigma8};
