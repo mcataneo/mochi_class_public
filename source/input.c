@@ -639,8 +639,8 @@ int input_read_parameters(
 
   /** - define local variables */
 
-  int flag1,flag2,flag3,flag4;
-  double param1,param2,param3,param4;
+  int flag1,flag2,flag3;
+  double param1,param2,param3;
   int N_ncdm=0,n,entries_read;
   int int1,fileentries;
   double scf_lambda;
@@ -719,18 +719,20 @@ int input_read_parameters(
     }
   }
 
-  class_call(parser_read_string(pfc, "get_h_from_trace", &string1, &flag1, errmsg),
-    errmsg,
-    errmsg);
+  hi_class_exec(
+    class_call(parser_read_string(pfc, "get_h_from_trace", &string1, &flag1, errmsg),
+      errmsg,
+      errmsg);
 
-if (flag1 == _TRUE_){
-  if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-    ppt->get_h_from_trace = _TRUE_;
-  }
-  else{
-    ppt->get_h_from_trace = _FALSE_;
-  }
-}
+    if (flag1 == _TRUE_){
+      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+        ppt->get_h_from_trace = _TRUE_;
+      }
+      else{
+        ppt->get_h_from_trace = _FALSE_;
+      }
+    }
+  );
 
   /** (a) background parameters */
 
@@ -1285,7 +1287,6 @@ if (flag1 == _TRUE_){
 
   /* Omega_0_lambda (cosmological constant), Omega0_fld (dark energy fluid),
      Omega0_scf (scalar field), Omega0_smg (scalar modified gravity) */
-  //TODO_EB
 
   class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
              errmsg,
@@ -1296,29 +1297,34 @@ if (flag1 == _TRUE_){
   class_call(parser_read_double(pfc,"Omega_scf",&param3,&flag3,errmsg),
              errmsg,
              errmsg);
-  class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
-             errmsg,
-             errmsg);
-  /* Look for Omega_smg_debug if Omega_smg is not specified */
-  if (flag4 == _FALSE_){
-      class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
-                 errmsg,
-                 errmsg);
-      if (flag4 == _TRUE_)
-          pba->Omega_smg_debug = param4;
-  }
+  hi_class_exec(
+    int flag4;
+    double param4;
+    class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
+               errmsg,
+               errmsg);
+    /* Look for Omega_smg_debug if Omega_smg is not specified */
+    if (flag4 == _FALSE_){
+        class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
+                   errmsg,
+                   errmsg);
+        if (flag4 == _TRUE_)
+            pba->Omega_smg_debug = param4;
+    }
 
   class_test((flag3 == _TRUE_) && (flag4 == _TRUE_),
              errmsg,
              "In input file, either Omega_scf or Omega_smg must be zero. It is not possible to have both scalar fields present.");
+  );
 
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)) && (flag4 == _FALSE_),
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)) hi_class_exec(&& (flag4 == _FALSE_)),
              errmsg,
              "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_scf is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && (flag3 == _FALSE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
-             errmsg,
-             "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_smg is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
+  hi_class_exec(
+    class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && (flag3 == _FALSE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
+               errmsg,
+               "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_smg is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
 
   /** - --> (flag3(4) == _FALSE_) || (param3(4) >= 0.) explained:
@@ -1340,6 +1346,8 @@ if (flag1 == _TRUE_){
              errmsg,
              "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (smg), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
 
+  );
+
   /* Step 1 */
   if (flag1 == _TRUE_){
     pba->Omega0_lambda = param1;
@@ -1353,10 +1361,10 @@ if (flag1 == _TRUE_){
     pba->Omega0_scf = param3;
     Omega_tot += pba->Omega0_scf;
   }
-  if ((flag4 == _TRUE_) && (param4 >= 0.)){
+  hi_class_exec_if((flag4 == _TRUE_) && (param4 >= 0.),
     pba->Omega0_smg = param4;
     Omega_tot += pba->Omega0_smg;
-  }
+  );
   /* Step 2 */
   if (flag1 == _FALSE_) {
     //Fill with Lambda
@@ -1373,11 +1381,13 @@ if (flag1 == _TRUE_){
     pba->Omega0_scf = 1. - pba->Omega0_k - Omega_tot;
     if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_scf = %e\n",pba->Omega0_scf);
   }
-  else if ((flag4 == _TRUE_) && (param4 < 0.)){
-    // Fill up with scalar field
-    pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
-    if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
-  }
+  hi_class_exec(
+    else if ((flag4 == _TRUE_) && (param4 < 0.)){
+      // Fill up with scalar field
+      pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
+      if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
+    }
+  );
 
   /*
     fprintf(stderr,"%e %e %e %e %e\n",

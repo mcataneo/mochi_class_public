@@ -303,10 +303,6 @@ class_precision_parameter(neglect_CMB_sources_below_visibility,double,1.0e-3)
 class_type_parameter(evolver,int,enum evolver_type,ndf15)
 
 
-class_precision_parameter(tol_einstein00_reldev,double,1.e-3) /**< tolerance to deviations w.r.t. the Einstein 00 equation. Useful if get_h_from_trace,int==_TRUE_. (not only _smg!!) */
-
-class_precision_parameter(einstein00_friction,double,1.) /**< friction term muliplying the Einstein 00 equation to correct for h''. (not only _smg!!) */
-
 /*
  * Primordial parameters
  * */
@@ -498,8 +494,9 @@ class_precision_parameter(num_mu_minus_lmax,int,70) /**< difference between num_
 class_precision_parameter(delta_l_max,int,500)/**< difference between l_max in unlensed and lensed spectra */
 class_precision_parameter(tol_gauss_legendre,double,ppr->smallest_allowed_variation) /**< tolerance with which quadrature points are found: must be very small for an accurate integration (if not entered manually, set automatically to match machine precision) */
 
-
+#ifdef HAS_HI_CLASS_SMG
 #include "precisions_smg.h"
+#endif
 
 #undef class_precision_parameter
 #undef class_string_parameter

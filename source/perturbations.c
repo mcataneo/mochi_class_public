@@ -2612,7 +2612,7 @@ int perturb_workspace_init(
       class_define_index(ppw->index_mt_eta_prime,_TRUE_,index_mt,1);     /* eta' */
       class_define_index(ppw->index_mt_alpha,_TRUE_,index_mt,1);         /* alpha = (h' + 6 tau') / (2 k**2) */
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
-      class_define_index(ppw->index_mt_einstein00,_TRUE_,index_mt,1);
+      hi_class_exec(class_define_index(ppw->index_mt_einstein00,_TRUE_,index_mt,1););
       hi_class_exec_if(pba->has_smg == _TRUE_, hi_class_define_indices_mt(ppw, &index_mt););
     }
 
@@ -3272,7 +3272,7 @@ int perturb_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles,"eta_prime",ppt->gauge == synchronous);
       class_store_columntitle(ppt->scalar_titles,"alpha",ppt->gauge == synchronous);
       class_store_columntitle(ppt->scalar_titles,"alpha_prime",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"einstein00",ppt->gauge == synchronous);
+      hi_class_exec(class_store_columntitle(ppt->scalar_titles,"einstein00",ppt->gauge == synchronous););
 
       /* Scalar field smg */
       hi_class_call_if(pba->has_smg == _TRUE_,
@@ -6544,13 +6544,15 @@ int perturb_einstein(
         , // Standard equations
 
         /* first equation involving total density fluctuation */
-        if (ppt->get_h_from_trace == _TRUE_) {
+        if_hi_class_exec_else(ppt->get_h_from_trace == _TRUE_,
+
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
-        }
-        else {
+
+          , // Standard equation
+
           ppw->pvecmetric[ppw->index_mt_h_prime] =
         	  ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
-        }
+        );
 
       	/* eventually, infer radiation streaming approximation for
       	  gamma and ur (this is exactly the right place to do it
@@ -6577,13 +6579,15 @@ int perturb_einstein(
       	/* second equation involving total velocity */
       	ppw->pvecmetric[ppw->index_mt_eta_prime] = (1.5 * a2 * ppw->rho_plus_p_theta + 0.5 * pba->K * ppw->pvecmetric[ppw->index_mt_h_prime])/k2/s2_squared;  /* eta' */
 
-        /* Here we are storing deviations from the first (00) einstein equation.
-        This is to check that h' and the other variables are being properly
-        integrated and as a friction term for the third einstein equation (h'') */
-        ppw->pvecmetric[ppw->index_mt_einstein00] =
-          - a_prime_over_a/a2*ppw->pvecmetric[ppw->index_mt_h_prime]
-          + 2.*k2/a2 * s2_squared * y[ppw->pv->index_pt_eta]
-          + 3. * ppw->delta_rho;  /* h' */
+        hi_class_exec(
+          /* Here we are storing deviations from the first (00) einstein equation.
+          This is to check that h' and the other variables are being properly
+          integrated and as a friction term for the third einstein equation (h'') */
+          ppw->pvecmetric[ppw->index_mt_einstein00] =
+            - a_prime_over_a/a2*ppw->pvecmetric[ppw->index_mt_h_prime]
+            + 2.*k2/a2 * s2_squared * y[ppw->pv->index_pt_eta]
+            + 3. * ppw->delta_rho;  /* h' */
+        );
 
       	/* third equation involving total pressure */
       	ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
@@ -6591,13 +6595,15 @@ int perturb_einstein(
       	  + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
       	  - 9. * a2 * ppw->delta_p;
 
-        /* This corrects the third equation using the Einstein 00. It has to be
-        read as a friction term that vanishes whenever the Hamiltonian constraint
-        is satisfied. */
-        if (ppt->get_h_from_trace == _TRUE_) {
-          ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
-            a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
-        }
+        hi_class_exec(
+          /* This corrects the third equation using the Einstein 00. It has to be
+          read as a friction term that vanishes whenever the Hamiltonian constraint
+          is satisfied. */
+          if (ppt->get_h_from_trace == _TRUE_) {
+            ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
+              a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+          }
+        );
 
       	/* alpha = (h'+6eta')/2k^2 */
       	ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
@@ -7404,7 +7410,6 @@ int perturb_sources(
 
   double H_T_Nb_prime=0., rho_tot;
   double theta_over_k2,theta_shift;
-  double check_einstein00;
 
   /** - rename structure fields (just to avoid heavy notations) */
 
@@ -7470,7 +7475,7 @@ int perturb_sources(
                error_message);
 
     hi_class_exec_if((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0),
-      check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
+      double check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
       class_test(
         fabs(check_einstein00)>ppr->tol_einstein00_reldev,
         ppt->error_message,
@@ -8019,7 +8024,6 @@ int perturb_print_variables(double tau,
   double h_prime=0., eta=0.;
   double h_prime_prime=0., eta_prime=0.;
   double alpha_mt_prime=0., alpha_mt=0.;
-  double einstein00=0.;
   /** - ncdm sector begins */
   int n_ncdm;
   double *delta_ncdm=NULL, *theta_ncdm=NULL, *shear_ncdm=NULL, *delta_p_over_delta_rho_ncdm=NULL;
@@ -8322,7 +8326,6 @@ int perturb_print_variables(double tau,
       eta_prime = ppw->pvecmetric[ppw->index_mt_eta_prime];
       alpha_mt = ppw->pvecmetric[ppw->index_mt_alpha];
       alpha_mt_prime = ppw->pvecmetric[ppw->index_mt_alpha_prime];
-      einstein00 = ppw->pvecmetric[ppw->index_mt_einstein00];
 
       /* density and velocity perturbations (comment out if you wish to keep synchronous variables) */
 
@@ -8457,7 +8460,7 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, eta_prime, ppt->gauge == synchronous, storeidx);
     class_store_double(dataptr, alpha_mt, ppt->gauge == synchronous, storeidx);
     class_store_double(dataptr, alpha_mt_prime, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, einstein00, ppt->gauge == synchronous, storeidx);
+    hi_class_exec(class_store_double(dataptr, ppw->pvecmetric[ppw->index_mt_einstein00], ppt->gauge == synchronous, storeidx););
 
     hi_class_call_if(pba->has_smg == _TRUE_,
       perturb_print_variables_smg(pba, ppt,  ppw, k, tau, dataptr, &storeidx),

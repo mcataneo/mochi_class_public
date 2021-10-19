@@ -1,3 +1,8 @@
+
+class_precision_parameter(tol_einstein00_reldev,double,1.e-3) /**< tolerance to deviations w.r.t. the Einstein 00 equation. Useful if get_h_from_trace,int==_TRUE_. (not only _smg!!) */
+
+class_precision_parameter(einstein00_friction,double,1.) /**< friction term muliplying the Einstein 00 equation to correct for h''. (not only _smg!!) */
+
 /*
  * hi_class (_smg) parameters
  * */
