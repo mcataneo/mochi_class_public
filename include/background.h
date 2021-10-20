@@ -19,7 +19,6 @@ printf("-> %-30s Omega = %-15g , omega = %-15g\n",name,pba->Omega0_##type,pba->O
 
 enum spatial_curvature {flat,open,closed};
 
-#ifdef HAS_HI_CLASS_SMG
 enum gravity_model {propto_omega, propto_scale,
     constant_alphas,
     eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
@@ -32,7 +31,6 @@ enum gravity_model {propto_omega, propto_scale,
 // enum gravity_model_subclass {quint_exp, cccg_exp, cccg_pow}; //write here model subclasses
 
 enum expansion_model {lcdm, wowa, wowa_w, wede}; //parameterized expansion, only for non-self consistent Horndeski theories \\ILSWEDE
-#endif
 
 /** list of possible parametrisations of the DE equation of state */
 
@@ -123,7 +121,6 @@ struct background
 
   double Omega0_k; /**< \f$ \Omega_{0_k} \f$ : curvature contribution */
 
-  #ifdef HAS_HI_CLASS_SMG
   double hubble_friction; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
   int hubble_evolution; /** whether to evolve H' from the equation */
 
@@ -185,7 +182,6 @@ struct background
   double M_pl_today_smg;
 
   short output_background_smg; /**< flag regulating the amount of information printed onbackground.dat output */
-  #endif
 
   //some thermo parameters: little cheat to be able to call sigma(rs_d), etc..
   double rs_d; //drag horizon
@@ -286,7 +282,6 @@ struct background
   int index_bg_p_scf;         /**< scalar field pressure */
   int index_bg_p_prime_scf;         /**< scalar field pressure */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_bg_phi_smg;       /**< scalar field value */
   int index_bg_phi_prime_smg; /**< scalar field derivative wrt conformal time */
   int index_bg_phi_prime_prime_smg; /**< scalar field second derivative wrt conformal time */
@@ -416,7 +411,6 @@ struct background
 
   int index_bg_G_eff_smg; /**< G effective in the infinite k limit */
   int index_bg_slip_eff_smg; /**< slip effective in the infinite k limit */
-  #endif
 
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
@@ -490,13 +484,11 @@ struct background
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_bi_H;       /**< {B} Hubble rate factor */
   int index_bi_phi_smg;   /**< scalar field */
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
   int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/
   int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
-  #endif
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */
@@ -529,9 +521,7 @@ struct background
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
   short has_idr;       /**< presence of interacting dark radiation? */
   short has_idm_dr;    /**< presence of dark matter interacting with dark radiation? */
-  #ifdef HAS_HI_CLASS_SMG
   short has_smg;       /**< presence of scalar field? */
-  #endif
   short has_curvature; /**< presence of global spatial curvature? */
 
   //@}

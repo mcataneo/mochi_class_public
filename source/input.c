@@ -4,10 +4,7 @@
  */
 
 #include "input.h"
-
-#ifdef HAS_HI_CLASS_SMG
 #include "hi_class.h"
-#endif
 
 /**
  * Use this routine to extract initial parameters from files 'xxx.ini'
@@ -278,18 +275,11 @@ int input_init(
    *
    */
 
-  #ifdef HAS_HI_CLASS_SMG
-  // TODO_EB: here we can not use the macros. Commas (in the list) are read as separators of the macros arguments
   char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
                                        "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8","Omega_smg","M_pl_today_smg"};
   char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
                                         "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s","shooting_parameter_smg","param_shoot_M_pl_smg"};
-  #else
-  char * const target_namestrings[] = {"100*theta_s","Omega_dcdmdr","omega_dcdmdr",
-                                       "Omega_scf","Omega_ini_dcdm","omega_ini_dcdm","sigma8"};
-  char * const unknown_namestrings[] = {"h","Omega_ini_dcdm","Omega_ini_dcdm",
-                                        "scf_shooting_parameter","Omega_dcdmdr","omega_dcdmdr","A_s"};
-  #endif
+
   enum computation_stage target_cs[] = {cs_thermodynamics, cs_background, cs_background,
                                         cs_background, cs_background, cs_background, cs_nonlinear};
 
@@ -299,7 +289,7 @@ int input_init(
   if (input_verbose >0) printf("Reading input parameters\n");
 
   /* for smg: no tuned parameters yet */
-  hi_class_exec(pba->parameters_tuned_smg = _FALSE_;);
+  pba->parameters_tuned_smg = _FALSE_;
 
   /** - Do we need to fix unknown parameters? */
   unknown_parameters_size = 0;
@@ -570,14 +560,17 @@ int input_init(
   }
 
   /* Now Horndeski should be tuned */
-  hi_class_exec(pba->parameters_tuned_smg = _TRUE_;);
+  pba->parameters_tuned_smg = _TRUE_;
+
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      input_warnings_smg(ppt, input_verbose),
+      errmsg,
+      errmsg
+    );
+  }
 
 
-  hi_class_call_if(pba->has_smg == _TRUE_,
-    input_warnings_smg(ppt, input_verbose),
-    errmsg,
-    errmsg
-  );
 
   return _SUCCESS_;
 
@@ -719,20 +712,19 @@ int input_read_parameters(
     }
   }
 
-  hi_class_exec(
-    class_call(parser_read_string(pfc, "get_h_from_trace", &string1, &flag1, errmsg),
-      errmsg,
-      errmsg);
+  // Not only _smg!
+  class_call(parser_read_string(pfc, "get_h_from_trace", &string1, &flag1, errmsg),
+    errmsg,
+    errmsg);
 
-    if (flag1 == _TRUE_){
-      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-        ppt->get_h_from_trace = _TRUE_;
-      }
-      else{
-        ppt->get_h_from_trace = _FALSE_;
-      }
+  if (flag1 == _TRUE_){
+    if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+      ppt->get_h_from_trace = _TRUE_;
     }
-  );
+    else{
+      ppt->get_h_from_trace = _FALSE_;
+    }
+  }
 
   /** (a) background parameters */
 
@@ -1297,34 +1289,35 @@ int input_read_parameters(
   class_call(parser_read_double(pfc,"Omega_scf",&param3,&flag3,errmsg),
              errmsg,
              errmsg);
-  hi_class_exec(
-    int flag4;
-    double param4;
-    class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
-               errmsg,
-               errmsg);
-    /* Look for Omega_smg_debug if Omega_smg is not specified */
-    if (flag4 == _FALSE_){
-        class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
-                   errmsg,
-                   errmsg);
-        if (flag4 == _TRUE_)
-            pba->Omega_smg_debug = param4;
-    }
+
+  // _smg
+  int flag4;
+  double param4;
+  class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
+             errmsg,
+             errmsg);
+  /* Look for Omega_smg_debug if Omega_smg is not specified */
+  if (flag4 == _FALSE_){
+      class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag4 == _TRUE_)
+          pba->Omega_smg_debug = param4;
+  }
 
   class_test((flag3 == _TRUE_) && (flag4 == _TRUE_),
              errmsg,
              "In input file, either Omega_scf or Omega_smg must be zero. It is not possible to have both scalar fields present.");
-  );
 
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)) hi_class_exec(&& (flag4 == _FALSE_)),
+  // _smg
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)) && (flag4 == _FALSE_),
              errmsg,
              "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_scf is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
-  hi_class_exec(
-    class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && (flag3 == _FALSE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
-               errmsg,
-               "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_smg is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
+  // _smg
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && (flag3 == _FALSE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
+             errmsg,
+             "In input file, either Omega_Lambda or Omega_fld must be left unspecified, except if Omega_smg is set and <0.0, in which case the contribution from the scalar field will be the free parameter.");
 
 
   /** - --> (flag3(4) == _FALSE_) || (param3(4) >= 0.) explained:
@@ -1346,7 +1339,6 @@ int input_read_parameters(
              errmsg,
              "It looks like you want to fulfil the closure relation sum Omega = 1 using the scalar field (smg), so you have to specify both Omega_lambda and Omega_fld in the .ini file");
 
-  );
 
   /* Step 1 */
   if (flag1 == _TRUE_){
@@ -1361,10 +1353,10 @@ int input_read_parameters(
     pba->Omega0_scf = param3;
     Omega_tot += pba->Omega0_scf;
   }
-  hi_class_exec_if((flag4 == _TRUE_) && (param4 >= 0.),
+  if ((flag4 == _TRUE_) && (param4 >= 0.)) {
     pba->Omega0_smg = param4;
     Omega_tot += pba->Omega0_smg;
-  );
+  }
   /* Step 2 */
   if (flag1 == _FALSE_) {
     //Fill with Lambda
@@ -1381,13 +1373,11 @@ int input_read_parameters(
     pba->Omega0_scf = 1. - pba->Omega0_k - Omega_tot;
     if (input_verbose > 0) printf(" -> matched budget equations by adjusting Omega_scf = %e\n",pba->Omega0_scf);
   }
-  hi_class_exec(
-    else if ((flag4 == _TRUE_) && (param4 < 0.)){
-      // Fill up with scalar field
-      pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
-      if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
-    }
-  );
+  else if ((flag4 == _TRUE_) && (param4 < 0.)){
+    // Fill up with scalar field
+    pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
+    if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
+  }
 
   /*
     fprintf(stderr,"%e %e %e %e %e\n",
@@ -1494,32 +1484,32 @@ int input_read_parameters(
     }
   }
 
-  hi_class_call_if(pba->Omega0_smg != 0.,
-    input_read_parameters_smg(pfc, ppr, pba, ppt, errmsg),
-    errmsg,
-    errmsg
-  );
+  if (pba->Omega0_smg != 0.) {
+    class_call(
+      input_read_parameters_smg(pfc, ppr, pba, ppt, errmsg),
+      errmsg,
+      errmsg
+    );
+  };
 
-  /* Hubble dynamics */
-  hi_class_exec(
-    class_call(parser_read_string(pfc,
-                                    "hubble_evolution",
-                                    &string1,
-                                    &flag1,
-                                    errmsg),
-                  errmsg,
-                  errmsg);
+  /* Hubble dynamics (not only _smg) */
+  class_call(parser_read_string(pfc,
+                                  "hubble_evolution",
+                                  &string1,
+                                  &flag1,
+                                  errmsg),
+                errmsg,
+                errmsg);
 
-    if (flag1 == _TRUE_){
-      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-        pba->hubble_evolution = _TRUE_;
-        class_read_double("hubble_friction",pba->hubble_friction);
-      }
-      else{
-        pba->hubble_evolution = _FALSE_;
-      }
+  if (flag1 == _TRUE_){
+    if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+      pba->hubble_evolution = _TRUE_;
+      class_read_double("hubble_friction",pba->hubble_friction);
     }
-  );
+    else{
+      pba->hubble_evolution = _FALSE_;
+    }
+  }
 
 
 
@@ -3206,11 +3196,13 @@ int input_read_parameters(
              errmsg,
              errmsg);
 
-  hi_class_call_if(pba->has_smg == _TRUE_,
-    input_readjust_precision(ppr),
-    errmsg,
-    errmsg
-  );
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      input_readjust_precision(ppr),
+      errmsg,
+      errmsg
+    );
+  }
 
 
   /** - (i.5) special steps if we want Halofit with wa_fld non-zero:
@@ -3581,7 +3573,7 @@ int input_default_params(
   ple->lensing_verbose = 0;
   pop->output_verbose = 0;
 
-  hi_class_exec(input_default_params_smg(pba, ppt));
+  input_default_params_smg(pba, ppt);
 
   return _SUCCESS_;
 
@@ -3969,27 +3961,25 @@ int input_try_unknown_parameters(double * unknown_parameter,
     case sigma8:
       output[i] = nl.sigma8[nl.index_pk_m]-pfzw->target_value[i];
       break;
-    hi_class_exec(
-      case Omega_smg:
-        output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
-    		  -ba.Omega0_smg;
-        if (input_verbose > 2)
-          printf(" param[%i] = %e, Omega_smg = %.3e, %.3e, target = %.2e \n",ba.tuning_index_smg,
-            ba.parameters_smg[ba.tuning_index_smg],
-            ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
-    	          /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit], ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
-    	          /pow(ba.H0,2),output[i]);
-        break;
-      case M_pl_today_smg:
-        output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg]
-                    -ba.M_pl_today_smg;
-        printf("M_pl = %e, want %e, param=%e\n",
-  	     ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg],
-  	     ba.M_pl_today_smg,
-  	     ba.parameters_smg[ba.tuning_index_2_smg]
-  	    );
-        break;
-      );
+    case Omega_smg:
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2)
+  		  -ba.Omega0_smg;
+      if (input_verbose > 2)
+        printf(" param[%i] = %e, Omega_smg = %.3e, %.3e, target = %.2e \n",ba.tuning_index_smg,
+          ba.parameters_smg[ba.tuning_index_smg],
+          ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+  	          /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit], ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+  	          /pow(ba.H0,2),output[i]);
+      break;
+    case M_pl_today_smg:
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg]
+                  -ba.M_pl_today_smg;
+      printf("M_pl = %e, want %e, param=%e\n",
+	     ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg],
+	     ba.M_pl_today_smg,
+	     ba.parameters_smg[ba.tuning_index_2_smg]
+	    );
+      break;
     }
   }
 
@@ -4177,16 +4167,14 @@ int input_get_guess(double *xguess,
       xguess[index_guess] = 2.43e-9/0.87659*pfzw->target_value[index_guess];
       dxdy[index_guess] = 2.43e-9/0.87659;
       break;
-    hi_class_exec(
-      case Omega_smg:
-        xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
-        dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
-        break;
-      case M_pl_today_smg:
-        xguess[index_guess] = ba.parameters_smg[ba.tuning_index_2_smg];
-        dxdy[index_guess] = 1;
-        break;
-    );
+    case Omega_smg:
+      xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
+      dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
+      break;
+    case M_pl_today_smg:
+      xguess[index_guess] = ba.parameters_smg[ba.tuning_index_2_smg];
+      dxdy[index_guess] = 1;
+      break;
     }
     //printf("xguess = %g\n",xguess[index_guess]);
   }
@@ -4339,10 +4327,8 @@ int input_auxillary_target_conditions(struct file_content * pfc,
     if (target_value == 0.)
       *aux_flag = _FALSE_;
     break;
-  hi_class_exec(
-    case Omega_smg:
-    case M_pl_today_smg:
-  );
+  case Omega_smg:
+  case M_pl_today_smg:
   default:
     /* Default is no additional checks */
     *aux_flag = _TRUE_;

@@ -12,10 +12,7 @@
  */
 
 #include "nonlinear.h"
-
-#ifdef HAS_HI_CLASS_SMG
 #include "hi_class.h"
-#endif
 
 /**
  * Return the P(k,z) for a given redshift z and pk type (_m, _cb)
@@ -3255,14 +3252,15 @@ int nonlinear_hmcode(
   Delta_v_0 = 418.;
 
   // Correct the LCDM virialized overdensity
-  hi_class_call_if(
-    pba->has_smg == _TRUE_,
-    nonlinear_hmcode_correct_Delta_v_0_smg(
-      pba,
-      z_at_tau,
-      & Delta_v_0
-    ),
-    pnl->error_message, pnl->error_message);
+  if (pba->has_smg) {
+    class_call(
+      nonlinear_hmcode_correct_Delta_v_0_smg(
+        pba,
+        z_at_tau,
+        & Delta_v_0
+      ),
+      pnl->error_message, pnl->error_message);
+  };
 
   // virialized overdensity
   Delta_v=Delta_v_0*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
@@ -3429,10 +3427,8 @@ int nonlinear_hmcode(
     if (g_form > 1.) g_form = 1.;
     /** Here we correct the formation growth for extreme models where it is
         g_form is very little and outside the precumputed table. */
-    hi_class_exec_if(
-      (pba->has_smg == _TRUE_) && (g_form < pnw->growtable[0]),
+    if ((pba->has_smg == _TRUE_) && (g_form < pnw->growtable[0]))
       g_form = pnw->growtable[0];
-    );
 
     //
     class_call(array_interpolate_two_arrays_one_column(

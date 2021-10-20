@@ -35,7 +35,6 @@ enum rsa_idr_flags {rsa_idr_off, rsa_idr_on};
 enum ufa_flags {ufa_off, ufa_on};
 enum ncdmfa_flags {ncdmfa_off, ncdmfa_on};
 
-#ifdef HAS_HI_CLASS_SMG
 /**
  * implemented quasi-static approximation scheme (qs_smg).
  * Check that "qs_smg_flags" and "_VALUES_QS_SMG_FLAGS_" agree each other
@@ -43,7 +42,6 @@ enum ncdmfa_flags {ncdmfa_off, ncdmfa_on};
 enum qs_smg_flags {qs_smg_fd_0, qs_smg_qs_1, qs_smg_fd_2, qs_smg_qs_3, qs_smg_fd_4, qs_smg_qs_5, qs_smg_fd_6};
 
 #define _VALUES_QS_SMG_FLAGS_ {0, 1, 0, 1, 0, 1, 0} // values associated to the quasi-static approximation scheme. FD = 0, QS = 1.
-#endif
 
 //@}
 
@@ -61,7 +59,6 @@ enum ufa_method {ufa_mb,ufa_hu,ufa_CLASS,ufa_none};
 enum ncdmfa_method {ncdmfa_mb,ncdmfa_hu,ncdmfa_CLASS,ncdmfa_none};
 enum tensor_methods {tm_photons_only,tm_massless_approximation,tm_exact};
 
-#ifdef HAS_HI_CLASS_SMG
 enum possible_methods_qs_smg {
   automatic, /**< uses the approximation scheme implemented */
   fully_dynamic, /**< forces the fully-dynamic evolution of the perturbations at all times */
@@ -69,7 +66,6 @@ enum possible_methods_qs_smg {
   fully_dynamic_debug, /**< forces the fully-dynamic evolution but evaluates the approximation scheme */
   quasi_static_debug /**< forces the quasi-static evolution but evaluates the approximation scheme */
 };
-#endif
 
 //@}
 
@@ -112,7 +108,6 @@ enum selection_type {gaussian,tophat,dirac};
 //@}
 
 
-#ifdef HAS_HI_CLASS_SMG
 // /* coefficients of the Sawicki polynomial
 //  * needed to find growing mode
 //  * NOTE: I'm trying that the code does not inline these very long computations
@@ -121,7 +116,6 @@ enum selection_type {gaussian,tophat,dirac};
 // double c2_ic_smg;
 // double c1_ic_smg;
 // double c0_ic_smg;
-#endif
 
 
 /**
@@ -279,10 +273,8 @@ struct perturbs
   short has_source_delta_fld;   /**< do we need source for delta of dark energy? */
   short has_source_delta_scf;   /**< do we need source for delta from scalar field? */
 
-  #ifdef HAS_HI_CLASS_SMG
   short has_source_phi_smg;     /**< do we need source for delta of scalar field? */
   short has_source_phi_prime_smg;/**< do we need source for theta of scalar field? */
-  #endif
 
   short has_source_delta_dr;    /**< do we need source for delta of decay radiation? */
   short has_source_delta_ur;    /**< do we need source for delta of ultra-relativistic neutrinos/relics? */
@@ -332,9 +324,7 @@ struct perturbs
   int index_tp_delta_fld;  /**< index value for delta of dark energy */
   int index_tp_delta_scf;  /**< index value for delta of scalar field */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_tp_phi_smg;  /**< index value for delta of scalar field */
-  #endif
 
   int index_tp_delta_dr; /**< index value for delta of decay radiation */
   int index_tp_delta_ur; /**< index value for delta of ultra-relativistic neutrinos/relics */
@@ -354,9 +344,7 @@ struct perturbs
   int index_tp_theta_fld;   /**< index value for theta of dark energy */
   int index_tp_theta_scf;   /**< index value for theta of scalar field */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_tp_phi_prime_smg;  /**< index value for theta of scalar field */
-  #endif
 
   int index_tp_theta_ur;    /**< index value for theta of ultra-relativistic neutrinos/relics */
   int index_tp_theta_idr;   /**< index value for theta of interacting dark radiation */
@@ -494,7 +482,6 @@ struct perturbs
 
   //@{
 
-  #ifdef HAS_HI_CLASS_SMG
   enum possible_methods_qs_smg method_qs_smg;
   short initial_approx_qs_smg; /**< flag regulating the initial state of qs_smg */
 
@@ -516,7 +503,6 @@ struct perturbs
 
   /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
   short get_h_from_trace;
-  #endif
 
 };
 
@@ -553,10 +539,8 @@ struct perturb_vector
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_pt_x_smg;  /**< scalar field perturbation */
   int index_pt_x_prime_smg;  /**< scalar field perturbation derivative */
-  #endif
 
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */
   int index_pt_theta_ur; /**< velocity of ultra-relativistic neutrinos/relics */
@@ -631,13 +615,11 @@ struct perturb_workspace
   int index_mt_V_prime;       /**< derivative of Newtonian gauge vector metric perturbation V */
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_x_smg;       /**< scalar field perturbation */
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
-  #endif
 
   int mt_size;                /**< size of metric perturbation vector */
 
@@ -722,10 +704,8 @@ struct perturb_workspace
   int index_ap_ufa; /**< index for ur fluid approximation */
   int index_ap_ncdmfa; /**< index for ncdm fluid approximation */
 
-  #ifdef HAS_HI_CLASS_SMG
   int index_ap_qs_smg; /**< index for smg quasi-static approximation */
   double * tau_scheme_qs_smg; /* array with the quasi-static approximation times */
-  #endif
 
   int ap_size;      /**< number of relevant approximations for a given mode */
 
