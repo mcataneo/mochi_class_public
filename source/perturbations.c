@@ -5495,12 +5495,9 @@ int perturb_initial_conditions(struct precision * ppr,
     */
 
 
-
     H = ppw->pvecback[pba->index_bg_H];
     Hprime = ppw->pvecback[pba->index_bg_H_prime];
     a = ppw->pvecback[pba->index_bg_a];
-    rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
-    p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
     if (pba->has_smg == _TRUE_) {
 
           // Read in the initial values of all background params: alphas, Omx, w
@@ -5510,6 +5507,8 @@ int perturb_initial_conditions(struct precision * ppr,
           dt = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
 
 
+          rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
+          p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
 	        rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
 	        p_smg = ppw->pvecback[pba->index_bg_p_smg];
 
