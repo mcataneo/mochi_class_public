@@ -14,7 +14,7 @@ extract cosmological parameters.
 from math import exp,log
 import numpy as np
 cimport numpy as np
-import scipy
+from scipy import interpolate
 from libc.stdlib cimport *
 from libc.stdio cimport *
 from libc.string cimport *
@@ -1285,7 +1285,7 @@ cdef class Class:
         return Om_m
 
 
-    def G_eff_smg(self, z):
+    def G_eff_back_smg(self, z):
         """
         G_eff_smg(z)
 
@@ -1319,7 +1319,7 @@ cdef class Class:
 
         return G_eff
 
-    def slip_eff_smg(self, z):
+    def slip_eff_back_smg(self, z):
         """
         slip_eff_smg(z)
 
@@ -1353,7 +1353,7 @@ cdef class Class:
 
         return slip
 
-    def G_matter_smg(self, z):
+    def G_matter_back_smg(self, z):
         """
         G_matter_smg(z)
 
@@ -1370,12 +1370,12 @@ cdef class Class:
                 Desired redshift
         """
 
-        G_eff = self.G_eff_smg(z)
-        slip = self.slip_eff_smg(z)
+        G_eff = self.G_eff_back_smg(z)
+        slip = self.slip_eff_back_smg(z)
 
         return G_eff/slip
 
-    def G_light_smg(self, z):
+    def G_light_back_smg(self, z):
         """
         G_light_smg(z)
 
@@ -1392,17 +1392,71 @@ cdef class Class:
                 Desired redshift
         """
 
-        G_eff = self.G_eff_smg(z)
-        slip = self.slip_eff_smg(z)
+        G_eff = self.G_eff_back_smg(z)
+        slip = self.slip_eff_back_smg(z)
 
         return (slip + 1)*G_eff/slip/2
 
+    def G_eff_at_z_smg(self, z):
+        """
+        G_eff_at_z_smg(z)
+
+        Return arrays of k [1/Mpc] and G_eff at a given
+        redshift z from the transfer module directly.
+        If the matter density is the gauge invariant
+        one and the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        G_eff = -2 k^2/a^2 Phi/delta_rho
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        # Get background and transfer
+        back = self.get_background()
+        trans = self.get_transfer(z=z)
+        k_range = trans['k (h/Mpc)']*self.h()
+        aH = interpolate.interp1d(back['z'], back['H [1/Mpc]']/(1+back['z']))(z)
+        # Get matter species
+        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg']
+        all_sp = [x for x in back.keys() if '(.)rho_' in x]
+        all_sp = [x for x in all_sp if x not in no_mat]
+        all_sp = [x.replace('(.)rho_', '') for x in all_sp]
+        # Get metric potentials
+        phi = trans['phi']
+        psi = trans['psi']
+        # Calculate the density perturbations
+        # for each species and then we sum up
+        delta_rho = np.zeros_like(phi)
+        for one_sp in all_sp:
+            rho = interpolate.interp1d(back['z'], back['(.)rho_'+one_sp])(z)
+            if one_sp in ['b', 'cdm']:
+                w = 0.
+            elif one_sp in ['g', 'ur']:
+                w = 1./3.
+            else:
+                w = interpolate.interp1d(
+                  back['z'], back['(.)p_'+one_sp]/back['(.)rho_'+one_sp])(z)
+            delta = trans['d_'+one_sp]
+            if one_sp == 'cdm':
+                theta = np.zeros_like(delta)
+            else:
+                theta = trans['t_'+one_sp]
+            delta_rho += 3.*rho*(delta+3*aH*(1.+w)*theta/k_range**2.)
+
+        G_eff = -2*k_range**2*(z+1.)**2*phi/delta_rho
+        return k_range, G_eff
+
     def G_eff_at_k_and_z_smg(self, k, z):
         """
-        G_eff_smg(k, z)
+        G_eff_at_k_and_z_smg(k, z)
 
-        Return G_eff from the perturbation module directly.
-        If the metric perturbations are:
+        Return G_eff from the transfer module directly.
+        If the matter density is the gauge invariant
+        one and the metric perturbations are:
           -) delta_g_00 = -2 Psi
           -) delta_g_ij = -2 Phi delta_ij
         Then:
@@ -1411,42 +1465,51 @@ cdef class Class:
         Parameters
         ----------
         k : float
-                Desired scale
+                Desired scale (1/Mpc)
         z : float
                 Desired redshift
         """
 
-        # Compute background and perturbations
-        self.set({'output':'mPk, mTk','k_output_values':str(k)})
-        self.compute(['perturb'])
-        back = self.get_background()
-        pts = self.get_perturbations()['scalar'][0]
-        zback = back['z']
-        zpert = 1./pts['a']-1.
-
-        # Get species
-        sps = [x.replace('delta_', '') for x in pts.keys() if 'delta_' in x]
-
-        # Get delta_rho total (the factor 3. comes from the densities normalization)
-        delta_rho = 0.
-        for sp in sps:
-            rho_back = scipy.interpolate.interp1d(zback, back['(.)rho_'+sp])(z)
-            delta = scipy.interpolate.interp1d(zpert, pts['delta_'+sp])(z)
-            delta_rho += 3.*rho_back*delta
-
-        # Get phi
-        phi = scipy.interpolate.interp1d(zpert, pts['phi'])(z)
-
-        G_eff = -2*k**2*(1+z)**2*phi/delta_rho
-
+        k_range, G_eff = self.G_eff_at_z_smg(z)
+        G_eff = interpolate.interp1d(k_range, G_eff)(k)
         return G_eff
+
+    def slip_eff_at_z_smg(self, z):
+        """
+        slip_eff_at_z_smg(z)
+
+        Return arrays of k [1/Mpc] and slip_eff at a given
+        redshift z from the transfer module directly.
+        If the matter density is the gauge invariant
+        one and the metric perturbations are:
+          -) delta_g_00 = -2 Psi
+          -) delta_g_ij = -2 Phi delta_ij
+        Then:
+        slip = Phi/Psi
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        # Get transfer
+        trans = self.get_transfer(z=z)
+        k_range = trans['k (h/Mpc)']*self.h()
+        # Get metric potentials
+        phi = trans['phi']
+        psi = trans['psi']
+
+        slip = phi/psi
+
+        return k_range, slip
 
     def slip_eff_at_k_and_z_smg(self, k, z):
         """
         slip_eff_at_k_and_z_smg(k, z)
 
-        Return slip_eff from the perturbation module directly.
-        If the metric perturbations are:
+        Return slip_eff from the transfer module directly.
+        If the matter density is the gauge invariant
+        one and the metric perturbations are:
           -) delta_g_00 = -2 Psi
           -) delta_g_ij = -2 Phi delta_ij
         Then:
@@ -1455,30 +1518,23 @@ cdef class Class:
         Parameters
         ----------
         k : float
-                Desired scale
+                Desired scale (1/Mpc)
         z : float
                 Desired redshift
         """
-        # Compute background and perturbations
-        self.set({'output':'mPk, mTk','k_output_values':str(k)})
-        self.compute(['perturb'])
-        pts = self.get_perturbations()['scalar'][0]
-        zpert = 1./pts['a']-1.
 
-        # Get phi and psi
-        phi = scipy.interpolate.interp1d(zpert, pts['phi'])(z)
-        psi = scipy.interpolate.interp1d(zpert, pts['psi'])(z)
-
-        slip = phi/psi
-
+        k_range, slip = self.slip_eff_at_z_smg(z)
+        slip = interpolate.interp1d(k_range, slip)(k)
         return slip
 
-    def G_matter_at_k_and_z_smg(self, k, z):
+    def G_matter_at_z_smg(self, z):
         """
-        G_matter_at_k_and_z_smg(k, z)
+        G_matter_at_z_smg(z)
 
-        Return G_matter from the perturbation module directly.
-        If the metric perturbations are:
+        Return arrays of k [1/Mpc] and G_matter at a given
+        redshift z from the transfer module directly.
+        If the matter density is the gauge invariant
+        one and the metric perturbations are:
           -) delta_g_00 = -2 Psi
           -) delta_g_ij = -2 Phi delta_ij
         Then:
@@ -1486,27 +1542,162 @@ cdef class Class:
 
         Parameters
         ----------
-        k : float
-                Desired scale
         z : float
                 Desired redshift
         """
+        # Get background and transfer
+        back = self.get_background()
+        trans = self.get_transfer(z=z)
+        k_range = trans['k (h/Mpc)']*self.h()
+        aH = interpolate.interp1d(back['z'], back['H [1/Mpc]']/(1+back['z']))(z)
+        # Get matter species
+        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg']
+        all_sp = [x for x in back.keys() if '(.)rho_' in x]
+        all_sp = [x for x in all_sp if x not in no_mat]
+        all_sp = [x.replace('(.)rho_', '') for x in all_sp]
+        # Get metric potentials
+        phi = trans['phi']
+        psi = trans['psi']
+        # Calculate the density perturbations
+        # for each species and then we sum up
+        delta_rho = np.zeros_like(phi)
+        for one_sp in all_sp:
+            rho = interpolate.interp1d(back['z'], back['(.)rho_'+one_sp])(z)
+            if one_sp in ['b', 'cdm']:
+                w = 0.
+            elif one_sp in ['g', 'ur']:
+                w = 1./3.
+            else:
+                w = interpolate.interp1d(
+                  back['z'], back['(.)p_'+one_sp]/back['(.)rho_'+one_sp])(z)
+            delta = trans['d_'+one_sp]
+            if one_sp == 'cdm':
+                theta = np.zeros_like(delta)
+            else:
+                theta = trans['t_'+one_sp]
+            delta_rho += 3.*rho*(delta+3*aH*(1.+w)*theta/k_range**2.)
 
-        G_eff = self.G_eff_at_k_and_z_smg(k, z)
-        slip = self.slip_eff_at_k_and_z_smg(k, z)
+        G_matter = -2*k_range**2*(z+1.)**2*psi/delta_rho
+        return k_range, G_matter
 
-        return G_eff/slip
+    def G_matter_at_k_and_z_smg(self, k, z):
+            """
+            G_matter_at_k_and_z_smg(k, z)
 
-    def G_light_at_k_and_z_smg(self, k, z):
+            Return G_matter from the transfer module directly.
+            If the matter density is the gauge invariant
+            one and the metric perturbations are:
+              -) delta_g_00 = -2 Psi
+              -) delta_g_ij = -2 Phi delta_ij
+            Then:
+            G_matter = -2 k^2/a^2 Psi/delta_rho
+
+            Parameters
+            ----------
+            k : float
+                    Desired scale (1/Mpc)
+            z : float
+                    Desired redshift
+            """
+
+            k_range, G_matter = self.G_matter_at_z_smg(z)
+            G_matter = interpolate.interp1d(k_range, G_matter)(k)
+            return G_matter
+
+    def G_light_at_z_smg(self, z):
         """
-        G_light_at_k_and_z_smg(k, z)
+        G_light_at_z_smg(z)
 
-        Return G_light from the perturbation module directly.
-        If the metric perturbations are:
+        Return arrays of k [1/Mpc] and G_light at a given
+        redshift z from the transfer module directly.
+        If the matter density is the gauge invariant
+        one and the metric perturbations are:
           -) delta_g_00 = -2 Psi
           -) delta_g_ij = -2 Phi delta_ij
         Then:
         G_light = -2 k^2/a^2 (Phi+Psi)/2/delta_rho
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        # Get background and transfer
+        back = self.get_background()
+        trans = self.get_transfer(z=z)
+        k_range = trans['k (h/Mpc)']*self.h()
+        aH = interpolate.interp1d(back['z'], back['H [1/Mpc]']/(1+back['z']))(z)
+        # Get matter species
+        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg']
+        all_sp = [x for x in back.keys() if '(.)rho_' in x]
+        all_sp = [x for x in all_sp if x not in no_mat]
+        all_sp = [x.replace('(.)rho_', '') for x in all_sp]
+        # Get metric potentials
+        phi = trans['phi']
+        psi = trans['psi']
+        # Calculate the density perturbations
+        # for each species and then we sum up
+        delta_rho = np.zeros_like(phi)
+        for one_sp in all_sp:
+            rho = interpolate.interp1d(back['z'], back['(.)rho_'+one_sp])(z)
+            if one_sp in ['b', 'cdm']:
+                w = 0.
+            elif one_sp in ['g', 'ur']:
+                w = 1./3.
+            else:
+                w = interpolate.interp1d(
+                  back['z'], back['(.)p_'+one_sp]/back['(.)rho_'+one_sp])(z)
+            delta = trans['d_'+one_sp]
+            if one_sp == 'cdm':
+                theta = np.zeros_like(delta)
+            else:
+                theta = trans['t_'+one_sp]
+            delta_rho += 3.*rho*(delta+3*aH*(1.+w)*theta/k_range**2.)
+
+        G_light = -k_range**2*(z+1.)**2*(phi+psi)/delta_rho
+        return k_range, G_light
+
+    def G_light_at_k_and_z_smg(self, k, z):
+            """
+            G_light_at_k_and_z_smg(k, z)
+
+            Return G_light from the transfer module directly.
+            If the matter density is the gauge invariant
+            one and the metric perturbations are:
+              -) delta_g_00 = -2 Psi
+              -) delta_g_ij = -2 Phi delta_ij
+            Then:
+            G_light = -2 k^2/a^2 (Phi+Psi)/2/delta_rho
+
+            Parameters
+            ----------
+            k : float
+                    Desired scale (1/Mpc)
+            z : float
+                    Desired redshift
+            """
+
+            k_range, G_light = self.G_light_at_z_smg(z)
+            G_light = interpolate.interp1d(k_range, G_light)(k)
+            return G_light
+
+    def get_qs_functions_at_k_and_z_qs_smg(self, k, z):
+        """
+        get_qs_functions_at_k_and_z_qs_smg(k, z)
+
+        Return the quasi-static (QS) functions
+          -) mass2_qs
+          -) mass2_qs_p
+          -) rad2_qs
+          -) friction_qs
+          -) slope_qs
+        at a given scale (k) and time (z).
+        These functions are the same used in the QS
+        automatic algorithm to determine at which times
+        and scales the system can be safely treated as
+        QS (mass2_qs_p and friction_qs are intermediate
+        steps to calculate slope_qs). They are useful to
+        inspect suspicious results and the validity of the QS.
 
         Parameters
         ----------
@@ -1515,11 +1706,17 @@ cdef class Class:
         z : float
                 Desired redshift
         """
+        cdef double tau
+        cdef double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
 
-        G_eff = self.G_eff_at_k_and_z_smg(k, z)
-        slip = self.slip_eff_at_k_and_z_smg(k, z)
+        if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
+            raise CosmoSevereError(self.ba.error_message)
 
-        return (slip + 1)*G_eff/slip/2
+        if perturb_qs_functions_at_tau_and_k_qs_smg(&self.ba,&self.pt, k, tau,
+          &mass2_qs, &mass2_qs_p, &rad2_qs, &friction_qs, &slope_qs)==_FAILURE_:
+            raise CosmoSevereError(self.pt.error_message)
+
+        return mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
 
     def ionization_fraction(self, z):
         """

@@ -35,6 +35,7 @@ enum rsa_idr_flags {rsa_idr_off, rsa_idr_on};
 enum ufa_flags {ufa_off, ufa_on};
 enum ncdmfa_flags {ncdmfa_off, ncdmfa_on};
 
+#ifdef HAS_HI_CLASS_SMG
 /**
  * implemented quasi-static approximation scheme (qs_smg).
  * Check that "qs_smg_flags" and "_VALUES_QS_SMG_FLAGS_" agree each other
@@ -42,6 +43,7 @@ enum ncdmfa_flags {ncdmfa_off, ncdmfa_on};
 enum qs_smg_flags {qs_smg_fd_0, qs_smg_qs_1, qs_smg_fd_2, qs_smg_qs_3, qs_smg_fd_4, qs_smg_qs_5, qs_smg_fd_6};
 
 #define _VALUES_QS_SMG_FLAGS_ {0, 1, 0, 1, 0, 1, 0} // values associated to the quasi-static approximation scheme. FD = 0, QS = 1.
+#endif
 
 //@}
 
@@ -59,6 +61,7 @@ enum ufa_method {ufa_mb,ufa_hu,ufa_CLASS,ufa_none};
 enum ncdmfa_method {ncdmfa_mb,ncdmfa_hu,ncdmfa_CLASS,ncdmfa_none};
 enum tensor_methods {tm_photons_only,tm_massless_approximation,tm_exact};
 
+#ifdef HAS_HI_CLASS_SMG
 enum possible_methods_qs_smg {
   automatic, /**< uses the approximation scheme implemented */
   fully_dynamic, /**< forces the fully-dynamic evolution of the perturbations at all times */
@@ -66,6 +69,7 @@ enum possible_methods_qs_smg {
   fully_dynamic_debug, /**< forces the fully-dynamic evolution but evaluates the approximation scheme */
   quasi_static_debug /**< forces the quasi-static evolution but evaluates the approximation scheme */
 };
+#endif
 
 //@}
 
@@ -108,6 +112,7 @@ enum selection_type {gaussian,tophat,dirac};
 //@}
 
 
+#ifdef HAS_HI_CLASS_SMG
 // /* coefficients of the Sawicki polynomial
 //  * needed to find growing mode
 //  * NOTE: I'm trying that the code does not inline these very long computations
@@ -116,6 +121,7 @@ enum selection_type {gaussian,tophat,dirac};
 // double c2_ic_smg;
 // double c1_ic_smg;
 // double c0_ic_smg;
+#endif
 
 
 /**
@@ -272,8 +278,12 @@ struct perturbs
   short has_source_delta_dcdm;  /**< do we need source for delta of DCDM? */
   short has_source_delta_fld;   /**< do we need source for delta of dark energy? */
   short has_source_delta_scf;   /**< do we need source for delta from scalar field? */
+
+  #ifdef HAS_HI_CLASS_SMG
   short has_source_phi_smg;     /**< do we need source for delta of scalar field? */
   short has_source_phi_prime_smg;/**< do we need source for theta of scalar field? */
+  #endif
+
   short has_source_delta_dr;    /**< do we need source for delta of decay radiation? */
   short has_source_delta_ur;    /**< do we need source for delta of ultra-relativistic neutrinos/relics? */
   short has_source_delta_idr;   /**< do we need source for delta of interacting dark radiation? */
@@ -321,7 +331,11 @@ struct perturbs
   int index_tp_delta_dcdm;/**< index value for delta of DCDM */
   int index_tp_delta_fld;  /**< index value for delta of dark energy */
   int index_tp_delta_scf;  /**< index value for delta of scalar field */
+
+  #ifdef HAS_HI_CLASS_SMG
   int index_tp_phi_smg;  /**< index value for delta of scalar field */
+  #endif
+
   int index_tp_delta_dr; /**< index value for delta of decay radiation */
   int index_tp_delta_ur; /**< index value for delta of ultra-relativistic neutrinos/relics */
   int index_tp_delta_idr; /**< index value for delta of interacting dark radiation */
@@ -339,7 +353,11 @@ struct perturbs
   int index_tp_theta_dcdm;  /**< index value for theta of DCDM */
   int index_tp_theta_fld;   /**< index value for theta of dark energy */
   int index_tp_theta_scf;   /**< index value for theta of scalar field */
+
+  #ifdef HAS_HI_CLASS_SMG
   int index_tp_phi_prime_smg;  /**< index value for theta of scalar field */
+  #endif
+
   int index_tp_theta_ur;    /**< index value for theta of ultra-relativistic neutrinos/relics */
   int index_tp_theta_idr;   /**< index value for theta of interacting dark radiation */
   int index_tp_theta_idm_dr;/**< index value for theta of interacting dark matter (with dr)*/
@@ -476,6 +494,7 @@ struct perturbs
 
   //@{
 
+  #ifdef HAS_HI_CLASS_SMG
   enum possible_methods_qs_smg method_qs_smg;
   short initial_approx_qs_smg; /**< flag regulating the initial state of qs_smg */
 
@@ -497,6 +516,7 @@ struct perturbs
 
   /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
   short get_h_from_trace;
+  #endif
 
 };
 
@@ -532,8 +552,12 @@ struct perturb_vector
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
+
+  #ifdef HAS_HI_CLASS_SMG
   int index_pt_x_smg;  /**< scalar field perturbation */
   int index_pt_x_prime_smg;  /**< scalar field perturbation derivative */
+  #endif
+
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */
   int index_pt_theta_ur; /**< velocity of ultra-relativistic neutrinos/relics */
   int index_pt_shear_ur; /**< shear of ultra-relativistic neutrinos/relics */
@@ -603,14 +627,18 @@ struct perturb_workspace
   int index_mt_eta_prime;     /**< eta' (wrt conf. time) in synchronous gauge */
   int index_mt_alpha;         /**< \f$ \alpha = (h' + 6 \eta') / (2 k^2) \f$ in synchronous gauge */
   int index_mt_alpha_prime;   /**< \f$ \alpha'\f$ wrt conf. time) in synchronous gauge */
-  int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_gw_prime_prime;/**< second derivative wrt conformal time of gravitational wave field, often called h */
   int index_mt_V_prime;       /**< derivative of Newtonian gauge vector metric perturbation V */
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
+
+  #ifdef HAS_HI_CLASS_SMG
+  int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_x_smg;       /**< scalar field perturbation */
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
+  #endif
+
   int mt_size;                /**< size of metric perturbation vector */
 
   //@}
@@ -693,7 +721,12 @@ struct perturb_workspace
   int index_ap_rsa_idr; /**< index for dark radiation streaming approximation */
   int index_ap_ufa; /**< index for ur fluid approximation */
   int index_ap_ncdmfa; /**< index for ncdm fluid approximation */
+
+  #ifdef HAS_HI_CLASS_SMG
   int index_ap_qs_smg; /**< index for smg quasi-static approximation */
+  double * tau_scheme_qs_smg; /* array with the quasi-static approximation times */
+  #endif
+
   int ap_size;      /**< number of relevant approximations for a given mode */
 
   int * approx;     /**< array of approximation flags holding at a given time: approx[index_ap] */
@@ -849,8 +882,7 @@ extern "C" {
                                         double tau_ini,
                                         double tau_end,
                                         int * interval_number,
-                                        int * interval_number_of,
-                                        double * tau_scheme_qs_smg
+                                        int * interval_number_of
                                         );
 
   int perturb_find_approximation_switches(
@@ -867,8 +899,7 @@ extern "C" {
                                           int interval_number,
                                           int * interval_number_of,
                                           double * interval_limit,
-                                          int ** interval_approx,
-                                          double * tau_scheme_qs_smg
+                                          int ** interval_approx
                                           );
 
   int perturb_vector_init(
@@ -907,8 +938,7 @@ extern "C" {
                              int index_md,
                              double k,
                              double tau,
-                             struct perturb_workspace * ppw,
-                             double * tau_scheme_qs_smg
+                             struct perturb_workspace * ppw
                              );
 
   int perturb_timescale(
@@ -995,121 +1025,6 @@ extern "C" {
                                   double * pvecthermo,
                                   struct perturb_workspace * ppw
                                   );
-
-
-  int perturb_test_ini_grav_ic_smg(struct precision * ppr,
-			  struct background * pba,
-			  struct perturbs * ppt);
-
-  int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
-			  struct background * pba,
-			  struct perturbs * ppt);
-
-  int perturb_test_at_k_qs_smg(struct precision * ppr,
-                              struct background * pba,
-                              struct perturbs * ppt,
-                              double k,
-                              double tau,
-                              int *approx);
-
-  int perturb_test_ini_qs_smg(struct precision * ppr,
-                             struct background * pba,
-                             struct perturbs * ppt,
-                             double k_min,
-                             double k_max,
-                             double a_ini);
-
-  int perturb_find_scheme_qs_smg(struct precision * ppr,
-                                struct background * pba,
-                                struct perturbs * ppt,
-                                double k,
-                                double tau_ini,
-                                double tau_end,
-                                double * tau_scheme_qs_smg);
-
-  int sample_mass_qs_smg(struct precision * ppr,
-                        struct background * pba,
-                        struct perturbs * ppt,
-                        double k,
-                        double tau_ini,
-                        double tau_end,
-                        double * tau_sample,
-                        double * mass_sample,
-                        double * rad_sample,
-                        double * slope_sample,
-                        int *size_sample);
-
-  int mass_to_approx_qs_smg(struct precision * ppr,
-                           struct background * pba,
-                           struct perturbs * ppt,
-                           double tau_ini,
-                           double tau_end,
-                           double * tau_sample,
-                           double * mass_sample,
-                           double * rad_sample,
-                           int * approx_sample,
-                           int size_sample);
-
-  int shorten_first_qs_smg(double * tau_sample,
-                          double * slope_sample,
-                          int * approx_sample,
-                          int size_sample,
-                          double * tau_array,
-                          double * slope_array,
-                          int * approx_array,
-                          int *size_array,
-                          double tau_end);
-
-  int correct_with_slope_qs_smg(struct precision * ppr,
-                               struct background * pba,
-                               struct perturbs * ppt,
-                               double tau_ini,
-                               double tau_end,
-                               double * tau_array,
-                               double * slope_array,
-                               int * approx_array,
-                               int size_array);
-
-  int shorten_second_qs_smg(double * tau_array,
-                           int * approx_array,
-                           int size_array,
-                           double * tau_scheme,
-                           int * approx_scheme,
-                           int *size_scheme);
-
-  int fit_real_scheme_qs_smg(double tau_end,
-                            int * approx_scheme,
-                            double * tau_scheme,
-                            int size_scheme,
-                            double * tau_export);
-
-  int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2,
-                        double Omx, double wx, double l1, double l2, double l3, double l4,
-                        double l5, double l6,double l7,double l8, double cs2num, double Dd, double ic_regulator_smg,
-                        double * amplitude);
-
-  int get_gravity_coefficients_smg(
-                                 struct perturbs * ppt,
-                                 struct background * pba,
-                                 double * pvecback,
-                                 double * delM2, double * M2, double * kin, double * bra,
-                                 double * ten, double * run, double * beh, double * res,
-                                 double * cD, double * cK, double * cB, double * cH, double * c0,
-                                 double * c1, double * c2, double * c3, double * c4,
-                                 double * c5, double * c6, double * c7, double * c8,
-                                 double * c9, double * c10, double * c11, double * c12,
-                                 double * c13, double * c14, double * c15, double * c16,
-                                 double * res_p, double *  cD_p, double *  cB_p, double *  cH_p,
-                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p
-                               );
-
-  int get_x_x_prime_qs_smg(
-                          struct precision * ppr,
-                          struct background * pba,
-                          struct perturbs * ppt,
-                          struct perturb_workspace * ppw,
-                          double k, double * x_qs_smg, double * x_prime_qs_smg
-                          );
 
 #ifdef __cplusplus
 }
