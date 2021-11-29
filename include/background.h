@@ -129,6 +129,70 @@ struct background
   //@}
 
 
+  /** @name - hi_class (_smg) related parameters */
+
+  double hubble_friction; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */
+  int hubble_evolution; /** whether to evolve H' from the equation */
+
+  enum gravity_model gravity_model_smg; /** Horndeski model */
+  //   enum gravity_model_subclass gravity_submodel_smg; /** Horndeski model */
+  enum expansion_model expansion_model_smg; /* choice of expansion rate */
+
+  short initial_conditions_set_smg; /* whether IC have been established. For printing and information */
+  short parameters_tuned_smg; /* whether model has been tuned. For doing stability tests, etc... */
+  short is_quintessence_smg; /* is the scalar field from a quintessence model?*/
+
+  double Omega0_smg; /**< \f$ \Omega_{0_\phi} \f$ : scalar field energy fraction */
+  double Omega_smg_debug; /**< debug value when no tuning is wanted */
+  short attractor_ic_smg; /** < whether the scalar field has attractor initial conditions */
+
+  double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
+  double phi_0_smg; /** < final value of phi  */
+  double M2_0_smg; /** < final value of M_*^2  */
+
+  double cs2_safe_smg; /**< threshold for the speed of sound to consider it negative */
+  double D_safe_smg; /* threshold to consider the kinetic term of scalars negative in the stability check */
+  double ct2_safe_smg; /* threshold to consider the sound speed of tensors negative in the stability check */
+  double M2_safe_smg; /* threshold to consider the kinetic term of tensors (M2) negative in the stability check */
+  double kineticity_safe_smg; /**< minimum value of the kineticity, to avoid problems with the perturbations */
+  double quintessence_w_safe_smg; /**< threshold to consider the quintessence equation of state less than -1 in the stability check */
+
+  double min_M2_smg; /**< minimum value of planck mass (for stability test) */
+  double min_ct2_smg; /**< minimum value of tensor speed of sound squared (for stability test) */
+  double min_D_smg; /**< minimum value of scalar kinetic term (for stability test) */
+  double min_cs2_smg; /**< minimum value of scalar speed of sound squared (for stability test) */
+
+  double min_bra_smg; /**< minimum value of the braiding */
+  double max_bra_smg; /**< maximum value of the braiding */
+
+  int skip_stability_tests_smg; /**< specify if you want to skip the stability tests for the field perturbations */
+  double a_min_stability_test_smg; /** < skip stability tests for a < a_min */
+
+
+  int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
+  int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
+  int rho_evolution_smg; /**< does the model require integrating the energy density? */
+
+   /* Modified gravity parameters
+   * parameters_smg -> contains the primary parameters. Any param that might be varied to determine Omega_smg should be here
+   * tuning_index_smg -> which parameter is varied to obtain the right Omega_smg
+   * parameters_2_smg -> contains auxiliary parameters. These will not be varied to obtain Omega_smg
+   * for non-dynamical models: the expansion history in parameters_smg, while the alphas are in parameters_2_smg
+   */
+  double * parameters_smg;  /**< list of parameters describing the modified gravity model (must contain the shooting parameter) */
+  int parameters_size_smg;  /**< size of scf_parameters */
+  int tuning_index_smg;     /**< index in parameters_smg used for tuning */
+  double tuning_dxdy_guess_smg; /**< guess for the scale of the tuning value */
+
+  double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
+  int parameters_2_size_smg; /**< size of parameters_smg */
+
+  int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
+  int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
+  double M_pl_today_smg;
+
+  short output_background_smg; /**< flag regulating the amount of information printed onbackground.dat output */
+
   /** @name - related parameters */
 
   //@{
@@ -185,6 +249,138 @@ struct background
   int index_bg_p_scf;         /**< scalar field pressure */
   int index_bg_p_prime_scf;         /**< scalar field pressure */
 
+  /** @name - hi_class (_smg) related parameters */
+
+  int index_bg_phi_smg;       /**< scalar field value */
+  int index_bg_phi_prime_smg; /**< scalar field derivative wrt conformal time */
+  int index_bg_phi_prime_prime_smg; /**< scalar field second derivative wrt conformal time */
+  int index_bg_rho_smg;       /**< scalar field energy density */
+  int index_bg_p_smg;         /**< scalar field pressure */
+  int index_bg_rho_prime_smg;       /**< derivative of the scalar field energy density */
+  int index_bg_current_smg;       /**< scalar field current */
+  int index_bg_shift_smg;       /**< scalar field shift */
+  int index_bg_M2_smg;   /**< relative Planck mass */
+  int index_bg_delta_M2_smg;   /**< relative Planck mass -1. */
+  int index_bg_kineticity_over_phiphi_smg;/**< scalar field kineticity alpha_k*(a*H/phi')^2 (BS eq A.8)*/
+  int index_bg_braiding_over_phi_smg;/**< scalar field braiding alpha_b*a*H/phi' (BS eq A.9)*/
+  int index_bg_beyond_horndeski_over_phi_smg;/**<scalar field beyond horndeski alpha_H*a*H/phi'*/
+  int index_bg_braiding_over_phi_prime_smg;/**< scalar field braiding alpha_b*a*H/phi' derivative*/
+  int index_bg_beyond_horndeski_over_phi_prime_smg;/**<scalar field beyond horndeski alpha_H*a*H/phi' derivative*/
+  int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/
+  int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/
+  int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/
+  int index_bg_mpl_running_smg; /**< scalar field relative Planck mass running*/
+  int index_bg_beyond_horndeski_smg;/**<scalar field beyond horndeski alpha_H*/
+  int index_bg_kineticity_prime_smg;/**< derivative of kineticity wrt tau (BS eq A.8)*/
+  int index_bg_braiding_prime_smg;/**< derivative of braiding wrt tau (BS eq A.9)*/
+  int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/
+  int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/
+  int index_bg_beyond_horndeski_prime_smg;/**<derivative of beyond horndeski alpha_H*/
+  int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
+
+  int index_bg_E0_smg; /**< Hubble constraint */
+  int index_bg_E1_smg; /**< Hubble constraint */
+  int index_bg_E2_smg; /**< Hubble constraint */
+  int index_bg_E3_smg; /**< Hubble constraint */
+
+  int index_bg_P0_smg; /**< Hubble dynamical */
+  int index_bg_P1_smg; /**< Hubble dynamical */
+  int index_bg_P2_smg; /**< Hubble dynamical */
+  int index_bg_R0_smg; /**< Klein-Gordon */
+  int index_bg_R1_smg; /**< Klein-Gordon */
+  int index_bg_R2_smg; /**< Klein-Gordon */
+
+  int index_bg_A0_smg;
+  int index_bg_A1_smg;
+  int index_bg_A2_smg;
+  int index_bg_A3_smg;
+  int index_bg_A4_smg;
+  int index_bg_A5_smg;
+  int index_bg_A6_smg;
+  int index_bg_A7_smg;
+  int index_bg_A8_smg;
+  int index_bg_A9_smg;
+  int index_bg_A10_smg;
+  int index_bg_A11_smg;
+  int index_bg_A12_smg;
+  int index_bg_A13_smg;
+  int index_bg_A14_smg;
+  int index_bg_A15_smg;
+  int index_bg_A16_smg;
+  int index_bg_A9_prime_smg;
+  int index_bg_A10_prime_smg;
+  int index_bg_A12_prime_smg;
+  int index_bg_A13_prime_smg;
+
+  int index_bg_B0_smg;
+  int index_bg_B1_smg;
+  int index_bg_B2_smg;
+  int index_bg_B3_smg;
+  int index_bg_B4_smg;
+  int index_bg_B5_smg;
+  int index_bg_B6_smg;
+  int index_bg_B7_smg;
+  int index_bg_B8_smg;
+  int index_bg_B9_smg;
+  int index_bg_B10_smg;
+  int index_bg_B11_smg;
+  int index_bg_B12_smg;
+
+  int index_bg_C0_smg;
+  int index_bg_C1_smg;
+  int index_bg_C2_smg;
+  int index_bg_C3_smg;
+  int index_bg_C4_smg;
+  int index_bg_C5_smg;
+  int index_bg_C6_smg;
+  int index_bg_C7_smg;
+  int index_bg_C8_smg;
+  int index_bg_C9_smg;
+  int index_bg_C10_smg;
+  int index_bg_C11_smg;
+  int index_bg_C12_smg;
+  int index_bg_C13_smg;
+  int index_bg_C14_smg;
+  int index_bg_C15_smg;
+  int index_bg_C16_smg;
+  int index_bg_C9_prime_smg;
+  int index_bg_C10_prime_smg;
+  int index_bg_C12_prime_smg;
+  int index_bg_C13_prime_smg;
+
+
+  int index_bg_kinetic_D_smg;
+  int index_bg_kinetic_D_prime_smg;
+  int index_bg_kinetic_D_over_phiphi_smg;
+  int index_bg_kinetic_D_over_phiphi_prime_smg;
+  int index_bg_lambda_1_smg;
+  int index_bg_lambda_2_smg;
+  int index_bg_lambda_3_smg;
+  int index_bg_lambda_4_smg;
+  int index_bg_lambda_5_smg;
+  int index_bg_lambda_6_smg;
+  int index_bg_lambda_7_smg;
+  int index_bg_lambda_8_smg;
+  int index_bg_lambda_9_smg;
+  int index_bg_lambda_10_smg;
+  int index_bg_lambda_11_smg;
+  int index_bg_lambda_2_prime_smg;
+  int index_bg_lambda_8_prime_smg;
+  int index_bg_lambda_9_prime_smg;
+  int index_bg_lambda_11_prime_smg;
+  int index_bg_cs2num_smg;
+  int index_bg_cs2num_prime_smg;
+
+  int index_bg_rho_tot_wo_smg; /**< total density minus scalar field */
+  int index_bg_p_tot_wo_smg; /**< total pressure minus scalar field */
+  int index_bg_H_prime_prime; /**< second derivative of the hubble parameter (necessary for BS perturbations equation for h'') */
+  int index_bg_p_tot_wo_prime_smg; /**< derivative of the total pressure minus scalar field */
+  int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */
+  int index_bg_w_smg; /**< equation of state of the scalar field */
+
+  int index_bg_G_eff_smg; /**< G effective in the infinite k limit */
+  int index_bg_slip_eff_smg; /**< slip effective in the infinite k limit */
+
   int index_bg_rho_ncdm1;     /**< density of first ncdm species (others contiguous) */
   int index_bg_p_ncdm1;       /**< pressure of first ncdm species (others contiguous) */
   int index_bg_pseudo_p_ncdm1;/**< another statistical momentum useful in ncdma approximation */
@@ -194,6 +390,8 @@ struct background
   int index_bg_p_tot_prime;   /**< Conf. time derivative of total pressure */
 
   int index_bg_Omega_r;       /**< relativistic density fraction (\f$ \Omega_{\gamma} + \Omega_{\nu r} \f$) */
+
+  int index_bg_Omega_de;       /**< dark energy density fraction (\f$ \Omega_{\Lambda} + \Omega_{\rm quint} + + \Omega_{\rm fld} + + \Omega_{\rm smg} \f$) */
 
   /* end of vector in normal format, now quantities in long format */
 
@@ -261,6 +459,12 @@ struct background
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 
+  int index_bi_H;       /**< {B} Hubble rate factor */
+  int index_bi_phi_smg;   /**< scalar field */
+  int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
+  int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/
+  int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
+
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */
   int index_bi_tau;     /**< {C} conformal time in Mpc */
@@ -292,6 +496,7 @@ struct background
   short has_fld;       /**< presence of fluid with constant w and cs2? */
   short has_ur;        /**< presence of ultra-relativistic neutrinos/relics? */
   short has_idr;       /**< presence of interacting dark radiation? */
+  short has_smg;       /**< presence of scalar field? */
   short has_curvature; /**< presence of global spatial curvature? */
   short has_varconst; /**< presence of varying fundamental constants? */
 
