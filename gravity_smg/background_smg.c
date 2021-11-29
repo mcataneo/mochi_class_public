@@ -2204,12 +2204,12 @@ int background_hi_class_second_loop(
 		pba->error_message);
 
 	  /* - indices for scalar field (modified gravity) */
-	  hi_class_call(background_derivs_alphas_smg(pba, pvecback, pvecback_derivs, i),
+	  class_call(background_derivs_alphas_smg(pba, pvecback, pvecback_derivs, i),
 	    pba->error_message,
 	    pba->error_message
 	  );
 
-	  hi_class_call(background_gravity_functions_A_C_smg(pba,pvecback,pvecback_derivs,i),
+	  class_call(background_gravity_functions_A_C_smg(pba,pvecback,pvecback_derivs,i),
 	    pba->error_message,
 	    pba->error_message
 	  );
