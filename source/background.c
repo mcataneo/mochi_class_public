@@ -1072,6 +1072,7 @@ int background_indices(
   class_define_index(pba->index_bg_A10_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A12_prime_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_A13_prime_smg,pba->has_smg,index_bg,1);
+  class_define_index(pba->index_bg_B0_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B1_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B2_smg,pba->has_smg,index_bg,1);
   class_define_index(pba->index_bg_B3_smg,pba->has_smg,index_bg,1);

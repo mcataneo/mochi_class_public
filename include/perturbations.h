@@ -493,7 +493,10 @@ struct perturbs
   Decide whether to use the equations with Vx (singular when phi_prime=0)
   or the equations with delta_phi (defined only with covariant theories)
   */
-  short use_pert_var_deltaphi;
+  short use_pert_var_deltaphi_smg;
+
+  /* Get h' from Einstein trace rather than 00 (not only _smg!!) */
+  short get_h_from_trace;
 
 };
 
@@ -560,7 +563,7 @@ struct perturb_vector
   int index_pt_phi;	      /**< newtonian gauge metric perturbation phi */
   int index_pt_hv_prime;  /**< vector metric perturbation h_v' in synchronous gauge */
   int index_pt_V;         /**< vector metric perturbation V in Newtonian gauge */
-  int index_pt_h_prime_from_trace_smg;
+  int index_pt_h_prime_from_trace;
 
   int index_pt_gw;        /**< tensor metric perturbation h (gravitational waves) */
   int index_pt_gwdot;     /**< its time-derivative */
@@ -600,6 +603,7 @@ struct perturb_workspace
   int index_mt_eta_prime;     /**< eta' (wrt conf. time) in synchronous gauge */
   int index_mt_alpha;         /**< \f$ \alpha = (h' + 6 \eta') / (2 k^2) \f$ in synchronous gauge */
   int index_mt_alpha_prime;   /**< \f$ \alpha'\f$ wrt conf. time) in synchronous gauge */
+  int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_gw_prime_prime;/**< second derivative wrt conformal time of gravitational wave field, often called h */
   int index_mt_V_prime;       /**< derivative of Newtonian gauge vector metric perturbation V */
   int index_mt_hv_prime_prime;/**< Second derivative of Synchronous gauge vector metric perturbation \f$ h_v\f$ */
@@ -607,7 +611,6 @@ struct perturb_workspace
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
   int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
-  int index_mt_checkeinstein00_smg; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace_smg == _TRUE_ */
   int mt_size;                /**< size of metric perturbation vector */
 
   //@}
@@ -1089,9 +1092,9 @@ extern "C" {
                                  struct perturbs * ppt,
                                  struct background * pba,
                                  double * pvecback,
-                                 double * M2, double * kin, double * bra, double * ten,
-                                 double * run, double * beh, double * res, double * cD,
-                                 double * cK, double * cB, double * cH, double * c0,
+                                 double * delM2, double * M2, double * kin, double * bra,
+                                 double * ten, double * run, double * beh, double * res,
+                                 double * cD, double * cK, double * cB, double * cH, double * c0,
                                  double * c1, double * c2, double * c3, double * c4,
                                  double * c5, double * c6, double * c7, double * c8,
                                  double * c9, double * c10, double * c11, double * c12,
@@ -1101,6 +1104,7 @@ extern "C" {
                                );
 
   int get_x_x_prime_qs_smg(
+                          struct precision * ppr,
                           struct background * pba,
                           struct perturbs * ppt,
                           struct perturb_workspace * ppw,

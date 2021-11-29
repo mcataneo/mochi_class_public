@@ -655,7 +655,7 @@ int perturb_init(
     if ( ppt->pert_initial_conditions_smg == gravitating_attr ){
       class_test_except((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
                  ppt->error_message,
-                 background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt),
+                 perturb_free_nosource(ppt),
                  "Isocurvature initial conditions for early modified gravity (Gravitating Attractor) not implemented.");
     }
 
@@ -672,7 +672,7 @@ int perturb_init(
                                                ppr->a_ini_over_a_today_default),
                  ppt->error_message,
                  ppt->error_message,
-                 background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+                 perturb_free_nosource(ppt));
     }
 
     if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==1))) {
@@ -690,7 +690,7 @@ int perturb_init(
             ppt),
           ppt->error_message,
           ppt->error_message,
-        background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+        perturb_free_nosource(ppt));
       }
 
       if( ppt->pert_initial_conditions_smg == ext_field_attr){
@@ -702,7 +702,7 @@ int perturb_init(
                                                          ppt),
                 ppt->error_message,
                 ppt->error_message,
-                background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+                perturb_free_nosource(ppt));
       }
     }
   }
@@ -734,7 +734,7 @@ int perturb_init(
                                                      ppt),
              ppt->error_message,
              ppt->error_message,
-             background_free(pba);thermodynamics_free(pth);perturb_free_nosource(ppt));
+             perturb_free_nosource(ppt));
 
   /** - if we want to store perturbations for given k values, write titles and allocate storage */
 
@@ -865,8 +865,6 @@ int perturb_init(
       } /* end of parallel region */
 
       if (abort == _TRUE_) {
-        background_free(pba);
-        thermodynamics_free(pth);
         perturb_free(ppt);
         int t;
         for (t = 0; t < number_of_threads; t++) {
@@ -2671,11 +2669,11 @@ int perturb_workspace_init(
       class_define_index(ppw->index_mt_eta_prime,_TRUE_,index_mt,1);     /* eta' */
       class_define_index(ppw->index_mt_alpha,_TRUE_,index_mt,1);         /* alpha = (h' + 6 tau') / (2 k**2) */
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
+      class_define_index(ppw->index_mt_einstein00,_TRUE_,index_mt,1);
       class_define_index(ppw->index_mt_x_smg,pba->has_smg,index_mt,1);   /* x_smg (can be dynamical or not) */
       class_define_index(ppw->index_mt_x_prime_smg,pba->has_smg,index_mt,1);   /* x_smg' (can be dynamical or not) */
       class_define_index(ppw->index_mt_x_prime_prime_smg,pba->has_smg,index_mt,1);   /* x_smg'' (passed to integrator) */
       class_define_index(ppw->index_mt_rsa_p_smg,pba->has_smg,index_mt,1);   /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
-      class_define_index(ppw->index_mt_checkeinstein00_smg,pba->has_smg,index_mt,1);
     }
 
   }
@@ -3370,8 +3368,18 @@ int perturb_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "delta_rho_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "rho_plus_p_theta_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "delta_p_fld", pba->has_fld);
+
+      /* Metric perturbations */
+      class_store_columntitle(ppt->scalar_titles,"h_prime",ppt->gauge == synchronous);
+      class_store_columntitle(ppt->scalar_titles,"h_prime_prime",ppt->gauge == synchronous);
+      class_store_columntitle(ppt->scalar_titles,"eta",ppt->gauge == synchronous);
+      class_store_columntitle(ppt->scalar_titles,"eta_prime",ppt->gauge == synchronous);
+      class_store_columntitle(ppt->scalar_titles,"alpha",ppt->gauge == synchronous);
+      class_store_columntitle(ppt->scalar_titles,"alpha_prime",ppt->gauge == synchronous);
+      class_store_columntitle(ppt->scalar_titles,"einstein00",ppt->gauge == synchronous);
+
       /* Scalar field smg */
-      if (ppt->use_pert_var_deltaphi==_TRUE_) {
+      if (ppt->use_pert_var_deltaphi_smg==_TRUE_) {
         class_store_columntitle(ppt->scalar_titles, "delta_phi_smg", pba->has_smg);
         class_store_columntitle(ppt->scalar_titles, "delta_phi_prime_smg", pba->has_smg);
         class_store_columntitle(ppt->scalar_titles, "delta_phi_prime_prime_smg", pba->has_smg);
@@ -3381,13 +3389,6 @@ int perturb_prepare_k_output(struct background * pba,
         class_store_columntitle(ppt->scalar_titles, "V_x_prime_smg", pba->has_smg);
         class_store_columntitle(ppt->scalar_titles, "V_x_prime_prime_smg", pba->has_smg);
       }
-
-      class_store_columntitle(ppt->scalar_titles,"h_prime",pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles,"h_prime_prime",pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles,"eta",pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles,"eta_prime",pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles,"alpha",pba->has_smg);
-      class_store_columntitle(ppt->scalar_titles,"alpha_prime",pba->has_smg);
 
       ppt->number_of_scalar_titles =
         get_number_of_titles(ppt->scalar_titles);
@@ -4074,8 +4075,8 @@ int perturb_vector_init(
 
     /* metric perturbation eta of synchronous gauge */
     class_define_index(ppv->index_pt_eta,ppt->gauge == synchronous,index_pt,1);
-    if (pba->has_smg == _TRUE_) {
-      class_define_index(ppv->index_pt_h_prime_from_trace_smg,ppt->gauge == synchronous,index_pt,1);
+    if (ppt->get_h_from_trace == _TRUE_) {
+      class_define_index(ppv->index_pt_h_prime_from_trace,ppt->gauge == synchronous,index_pt,1);
     }
 
     /* metric perturbation phi of newtonian gauge ( we could fix it
@@ -4511,9 +4512,9 @@ int perturb_vector_init(
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
 
-      if ((ppt->gauge == synchronous) && (pba->has_smg == _TRUE_))
-        ppv->y[ppv->index_pt_h_prime_from_trace_smg] =
-          ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace_smg];
+      if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_))
+        ppv->y[ppv->index_pt_h_prime_from_trace] =
+          ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace];
 
       if (ppt->gauge == newtonian)
         ppv->y[ppv->index_pt_phi] =
@@ -5481,6 +5482,8 @@ int perturb_initial_conditions(struct precision * ppr,
     /* Omega_m(t_i) / Omega_r(t_i) */
     rho_m_over_rho_r = rho_m/rho_r;
 
+
+
     /* omega = Omega_m(t_i) a(t_i) H(t_i) / sqrt(Omega_r(t_i))
        = Omega_m(t_0) a(t_0) H(t_0) / sqrt(Omega_r(t_0)) assuming rho_m in a-3 and rho_r in a^-4
        = (8piG/3 rho_m(t_i)) a(t_i) / sqrt(8piG/3 rho_r(t_i))  in Mpc-1
@@ -5495,6 +5498,11 @@ int perturb_initial_conditions(struct precision * ppr,
 
 
 
+    H = ppw->pvecback[pba->index_bg_H];
+    Hprime = ppw->pvecback[pba->index_bg_H_prime];
+    a = ppw->pvecback[pba->index_bg_a];
+    rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
+    p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
     if (pba->has_smg == _TRUE_) {
 
           // Read in the initial values of all background params: alphas, Omx, w
@@ -5504,11 +5512,6 @@ int perturb_initial_conditions(struct precision * ppr,
           dt = -1/(4.*ppw->pvecback[pba->index_bg_H])*ppw->pv->y[ppw->pv->index_pt_delta_g];
 
 
-          H = ppw->pvecback[pba->index_bg_H];
-          Hprime = ppw->pvecback[pba->index_bg_H_prime];
-          a = ppw->pvecback[pba->index_bg_a];
-	        rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
-	        p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
 	        rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
 	        p_smg = ppw->pvecback[pba->index_bg_p_smg];
 
@@ -6074,7 +6077,6 @@ int perturb_initial_conditions(struct precision * ppr,
 
           x_smg = ppw->pv->y[ppw->pv->index_pt_x_smg];
           xp_smg = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
-          delta_rho_r = rho_r * ppw->pv->y[ppw->pv->index_pt_delta_g];
 
         } //end adiabatic mode dynamical ICs for smg
         else
@@ -6166,16 +6168,6 @@ int perturb_initial_conditions(struct precision * ppr,
         //print the scalar's IC values, whatever the ICs
         if(ppt->perturbations_verbose > 5)
           printf(" x_smg = %e, x_smg'= %e \n", x_smg,xp_smg);
-
-        // Define initial condition for h^\prime evolved from the Einstein trace equation
-        // We should take into account also matter density otherwise we get percent differences
-        /* TODO: think of adding all species in a more sysyematic way */
-        double delta_rho_tot =
-          + delta_rho_r
-          + ppw->pvecback[pba->index_bg_rho_b]*ppw->pv->y[ppw->pv->index_pt_delta_b]
-          + ppw->pvecback[pba->index_bg_rho_cdm]*ppw->pv->y[ppw->pv->index_pt_delta_cdm];
-        /* TODO_EB: rewrite this equation with new variables */
-        ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace_smg] = (-4. * pow(H, -1) * pow(k, 2) * eta / a - 6. * pow(H, -1) * pow(M2, -1) * delta_rho_tot * a + 2. * H * (3. * bra + kin) * xp_smg * a + (2. * bra * pow(k, 2) + (-18. + 15. * bra + 2. * kin) * rho_smg * pow(a, 2) + (-18. * DelM2 + 15. * bra * M2 + 2. * kin * M2) * rho_tot * pow(M2, -1) * pow(a, 2) + (-2. * DelM2 + bra * M2) * 9. * pow(M2, -1) * p_tot * pow(a, 2) + 9. * (-2. + bra) * p_smg * pow(a, 2)) * x_smg) * pow(-2. + bra, -1);
 
       } // end SMG adiabatic ICs
     }   //end adiabatic ICs
@@ -6491,7 +6483,25 @@ int perturb_initial_conditions(struct precision * ppr,
     if (ppt->gauge == synchronous) {
 
       ppw->pv->y[ppw->pv->index_pt_eta] = eta;
+
+      if (ppt->get_h_from_trace == _TRUE_) {
+        // Define initial condition for h^\prime evolved from the Einstein trace equation
+        // We should take into account also matter density otherwise we get percent differences
+        /* TODO: think of adding all species in a more sysyematic way */
+        double delta_rho_tot =
+          + rho_r * ppw->pv->y[ppw->pv->index_pt_delta_g]
+          + ppw->pvecback[pba->index_bg_rho_b]*ppw->pv->y[ppw->pv->index_pt_delta_b]
+          + ppw->pvecback[pba->index_bg_rho_cdm]*ppw->pv->y[ppw->pv->index_pt_delta_cdm];
+        if (pba->has_smg == _TRUE_) {
+          /* TODO_EB: rewrite this equation with new variables */
+          ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace] = (-4. * pow(H, -1) * pow(k, 2) * eta / a - 6. * pow(H, -1) * pow(M2, -1) * delta_rho_tot * a + 2. * H * (3. * bra + kin) * xp_smg * a + (2. * bra * pow(k, 2) + (-18. + 15. * bra + 2. * kin) * rho_smg * pow(a, 2) + (-18. * DelM2 + 15. * bra * M2 + 2. * kin * M2) * rho_tot * pow(M2, -1) * pow(a, 2) + (-2. * DelM2 + bra * M2) * 9. * pow(M2, -1) * p_tot * pow(a, 2) + 9. * (-2. + bra) * p_smg * pow(a, 2)) * x_smg) * pow(-2. + bra, -1);
+        }
+        else {
+          ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace] = (2.*pow(k, 2)*eta + 3.*a*a*delta_rho_tot)/a/H;
+        }
+      }
     }
+
 
 
     /** - (d) If the needed gauge is the newtonian gauge, we must compute alpha and then perform a gauge transformation for each variable */
@@ -7399,7 +7409,7 @@ int perturb_einstein(
 
         int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
-        double H, M2, kin, bra, ten, run, beh;
+        double H, delM2, M2, kin, bra, ten, run, beh;
         double res, cD, cK, cB, cH;
         double c0, c1, c2, c3, c4, c5, c6, c7, c8;
         double c9, c10, c11, c12, c13, c14, c15, c16;
@@ -7409,12 +7419,12 @@ int perturb_einstein(
         H = ppw->pvecback[pba->index_bg_H];
 
         /* Define background coefficients. This function uses
-        use_pert_var_deltaphi to decide which coefficients to output.
+        use_pert_var_deltaphi_smg to decide which coefficients to output.
         */
         class_call(
           get_gravity_coefficients_smg(
             ppt, pba, ppw->pvecback,
-            & M2, & kin, & bra, & ten, & run, & beh, & res,
+            & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
             & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
             & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
             & c12, & c13, & c14, & c15, & c16,  & res_p, & cD_p, & cB_p,
@@ -7424,31 +7434,25 @@ int perturb_einstein(
           ppt->error_message);
 
 
-        /* Get metric perturbations from the integrator */
+        /* Get eta from the integrator */
         ppw->pvecmetric[ppw->index_mt_eta] = y[ppw->pv->index_pt_eta];
-        if (ppr->get_h_from_trace_smg == _TRUE_) {
-          ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace_smg];
-        }
-        else{
-          /* It is still possible to get h_prime through th 00 Einstein equation,
-          but this generates a warning as it will be removed in future versions
-          of hi_class. */
-          ppw->pvecmetric[ppw->index_mt_h_prime] =
-          + 4.*(
-            + 3./2.*ppw->delta_rho*a/H/M2
-            + (1. + beh)*k2*ppw->pvecmetric[ppw->index_mt_eta]/a/H
-            - c14*res*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-            - res/a/H*(c15*k2 + c16*pow(a*H,2))*ppw->pvecmetric[ppw->index_mt_x_smg]
-          )/(2. - bra);
-        }
 
+        /* Get h' from the integrator. This is the right place because in QS
+        the scalar field depends on h' (only if h' comes from the integrator,
+        otherwise it has been diagonalised) */
+        if (ppt->get_h_from_trace == _TRUE_) {
+          ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
+        }
 
         /* Get scalar field perturbations */
         if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
-          /* Get scalar field perturbations from QS expressions */
+          /* Get scalar field perturbations from QS expressions. This function
+          hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
+          both x and x' depend on h' (simpler non-divergent expressions), otherwise
+          they have been diagonalised (longer divergent expressions). */
           class_call(
             get_x_x_prime_qs_smg(
-              pba, ppt, ppw, k,
+              ppr, pba, ppt, ppw, k,
               & ppw->pvecmetric[ppw->index_mt_x_smg],
               & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
             ),
@@ -7463,6 +7467,19 @@ int perturb_einstein(
         else {
           printf("Scalar field equation: qs_smg approximation mode %i not recognized. should be quasi_static or fully_dynamic.\n",ppw->approx[ppw->index_ap_qs_smg]);
           return _FAILURE_;
+        }
+
+        if (ppt->get_h_from_trace == _FALSE_) {
+          /* It is still possible to get h_prime through th 00 Einstein equation,
+          but this generates a warning as it will be removed in future versions
+          of hi_class. This is the right place, since h' depends on x and x'. */
+          ppw->pvecmetric[ppw->index_mt_h_prime] =
+          + 4.*(
+            + 3./2.*ppw->delta_rho*a/H/M2
+            + (1. + beh)*k2*ppw->pvecmetric[ppw->index_mt_eta]/a/H
+            - c14*res*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+            - res/a/H*(c15*k2 + c16*pow(a*H,2))*ppw->pvecmetric[ppw->index_mt_x_smg]
+          )/(2. - bra);
         }
 
 
@@ -7507,6 +7524,17 @@ int perturb_einstein(
           - 1./2.*res*cB*ppw->pvecmetric[ppw->index_mt_x_prime_smg];
 
 
+        /* Here we are storing deviations from the first (00) einstein equation.
+        This is to check that h' and the other variables are being properly
+        integrated and as a friction term for the third einstein equation (h'') */
+        ppw->pvecmetric[ppw->index_mt_einstein00] =
+          + 2.*(1. + beh)*k2*pow(a,-2)*ppw->pvecmetric[ppw->index_mt_eta]
+          + 3.*ppw->delta_rho/M2
+          - H/a*(2. - bra)/2.*ppw->pvecmetric[ppw->index_mt_h_prime]
+          - 2.*res*pow(H,2)*(c16 + c15*k2*pow(a*H,-2))*ppw->pvecmetric[ppw->index_mt_x_smg]
+          - 2.*res*c14*H*ppw->pvecmetric[ppw->index_mt_x_prime_smg]/a;
+
+
         /* third equation involving total pressure */
         ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
         (
@@ -7523,6 +7551,14 @@ int perturb_einstein(
             + c7*k2 + c6*pow(a*H,2)
           )*ppw->pvecmetric[ppw->index_mt_x_smg]
         )/cD;
+
+        /* This corrects the third equation using the Einstein 00. It has to be
+        read as a friction term that vanishes whenever the Hamiltonian constraint
+        is satisfied. */
+        if (ppt->get_h_from_trace == _TRUE_) {
+          ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
+            a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+        }
 
 
         /* alpha = (h'+6eta')/2k^2 */
@@ -7561,7 +7597,7 @@ int perturb_einstein(
 
 
         /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
-        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
+        if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
           ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
           (
             + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
@@ -7583,23 +7619,17 @@ int perturb_einstein(
         }//end of fully_dynamic equation
 
 
-        /* Here we are using the first (00) einstein equation to check that
-        h' and the other variables are being integrated properly */
-        ppw->pvecmetric[ppw->index_mt_checkeinstein00_smg] =
-        + 1. + beh
-        + pow(a,2)*(
-          + 3.*ppw->delta_rho/M2
-          - H/a*(2. - bra)/2.*ppw->pvecmetric[ppw->index_mt_h_prime]
-          - 2.*res*pow(H,2)*(c16 + c15*k2*pow(a*H,-2))*ppw->pvecmetric[ppw->index_mt_x_smg]
-          - 2.*res*c14*H*ppw->pvecmetric[ppw->index_mt_x_prime_smg]/a
-        )/ppw->pvecmetric[ppw->index_mt_eta]/k2/2.;
-
       }//end if has_smg
       else {// Standard equations
 
-	/* first equation involving total density fluctuation */
-	ppw->pvecmetric[ppw->index_mt_h_prime] =
-	  ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
+        /* first equation involving total density fluctuation */
+        if (ppt->get_h_from_trace == _TRUE_) {
+          ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
+        }
+        else {
+          ppw->pvecmetric[ppw->index_mt_h_prime] =
+        	  ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
+        }
 
 	/* eventually, infer radiation streaming approximation for
 	  gamma and ur (this is exactly the right place to do it
@@ -7626,11 +7656,27 @@ int perturb_einstein(
 	/* second equation involving total velocity */
 	ppw->pvecmetric[ppw->index_mt_eta_prime] = (1.5 * a2 * ppw->rho_plus_p_theta + 0.5 * pba->K * ppw->pvecmetric[ppw->index_mt_h_prime])/k2/s2_squared;  /* eta' */
 
+  /* Here we are storing deviations from the first (00) einstein equation.
+  This is to check that h' and the other variables are being properly
+  integrated and as a friction term for the third einstein equation (h'') */
+  ppw->pvecmetric[ppw->index_mt_einstein00] =
+    - a_prime_over_a/a2*ppw->pvecmetric[ppw->index_mt_h_prime]
+    + 2.*k2/a2 * s2_squared * y[ppw->pv->index_pt_eta]
+    + 3. * ppw->delta_rho;  /* h' */
+
 	/* third equation involving total pressure */
 	ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
 	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
 	  + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
 	  - 9. * a2 * ppw->delta_p;
+
+  /* This corrects the third equation using the Einstein 00. It has to be
+  read as a friction term that vanishes whenever the Hamiltonian constraint
+  is satisfied. */
+  if (ppt->get_h_from_trace == _TRUE_) {
+    ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
+      a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+  }
 
 	/* alpha = (h'+6eta')/2k^2 */
 	ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
@@ -8442,6 +8488,7 @@ int perturb_sources(
 
   double H_T_Nb_prime=0., rho_tot;
   double theta_over_k2,theta_shift;
+  double check_einstein00;
 
   /** - rename structure fields (just to avoid heavy notations) */
 
@@ -8506,10 +8553,13 @@ int perturb_sources(
                ppt->error_message,
                error_message);
 
-    class_test(
-      fabs(pvecmetric[ppw->index_mt_checkeinstein00_smg])>ppr->einstein00_reldev_tolerance_smg,
-      ppt->error_message,
-      "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace_smg==FALSE to get a consistent evolution. Otherwise you can increase einstein00_reldev_tolerance_smg if you can tolerate larger deviations to this equation.", a_rel, k);
+    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0)) {
+      check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
+      class_test(
+        fabs(check_einstein00)>ppr->tol_einstein00_reldev,
+        ppt->error_message,
+        "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace==FALSE to get a consistent evolution. Otherwise you can increase tol_einstein00_reldev if you can tolerate larger deviations to this equation.", a_rel, k);
+    }
 
     /** - --> compute quantities depending on approximation schemes */
 
@@ -9050,10 +9100,11 @@ int perturb_print_variables(double tau,
   double delta_idr=0., theta_idr=0., shear_idr=0.;
   double delta_rho_scf=0., rho_plus_p_theta_scf=0.;
   double delta_scf=0., theta_scf=0.;
+  double h_prime=0., eta=0.;
+  double h_prime_prime=0., eta_prime=0.;
+  double alpha_mt_prime=0., alpha_mt=0.;
+  double einstein00=0.;
   double x_smg=0., x_prime_smg=0., x_prime_prime_smg=0.;
-  double h_prime_smg=0., eta_smg=0.;
-  double h_prime_prime_smg=0., eta_prime_smg=0.;
-  double alpha_prime_smg=0., alpha_smg=0.;
   /** - ncdm sector begins */
   int n_ncdm;
   double *delta_ncdm=NULL, *theta_ncdm=NULL, *shear_ncdm=NULL, *delta_p_over_delta_rho_ncdm=NULL;
@@ -9351,16 +9402,19 @@ int perturb_print_variables(double tau,
       x_smg = ppw->pvecmetric[ppw->index_mt_x_smg];
       x_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
       x_prime_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg];
-      h_prime_smg = ppw->pvecmetric[ppw->index_mt_h_prime];
-      eta_smg = ppw->pvecmetric[ppw->index_mt_eta];
-      h_prime_prime_smg = ppw->pvecmetric[ppw->index_mt_h_prime_prime];
-      eta_prime_smg = ppw->pvecmetric[ppw->index_mt_eta_prime];
-      alpha_smg = ppw->pvecmetric[ppw->index_mt_alpha];
-      alpha_prime_smg = ppw->pvecmetric[ppw->index_mt_alpha_prime];
     }
 
     /* converting synchronous variables to newtonian ones */
     if (ppt->gauge == synchronous) {
+
+      /* metric perturbations */
+      h_prime = ppw->pvecmetric[ppw->index_mt_h_prime];
+      h_prime_prime = ppw->pvecmetric[ppw->index_mt_h_prime_prime];
+      eta = ppw->pvecmetric[ppw->index_mt_eta];
+      eta_prime = ppw->pvecmetric[ppw->index_mt_eta_prime];
+      alpha_mt = ppw->pvecmetric[ppw->index_mt_alpha];
+      alpha_mt_prime = ppw->pvecmetric[ppw->index_mt_alpha_prime];
+      einstein00 = ppw->pvecmetric[ppw->index_mt_einstein00];
 
       /* density and velocity perturbations (comment out if you wish to keep synchronous variables) */
 
@@ -9489,16 +9543,17 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, ppw->rho_plus_p_theta_fld, pba->has_fld, storeidx);
     class_store_double(dataptr, ppw->delta_p_fld, pba->has_fld, storeidx);
     //fprintf(ppw->perturb_output_file,"\n");
+    class_store_double(dataptr, h_prime, ppt->gauge == synchronous, storeidx);
+    class_store_double(dataptr, h_prime_prime, ppt->gauge == synchronous, storeidx);
+    class_store_double(dataptr, eta, ppt->gauge == synchronous, storeidx);
+    class_store_double(dataptr, eta_prime, ppt->gauge == synchronous, storeidx);
+    class_store_double(dataptr, alpha_mt, ppt->gauge == synchronous, storeidx);
+    class_store_double(dataptr, alpha_mt_prime, ppt->gauge == synchronous, storeidx);
+    class_store_double(dataptr, einstein00, ppt->gauge == synchronous, storeidx);
     /* Scalar field smg*/
     class_store_double(dataptr, x_smg, pba->has_smg, storeidx);
     class_store_double(dataptr, x_prime_smg, pba->has_smg, storeidx);
     class_store_double(dataptr, x_prime_prime_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, h_prime_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, h_prime_prime_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, eta_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, eta_prime_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, alpha_smg, pba->has_smg, storeidx);
-    class_store_double(dataptr, alpha_prime_smg, pba->has_smg, storeidx);
 
 
   }
@@ -10517,9 +10572,9 @@ int perturb_derivs(double tau,
 
     }
 
-    if ((ppt->gauge == synchronous) && (pba->has_smg == _TRUE_)) {
+    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) {
 
-      dy[pv->index_pt_h_prime_from_trace_smg] = pvecmetric[ppw->index_mt_h_prime_prime];
+      dy[pv->index_pt_h_prime_from_trace] = pvecmetric[ppw->index_mt_h_prime_prime];
 
     }
 
@@ -11632,7 +11687,7 @@ int sample_mass_qs_smg(
                pba->error_message,
                ppt->error_message);
 
-   double M2, kin, bra, ten, run, beh;
+   double delM2, M2, kin, bra, ten, run, beh;
    double res, cD, cK, cB, cH;
    double c0, c1, c2, c3, c4, c5, c6, c7, c8;
    double c9, c10, c11, c12, c13, c14, c15, c16;
@@ -11653,7 +11708,7 @@ int sample_mass_qs_smg(
    class_call(
      get_gravity_coefficients_smg(
        ppt, pba, pvecback,
-       & M2, & kin, & bra, & ten, & run, & beh, & res,
+       & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
        & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
        & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
        & c12, & c13, & c14, & c15, & c16, & res_p, & cD_p, & cB_p,
@@ -12466,9 +12521,9 @@ int get_gravity_coefficients_smg(
                                struct perturbs * ppt,
                                struct background * pba,
                                double * pvecback,
-                               double * M2, double * kin, double * bra, double * ten,
-                               double * run, double * beh, double * res, double * cD,
-                               double * cK, double * cB, double * cH, double * c0,
+                               double * delM2, double * M2, double * kin, double * bra,
+                               double * ten, double * run, double * beh, double * res,
+                               double * cD, double * cK, double * cB, double * cH, double * c0,
                                double * c1, double * c2, double * c3, double * c4,
                                double * c5, double * c6, double * c7, double * c8,
                                double * c9, double * c10, double * c11, double * c12,
@@ -12478,7 +12533,7 @@ int get_gravity_coefficients_smg(
                              ){
   /* It returns the alphas and the coefficients of the Einstein equations
   that will be used to evaluate the perturbations and their initial
-  conditions. This function uses use_pert_var_deltaphi to decide which
+  conditions. This function uses use_pert_var_deltaphi_smg to decide which
   coefficients to output.
   */
 
@@ -12486,6 +12541,7 @@ int get_gravity_coefficients_smg(
   double H = pvecback[pba->index_bg_H];
   double Hp = pvecback[pba->index_bg_H_prime];
 
+  *delM2 = pvecback[pba->index_bg_delta_M2_smg];
   *M2 = pvecback[pba->index_bg_M2_smg];
   *kin = pvecback[pba->index_bg_kineticity_smg];
   *bra = pvecback[pba->index_bg_braiding_smg];
@@ -12493,7 +12549,7 @@ int get_gravity_coefficients_smg(
   *run = pvecback[pba->index_bg_mpl_running_smg];
   *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
 
-  if (ppt->use_pert_var_deltaphi == _TRUE_) {
+  if (ppt->use_pert_var_deltaphi_smg == _TRUE_) {
     *res = 1.;
     *cD  = pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
     *cK  = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
@@ -12525,7 +12581,7 @@ int get_gravity_coefficients_smg(
     *c12_p = pvecback[pba->index_bg_C12_prime_smg];
     *c13_p = pvecback[pba->index_bg_C13_prime_smg];
   }
-  else if (ppt->use_pert_var_deltaphi == _FALSE_) {
+  else if (ppt->use_pert_var_deltaphi_smg == _FALSE_) {
     *res = - a*H;
     *cD  = pvecback[pba->index_bg_kinetic_D_smg];
     *cK  = pvecback[pba->index_bg_kineticity_smg];
@@ -12566,6 +12622,7 @@ int get_gravity_coefficients_smg(
 }
 
 int get_x_x_prime_qs_smg(
+                        struct precision * ppr,
                         struct background * pba,
                         struct perturbs * ppt,
                         struct perturb_workspace * ppw,
@@ -12574,7 +12631,7 @@ int get_x_x_prime_qs_smg(
 
   double k2 = k*k;
   double rho_r, p_tot, p_smg;
-  double a, H, M2, kin, bra, ten, run, beh;
+  double a, H, delM2, M2, kin, bra, ten, run, beh;
   double res, cD, cK, cB, cH;
   double c0, c1, c2, c3, c4, c5, c6, c7, c8;
   double c9, c10, c11, c12, c13, c14, c15, c16;
@@ -12591,7 +12648,7 @@ int get_x_x_prime_qs_smg(
   class_call(
     get_gravity_coefficients_smg(
       ppt, pba, ppw->pvecback,
-      & M2, & kin, & bra, & ten, & run, & beh, & res,
+      & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
       & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
       & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
       & c12, & c13, & c14, & c15, & c16, & res_p, & cD_p, & cB_p,
@@ -12601,13 +12658,35 @@ int get_x_x_prime_qs_smg(
     ppt->error_message);
 
   /* This is the expression for the scalar field in the quasi static approximation */
-  *x_qs_smg =
-  + 1./res*(
-    - 9./2.*cB*pow(a,2)*ppw->delta_p/M2
-    + c10*k2*ppw->pvecmetric[ppw->index_mt_eta]
-    + (c9*pow(a*H,2) - 1./3.*cH*k2)*ppw->pvecmetric[ppw->index_mt_h_prime]/a/H
-    + 2./3.*cH*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H
-  )/(c13*k2 + c12*pow(a*H,2));
+  if (ppt->get_h_from_trace == _TRUE_) {
+    /* Scalar field in QS with h' */
+    *x_qs_smg =
+    + 1./res*(
+      - 9./2.*cB*pow(a,2)*ppw->delta_p/M2
+      + c10*k2*ppw->pvecmetric[ppw->index_mt_eta]
+      + (c9*pow(a*H,2) - 1./3.*cH*k2)*ppw->pvecmetric[ppw->index_mt_h_prime]/a/H
+      + 2./3.*cH*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H
+    )/(c13*k2 + c12*pow(a*H,2));
+  }
+  else {
+    /* Scalar field in QS without h' */
+    *x_qs_smg =
+    1./res*(
+      + k2*(
+        + 4.*(1. + beh)*cH*k2
+        - 3.*pow(a*H,2)*((2. - bra)*c10 + 4.*(1. + beh)*c9)
+      )*ppw->pvecmetric[ppw->index_mt_eta]
+      - 2.*(2. - bra)*cH*H*pow(k2,2)*a*ppw->pvecmetric[ppw->index_mt_alpha]
+      + 6.*(
+        + (cH*k2 - 3.*c9*pow(a*H,2))*ppw->delta_rho
+        + 9./4.*cB*(2. - bra)*pow(a*H,2)*ppw->delta_p
+      )*pow(a,2)/M2
+    )/(
+      + 4.*c15*cH*pow(k2,2)
+      - k2*pow(a*H,2)*(3.*c13*(2. - bra) + 12.*c15*c9 - 4.*c16*cH)
+      - 3.*pow(a*H,4)*(c12*(2. - bra) + 4.*c16*c9)
+    );
+  }
 
 
   /* scalar field derivative equation
@@ -12619,50 +12698,150 @@ int get_x_x_prime_qs_smg(
    * The result is approximated when rsa is on since the velocity of radiation gets updated only after
    * this call in perturb_einstein */
 
-   x_prime_qs_smg_num =
-   + 3.*(
-     + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
-     - 2.*cH*cK*pow(a*H,-2)*k2
-   )*ppw->delta_rho_r*a/H/M2
-   + 9.*(
-     + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
-     - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
-     - 2.*c3*cH*k2*pow(a*H,-2)
-   )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
-   + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
-   + 4.*k2*pow(a*H,-2)*(
-     + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
-     - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
-   )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
-   + 3.*(
-     + 2.*cD*(c9*res_p/res - c9_p)/a/H - 2.*c2*c9 + c9*cD
-     - cD*(2.*cB*rho_r/M2 - 3.*c9*(p_tot + p_smg))*pow(H,-2)
-     + 2./3.*cH*(c2 + 2.*cD + run*cD)*k2*pow(a*H,-2)
-   )*ppw->pvecmetric[ppw->index_mt_h_prime]
-   + 6.*a*H*res*(
-     + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
-     - (
-       + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
-       + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
-       + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
-     )*k2*pow(a*H,-2)
-     + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
-   )*ppw->pvecmetric[ppw->index_mt_x_smg]
-   ;
+   if (ppt->get_h_from_trace == _TRUE_) {
+     /* Numerator of the scalar field derivative in QS with h' */
+     x_prime_qs_smg_num =
+     + 3.*(
+       + 3.*(2.*c9*cK - cB*cD*(2. + run) - cD*(cB*res_p/res - cB_p)/a/H)
+       - 2.*cH*cK*pow(a*H,-2)*k2
+     )*ppw->delta_rho_r*a/H/M2
+     + 9.*(
+       + 2.*cD*(cH*res_p/res - cH_p)/a/H + 6.*c3*c9
+       - cD*(cB + c10) + 3.*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+       - 2.*c3*cH*k2*pow(a*H,-2)
+     )*pow(H,-2)*ppw->rho_plus_p_theta_r/M2
+     + 18.*cD*cH*pow(a*H,-2)*k2*ppw->rho_plus_p_shear*a/H/M2
+     + 4.*k2*pow(a*H,-2)*(
+       + cH*(c1 - cD - ten*cD)*k2*pow(a*H,-2)
+       - 3./2.*(2.*c1*c9 - (c10*cD*res_p/res - cD*c10_p)/a/H)
+     )*a*H*ppw->pvecmetric[ppw->index_mt_eta]
+     + 3.*(
+       + 2.*cD*(c9*res_p/res - c9_p)/a/H - 2.*c2*c9 + c9*cD
+       - cD*(2.*cB*rho_r/M2 - 3.*c9*(p_tot + p_smg))*pow(H,-2)
+       + 2./3.*cH*(c2 + 2.*cD + run*cD)*k2*pow(a*H,-2)
+     )*ppw->pvecmetric[ppw->index_mt_h_prime]
+     + 6.*a*H*res*(
+       + c6*c9 + cD*(c12_p/a/H - c12 - 3.*c12*(p_tot + p_smg)*pow(H,-2))
+       - (
+         + cD*(2.*c0*cH*res_p/res - c13_p - 2.*c0*cH_p)/a/H
+         + c9*(6.*c0*c3 - c7) - c0*c10*cD + c6*cH/3.
+         + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
+       )*k2*pow(a*H,-2)
+       + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
+     )*ppw->pvecmetric[ppw->index_mt_x_smg];
 
-  x_prime_qs_smg_den =
-  - 6.*res*(
-    + c4*c9 + c12*cD
-    - k2*(
-      + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
-      - 12.*c9*(c5 - 3./2.*c3*cB)
-      - 3.*cD*(c10*cB + 2.*c13)
-      + 2.*c4*cH
-      + 3.*cB*cD*cH*(3. + 2.*run)
-      - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
-    )/6.*pow(a*H,-2)
-    - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
-  );
+     /* Denominator of the scalar field derivative in QS with h' */
+    x_prime_qs_smg_den =
+    - 6.*res*(
+      + c4*c9 + c12*cD
+      - k2*(
+        + 6.*cB*cD*(cH*res_p/res - cH_p)/a/H
+        - 12.*c9*(c5 - 3./2.*c3*cB)
+        - 3.*cD*(c10*cB + 2.*c13)
+        + 2.*c4*cH
+        + 3.*cB*cD*cH*(3. + 2.*run)
+        - 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+      )/6.*pow(a*H,-2)
+      - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
+    );
+   }
+   else {
+     /* Numerator of the scalar field derivative in QS without h' */
+    x_prime_qs_smg_num =
+    - 18.*(2. - bra)*cD*cH*pow(H,-3)*k2*ppw->rho_plus_p_shear/a/M2
+    + (2. - bra)*(
+      + 6.*cH*cK*pow(H,-3)*k2/a
+      + 9.*(
+        + cD*(cB*res_p - cB_p*res)
+        + ((2. + run)*cB*cD - 2.*c9*cK)*H*res*a
+      )*pow(H,-2)/res
+    )*ppw->delta_rho_r/M2
+    + 9.*(2. - bra)*(
+      + 2.*c3*cH*pow(H,-4)*pow(a,-2)*k2
+      - (
+        + 2.*cD*H*(cH*res_p - cH_p*res)/a/res
+        + (6.*c3*c9 - c10*cD - cB*cD + 3.*cD*cH + 2.*run*cD*cH)*pow(H,2)
+        - 3.*cD*cH*(p_tot + p_smg)
+      )*pow(H,-4)
+    )/M2*ppw->rho_plus_p_theta_r
+    - (
+      + 12.*(c2 + 2.*cD + run*cD)*cH*pow(H,-3)*k2/a
+      + 18.*(
+        + 2.*cD*H*(c9*res_p/res - c9_p)
+        - 2.*cB*cD*rho_r*a/M2
+        + c9*(cD - 2.*c2)*pow(H,2)*a
+        + 3.*c9*cD*(p_tot + p_smg)*a
+      )*pow(H,-3)
+    )/M2*ppw->delta_rho
+    + (
+      + 4.*cH*(
+        + (2. - bra)*(cD + ten*cD - c1)
+        - 2.*(c2 + 2.*cD + run*cD)*(1. + beh)
+      )*pow(k2,2)*pow(a*H,-3)
+      - 6.*(
+        + (2. - bra)*(cD*(c10*res_p/res - c10_p)/a/H - 2.*c1*c9)
+        + 2.*(1. + beh)*(
+          + 2.*cD*(c9*res_p/res - c9_p)/a/H
+          + c9*(cD - 2.*c2)
+          - 2.*cB*cD*rho_r*pow(H,-2)/M2
+          + 3.*c9*cD*(p_tot + p_smg)*pow(H,-2)
+        )
+      )*k2/a/H
+    )*ppw->pvecmetric[ppw->index_mt_eta]
+    + (
+      + (
+        - (2. - bra)*(6.*c0*c3 - c7 + 2.*c8*cD)
+        + 4.*c15*(c2 + 2.*cD + run*cD)
+      )*2.*cH*pow(k2,2)*res*pow(a*H,-3)
+      + 6.*(
+        + cD*H*(
+          + 4.*c16*c9*res_p/res
+          - c12_p*(2. - bra)
+          - 4.*c16*c9_p
+        )/a
+        - 4.*c16*cB*cD*rho_r/M2
+        - 4.*c16*c2*c9*pow(H,2)
+        - c6*c9*(2. - bra)*pow(H,2)
+        + cD*((2. - bra)*c12 + 2.*c16*c9)*(pow(H,2) + 3.*(p_tot + p_smg))
+      )*res*a/H
+      + 2.*(
+        + 12.*cD*c15*(c9*res_p/res - c9_p)/H/a
+        - 12.*c15*cB*cD*rho_r/M2*pow(H,-2)
+        + 2.*(
+          + 3.*c15*c9*(cD - 2.*c2)
+          + 2.*cH*c16*(c2 + 2.*cD + run*cD)
+        )
+        + (2. - bra)*(
+          - 3.*cD*(2.*c0*cH_p - 2.*c0*cH*res_p/res + c13_p)/a/H
+          + 18.*c0*c3*c9 - 3.*c7*c9
+          - 3.*c0*c10*cD + c6*cH
+          + 6.*(3./2. + run)*c0*cD*cH
+        )
+        - 9.*cD*((2. - bra)*c0*cH - 2.*c15*c9)*(p_tot + p_smg)*pow(H,-2)
+      )*res*k2/a/H
+    )*ppw->pvecmetric[ppw->index_mt_x_smg];
+
+
+    /* Denominator of the scalar field derivative in QS without h' */
+    x_prime_qs_smg_den =
+    - 2.*cH*res*(2. - bra)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)*pow(a*H,-4)*pow(k2,2)
+    + a*(
+      - 6.*cB*cD*(2. - bra)*(cH*res_p - cH_p*res)*H
+      + (2. - bra)*(
+        + 12.*c5*c9 - 18.*c3*c9*cB
+        + 6.*c13*cD + 3.*c10*cB*cD - 2.*c4*cH
+        - 3.*(3. + 2.*run)*cB*cD*cH
+        + 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+      )*res*a*pow(H,2)
+      - 8.*(c2 + 2.*cD + run*cD)*c14*cH*pow(H,2)*res*a
+    )*k2*pow(a*H,-4)
+    + 6.*(
+      - 4.*c14*cD*H*(c9*res_p - c9_p*res)
+      + 4.*c14*(cB*cD*rho_r/M2 + c2*c9*pow(H,2))*res*a
+      + (2. - bra)*(c4*c9 + c12*cD)*pow(H,2)*res*a
+      - 2.*c14*c9*cD*(pow(H,2) + 3.*(p_tot + p_smg))*res*a
+    )*pow(H,-2)/a;
+   }
 
   *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
 
