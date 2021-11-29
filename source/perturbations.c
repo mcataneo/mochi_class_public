@@ -1,6 +1,6 @@
 /** @file perturbations.c Documented perturbation module
- * Julien Lesgourgues, 23.09.2010
  *
+ * Julien Lesgourgues, 23.09.2010
  *
  * Deals with the perturbation evolution.
  * This module has two purposes:
@@ -19,12 +19,13 @@
  *
  * Hence the following functions can be called from other modules:
  *
- * -# perturb_init() at the beginning (but after background_init() and thermodynamics_init())
- * -# perturb_sources_at_tau() at any later time
- * -# perturb_free() at the end, when no more calls to perturb_sources_at_tau() are needed
+ * -# perturbations_init() at the beginning (but after background_init() and thermodynamics_init())
+ * -# perturbations_sources_at_tau() at any later time
+ * -# perturbations_free() at the end, when no more calls to perturbations_sources_at_tau() are needed
  */
+
 #include "perturbations.h"
-#include "hi_class.h"
+
 
 /**
  * Source function \f$ S^{X} (k, \tau) \f$ at a given conformal time tau.
@@ -41,14 +42,14 @@
  * @return the error status
  */
 
-int perturb_sources_at_tau(
-                           struct perturbs * ppt,
-                           int index_md,
-                           int index_ic,
-                           int index_tp,
-                           double tau,
-                           double * psource
-                           ) {
+int perturbations_sources_at_tau(
+                                 struct perturbations * ppt,
+                                 int index_md,
+                                 int index_ic,
+                                 int index_tp,
+                                 double tau,
+                                 double * psource
+                                 ) {
 
   /** Summary: */
 
@@ -112,24 +113,24 @@ int perturb_sources_at_tau(
  * @param ppt              Input: pointer to perturbation structure
  * @param output_format    Input: choice of ordering and normalisation for the output quantities
  * @param z                Input: redshift
- * @param number_of_titles Input: number of requested source functions (found in perturb_output_titles)
+ * @param number_of_titles Input: number of requested source functions (found in perturbations_output_titles)
  * @param data             Output: vector of all source functions for all k values and initial conditions (previously allocated with the right size)
  * @return the error status
  */
 
-int perturb_output_data(
-                        struct background * pba,
-                        struct perturbs * ppt,
-                        enum file_format output_format,
-                        double z,
-                        int number_of_titles,
-                        double *data
-                        ) {
+int perturbations_output_data(
+                              struct background * pba,
+                              struct perturbations * ppt,
+                              enum file_format output_format,
+                              double z,
+                              int number_of_titles,
+                              double *data
+                              ) {
 
   int n_ncdm;
   double k, k_over_h, k2;
   double * tkfull=NULL;  /* array with argument
-                            pk_ic[(index_k * psp->ic_size[index_md] + index_ic)*psp->tr_size+index_tr] */
+                            pk_ic[(index_k * phr->ic_size[index_md] + index_ic)*phr->tr_size+index_tr] */
   double *tk;
   double *dataptr;
 
@@ -186,12 +187,12 @@ int perturb_output_data(
     for (index_k=0; index_k<ppt->k_size[index_md]; index_k++) {
       for (index_tp=0; index_tp<ppt->tp_size[index_md]; index_tp++) {
         for (index_ic=0; index_ic<ppt->ic_size[index_md]; index_ic++) {
-          class_call(perturb_sources_at_tau(ppt,
-                                            index_md,
-                                            index_ic,
-                                            index_tp,
-                                            tau,
-                                            pvecsources),
+          class_call(perturbations_sources_at_tau(ppt,
+                                                  index_md,
+                                                  index_ic,
+                                                  index_tp,
+                                                  tau,
+                                                  pvecsources),
                      ppt->error_message,
                      ppt->error_message);
 
@@ -275,11 +276,9 @@ int perturb_output_data(
 
         /* rescale and reorder the matter transfer functions following the CMBFAST/CAMB convention */
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_cdm]/k2,ppt->has_source_delta_cdm,storeidx,0.0);
-        class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_idm_dr]/k2,ppt->has_source_delta_idm_dr,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_b]/k2,ppt->has_source_delta_b,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_g]/k2,ppt->has_source_delta_g,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_ur]/k2,ppt->has_source_delta_ur,storeidx,0.0);
-        class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_idr]/k2,ppt->has_source_delta_idr,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_ncdm1]/k2,ppt->has_source_delta_ncdm,storeidx,0.0);
         class_store_double_or_default(dataptr,-tk[ppt->index_tp_delta_tot]/k2,_TRUE_,storeidx,0.0);
       }
@@ -304,12 +303,12 @@ int perturb_output_data(
  * @return the error status
  */
 
-int perturb_output_titles(
-                             struct background *pba,
-                             struct perturbs *ppt,
-                             enum file_format output_format,
-                             char titles[_MAXTITLESTRINGLENGTH_]
-                             ){
+int perturbations_output_titles(
+                                struct background *pba,
+                                struct perturbations *ppt,
+                                enum file_format output_format,
+                                char titles[_MAXTITLESTRINGLENGTH_]
+                                ){
   int n_ncdm;
   char tmp[40];
 
@@ -359,7 +358,7 @@ int perturb_output_titles(
       }
       class_store_columntitle(titles,"t_dcdm",pba->has_dcdm);
       class_store_columntitle(titles,"t_dr",pba->has_dr);
-      class_store_columntitle(titles,"t__scf",pba->has_scf);
+      class_store_columntitle(titles,"t_scf",pba->has_scf);
       class_store_columntitle(titles,"t_tot",_TRUE_);
     }
   }
@@ -368,11 +367,9 @@ int perturb_output_titles(
 
     class_store_columntitle(titles,"k (h/Mpc)",_TRUE_);
     class_store_columntitle(titles,"-T_cdm/k2",_TRUE_);
-    class_store_columntitle(titles,"-T_idm_dr/k2",_TRUE_);
     class_store_columntitle(titles,"-T_b/k2",_TRUE_);
     class_store_columntitle(titles,"-T_g/k2",_TRUE_);
     class_store_columntitle(titles,"-T_ur/k2",_TRUE_);
-    class_store_columntitle(titles,"-T_idr/k2",_TRUE_);
     class_store_columntitle(titles,"-T_ncdm/k2",_TRUE_);
     class_store_columntitle(titles,"-T_tot/k2",_TRUE_);
 
@@ -393,12 +390,12 @@ int perturb_output_titles(
  *
  */
 
-int perturb_output_firstline_and_ic_suffix(
-                                    struct perturbs *ppt,
-                                    int index_ic,
-                                    char first_line[_LINE_LENGTH_MAX_],
-                                    FileName ic_suffix
-                                    ){
+int perturbations_output_firstline_and_ic_suffix(
+                                                 struct perturbations *ppt,
+                                                 int index_ic,
+                                                 char first_line[_LINE_LENGTH_MAX_],
+                                                 char ic_suffix[_SUFFIXNAMESIZE_]
+                                                 ){
 
   first_line[0]='\0';
   ic_suffix[0]='\0';
@@ -431,7 +428,7 @@ int perturb_output_firstline_and_ic_suffix(
 }
 
 /**
- * Initialize the perturbs structure, and in particular the table of source functions.
+ * Initialize the perturbations structure, and in particular the table of source functions.
  *
  * Main steps:
  *
@@ -453,12 +450,12 @@ int perturb_output_firstline_and_ic_suffix(
  * @return the error status
  */
 
-int perturb_init(
-                 struct precision * ppr,
-                 struct background * pba,
-                 struct thermo * pth,
-                 struct perturbs * ppt
-                 ) {
+int perturbations_init(
+                       struct precision * ppr,
+                       struct background * pba,
+                       struct thermodynamics * pth,
+                       struct perturbations * ppt
+                       ) {
 
   /** Summary: */
 
@@ -472,8 +469,8 @@ int perturb_init(
   int index_k;
   /* running index for type of perturbation */
   int index_tp;
-  /* pointer to one struct perturb_workspace per thread (one if no openmp) */
-  struct perturb_workspace ** pppw;
+  /* pointer to one struct perturbations_workspace per thread (one if no openmp) */
+  struct perturbations_workspace ** pppw;
   /* background quantities */
   double w_fld_ini, w_fld_0,dw_over_da_fld,integral_fld;
   /* number of threads (always one if no openmp) */
@@ -508,9 +505,9 @@ int perturb_init(
       printf("Computing sources\n");
   }
 
-  class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_),
+  class_test((ppt->gauge == synchronous) && (pba->has_cdm == _FALSE_) && (pba->has_idm_dr == _FALSE_),
              ppt->error_message,
-             "In the synchronous gauge, it is not self-consistent to assume no CDM: the later is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or switch to newtonian gauge");
+             "In the synchronous gauge, it is not self-consistent to assume no CDM or IDM: the later is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or IDM, or switch to newtonian gauge");
 
   class_test ((ppr->tight_coupling_approximation < first_order_MB) ||
               (ppr->tight_coupling_approximation > compromise_CLASS),
@@ -554,9 +551,9 @@ int perturb_init(
 
   if (pba->has_fld == _TRUE_) {
 
-    /* check values of w_fld at initial time and today */
-    class_call(background_w_fld(pba,     0.,   &w_fld_ini,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
-    class_call(background_w_fld(pba,pba->a_today,&w_fld_0,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
+    /* check values of w_fld at initial time and today. Since 'a' in the code stands for 'a/a_0', its current value is 1 by definition */
+    class_call(background_w_fld(pba, 0., &w_fld_ini, &dw_over_da_fld, &integral_fld), pba->error_message, ppt->error_message);
+    class_call(background_w_fld(pba, 1.,   &w_fld_0, &dw_over_da_fld, &integral_fld), pba->error_message, ppt->error_message);
 
     class_test(w_fld_ini >= 0.,
                ppt->error_message,
@@ -633,24 +630,15 @@ int perturb_init(
              _omegab_BIG_);
   */
 
-  /** - initialize all indices and lists in perturbs structure using perturb_indices() */
+  /** - initialize all indices and lists in perturbations structure using perturbations_indices() */
 
-  class_call(perturb_indices(ppr,
-                             pba,
-                             pth,
-                             ppt),
+  class_call(perturbations_indices(ppr,
+                                   pba,
+                                   pth,
+                                   ppt),
              ppt->error_message,
              ppt->error_message);
 
-
-  if (pba->has_smg == _TRUE_) {
-    class_call_except(
-      perturb_tests_smg(ppr, pba, ppt),
-      ppt->error_message,
-      ppt->error_message,
-      perturb_free_nosource(ppt)
-    );
-  }
 
   if (ppt->z_max_pk > pth->z_rec) {
 
@@ -662,7 +650,7 @@ int perturb_init(
 
     class_test(ppt->has_source_delta_m == _TRUE_,
                ppt->error_message,
-               "You requested a very high z_pk=%e, higher than z_rec=%e. This works very well when you ask only transfer functions, e.g. with 'output=mTk' or 'output=mTk,vTk'. But if you need the total matter (e.g. with 'mPk', 'dCl', etc.) there is an issue with the calculation of delta_m at very early times. By default, delta_m is a gauge-invariant variable (the density fluctuation in comoving gauge) and this quantity is hard to get accurately at very early times. The solution is to define delta_m as the density fluctuation in the current gauge, synchronous or newtonian. For the moment this must be done manually by commenting the line 'ppw->delta_m += 3. *ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H] * ppw->theta_m/k2;' in perturb_sources(). In the future there will be an option for doing it in an easier way.",
+               "You requested a very high z_pk=%e, higher than z_rec=%e. This works very well when you ask only transfer functions, e.g. with 'output=mTk' or 'output=mTk,vTk'. But if you need the total matter (e.g. with 'mPk', 'dCl', etc.) there is an issue with the calculation of delta_m at very early times. By default, delta_m is a gauge-invariant variable (the density fluctuation in comoving gauge) and this quantity is hard to get accurately at very early times. The solution is to define delta_m as the density fluctuation in the current gauge, synchronous or newtonian. For the moment this must be done manually by commenting the line 'ppw->delta_m += 3. *ppw->pvecback[pba->index_bg_a]*ppw->pvecback[pba->index_bg_H] * ppw->theta_m/k2;' in perturbations_sources(). In the future there will be an option for doing it in an easier way.",
                ppt->z_max_pk,
                pth->z_rec);
 
@@ -671,19 +659,17 @@ int perturb_init(
 
 
   /** - define the common time sampling for all sources using
-      perturb_timesampling_for_sources() */
+      perturbations_timesampling_for_sources() */
 
-  class_call_except(perturb_timesampling_for_sources(ppr,
-                                                     pba,
-                                                     pth,
-                                                     ppt),
+  class_call(perturbations_timesampling_for_sources(ppr,
+                                                    pba,
+                                                    pth,
+                                                    ppt),
              ppt->error_message,
-             ppt->error_message,
-             perturb_free_nosource(ppt));
+             ppt->error_message);
 
   /** - if we want to store perturbations for given k values, write titles and allocate storage */
-
-  class_call(perturb_prepare_k_output(pba,ppt),
+  class_call(perturbations_prepare_k_output(pba,ppt),
              ppt->error_message,
              ppt->error_message);
 
@@ -697,7 +683,7 @@ int perturb_init(
   }
 #endif
 
-  class_alloc(pppw,number_of_threads * sizeof(struct perturb_workspace *),ppt->error_message);
+  class_alloc(pppw,number_of_threads * sizeof(struct perturbations_workspace *),ppt->error_message);
 
   /** - loop over modes (scalar, tensors, etc). For each mode: */
 
@@ -708,7 +694,7 @@ int perturb_init(
 
     abort = _FALSE_;
 
-    sz = sizeof(struct perturb_workspace);
+    sz = sizeof(struct perturbations_workspace);
 
 #pragma omp parallel                                            \
   shared(pppw,ppr,pba,pth,ppt,index_md,abort,number_of_threads) \
@@ -725,14 +711,14 @@ int perturb_init(
 
       class_alloc_parallel(pppw[thread],sz,ppt->error_message);
 
-      /** - --> (b) initialize indices of vectors of perturbations with perturb_indices_of_current_vectors() */
+      /** - --> (b) initialize indices of vectors of perturbations with perturbations_indices_of_current_vectors() */
 
-      class_call_parallel(perturb_workspace_init(ppr,
-                                                 pba,
-                                                 pth,
-                                                 ppt,
-                                                 index_md,
-                                                 pppw[thread]),
+      class_call_parallel(perturbations_workspace_init(ppr,
+                                                       pba,
+                                                       pth,
+                                                       ppt,
+                                                       index_md,
+                                                       pppw[thread]),
                           ppt->error_message,
                           ppt->error_message);
 
@@ -740,11 +726,11 @@ int perturb_init(
 
     if (abort == _TRUE_) return _FAILURE_;
 
-    /** - --> (c) loop over initial conditions and wavenumbers; for each of them, evolve perturbations and compute source functions with perturb_solve() */
+    /** - --> (c) loop over initial conditions and wavenumbers; for each of them, evolve perturbations and compute source functions with perturbations_solve() */
 
     for (index_ic = 0; index_ic < ppt->ic_size[index_md]; index_ic++) {
 
-     if (ppt->perturbations_verbose > 1) {
+      if (ppt->perturbations_verbose > 1) {
         printf("Evolving ic %d/%d\n",index_ic+1,ppt->ic_size[index_md]);
         printf("evolving %d wavenumbers\n",ppt->k_size[index_md]);
       }
@@ -780,14 +766,14 @@ int perturb_init(
           tstart = omp_get_wtime();
 #endif
 
-          class_call_parallel(perturb_solve(ppr,
-                                            pba,
-                                            pth,
-                                            ppt,
-                                            index_md,
-                                            index_ic,
-                                            index_k,
-                                            pppw[thread]),
+          class_call_parallel(perturbations_solve(ppr,
+                                                  pba,
+                                                  pth,
+                                                  ppt,
+                                                  index_md,
+                                                  index_ic,
+                                                  index_k,
+                                                  pppw[thread]),
                               ppt->error_message,
                               ppt->error_message);
 
@@ -809,15 +795,7 @@ int perturb_init(
 
       } /* end of parallel region */
 
-      if (abort == _TRUE_) {
-        perturb_free(ppt);
-        int t;
-        for (t = 0; t < number_of_threads; t++) {
-          perturb_workspace_free(ppt,index_md,pppw[t]);
-        }
-        free(pppw);
-        return _FAILURE_;
-      }
+      if (abort == _TRUE_) return _FAILURE_;
 
     } /* end of loop over initial conditions */
 
@@ -834,7 +812,7 @@ int perturb_init(
       thread=omp_get_thread_num();
 #endif
 
-      class_call_parallel(perturb_workspace_free(ppt,index_md,pppw[thread]),
+      class_call_parallel(perturbations_workspace_free(ppt,index_md,pppw[thread]),
                           ppt->error_message,
                           ppt->error_message);
 
@@ -893,21 +871,38 @@ int perturb_init(
 }
 
 /**
- * Free all memory space allocated by perturb_init().
+ * Free all memory space allocated by input.
+ *
+ * Called by perturbations_free(), during shooting and if shooting failed
+ *
+ * @param ppt Input: perturbation structure with input pointers to be freed
+ * @return the error status
+ */
+
+int perturbations_free_input(struct perturbations* ppt) {
+  free(ppt->alpha_idm_dr);
+  free(ppt->beta_idr);
+  return _SUCCESS_;
+}
+
+/**
+ * Free all memory space allocated by perturbations_init().
  *
  * To be called at the end of each run, only when no further calls to
- * perturb_sources_at_tau() are needed.
+ * perturbations_sources_at_tau() are needed.
  *
  * @param ppt Input: perturbation structure to be freed
  * @return the error status
  */
 
-int perturb_free(
-                 struct perturbs * ppt
-                 ) {
+int perturbations_free(
+                       struct perturbations * ppt
+                       ) {
 
   int index_md,index_ic,index_tp;
   int filenum;
+
+  perturbations_free_input(ppt);
 
   if (ppt->has_perturbations == _TRUE_) {
 
@@ -952,16 +947,10 @@ int perturb_free(
     free(ppt->late_sources);
     free(ppt->ddlate_sources);
 
-    if (ppt->alpha_idm_dr != NULL)
-      free(ppt->alpha_idm_dr);
-
-    if (ppt->beta_idr != NULL)
-      free(ppt->beta_idr);
-
     /** Stuff related to perturbations output: */
 
     /** - Free non-NULL pointers */
-    if (ppt->index_k_output_values != NULL)
+    if (ppt->k_output_values_num > 0 )
       free(ppt->index_k_output_values);
 
     for (filenum = 0; filenum<_MAX_NUMBER_OF_K_FILES_; filenum++){
@@ -978,64 +967,9 @@ int perturb_free(
   return _SUCCESS_;
 
 }
-
-int perturb_free_nosource(
-                          struct perturbs * ppt
-                         ) {
-
-  int index_md,index_ic,index_type;
-  int filenum;
-
-  if (ppt->has_perturbations == _TRUE_) {
-
-    for (index_md = 0; index_md < ppt->md_size; index_md++) {
-
-      free(ppt->sources[index_md]);
-
-      free(ppt->k[index_md]);
-
-    }
-
-    free(ppt->tau_sampling);
-
-    free(ppt->tp_size);
-
-    free(ppt->ic_size);
-
-    free(ppt->k);
-
-    free(ppt->k_size_cmb);
-
-    free(ppt->k_size_cl);
-
-    free(ppt->k_size);
-
-    free(ppt->sources);
-
-    /** Stuff related to perturbations output: */
-
-    /** - Free non-NULL pointers */
-    if (ppt->index_k_output_values != NULL)
-      free(ppt->index_k_output_values);
-
-    for (filenum = 0; filenum<_MAX_NUMBER_OF_K_FILES_; filenum++){
-      if (ppt->scalar_perturbations_data[filenum] != NULL)
-        free(ppt->scalar_perturbations_data[filenum]);
-      if (ppt->vector_perturbations_data[filenum] != NULL)
-        free(ppt->vector_perturbations_data[filenum]);
-      if (ppt->tensor_perturbations_data[filenum] != NULL)
-        free(ppt->tensor_perturbations_data[filenum]);
-    }
-
-  }
-
-  return _SUCCESS_;
-
-}
-
 
 /**
- * Initialize all indices and allocate most arrays in perturbs structure.
+ * Initialize all indices and allocate most arrays in perturbations structure.
  *
  * @param ppr Input: pointer to precision structure
  * @param pba Input: pointer to background structure
@@ -1044,12 +978,12 @@ int perturb_free_nosource(
  * @return the error status
  */
 
-int perturb_indices(
-                    struct precision * ppr,
-                    struct background * pba,
-                    struct thermo * pth,
-                    struct perturbs * ppt
-                    ) {
+int perturbations_indices(
+                          struct precision * ppr,
+                          struct background * pba,
+                          struct thermodynamics * pth,
+                          struct perturbations * ppt
+                          ) {
 
   /** Summary: */
 
@@ -1122,6 +1056,7 @@ int perturb_indices(
   ppt->has_source_delta_idr = _FALSE_;
   ppt->has_source_delta_idm_dr = _FALSE_;
   ppt->has_source_delta_ncdm = _FALSE_;
+  ppt->has_source_delta_tot = _FALSE_;
   ppt->has_source_theta_m = _FALSE_;
   ppt->has_source_theta_cb = _FALSE_;
   ppt->has_source_theta_tot = _FALSE_;
@@ -1136,6 +1071,7 @@ int perturb_indices(
   ppt->has_source_theta_idr = _FALSE_;
   ppt->has_source_theta_idm_dr = _FALSE_;
   ppt->has_source_theta_ncdm = _FALSE_;
+  ppt->has_source_theta_tot = _FALSE_;
   ppt->has_source_phi = _FALSE_;
   ppt->has_source_phi_prime = _FALSE_;
   ppt->has_source_phi_plus_psi = _FALSE_;
@@ -1146,8 +1082,6 @@ int perturb_indices(
   ppt->has_source_eta_prime = _FALSE_;
   ppt->has_source_H_T_Nb_prime = _FALSE_;
   ppt->has_source_k2gamma_Nb = _FALSE_;
-  ppt->has_source_phi_smg = _FALSE_;
-  ppt->has_source_phi_prime_smg = _FALSE_;
 
   /** - source flags and indices, for sources that all modes have in
       common (temperature, polarization, ...). For temperature, the
@@ -1178,12 +1112,12 @@ int perturb_indices(
 
 
 
-  /** - define k values with perturb_get_k_list() */
+  /** - define k values with perturbations_get_k_list() */
 
-  class_call(perturb_get_k_list(ppr,
-                                pba,
-                                pth,
-                                ppt),
+  class_call(perturbations_get_k_list(ppr,
+                                      pba,
+                                      pth,
+                                      ppt),
              ppt->error_message,
              ppt->error_message);
 
@@ -1234,8 +1168,6 @@ int perturb_indices(
           ppt->has_source_delta_dr = _TRUE_;
         if (pba->has_ncdm == _TRUE_)
           ppt->has_source_delta_ncdm = _TRUE_;
-        if(pba->has_smg == _TRUE_)
-          ppt->has_source_phi_smg = _TRUE_;
         // Thanks to the following lines, (phi,psi) are also stored as sources
         // (Obtained directly in newtonian gauge, infereed from (h,eta) in synchronous gauge).
         // If density transfer functions are requested in the (default) CLASS format,
@@ -1267,8 +1199,6 @@ int perturb_indices(
           ppt->has_source_theta_dr = _TRUE_;
         if (pba->has_ncdm == _TRUE_)
           ppt->has_source_theta_ncdm = _TRUE_;
-        if(pba->has_smg == _TRUE_)
-          ppt->has_source_phi_prime_smg = _TRUE_;
       }
 
       if (ppt->has_cl_number_count == _TRUE_) {
@@ -1334,7 +1264,7 @@ int perturb_indices(
       class_define_index(ppt->index_tp_delta_dcdm, ppt->has_source_delta_dcdm,index_type,1);
       class_define_index(ppt->index_tp_delta_fld,  ppt->has_source_delta_fld, index_type,1);
       class_define_index(ppt->index_tp_delta_scf,  ppt->has_source_delta_scf, index_type,1);
-      class_define_index(ppt->index_tp_delta_dr,   ppt->has_source_delta_dr, index_type,1);
+      class_define_index(ppt->index_tp_delta_dr,   ppt->has_source_delta_dr,  index_type,1);
       class_define_index(ppt->index_tp_delta_ur,   ppt->has_source_delta_ur,  index_type,1);
       class_define_index(ppt->index_tp_delta_idr,  ppt->has_source_delta_idr, index_type,1);
       class_define_index(ppt->index_tp_delta_idm_dr,  ppt->has_source_delta_idm_dr, index_type,1);
@@ -1363,7 +1293,6 @@ int perturb_indices(
       class_define_index(ppt->index_tp_eta_prime,  ppt->has_source_eta_prime, index_type,1);
       class_define_index(ppt->index_tp_H_T_Nb_prime,ppt->has_source_H_T_Nb_prime,index_type,1);
       class_define_index(ppt->index_tp_k2gamma_Nb, ppt->has_source_k2gamma_Nb,index_type,1);
-      hi_class_define_indices_tp(ppt,&index_type); // _smg
       ppt->tp_size[index_md] = index_type;
 
       class_test(index_type == 0,
@@ -1449,6 +1378,16 @@ int perturb_indices(
 
   }
 
+  /* Allocate the titles and data sections for the output file */
+  ppt->number_of_scalar_titles=0;
+  ppt->number_of_vector_titles=0;
+  ppt->number_of_tensor_titles=0;
+  for (filenum = 0; filenum<_MAX_NUMBER_OF_K_FILES_; filenum++){
+    ppt->scalar_perturbations_data[filenum] = NULL;
+    ppt->vector_perturbations_data[filenum] = NULL;
+    ppt->tensor_perturbations_data[filenum] = NULL;
+  }
+
   return _SUCCESS_;
 
 }
@@ -1467,12 +1406,12 @@ int perturb_indices(
  * @return the error status
  */
 
-int perturb_timesampling_for_sources(
-                                     struct precision * ppr,
-                                     struct background * pba,
-                                     struct thermo * pth,
-                                     struct perturbs * ppt
-                                     ) {
+int perturbations_timesampling_for_sources(
+                                           struct precision * ppr,
+                                           struct background * pba,
+                                           struct thermodynamics * pth,
+                                           struct perturbations * ppt
+                                           ) {
 
   /** Summary: */
 
@@ -1504,7 +1443,7 @@ int perturb_timesampling_for_sources(
 
   /** - allocate background/thermodynamics vectors */
 
-  class_alloc(pvecback,pba->bg_size_short*sizeof(double),ppt->error_message);
+  class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
   class_alloc(pvecthermo,pth->th_size*sizeof(double),ppt->error_message);
 
   /** - first, just count the number of sampling points in order to allocate the array containing all values */
@@ -1527,8 +1466,8 @@ int perturb_timesampling_for_sources(
 
     class_call(background_at_tau(pba,
                                  tau_lower,
-                                 pba->short_info,
-                                 pba->inter_normal,
+                                 short_info,
+                                 inter_normal,
                                  &first_index_back,
                                  pvecback),
                pba->error_message,
@@ -1537,7 +1476,7 @@ int perturb_timesampling_for_sources(
     class_call(thermodynamics_at_z(pba,
                                    pth,
                                    1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                   pth->inter_normal,
+                                   inter_normal,
                                    &first_index_thermo,
                                    pvecback,
                                    pvecthermo),
@@ -1557,8 +1496,8 @@ int perturb_timesampling_for_sources(
 
     class_call(background_at_tau(pba,
                                  tau_upper,
-                                 pba->short_info,
-                                 pba->inter_normal,
+                                 short_info,
+                                 inter_normal,
                                  &first_index_back,
                                  pvecback),
                pba->error_message,
@@ -1567,7 +1506,7 @@ int perturb_timesampling_for_sources(
     class_call(thermodynamics_at_z(pba,
                                    pth,
                                    1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                   pth->inter_normal,
+                                   inter_normal,
                                    &first_index_thermo,
                                    pvecback,
                                    pvecthermo),
@@ -1587,8 +1526,8 @@ int perturb_timesampling_for_sources(
 
       class_call(background_at_tau(pba,
                                    tau_mid,
-                                   pba->short_info,
-                                   pba->inter_normal,
+                                   short_info,
+                                   inter_normal,
                                    &first_index_back,
                                    pvecback),
                  pba->error_message,
@@ -1597,7 +1536,7 @@ int perturb_timesampling_for_sources(
       class_call(thermodynamics_at_z(pba,
                                      pth,
                                      1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                     pth->inter_normal,
+                                     inter_normal,
                                      &first_index_thermo,
                                      pvecback,
                                      pvecthermo),
@@ -1636,8 +1575,8 @@ int perturb_timesampling_for_sources(
     /* set values of first_index_back/thermo */
     class_call(background_at_tau(pba,
                                  tau_ini,
-                                 pba->short_info,
-                                 pba->inter_normal,
+                                 short_info,
+                                 inter_normal,
                                  &first_index_back,
                                  pvecback),
                pba->error_message,
@@ -1646,7 +1585,7 @@ int perturb_timesampling_for_sources(
     class_call(thermodynamics_at_z(pba,
                                    pth,
                                    1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                   pth->inter_normal,
+                                   inter_normal,
                                    &first_index_thermo,
                                    pvecback,
                                    pvecthermo),
@@ -1654,7 +1593,7 @@ int perturb_timesampling_for_sources(
                ppt->error_message);
   }
 
-  /** - (b) next sampling point = previous + ppr->perturb_sampling_stepsize * timescale_source, where:
+  /** - (b) next sampling point = previous + ppr->perturbations_sampling_stepsize * timescale_source, where:
       - --> if CMB requested:
       timescale_source1 = \f$ |g/\dot{g}| = |\dot{\kappa}-\ddot{\kappa}/\dot{\kappa}|^{-1} \f$;
       timescale_source2 = \f$ |2\ddot{a}/a-(\dot{a}/a)^2|^{-1/2} \f$ (to sample correctly the late ISW effect; and
@@ -1672,8 +1611,8 @@ int perturb_timesampling_for_sources(
 
     class_call(background_at_tau(pba,
                                  tau,
-                                 pba->short_info,
-                                 pba->inter_closeby,
+                                 short_info,
+                                 inter_closeby,
                                  &last_index_back,
                                  pvecback),
                pba->error_message,
@@ -1682,7 +1621,7 @@ int perturb_timesampling_for_sources(
     class_call(thermodynamics_at_z(pba,
                                    pth,
                                    1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                   pth->inter_closeby,
+                                   inter_closeby,
                                    &last_index_thermo,
                                    pvecback,
                                    pvecthermo),
@@ -1711,20 +1650,18 @@ int perturb_timesampling_for_sources(
     }
 
     /* check it is non-zero */
-    class_test_except(timescale_source == 0.,
+    class_test(timescale_source == 0.,
                ppt->error_message,
-               free(pvecback);free(pvecthermo),
                "null evolution rate, integration is diverging");
 
     /* compute inverse rate */
     timescale_source = 1./timescale_source;
 
-    class_test_except(fabs(ppr->perturb_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
+    class_test(fabs(ppr->perturbations_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
                ppt->error_message,
-               free(pvecback);free(pvecthermo),
-               "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturb_sampling_stepsize*timescale_source);
+               "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturbations_sampling_stepsize*timescale_source);
 
-    tau = tau + ppr->perturb_sampling_stepsize*timescale_source;
+    tau = tau + ppr->perturbations_sampling_stepsize*timescale_source;
     counter++;
 
   }
@@ -1742,7 +1679,7 @@ int perturb_timesampling_for_sources(
   counter = 0;
   ppt->tau_sampling[counter]=tau_ini;
 
-  /** - --> (b.2.) next sampling point = previous + ppr->perturb_sampling_stepsize * timescale_source, where
+  /** - --> (b.2.) next sampling point = previous + ppr->perturbations_sampling_stepsize * timescale_source, where
       timescale_source1 = \f$ |g/\dot{g}| = |\dot{\kappa}-\ddot{\kappa}/\dot{\kappa}|^{-1} \f$;
       timescale_source2 = \f$ |2\ddot{a}/a-(\dot{a}/a)^2|^{-1/2} \f$ (to sample correctly the late ISW effect; and
       timescale_source=1/(1/timescale_source1+1/timescale_source2); repeat till today.
@@ -1757,8 +1694,8 @@ int perturb_timesampling_for_sources(
 
     class_call(background_at_tau(pba,
                                  tau,
-                                 pba->short_info,
-                                 pba->inter_closeby,
+                                 short_info,
+                                 inter_closeby,
                                  &last_index_back,
                                  pvecback),
                pba->error_message,
@@ -1767,7 +1704,7 @@ int perturb_timesampling_for_sources(
     class_call(thermodynamics_at_z(pba,
                                    pth,
                                    1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                   pth->inter_closeby,
+                                   inter_closeby,
                                    &last_index_thermo,
                                    pvecback,
                                    pvecthermo),
@@ -1794,20 +1731,18 @@ int perturb_timesampling_for_sources(
     }
 
     /* check it is non-zero */
-    class_test_except(timescale_source == 0.,
+    class_test(timescale_source == 0.,
                ppt->error_message,
-               free(pvecback);free(pvecthermo),
                "null evolution rate, integration is diverging");
 
     /* compute inverse rate */
     timescale_source = 1./timescale_source;
 
-    class_test_except(fabs(ppr->perturb_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
+    class_test(fabs(ppr->perturbations_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
                ppt->error_message,
-               free(pvecback);free(pvecthermo),
-               "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturb_sampling_stepsize*timescale_source);
+               "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturbations_sampling_stepsize*timescale_source);
 
-    tau = tau + ppr->perturb_sampling_stepsize*timescale_source;
+    tau = tau + ppr->perturbations_sampling_stepsize*timescale_source;
     counter++;
     ppt->tau_sampling[counter]=tau;
 
@@ -1911,12 +1846,12 @@ int perturb_timesampling_for_sources(
  * @return the error status
  */
 
-int perturb_get_k_list(
-                       struct precision * ppr,
-                       struct background * pba,
-                       struct thermo * pth,
-                       struct perturbs * ppt
-                       ) {
+int perturbations_get_k_list(
+                             struct precision * ppr,
+                             struct background * pba,
+                             struct thermodynamics * pth,
+                             struct perturbations * ppt
+                             ) {
   int index_k, index_k_output, index_mode;
   double k,k_min=0.,k_rec,step,tau1;
   double * k_max_cmb;
@@ -2105,7 +2040,7 @@ int perturb_get_k_list(
          stepsize is still fixed by k_step_super, this is just a
          reduction factor. */
 
-      scale2 = pow(pba->a_today*pba->H0,2)+fabs(pba->K);
+      scale2 = pow(pba->H0,2)+fabs(pba->K);
 
       step *= (k*k/scale2+1.)/(k*k/scale2+1./ppr->k_step_super_reduction);
 
@@ -2271,7 +2206,7 @@ int perturb_get_k_list(
          stepsize is still fixed by k_step_super, this is just a
          reduction factor. */
 
-      scale2 = pow(pba->a_today*pba->H0,2)+fabs(pba->K);
+      scale2 = pow(pba->H0,2)+fabs(pba->K);
 
       step *= (k*k/scale2+1.)/(k*k/scale2+1./ppr->k_step_super_reduction);
 
@@ -2405,7 +2340,7 @@ int perturb_get_k_list(
          stepsize is still fixed by k_step_super, this is just a
          reduction factor. */
 
-      scale2 = pow(pba->a_today*pba->H0,2)+fabs(pba->K);
+      scale2 = pow(pba->H0,2)+fabs(pba->K);
 
       step *= (k*k/scale2+1.)/(k*k/scale2+1./ppr->k_step_super_reduction);
 
@@ -2434,6 +2369,9 @@ int perturb_get_k_list(
                   ppt->k_size[ppt->index_md_tensors]*sizeof(double),
                   ppt->error_message);
   }
+
+  /* Set default of the array (do NOT remove) */
+  //ppt->index_k_output_values = NULL;
 
   /** - If user asked for k_output_values, add those to all k lists: */
   if (ppt->k_output_values_num > 0) {
@@ -2532,10 +2470,10 @@ int perturb_get_k_list(
 }
 
 /**
- * Initialize a perturb_workspace structure. All fields are allocated
- * here, with the exception of the perturb_vector '-->pv' field, which
- * is allocated separately in perturb_vector_init. We allocate one
- * such perturb_workspace structure per thread and per mode
+ * Initialize a perturbations_workspace structure. All fields are allocated
+ * here, with the exception of the perturbations_vector '-->pv' field, which
+ * is allocated separately in perturbations_vector_init. We allocate one
+ * such perturbations_workspace structure per thread and per mode
  * (scalar/../tensor). Then, for each thread, all initial conditions
  * and wavenumbers will use the same workspace.
  *
@@ -2544,18 +2482,18 @@ int perturb_get_k_list(
  * @param pth        Input: pointer to the thermodynamics structure
  * @param ppt        Input: pointer to the perturbation structure
  * @param index_md Input: index of mode under consideration (scalar/.../tensor)
- * @param ppw        Input/Output: pointer to perturb_workspace structure which fields are allocated or filled here
+ * @param ppw        Input/Output: pointer to perturbations_workspace structure which fields are allocated or filled here
  * @return the error status
  */
 
-int perturb_workspace_init(
-                           struct precision * ppr,
-                           struct background * pba,
-                           struct thermo * pth,
-                           struct perturbs * ppt,
-                           int index_md,
-                           struct perturb_workspace * ppw
-                           ) {
+int perturbations_workspace_init(
+                                 struct precision * ppr,
+                                 struct background * pba,
+                                 struct thermodynamics * pth,
+                                 struct perturbations * ppt,
+                                 int index_md,
+                                 struct perturbations_workspace * ppw
+                                 ) {
 
   /** Summary: */
 
@@ -2591,7 +2529,7 @@ int perturb_workspace_init(
       vector of metric perturbations is the same whatever the
       approximation scheme, unlike the vector of quantities to
       be integrated, which is allocated separately in
-      perturb_vector_init) */
+      perturbations_vector_init) */
 
   if (_scalars_) {
 
@@ -2609,13 +2547,10 @@ int perturb_workspace_init(
     if (ppt->gauge == synchronous) {
       class_define_index(ppw->index_mt_h_prime,_TRUE_,index_mt,1);       /* h' */
       class_define_index(ppw->index_mt_h_prime_prime,_TRUE_,index_mt,1); /* h'' */
-      class_define_index(ppw->index_mt_eta,_TRUE_,index_mt,1);           /* eta */
       class_define_index(ppw->index_mt_eta_prime,_TRUE_,index_mt,1);     /* eta' */
       class_define_index(ppw->index_mt_alpha,_TRUE_,index_mt,1);         /* alpha = (h' + 6 tau') / (2 k**2) */
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
-      class_define_index(ppw->index_mt_einstein00,_TRUE_,index_mt,1); // not only _smg
-      if (pba->has_smg == _TRUE_)
-        hi_class_define_indices_mt(ppw, &index_mt);
+
     }
 
   }
@@ -2648,7 +2583,7 @@ int perturb_workspace_init(
       values of background, thermodynamics, metric and source
       quantities at a given time */
 
-  class_alloc(ppw->pvecback,pba->bg_size_normal*sizeof(double),ppt->error_message);
+  class_alloc(ppw->pvecback,pba->bg_size*sizeof(double),ppt->error_message);
   class_alloc(ppw->pvecthermo,pth->th_size*sizeof(double),ppt->error_message);
   class_alloc(ppw->pvecmetric,ppw->mt_size*sizeof(double),ppt->error_message);
 
@@ -2665,10 +2600,7 @@ int perturb_workspace_init(
     class_define_index(ppw->index_ap_tca_idm_dr,pba->has_idm_dr,index_ap,1);
     class_define_index(ppw->index_ap_rsa_idr,pba->has_idr,index_ap,1);
 
-    if (pba->has_smg == _TRUE_)
-      class_define_index(ppw->index_ap_qs_smg,_TRUE_,index_ap,1);
-
-}
+  }
 
   ppw->ap_size=index_ap;
 
@@ -2694,9 +2626,6 @@ int perturb_workspace_init(
     }
     if (pba->has_ncdm == _TRUE_) {
       ppw->approx[ppw->index_ap_ncdmfa]=(int)ncdmfa_off;
-    }
-    if(pba->has_smg == _TRUE_) {
-      ppw->approx[ppw->index_ap_qs_smg]=(int)qs_smg_fd_0;
     }
   }
 
@@ -2724,21 +2653,21 @@ int perturb_workspace_init(
 }
 
 /**
- * Free the perturb_workspace structure (with the exception of the
- * perturb_vector '-->pv' field, which is freed separately in
- * perturb_vector_free).
+ * Free the perturbations_workspace structure (with the exception of the
+ * perturbations_vector '-->pv' field, which is freed separately in
+ * perturbations_vector_free).
  *
  * @param ppt        Input: pointer to the perturbation structure
  * @param index_md Input: index of mode under consideration (scalar/.../tensor)
- * @param ppw        Input: pointer to perturb_workspace structure to be freed
+ * @param ppw        Input: pointer to perturbations_workspace structure to be freed
  * @return the error status
  */
 
-int perturb_workspace_free (
-                            struct perturbs * ppt,
-                            int index_md,
-                            struct perturb_workspace * ppw
-                            ) {
+int perturbations_workspace_free (
+                                  struct perturbations * ppt,
+                                  int index_md,
+                                  struct perturbations_workspace * ppw
+                                  ) {
 
   free(ppw->s_l);
   free(ppw->pvecback);
@@ -2769,10 +2698,10 @@ int perturb_workspace_free (
  * For a given mode, initial condition and wavenumber, this function
  * finds the time ranges over which the perturbations can be described
  * within a given approximation. For each such range, it initializes
- * (or redistributes) perturbations using perturb_vector_init(), and
+ * (or redistributes) perturbations using perturbations_vector_init(), and
  * integrates over time. Whenever a "source sampling time" is passed,
  * the source terms are computed and stored in the source table using
- * perturb_sources().
+ * perturbations_sources().
  *
  * @param ppr        Input: pointer to precision structure
  * @param pba        Input: pointer to background structure
@@ -2781,27 +2710,27 @@ int perturb_workspace_free (
  * @param index_md Input: index of mode under consideration (scalar/.../tensor)
  * @param index_ic   Input: index of initial condition under consideration (ad, iso...)
  * @param index_k    Input: index of wavenumber
- * @param ppw        Input: pointer to perturb_workspace structure containing index values and workspaces
+ * @param ppw        Input: pointer to perturbations_workspace structure containing index values and workspaces
  * @return the error status
  */
 
-int perturb_solve(
-                  struct precision * ppr,
-                  struct background * pba,
-                  struct thermo * pth,
-                  struct perturbs * ppt,
-                  int index_md,
-                  int index_ic,
-                  int index_k,
-                  struct perturb_workspace * ppw
-                  ) {
+int perturbations_solve(
+                        struct precision * ppr,
+                        struct background * pba,
+                        struct thermodynamics * pth,
+                        struct perturbations * ppt,
+                        int index_md,
+                        int index_ic,
+                        int index_k,
+                        struct perturbations_workspace * ppw
+                        ) {
 
   /** Summary: */
 
   /** - define local variables */
 
-  /* contains all fixed parameters, indices and workspaces used by the perturb_derivs function */
-  struct perturb_parameters_and_workspace ppaw;
+  /* contains all fixed parameters, indices and workspaces used by the perturbations_derivs function */
+  struct perturbations_parameters_and_workspace ppaw;
 
   /* conformal time */
   double tau,tau_lower,tau_upper,tau_mid;
@@ -2858,7 +2787,7 @@ int perturb_solve(
   /** - initialize indices relevant for back/thermo tables search */
   ppw->last_index_back=0;
   ppw->last_index_thermo=0;
-  ppw->inter_mode = pba->inter_normal;
+  ppw->inter_mode = inter_normal;
 
   /** - get wavenumber value */
   k = ppt->k[index_md][index_k];
@@ -2887,8 +2816,8 @@ int perturb_solve(
 
   class_call(background_at_tau(pba,
                                tau_lower,
-                               pba->normal_info,
-                               pba->inter_normal,
+                               normal_info,
+                               inter_normal,
                                &(ppw->last_index_back),
                                ppw->pvecback),
              pba->error_message,
@@ -2897,7 +2826,7 @@ int perturb_solve(
   class_call(thermodynamics_at_z(pba,
                                  pth,
                                  1./ppw->pvecback[pba->index_bg_a]-1.,
-                                 pth->inter_normal,
+                                 inter_normal,
                                  &(ppw->last_index_thermo),
                                  ppw->pvecback,
                                  ppw->pvecthermo),
@@ -2945,8 +2874,8 @@ int perturb_solve(
 
     class_call(background_at_tau(pba,
                                  tau_mid,
-                                 pba->normal_info,
-                                 pba->inter_normal,
+                                 normal_info,
+                                 inter_normal,
                                  &(ppw->last_index_back),
                                  ppw->pvecback),
                pba->error_message,
@@ -2966,7 +2895,7 @@ int perturb_solve(
       class_call(thermodynamics_at_z(pba,
                                      pth,
                                      1./ppw->pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                     pth->inter_normal,
+                                     inter_normal,
                                      &(ppw->last_index_thermo),
                                      ppw->pvecback,
                                      ppw->pvecthermo),
@@ -2994,31 +2923,23 @@ int perturb_solve(
 
   tau = tau_mid;
 
-  if (pba->has_smg == _TRUE_) {
-    class_call(
-      perturb_hi_class_qs(ppr, pba, ppt, ppw, k, &tau, ppt->tau_sampling[tau_actual_size-1]),
-      ppt->error_message,
-      ppt->error_message
-    );
-  }
-
   /** - find the number of intervals over which approximation scheme is constant */
 
   class_alloc(interval_number_of,ppw->ap_size*sizeof(int),ppt->error_message);
 
-  ppw->inter_mode = pba->inter_normal;
+  ppw->inter_mode = inter_normal;
 
-  class_call(perturb_find_approximation_number(ppr,
-                                               pba,
-                                               pth,
-                                               ppt,
-                                               index_md,
-                                               k,
-                                               ppw,
-                                               tau,
-                                               ppt->tau_sampling[tau_actual_size-1],
-                                               &interval_number,
-                                               interval_number_of),
+  class_call(perturbations_find_approximation_number(ppr,
+                                                     pba,
+                                                     pth,
+                                                     ppt,
+                                                     index_md,
+                                                     k,
+                                                     ppw,
+                                                     tau,
+                                                     ppt->tau_sampling[tau_actual_size-1],
+                                                     &interval_number,
+                                                     interval_number_of),
              ppt->error_message,
              ppt->error_message);
 
@@ -3029,29 +2950,27 @@ int perturb_solve(
   for (index_interval=0; index_interval<interval_number; index_interval++)
     class_alloc(interval_approx[index_interval],ppw->ap_size*sizeof(int),ppt->error_message);
 
-  class_call(perturb_find_approximation_switches(ppr,
-                                                 pba,
-                                                 pth,
-                                                 ppt,
-                                                 index_md,
-                                                 k,
-                                                 ppw,
-                                                 tau,
-                                                 ppt->tau_sampling[tau_actual_size-1],
-                                                 ppr->tol_tau_approx,
-                                                 interval_number,
-                                                 interval_number_of,
-                                                 interval_limit,
-                                                 interval_approx),
+  class_call(perturbations_find_approximation_switches(ppr,
+                                                       pba,
+                                                       pth,
+                                                       ppt,
+                                                       index_md,
+                                                       k,
+                                                       ppw,
+                                                       tau,
+                                                       ppt->tau_sampling[tau_actual_size-1],
+                                                       ppr->tol_tau_approx,
+                                                       interval_number,
+                                                       interval_number_of,
+                                                       interval_limit,
+                                                       interval_approx),
              ppt->error_message,
              ppt->error_message);
 
   free(interval_number_of);
-  if(pba->has_smg == _TRUE_)
-    free(ppw->tau_scheme_qs_smg);
 
   /** - fill the structure containing all fixed parameters, indices
-      and workspaces needed by perturb_derivs */
+      and workspaces needed by perturbations_derivs */
 
   ppaw.ppr = ppr;
   ppaw.pba = pba;
@@ -3062,7 +2981,7 @@ int perturb_solve(
   ppaw.index_k = index_k;
   ppaw.k = k;
   ppaw.ppw = ppw;
-  ppaw.ppw->inter_mode = pba->inter_closeby;
+  ppaw.ppw->inter_mode = inter_closeby;
   ppaw.ppw->last_index_back = 0;
   ppaw.ppw->last_index_thermo = 0;
 
@@ -3073,7 +2992,7 @@ int perturb_solve(
   for (index_ikout=0; index_ikout<ppt->k_output_values_num; index_ikout++){
     if (ppt->index_k_output_values[index_md*ppt->k_output_values_num+index_ikout] == index_k){
       ppw->index_ikout = index_ikout;
-      perhaps_print_variables = perturb_print_variables;
+      perhaps_print_variables = perturbations_print_variables;
     }
   }
 
@@ -3089,7 +3008,7 @@ int perturb_solve(
     /** - --> (b) get the previous approximation scheme. If the current
         interval starts from the initial time tau_ini, the previous
         approximation is set to be a NULL pointer, so that the
-        function perturb_vector_init() knows that perturbations must
+        function perturbations_vector_init() knows that perturbations must
         be initialized */
 
     if (index_interval==0) {
@@ -3106,21 +3025,18 @@ int perturb_solve(
         redistribute correctly the perturbations from the previous to
         the new vector of perturbations. */
 
-    class_call_except(perturb_vector_init(ppr,
-                                          pba,
-                                          pth,
-                                          ppt,
-                                          index_md,
-                                          index_ic,
-                                          k,
-                                          interval_limit[index_interval],
-                                          ppw,
-                                          previous_approx),
+    class_call(perturbations_vector_init(ppr,
+                                         pba,
+                                         pth,
+                                         ppt,
+                                         index_md,
+                                         index_ic,
+                                         k,
+                                         interval_limit[index_interval],
+                                         ppw,
+                                         previous_approx),
                ppt->error_message,
-               ppt->error_message,
-              for (index_interval=0; index_interval<interval_number; index_interval++)
-                 free(interval_approx[index_interval]);
-               free(interval_approx);free(interval_limit);perturb_vector_free(ppw->pv));
+               ppt->error_message);
 
     /** - --> (d) integrate the perturbations over the current interval. */
 
@@ -3131,34 +3047,31 @@ int perturb_solve(
       generic_evolver = evolver_ndf15;
     }
 
-    class_call_except(generic_evolver(perturb_derivs,
+    class_call(generic_evolver(perturbations_derivs,
                                interval_limit[index_interval],
                                interval_limit[index_interval+1],
                                ppw->pv->y,
                                ppw->pv->used_in_sources,
                                ppw->pv->pt_size,
                                &ppaw,
-                               ppr->tol_perturb_integration,
+                               ppr->tol_perturbations_integration,
                                ppr->smallest_allowed_variation,
-                               perturb_timescale,
-                               ppr->perturb_integration_stepsize,
+                               perturbations_timescale,
+                               ppr->perturbations_integration_stepsize,
                                ppt->tau_sampling,
                                tau_actual_size,
-                               perturb_sources,
+                               perturbations_sources,
                                perhaps_print_variables,
                                ppt->error_message),
                ppt->error_message,
-               ppt->error_message,
-               for (index_interval=0; index_interval<interval_number; index_interval++)
-                  free(interval_approx[index_interval]);
-             free(interval_approx);free(interval_limit);perturb_vector_free(ppw->pv));
+               ppt->error_message);
 
   }
 
   /** - if perturbations were printed in a file, close the file */
 
   //if (perhaps_print_variables != NULL)
-  //  fclose(ppw->perturb_output_file);
+  //  fclose(ppw->perturbations_output_file);
 
   /** - fill the source terms array with zeros for all times between
       the last integrated time tau_max and tau_today. */
@@ -3173,7 +3086,7 @@ int perturb_solve(
 
   /** - free quantities allocated at the beginning of the routine */
 
-  class_call(perturb_vector_free(ppw->pv),
+  class_call(perturbations_vector_free(ppw->pv),
              ppt->error_message,
              ppt->error_message);
 
@@ -3197,8 +3110,9 @@ int perturb_solve(
  * @return the error status
  */
 
-int perturb_prepare_k_output(struct background * pba,
-			   struct perturbs * ppt){
+int perturbations_prepare_k_output(struct background * pba,
+                                   struct perturbations * ppt
+                                   ){
   int n_ncdm;
   char tmp[40];
 
@@ -3224,7 +3138,6 @@ int perturb_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles,"theta_b",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"psi",_TRUE_);
       class_store_columntitle(ppt->scalar_titles,"phi",_TRUE_);
-
       /* Perturbed recombination */
       class_store_columntitle(ppt->scalar_titles,"delta_Tb",ppt->has_perturbed_recombination);
       class_store_columntitle(ppt->scalar_titles,"delta_chi",ppt->has_perturbed_recombination);
@@ -3270,24 +3183,6 @@ int perturb_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "delta_rho_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "rho_plus_p_theta_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "delta_p_fld", pba->has_fld);
-
-      /* Metric perturbations */
-      class_store_columntitle(ppt->scalar_titles,"h_prime",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"h_prime_prime",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"eta",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"eta_prime",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"alpha",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"alpha_prime",ppt->gauge == synchronous);
-      class_store_columntitle(ppt->scalar_titles,"einstein00",ppt->gauge == synchronous); // not only _smg
-
-      /* Scalar field smg */
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_store_columntitles_smg(ppt),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
 
       ppt->number_of_scalar_titles =
         get_number_of_titles(ppt->scalar_titles);
@@ -3342,7 +3237,7 @@ int perturb_prepare_k_output(struct background * pba,
  * @param ppt                Input: pointer to the perturbation structure
  * @param index_md           Input: index of mode under consideration (scalar/.../tensor)
  * @param k                  Input: index of wavenumber
- * @param ppw                Input: pointer to perturb_workspace structure containing index values and workspaces
+ * @param ppw                Input: pointer to perturbations_workspace structure containing index values and workspaces
  * @param tau_ini            Input: initial time of the perturbation integration
  * @param tau_end            Input: final time of the perturbation integration
  * @param interval_number    Output: total number of intervals
@@ -3350,19 +3245,19 @@ int perturb_prepare_k_output(struct background * pba,
  * @return the error status
  */
 
-int perturb_find_approximation_number(
-                                      struct precision * ppr,
-                                      struct background * pba,
-                                      struct thermo * pth,
-                                      struct perturbs * ppt,
-                                      int index_md,
-                                      double k,
-                                      struct perturb_workspace * ppw,
-                                      double tau_ini,
-                                      double tau_end,
-                                      int * interval_number,
-                                      int * interval_number_of /* interval_number_of[index_ap] (already allocated) */
-                                      ){
+int perturbations_find_approximation_number(
+                                            struct precision * ppr,
+                                            struct background * pba,
+                                            struct thermodynamics * pth,
+                                            struct perturbations * ppt,
+                                            int index_md,
+                                            double k,
+                                            struct perturbations_workspace * ppw,
+                                            double tau_ini,
+                                            double tau_end,
+                                            int * interval_number,
+                                            int * interval_number_of /* interval_number_of[index_ap] (already allocated) */
+                                            ){
 
   /** Summary: */
   /* index running over approximations */
@@ -3379,27 +3274,27 @@ int perturb_find_approximation_number(
 
   for (index_ap=0; index_ap<ppw->ap_size; index_ap++) {
 
-    class_call(perturb_approximations(ppr,
-                                      pba,
-                                      pth,
-                                      ppt,
-                                      index_md,
-                                      k,
-                                      tau_ini,
-                                      ppw),
+    class_call(perturbations_approximations(ppr,
+                                            pba,
+                                            pth,
+                                            ppt,
+                                            index_md,
+                                            k,
+                                            tau_ini,
+                                            ppw),
                ppt->error_message,
                ppt->error_message);
 
     flag_ini = ppw->approx[index_ap];
 
-    class_call(perturb_approximations(ppr,
-                                      pba,
-                                      pth,
-                                      ppt,
-                                      index_md,
-                                      k,
-                                      tau_end,
-                                      ppw),
+    class_call(perturbations_approximations(ppr,
+                                            pba,
+                                            pth,
+                                            ppt,
+                                            index_md,
+                                            k,
+                                            tau_end,
+                                            ppw),
                ppt->error_message,
                ppt->error_message);
 
@@ -3428,7 +3323,7 @@ int perturb_find_approximation_number(
  * @param ppt                Input: pointer to the perturbation structure
  * @param index_md           Input: index of mode under consideration (scalar/.../tensor)
  * @param k                  Input: index of wavenumber
- * @param ppw                Input: pointer to perturb_workspace structure containing index values and workspaces
+ * @param ppw                Input: pointer to perturbations_workspace structure containing index values and workspaces
  * @param tau_ini            Input: initial time of the perturbation integration
  * @param tau_end            Input: final time of the perturbation integration
  * @param precision          Input: tolerance on output values
@@ -3439,22 +3334,22 @@ int perturb_find_approximation_number(
  * @return the error status
  */
 
-int perturb_find_approximation_switches(
-                                        struct precision * ppr,
-                                        struct background * pba,
-                                        struct thermo * pth,
-                                        struct perturbs * ppt,
-                                        int index_md,
-                                        double k,
-                                        struct perturb_workspace * ppw,
-                                        double tau_ini,
-                                        double tau_end,
-                                        double precision,
-                                        int interval_number,
-                                        int * interval_number_of,
-                                        double * interval_limit, /* interval_limit[index_interval] (already allocated) */
-                                        int ** interval_approx   /* interval_approx[index_interval][index_ap] (already allocated) */
-                                        ){
+int perturbations_find_approximation_switches(
+                                              struct precision * ppr,
+                                              struct background * pba,
+                                              struct thermodynamics * pth,
+                                              struct perturbations * ppt,
+                                              int index_md,
+                                              double k,
+                                              struct perturbations_workspace * ppw,
+                                              double tau_ini,
+                                              double tau_end,
+                                              double precision,
+                                              int interval_number,
+                                              int * interval_number_of,
+                                              double * interval_limit, /* interval_limit[index_interval] (already allocated) */
+                                              int ** interval_approx   /* interval_approx[index_interval][index_ap] (already allocated) */
+                                              ){
 
   /** Summary: */
 
@@ -3473,14 +3368,14 @@ int perturb_find_approximation_switches(
 
   interval_limit[0]=tau_ini;
 
-  class_call(perturb_approximations(ppr,
-                                    pba,
-                                    pth,
-                                    ppt,
-                                    index_md,
-                                    k,
-                                    tau_ini,
-                                    ppw),
+  class_call(perturbations_approximations(ppr,
+                                          pba,
+                                          pth,
+                                          ppt,
+                                          index_md,
+                                          k,
+                                          tau_ini,
+                                          ppw),
              ppt->error_message,
              ppt->error_message);
 
@@ -3523,14 +3418,14 @@ int perturb_find_approximation_switches(
 
           while (upper_bound - lower_bound > precision) {
 
-            class_call(perturb_approximations(ppr,
-                                              pba,
-                                              pth,
-                                              ppt,
-                                              index_md,
-                                              k,
-                                              mid,
-                                              ppw),
+            class_call(perturbations_approximations(ppr,
+                                                    pba,
+                                                    pth,
+                                                    ppt,
+                                                    index_md,
+                                                    k,
+                                                    mid,
+                                                    ppw),
                        ppt->error_message,
                        ppt->error_message);
 
@@ -3586,14 +3481,14 @@ int perturb_find_approximation_switches(
 
     for (index_switch=1; index_switch<interval_number; index_switch++) {
 
-      class_call(perturb_approximations(ppr,
-                                        pba,
-                                        pth,
-                                        ppt,
-                                        index_md,
-                                        k,
-                                        0.5*(interval_limit[index_switch]+interval_limit[index_switch+1]),
-                                        ppw),
+      class_call(perturbations_approximations(ppr,
+                                              pba,
+                                              pth,
+                                              ppt,
+                                              index_md,
+                                              k,
+                                              0.5*(interval_limit[index_switch]+interval_limit[index_switch+1]),
+                                              ppw),
 
                  ppt->error_message,
                  ppt->error_message);
@@ -3666,19 +3561,6 @@ int perturb_find_approximation_switches(
               fprintf(stdout,"Mode k=%e: will switch on ncdm fluid approximation at tau=%e\n",k,interval_limit[index_switch]);
             }
           }
-          if (pba->has_smg == _TRUE_) {
-            class_call(
-              perturb_verbose_qs_smg(
-                ppt,
-                ppw,
-                k,
-                interval_limit[index_switch],
-                interval_approx[index_switch-1],
-                interval_approx[index_switch]),
-              ppt->error_message,
-              ppt->error_message
-            );
-          }
         }
 
         if (_tensors_) {
@@ -3697,14 +3579,14 @@ int perturb_find_approximation_switches(
 
     free(unsorted_tau_switch);
 
-    class_call(perturb_approximations(ppr,
-                                      pba,
-                                      pth,
-                                      ppt,
-                                      index_md,
-                                      k,
-                                      tau_end,
-                                      ppw),
+    class_call(perturbations_approximations(ppr,
+                                            pba,
+                                            pth,
+                                            ppt,
+                                            index_md,
+                                            k,
+                                            tau_end,
+                                            ppw),
 
                ppt->error_message,
                ppt->error_message);
@@ -3714,8 +3596,8 @@ int perturb_find_approximation_switches(
 }
 
 /**
- * Initialize the field '-->pv' of a perturb_workspace structure, which
- * is a perturb_vector structure. This structure contains indices and
+ * Initialize the field '-->pv' of a perturbations_workspace structure, which
+ * is a perturbations_vector structure. This structure contains indices and
  * values of all quantities which need to be integrated with respect
  * to time (and only them: quantities fixed analytically or obeying
  * constraint equations are NOT included in this vector). This routine
@@ -3727,7 +3609,7 @@ int perturb_find_approximation_switches(
  * want to set initial conditions for the perturbations. Then, it is
  * assumed that ppw-->pv is not yet allocated. This routine allocates
  * it, defines all indices, and then fills the vector ppw-->pv-->y with
- * the initial conditions defined in perturb_initial_conditions.
+ * the initial conditions defined in perturbations_initial_conditions.
  *
  * --> the input pa_old is not set to the NULL pointer and describes
  * some set of approximations:
@@ -3751,40 +3633,40 @@ int perturb_find_approximation_switches(
  * @param k          Input: wavenumber
  * @param tau        Input: conformal time
  * @param ppw        Input/Output: workspace containing in input the approximation scheme, the background/thermodynamics/metric quantities, and eventually the previous vector y; and in output the new vector y.
- * @param pa_old     Input: NULL is we need to set y to initial conditions for a new wavenumber; points towards a perturb_approximations if we want to switch of approximation.
+ * @param pa_old     Input: NULL is we need to set y to initial conditions for a new wavenumber; points towards a perturbations_approximations if we want to switch of approximation.
  * @return the error status
  */
 
-int perturb_vector_init(
-                        struct precision * ppr,
-                        struct background * pba,
-                        struct thermo * pth,
-                        struct perturbs * ppt,
-                        int index_md,
-                        int index_ic,
-                        double k,
-                        double tau,
-                        struct perturb_workspace * ppw, /* ppw->pv unallocated if pa_old = NULL, allocated and filled otherwise */
-                        int * pa_old
-                        ) {
+int perturbations_vector_init(
+                              struct precision * ppr,
+                              struct background * pba,
+                              struct thermodynamics * pth,
+                              struct perturbations * ppt,
+                              int index_md,
+                              int index_ic,
+                              double k,
+                              double tau,
+                              struct perturbations_workspace * ppw, /* ppw->pv unallocated if pa_old = NULL, allocated and filled otherwise */
+                              int * pa_old
+                              ) {
 
   /** Summary: */
 
   /** - define local variables */
 
-  struct perturb_vector * ppv;
+  struct perturbations_vector * ppv;
 
   int index_pt;
   int l;
   int n_ncdm,index_q,ncdm_l_size;
   double rho_plus_p_ncdm,q,q2,epsilon,a,factor;
 
-  /** - allocate a new perturb_vector structure to which ppw-->pv will point at the end of the routine */
+  /** - allocate a new perturbations_vector structure to which ppw-->pv will point at the end of the routine */
 
-  class_alloc(ppv,sizeof(struct perturb_vector),ppt->error_message);
+  class_alloc(ppv,sizeof(struct perturbations_vector),ppt->error_message);
 
   /** - initialize pointers to NULL (they will be allocated later if
-      needed), relevant for perturb_vector_free() */
+      needed), relevant for perturbations_vector_free() */
   ppv->l_max_ncdm = NULL;
   ppv->q_size_ncdm = NULL;
 
@@ -3862,6 +3744,7 @@ int perturb_vector_init(
     class_define_index(ppv->index_pt_theta_cdm,pba->has_cdm && (ppt->gauge == newtonian),index_pt,1); /* cdm velocity */
 
     /* idm_dr */
+
     class_define_index(ppv->index_pt_delta_idm_dr,pba->has_idm_dr,index_pt,1); /* idm_dr density */
     class_define_index(ppv->index_pt_theta_idm_dr,pba->has_idm_dr,index_pt,1); /* idm_dr velocity */
 
@@ -3890,14 +3773,6 @@ int perturb_vector_init(
 
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
     class_define_index(ppv->index_pt_phi_prime_scf,pba->has_scf,index_pt,1); /* scalar field velocity */
-
-    if (pba->has_smg == _TRUE_) {
-      class_call(
-        hi_class_define_indices_pt(ppw, ppv, &index_pt),
-        ppt->error_message,
-        ppt->error_message
-      );
-    }
 
     /* perturbed recombination: the indices are defined once tca is off. */
     if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
@@ -3968,8 +3843,6 @@ int perturb_vector_init(
 
     /* metric perturbation eta of synchronous gauge */
     class_define_index(ppv->index_pt_eta,ppt->gauge == synchronous,index_pt,1);
-    if (ppt->get_h_from_trace == _TRUE_) // not only _smg
-      class_define_index(ppv->index_pt_h_prime_from_trace,ppt->gauge == synchronous,index_pt,1);
 
     /* metric perturbation phi of newtonian gauge ( we could fix it
        using Einstein equations as a constraint equation for phi, but
@@ -4208,13 +4081,6 @@ int perturb_vector_init(
 
     if (ppt->perturbations_verbose>2)
       fprintf(stdout,"Mode k=%e: initializing vector at tau=%e\n",k,tau);
-        /* Uncomment this line to print tau_ini for each mode in terminal
-         * (important for IC of smg models with early MG (eMG)
-         * you can uncomment all the verbose and do
-         * 	./class my_init_file.ini > output_file.dat
-         * to save tau_ini(k) into a file
-         */
-    //     printf(" %e \t %e \n",k,tau);
 
     if (_scalars_) {
 
@@ -4268,21 +4134,21 @@ int perturb_vector_init(
 
     }
 
-    /** - --> (b) let ppw-->pv points towards the perturb_vector structure
+    /** - --> (b) let ppw-->pv points towards the perturbations_vector structure
         that we just created */
 
     ppw->pv = ppv;
 
     /** - --> (c) fill the vector ppw-->pv-->y with appropriate initial conditions */
 
-    class_call(perturb_initial_conditions(ppr,
-                                          pba,
-                                          ppt,
-                                          index_md,
-                                          index_ic,
-                                          k,
-                                          tau,
-                                          ppw),
+    class_call(perturbations_initial_conditions(ppr,
+                                                pba,
+                                                ppt,
+                                                index_md,
+                                                index_ic,
+                                                k,
+                                                tau,
+                                                ppw),
                ppt->error_message,
                ppt->error_message);
 
@@ -4342,7 +4208,6 @@ int perturb_vector_init(
           ppw->pv->y[ppw->pv->index_pt_theta_idm_dr];
       }
 
-
       if (pba->has_dcdm == _TRUE_) {
 
         ppv->y[ppv->index_pt_delta_dcdm] =
@@ -4382,22 +4247,9 @@ int perturb_vector_init(
           ppw->pv->y[ppw->pv->index_pt_phi_prime_scf];
       }
 
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_vector_init_smg(ppw, ppv, pa_old),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
-
       if (ppt->gauge == synchronous)
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
-
-      if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) { // not only _smg
-        ppv->y[ppv->index_pt_h_prime_from_trace] =
-          ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace];
-      }
 
       if (ppt->gauge == newtonian)
         ppv->y[ppv->index_pt_phi] =
@@ -4409,7 +4261,7 @@ int perturb_vector_init(
 
       if ((pa_old[ppw->index_ap_tca] == (int)tca_on) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
-        if (ppt->perturbations_verbose>3)
+        if (ppt->perturbations_verbose>2)
           fprintf(stdout,"Mode k=%e: switch off tight-coupling approximation at tau=%e\n",k,tau);
 
         ppv->y[ppv->index_pt_delta_g] =
@@ -4419,7 +4271,7 @@ int perturb_vector_init(
           ppw->pv->y[ppw->pv->index_pt_theta_g];
 
         /* tight-coupling approximation for shear_g (previously
-           computed in perturb_derivs: perturb_derivs is always
+           computed in perturbations_derivs: perturbations_derivs is always
            called at the end of generic_evolver, in order to update
            all quantities in ppw to the time at which the
            approximation is switched off) */
@@ -4521,7 +4373,7 @@ int perturb_vector_init(
 
       if ((pa_old[ppw->index_ap_rsa] == (int)rsa_off) && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on)) {
 
-        if (ppt->perturbations_verbose>3)
+        if (ppt->perturbations_verbose>2)
           fprintf(stdout,"Mode k=%e: switch on radiation streaming approximation at tau=%e with Omega_r=%g\n",k,tau,ppw->pvecback[pba->index_bg_Omega_r]);
 
         if (pba->has_idr == _TRUE_){
@@ -4891,7 +4743,7 @@ int perturb_vector_init(
 
         if ((pa_old[ppw->index_ap_ncdmfa] == (int)ncdmfa_off) && (ppw->approx[ppw->index_ap_ncdmfa] == (int)ncdmfa_on)) {
 
-          if (ppt->perturbations_verbose>3)
+          if (ppt->perturbations_verbose>2)
             fprintf(stdout,"Mode k=%e: switch on ncdm fluid approximation at tau=%e\n",k,tau);
 
           if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) {
@@ -5002,7 +4854,7 @@ int perturb_vector_init(
             for(l=0; l<=2; l++){
               ppv->y[ppv->index_pt_psi0_ncdm1+ncdm_l_size*n_ncdm+l] = 0.0;
             }
-            factor = pba->factor_ncdm[n_ncdm]*pow(pba->a_today/a,4);
+            factor = pba->factor_ncdm[n_ncdm]/pow(a,4);
             for(index_q=0; index_q < ppw->pv->q_size_ncdm[n_ncdm]; index_q++){
               // Integrate over distributions:
               q = pba->q_ncdm[n_ncdm][index_q];
@@ -5072,7 +4924,7 @@ int perturb_vector_init(
 
       if ((pa_old[ppw->index_ap_tca] == (int)tca_on) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
-        if (ppt->perturbations_verbose>3)
+        if (ppt->perturbations_verbose>2)
           fprintf(stdout,"Mode k=%e: switch off tight-coupling approximation at tau=%e\n",k,tau);
 
         ppv->y[ppv->index_pt_delta_g] = 0.0; //TBC
@@ -5162,7 +5014,7 @@ int perturb_vector_init(
 
       if ((pa_old[ppw->index_ap_tca] == (int)tca_on) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
-        if (ppt->perturbations_verbose>3)
+        if (ppt->perturbations_verbose>2)
           fprintf(stdout,"Mode k=%e: switch off tight-coupling approximation at tau=%e\n",k,tau);
 
         ppv->y[ppv->index_pt_delta_g] = -4./3.*ppw->pv->y[ppw->pv->index_pt_gwdot]/ppw->pvecthermo[pth->index_th_dkappa];
@@ -5176,7 +5028,7 @@ int perturb_vector_init(
 
       if ((pa_old[ppw->index_ap_rsa] == (int)rsa_off) && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on)) {
 
-        if (ppt->perturbations_verbose>3)
+        if (ppt->perturbations_verbose>2)
           fprintf(stdout,"Mode k=%e: switch on radiation streaming approximation at tau=%e with Omega_r=%g\n",k,tau,ppw->pvecback[pba->index_bg_Omega_r]);
 
       }
@@ -5184,11 +5036,11 @@ int perturb_vector_init(
 
     /** - --> (d) free the previous vector of perturbations */
 
-    class_call(perturb_vector_free(ppw->pv),
+    class_call(perturbations_vector_free(ppw->pv),
                ppt->error_message,
                ppt->error_message);
 
-    /** - --> (e) let ppw-->pv points towards the perturb_vector structure
+    /** - --> (e) let ppw-->pv points towards the perturbations_vector structure
         that we just created */
 
     ppw->pv = ppv;
@@ -5199,15 +5051,15 @@ int perturb_vector_init(
 }
 
 /**
- * Free the perturb_vector structure.
+ * Free the perturbations_vector structure.
  *
- * @param pv        Input: pointer to perturb_vector structure to be freed
+ * @param pv        Input: pointer to perturbations_vector structure to be freed
  * @return the error status
  */
 
-int perturb_vector_free(
-                        struct perturb_vector * pv
-                        ) {
+int perturbations_vector_free(
+                              struct perturbations_vector * pv
+                              ) {
 
   if (pv->l_max_ncdm != NULL) free(pv->l_max_ncdm);
   if (pv->q_size_ncdm != NULL) free(pv->q_size_ncdm);
@@ -5236,15 +5088,15 @@ int perturb_vector_free(
  * @return the error status
  */
 
-int perturb_initial_conditions(struct precision * ppr,
-                               struct background * pba,
-                               struct perturbs * ppt,
-                               int index_md,
-                               int index_ic,
-                               double k,
-                               double tau,
-                               struct perturb_workspace * ppw
-                               ) {
+int perturbations_initial_conditions(struct precision * ppr,
+                                     struct background * pba,
+                                     struct perturbations * ppt,
+                                     int index_md,
+                                     int index_ic,
+                                     double k,
+                                     double tau,
+                                     struct perturbations_workspace * ppw
+                                     ) {
   /** Summary: */
 
   /** --> Declare local variables */
@@ -5256,9 +5108,8 @@ int perturb_initial_conditions(struct precision * ppr,
   double q,epsilon,k2;
   int index_q,n_ncdm,idx;
   double rho_r,rho_m,rho_nu,rho_m_over_rho_r;
-
-
-  double fracnu,fracg,fracb,fraccdm,om;
+  double fracnu,fracg,fracb,fraccdm, fracidm_dr = 0.;
+  double om;
   double ktau_two,ktau_three;
   double f_dr;
 
@@ -5266,7 +5117,8 @@ int perturb_initial_conditions(struct precision * ppr,
   double velocity_tot;
   double s2_squared;
 
-  /** - for scalars */
+  /** --> For scalars */
+
   if (_scalars_) {
 
     /** - (a) compute relevant background quantities: compute rho_r,
@@ -5275,8 +5127,8 @@ int perturb_initial_conditions(struct precision * ppr,
 
     class_call(background_at_tau(pba,
                                  tau,
-                                 pba->normal_info,
-                                 pba->inter_normal,
+                                 normal_info,
+                                 inter_normal,
                                  &(ppw->last_index_back),
                                  ppw->pvecback),
                pba->error_message,
@@ -5343,13 +5195,15 @@ int perturb_initial_conditions(struct precision * ppr,
     fracb = ppw->pvecback[pba->index_bg_rho_b]/rho_m;
 
     /* f_cdm = Omega_cdm(t_i) / Omega_m(t_i) */
-    fraccdm = 1.-fracb;
+    fraccdm = ppw->pvecback[pba->index_bg_rho_cdm]/rho_m;
 
+    if(pba->has_idm_dr == _TRUE_){
+      /* f_idm_dr = Omega_idm_dr(t_i) / Omega_m(t_i) */
+      fracidm_dr =  ppw->pvecback[pba->index_bg_rho_idm_dr]/rho_m;
+    }
 
     /* Omega_m(t_i) / Omega_r(t_i) */
     rho_m_over_rho_r = rho_m/rho_r;
-
-
 
     /* omega = Omega_m(t_i) a(t_i) H(t_i) / sqrt(Omega_r(t_i))
        = Omega_m(t_0) a(t_0) H(t_0) / sqrt(Omega_r(t_0)) assuming rho_m in a-3 and rho_r in a^-4
@@ -5359,20 +5213,8 @@ int perturb_initial_conditions(struct precision * ppr,
        Indeed the exact solution of Friedmann when there is only radiation and matter in
        the universe is
        a = [H(t_0)^2 Omega_m(t_0) a(t_0)^3 / 4] x [tau^2 + 4 tau / omega]
-
-       ILS: only used for Newtonian gauge transformations
     */
-
-
-
-    // Add smg to radiation to correct om: if have early dark energy, it will take that into account the changed mat-red equality
-    // If not -> it doesn't matter in any case
-    // We do not want to change the value of rho_r, since afterwards, it is assumed to be just the radiation fluid
-
     om = a*rho_m/sqrt(rho_r);
-    if (pba->has_smg == _TRUE_)
-      om = a*rho_m/sqrt(rho_r + ppw->pvecback[pba->index_bg_rho_smg]);
-
 
     /* (k tau)^2, (k tau)^3 */
     ktau_two=k*k*tau*tau;
@@ -5383,7 +5225,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
     s2_squared = 1.-3.*pba->K/k/k;
 
-        /** - (b) starts by setting everything in synchronous gauge. If
+    /** - (b) starts by setting everything in synchronous gauge. If
         another gauge is needed, we will perform a gauge
         transformation below. */
 
@@ -5422,7 +5264,7 @@ int perturb_initial_conditions(struct precision * ppr,
         /* cdm velocity vanishes in the synchronous gauge */
       }
 
-      /* interacting dark matter */
+      /* interacting dark matter with dark radiation*/
       if (pba->has_idm_dr == _TRUE_) {
         ppw->pv->y[ppw->pv->index_pt_delta_idm_dr] = 3./4.*ppw->pv->y[ppw->pv->index_pt_delta_g]; /* idm_dr density */
       }
@@ -5486,14 +5328,6 @@ int perturb_initial_conditions(struct precision * ppr,
       //eta = ppr->curvature_ini * s2_squared * (1.-ktau_two/12./(15.+4.*fracnu)*(15.*s2_squared-10.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
       eta = ppr->curvature_ini * (1.-ktau_two/12./(15.+4.*fracnu)*(5.+4.*s2_squared*fracnu - (16.*fracnu*fracnu+280.*fracnu+325)/10./(2.*fracnu+15.)*tau*om));
 
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_adiabatic_ic_smg(ppr, pba, ppt, ppw, &eta, &delta_ur, &theta_ur, &shear_ur, &l3_ur, &delta_dr, tau, k, fracnu, om, rho_r),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
-
     }
 
     /* isocurvature initial conditions taken from Bucher, Moodely,
@@ -5532,16 +5366,8 @@ int perturb_initial_conditions(struct precision * ppr,
         shear_ur = -ppr->entropy_ini*fraccdm*ktau_two*tau*om/6./(2.*fracnu+15.);
 
       }
+
       eta = -ppr->entropy_ini*fraccdm*om*tau*(1./6.-om*tau/16.);
-
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_isocurvature_cdm_ic_smg(ppr, pba, ppt, ppw, tau, k, fraccdm, om),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
-
 
     }
 
@@ -5575,14 +5401,6 @@ int perturb_initial_conditions(struct precision * ppr,
 
       eta = -ppr->entropy_ini*fracb*om*tau*(1./6.-om*tau/16.);
 
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_isocurvature_b_ic_smg(ppr, pba, ppt, ppw, tau, k, fracb, om),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
-
     }
 
     /** - --> (b.4.) Neutrino density Isocurvature */
@@ -5593,9 +5411,9 @@ int perturb_initial_conditions(struct precision * ppr,
                  ppt->error_message,
                  "not consistent to ask for NID in absence of ur or ncdm species!");
 
-       class_test((pba->has_idr == _TRUE_),
-                  ppt->error_message,
-                  "only adiabatic ic in presence of interacting dark radiation");
+      class_test((pba->has_idr == _TRUE_),
+                 ppt->error_message,
+                 "only adiabatic ic in presence of interacting dark radiation");
 
       ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*fracnu/fracg*(-1.+ktau_two/6.);
       ppw->pv->y[ppw->pv->index_pt_theta_g] = -ppr->entropy_ini*fracnu/fracg*k*k*tau*(1./4.-fracb/fracg*3./16.*om*tau);
@@ -5615,14 +5433,6 @@ int perturb_initial_conditions(struct precision * ppr,
 
       eta = -ppr->entropy_ini*fracnu/(4.*fracnu+15.)/6.*ktau_two;
 
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_isocurvature_urd_ic_smg(ppr, pba, ppt, ppw, tau, k, fracnu, fracg, fracb, om),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
-
     }
 
     /** - --> (b.5.) Neutrino velocity Isocurvature */
@@ -5634,8 +5444,8 @@ int perturb_initial_conditions(struct precision * ppr,
                  "not consistent to ask for NIV in absence of ur or ncdm species!");
 
       class_test((pba->has_idr == _TRUE_),
-                ppt->error_message,
-                "only adiabatic ic in presence of interacting dark radiation");
+                 ppt->error_message,
+                 "only adiabatic ic in presence of interacting dark radiation");
 
       ppw->pv->y[ppw->pv->index_pt_delta_g] = ppr->entropy_ini*k*tau*fracnu/fracg*
         (1. - 3./16.*fracb*(2.+fracg)/fracg*om*tau); /* small diff wrt camb */
@@ -5654,19 +5464,9 @@ int perturb_initial_conditions(struct precision * ppr,
 
       delta_ur = -ppr->entropy_ini*k*tau*(1.+3./16.*fracb*fracnu/fracg*om*tau);  /* small diff wrt camb */
       theta_ur = ppr->entropy_ini*3./4.*k*(1. - 1./6.*ktau_two*(4.*fracnu+9.)/(4.*fracnu+5.));
-      //shear_ur = ppr->entropy_ini/(4.*fracnu+15.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */ //Original CLASS
-      shear_ur = ppr->entropy_ini/(4.*fracnu+5.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */ //ILS corrected 15->5 in the first denom
-
+      shear_ur = ppr->entropy_ini/(4.*fracnu+15.)*k*tau*(1. + 3.*om*tau*fracnu/(4.*fracnu+15.)); /* small diff wrt camb */
 
       eta = ppr->entropy_ini*fracnu*k*tau*(-1./(4.*fracnu+5.) + (-3./64.*fracb/fracg+15./4./(4.*fracnu+15.)/(4.*fracnu+5.)*om*tau)); /* small diff wrt camb */
-
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_isocurvature_urv_ic_smg(ppr, pba, ppt, ppw, tau, k, fracnu, fracg, fracb, om),
-          ppt->error_message,
-          ppt->error_message
-        );
-      }
 
     }
 
@@ -5675,24 +5475,7 @@ int perturb_initial_conditions(struct precision * ppr,
     if (ppt->gauge == synchronous) {
 
       ppw->pv->y[ppw->pv->index_pt_eta] = eta;
-
-      if(ppt->get_h_from_trace == _TRUE_) { // not only smg
-        // Define initial condition for h^\prime evolved from the Einstein trace equation
-        // We should take into account also matter density otherwise we get percent differences
-        /* TODO: think of adding all species in a more sysyematic way */
-        double delta_rho_tot =
-          + rho_r * ppw->pv->y[ppw->pv->index_pt_delta_g]
-          + ppw->pvecback[pba->index_bg_rho_b]*ppw->pv->y[ppw->pv->index_pt_delta_b]
-          + ppw->pvecback[pba->index_bg_rho_cdm]*ppw->pv->y[ppw->pv->index_pt_delta_cdm];
-        if(pba->has_smg == _TRUE_) {
-          perturb_get_h_prime_ic_from_00(pba, ppw, k, eta, delta_rho_tot);
-        }
-        else {
-          ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace] = (2.*pow(k, 2)*eta + 3.*a*a*delta_rho_tot)/a/ppw->pvecback[pba->index_bg_H];
-        }
-      }
     }
-
 
 
     /** - (d) If the needed gauge is the newtonian gauge, we must compute alpha and then perform a gauge transformation for each variable */
@@ -5719,10 +5502,10 @@ int perturb_initial_conditions(struct precision * ppr,
 
       if (pba->has_cdm == _TRUE_)
         delta_cdm = ppw->pv->y[ppw->pv->index_pt_delta_cdm];
+      if (pba->has_idm_dr == _TRUE_)
+        delta_cdm += ppw->pv->y[ppw->pv->index_pt_delta_idm_dr];
       else if (pba->has_dcdm == _TRUE_)
         delta_cdm = ppw->pv->y[ppw->pv->index_pt_delta_dcdm];
-      else if (pba->has_idm_dr == _TRUE_)
-        delta_cdm = ppw->pv->y[ppw->pv->index_pt_delta_idm_dr];
       else
         delta_cdm=0.;
 
@@ -5731,6 +5514,11 @@ int perturb_initial_conditions(struct precision * ppr,
       delta_tot = (fracg*ppw->pv->y[ppw->pv->index_pt_delta_g]+fracnu*delta_ur+rho_m_over_rho_r*(fracb*ppw->pv->y[ppw->pv->index_pt_delta_b]+fraccdm*delta_cdm))/(1.+rho_m_over_rho_r);
 
       velocity_tot = ((4./3.)*(fracg*ppw->pv->y[ppw->pv->index_pt_theta_g]+fracnu*theta_ur) + rho_m_over_rho_r*fracb*ppw->pv->y[ppw->pv->index_pt_theta_b])/(1.+rho_m_over_rho_r);
+
+      if ( pba->has_idm_dr == _TRUE_ ) {
+        delta_tot += rho_m_over_rho_r*fracidm_dr*ppw->pv->y[ppw->pv->index_pt_delta_idm_dr]/(1.+rho_m_over_rho_r);
+        velocity_tot += rho_m_over_rho_r*fracidm_dr*ppw->pv->y[ppw->pv->index_pt_theta_idm_dr]/(1.+rho_m_over_rho_r);
+      }
 
       alpha = (eta + 3./2.*a_prime_over_a*a_prime_over_a/k/k/s2_squared*(delta_tot + 3.*a_prime_over_a/k/k*velocity_tot))/a_prime_over_a;
 
@@ -5754,7 +5542,7 @@ int perturb_initial_conditions(struct precision * ppr,
       }
 
       if (pba->has_dcdm == _TRUE_) {
-        ppw->pv->y[ppw->pv->index_pt_delta_dcdm] += (-3.*a_prime_over_a - a*pba->Gamma_dcdm)*alpha;
+        ppw->pv->y[ppw->pv->index_pt_delta_dcdm] -= (3.*a_prime_over_a + a*pba->Gamma_dcdm)*alpha;
         ppw->pv->y[ppw->pv->index_pt_theta_dcdm] = k*k*alpha;
       }
 
@@ -5778,14 +5566,6 @@ int perturb_initial_conditions(struct precision * ppr,
           (-2.*a_prime_over_a*alpha*ppw->pvecback[pba->index_bg_phi_prime_scf]
            -a*a* dV_scf(pba,ppw->pvecback[pba->index_bg_phi_scf])*alpha
            +ppw->pvecback[pba->index_bg_phi_prime_scf]*alpha_prime);
-      }
-
-      if (pba->has_smg == _TRUE_) {
-        class_call(
-          perturb_get_x_x_prime_newtonian(ppw),
-          ppt->error_message,
-          ppt->error_message
-        );
       }
 
       if ((pba->has_ur == _TRUE_) || (pba->has_ncdm == _TRUE_) || (pba->has_dr == _TRUE_)  || (pba->has_idr == _TRUE_)) {
@@ -5857,7 +5637,7 @@ int perturb_initial_conditions(struct precision * ppr,
 
     if (pba->has_dr == _TRUE_) {
 
-      f_dr = pow(pow(a/pba->a_today,2)/pba->H0,2)*ppw->pvecback[pba->index_bg_rho_dr];
+      f_dr = pow(pow(a,2)/pba->H0,2)*ppw->pvecback[pba->index_bg_rho_dr];
 
       ppw->pv->y[ppw->pv->index_pt_F0_dr] = delta_dr*f_dr;
 
@@ -5939,16 +5719,16 @@ int perturb_initial_conditions(struct precision * ppr,
 
         - In the primordial module: \f$ \mathcal{P}_h(k) = \frac{A_t}{6} \tanh{(\pi*\frac{\nu}{2})} (k/k^*)^{n_T}\f$
         - In the perturbation initial conditions: \f$ h = 1\f$
-        - In the spectra module: \f$ C_l^T = \frac{4}{\pi} \int \frac{dk}{k} [\Delta_l^T(q)]^2 F\left(\frac{k^2}{K}\right) \mathcal{P}_h(k) \f$
+        - In the harmonic module: \f$ C_l^T = \frac{4}{\pi} \int \frac{dk}{k} [\Delta_l^T(q)]^2 F\left(\frac{k^2}{K}\right) \mathcal{P}_h(k) \f$
 
         or:
 
         - In the primordial module: \f$ \mathcal{P}_h(k) = A_t (k/k^*)^{n_T} \f$
         - In the perturbation initial conditions: \f$ h = \sqrt{[F\left(\frac{k^2}{K}\right) / 6] \tanh{(\pi*\frac{\nu}{2})}} \f$
-        - In the spectra module: \f$ C_l^T = \frac{4}{\pi} \int \frac{dk}{k} [\Delta_l^T(q)]^2 \mathcal{P}_h(k) \f$
+        - In the harmonic module: \f$ C_l^T = \frac{4}{\pi} \int \frac{dk}{k} [\Delta_l^T(q)]^2 \mathcal{P}_h(k) \f$
 
         We choose this last option, such that the primordial and
-        spectra module differ minimally in flat and non-flat space. Then we must impose
+        harmonic module differ minimally in flat and non-flat space. Then we must impose
 
         \f[ h = \sqrt{\left(\frac{F}{6}\right) \tanh{(\pi*\frac{\nu}{2})}} \f]
 
@@ -6011,7 +5791,7 @@ int perturb_initial_conditions(struct precision * ppr,
  * Evaluate background quantities at \f$ \tau \f$, as well as thermodynamics for scalar mode; infer useful flags and time scales for integrating the perturbations:
  * - check whether tight-coupling approximation is needed.
  * - check whether radiation (photons, massless neutrinos...) perturbations are needed.
- * - choose step of integration: step = ppr->perturb_integration_stepsize * min_time_scale, where min_time_scale = smallest time scale involved in the equations. There are three time scales to compare:
+ * - choose step of integration: step = ppr->perturbations_integration_stepsize * min_time_scale, where min_time_scale = smallest time scale involved in the equations. There are three time scales to compare:
  *     -# that of recombination, \f$ \tau_c = 1/\kappa' \f$
  *     -# Hubble time scale, \f$ \tau_h = a/a' \f$
  *     -# Fourier mode, \f$ \tau_k = 1/k \f$
@@ -6042,16 +5822,16 @@ int perturb_initial_conditions(struct precision * ppr,
  * @return the error status
  */
 
-int perturb_approximations(
-                           struct precision * ppr,
-                           struct background * pba,
-                           struct thermo * pth,
-                           struct perturbs * ppt,
-                           int index_md,
-                           double k,
-                           double tau,
-                           struct perturb_workspace * ppw
-                           ) {
+int perturbations_approximations(
+                                 struct precision * ppr,
+                                 struct background * pba,
+                                 struct thermodynamics * pth,
+                                 struct perturbations * ppt,
+                                 int index_md,
+                                 double k,
+                                 double tau,
+                                 struct perturbations_workspace * ppw
+                                 ) {
   /** Summary: */
 
   /** - define local variables */
@@ -6074,7 +5854,7 @@ int perturb_approximations(
   /** - evaluate background quantities with background_at_tau() and
       Hubble time scale \f$ \tau_h = a/a' \f$ */
 
-  class_call(background_at_tau(pba,tau, pba->normal_info, ppw->inter_mode, &(ppw->last_index_back), ppw->pvecback),
+  class_call(background_at_tau(pba,tau, normal_info, ppw->inter_mode, &(ppw->last_index_back), ppw->pvecback),
              pba->error_message,
              ppt->error_message);
 
@@ -6227,16 +6007,7 @@ int perturb_approximations(
         ppw->approx[ppw->index_ap_ncdmfa] = (int)ncdmfa_off;
       }
     }
-
-    if (pba->has_smg == _TRUE_) {
-      class_call(
-        perturb_approximations_smg(ppt, ppw, tau),
-        ppt->error_message,
-        ppt->error_message
-      );
-    }
-
-}
+  }
 
   /** - for tensor modes: */
 
@@ -6312,12 +6083,12 @@ int perturb_approximations(
  * @param error_message            Output: error message
  */
 
-int perturb_timescale(
-                      double tau,
-                      void * parameters_and_workspace,
-                      double * timescale,
-                      ErrorMsg error_message
-                      ) {
+int perturbations_timescale(
+                            double tau,
+                            void * parameters_and_workspace,
+                            double * timescale,
+                            ErrorMsg error_message
+                            ) {
   /** Summary: */
 
   /** - define local variables */
@@ -6331,11 +6102,11 @@ int perturb_timescale(
 
   /* various pointers allowing to extract the fields of the
      parameter_and_workspace input structure */
-  struct perturb_parameters_and_workspace * pppaw;
+  struct perturbations_parameters_and_workspace * pppaw;
   struct background * pba;
-  struct thermo * pth;
-  struct perturbs * ppt;
-  struct perturb_workspace * ppw;
+  struct thermodynamics * pth;
+  struct perturbations * ppt;
+  struct perturbations_workspace * ppw;
   double * pvecback;
   double * pvecthermo;
 
@@ -6359,7 +6130,7 @@ int perturb_timescale(
   /** - evaluate background quantities with background_at_tau() and
       Hubble time scale \f$ \tau_h = a/a' \f$ */
 
-  class_call(background_at_tau(pba,tau, pba->normal_info, ppw->inter_mode, &(ppw->last_index_back), pvecback),
+  class_call(background_at_tau(pba,tau, normal_info, ppw->inter_mode, &(ppw->last_index_back), pvecback),
              pba->error_message,
              error_message);
 
@@ -6482,23 +6253,23 @@ int perturb_timescale(
  * @return the error status
  */
 
-int perturb_einstein(
-                     struct precision * ppr,
-                     struct background * pba,
-                     struct thermo * pth,
-                     struct perturbs * ppt,
-                     int index_md,
-                     double k,
-                     double tau,
-                     double * y,
-                     struct perturb_workspace * ppw
-                     ) {
+int perturbations_einstein(
+                           struct precision * ppr,
+                           struct background * pba,
+                           struct thermodynamics * pth,
+                           struct perturbations * ppt,
+                           int index_md,
+                           double k,
+                           double tau,
+                           double * y,
+                           struct perturbations_workspace * ppw
+                           ) {
   /** Summary: */
 
   /** - define local variables */
 
-  double k2=0.,a=0.,a2=0.,a_prime_over_a=0.;
-  double s2_squared=0.;
+  double k2,a,a2,a_prime_over_a;
+  double s2_squared;
   double shear_g = 0.;
   double shear_idr = 0.;
 
@@ -6511,7 +6282,7 @@ int perturb_einstein(
   s2_squared = 1.-3.*pba->K/k2;
 
   /** - sum up perturbations from all species */
-  class_call(perturb_total_stress_energy(ppr,pba,pth,ppt,index_md,k,y,ppw),
+  class_call(perturbations_total_stress_energy(ppr,pba,pth,ppt,index_md,k,y,ppw),
              ppt->error_message,
              ppt->error_message);
 
@@ -6547,14 +6318,14 @@ int perturb_einstein(
 
       if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
 
-        class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
+        class_call(perturbations_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
                    ppt->error_message,
                    ppt->error_message);
       }
 
       if ((pba->has_idr)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)){
 
-        class_call(perturb_rsa_idr_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
+        class_call(perturbations_rsa_idr_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
                    ppt->error_message,
                    ppt->error_message);
       }
@@ -6564,98 +6335,67 @@ int perturb_einstein(
     /* synchronous gauge */
     if (ppt->gauge == synchronous) {
 
-      if(pba->has_smg == _TRUE_) {
+      /* first equation involving total density fluctuation */
+      ppw->pvecmetric[ppw->index_mt_h_prime] =
+        ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
 
-        perturb_einstein_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
+      /* eventually, infer radiation streaming approximation for
+         gamma and ur (this is exactly the right place to do it
+         because the result depends on h_prime) */
 
+      if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
+
+        class_call(perturbations_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
+                   ppt->error_message,
+                   ppt->error_message);
       }
-      else { // Standard equations
 
-        /* first equation involving total density fluctuation */
-        if (ppt->get_h_from_trace == _TRUE_) {
-          ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
-        }
-        else {
-          ppw->pvecmetric[ppw->index_mt_h_prime] =
-        	  ( k2 * s2_squared * y[ppw->pv->index_pt_eta] + 1.5 * a2 * ppw->delta_rho)/(0.5*a_prime_over_a);  /* h' */
-        }
+      if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
 
-      	/* eventually, infer radiation streaming approximation for
-      	  gamma and ur (this is exactly the right place to do it
-      	  because the result depends on h_prime) */
+        class_call(perturbations_rsa_idr_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
+                   ppt->error_message,
+                   ppt->error_message);
 
-      	if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
-
-      	  class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
-      		     ppt->error_message,
-      		     ppt->error_message);
-
-      	}
-
-        if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
-
-          class_call(perturb_rsa_idr_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
-                     ppt->error_message,
-                     ppt->error_message);
-
-          ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*ppw->rsa_theta_idr;
-
-        }
-
-      	/* second equation involving total velocity */
-      	ppw->pvecmetric[ppw->index_mt_eta_prime] = (1.5 * a2 * ppw->rho_plus_p_theta + 0.5 * pba->K * ppw->pvecmetric[ppw->index_mt_h_prime])/k2/s2_squared;  /* eta' */
-
-        /* Here we are storing deviations from the first (00) einstein equation.
-        This is to check that h' and the other variables are being properly
-        integrated and as a friction term for the third einstein equation (h'') */
-        ppw->pvecmetric[ppw->index_mt_einstein00] =
-          - a_prime_over_a/a2*ppw->pvecmetric[ppw->index_mt_h_prime]
-          + 2.*k2/a2 * s2_squared * y[ppw->pv->index_pt_eta]
-          + 3. * ppw->delta_rho;  /* not only _smg */
-
-      	/* third equation involving total pressure */
-      	ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
-      	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
-      	  + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
-      	  - 9. * a2 * ppw->delta_p;
-
-        /* This corrects the third equation using the Einstein 00. It has to be
-        read as a friction term that vanishes whenever the Hamiltonian constraint
-        is satisfied. */
-        if (ppt->get_h_from_trace == _TRUE_) { // not only _smg
-          ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
-            a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
-        }
-
-      	/* alpha = (h'+6eta')/2k^2 */
-      	ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
-
-      	/* eventually, infer first-order tight-coupling approximation for photon
-      	  shear, then correct the total shear */
-      	if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
-
-      	  shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
-
-      	  ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
-
-      	}
-
-        if ((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_on)){
-
-          shear_idr = 0.5*8./15./ppw->pvecthermo[pth->index_th_dmu_idm_dr]/ppt->alpha_idm_dr[0]*(y[ppw->pv->index_pt_theta_idr]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
-
-          ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*shear_idr;
-        }
-
-      	/* fourth equation involving total shear */
-      	ppw->pvecmetric[ppw->index_mt_alpha_prime] =  //TBC
-      	  - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
-      	  + y[ppw->pv->index_pt_eta]
-      	  - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
+        ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*ppw->rsa_theta_idr;
 
       }
 
-    } // end of synchronous
+      /* second equation involving total velocity */
+      ppw->pvecmetric[ppw->index_mt_eta_prime] = (1.5 * a2 * ppw->rho_plus_p_theta + 0.5 * pba->K * ppw->pvecmetric[ppw->index_mt_h_prime])/k2/s2_squared;  /* eta' */
+
+      /* third equation involving total pressure */
+      ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
+        - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
+        + 2. * k2 * s2_squared * y[ppw->pv->index_pt_eta]
+        - 9. * a2 * ppw->delta_p;
+
+      /* alpha = (h'+6eta')/2k^2 */
+      ppw->pvecmetric[ppw->index_mt_alpha] = (ppw->pvecmetric[ppw->index_mt_h_prime] + 6.*ppw->pvecmetric[ppw->index_mt_eta_prime])/2./k2;
+
+      /* eventually, infer first-order tight-coupling approximation for photon
+         shear, then correct the total shear */
+      if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
+
+        shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+
+        ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
+
+      }
+
+      if ((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_on)){
+
+        shear_idr = 0.5*8./15./ppw->pvecthermo[pth->index_th_dmu_idm_dr]/ppt->alpha_idm_dr[0]*(y[ppw->pv->index_pt_theta_idr]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+
+        ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*shear_idr;
+      }
+
+      /* fourth equation involving total shear */
+      ppw->pvecmetric[ppw->index_mt_alpha_prime] =  //TBC
+        - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_alpha]
+        + y[ppw->pv->index_pt_eta]
+        - 4.5 * (a2/k2) * ppw->rho_plus_p_shear;
+
+    }
 
     /* transform (delta_m, theta_m) of the current gauge into
        gauge-independent variables (you could comment this out if you
@@ -6721,12 +6461,7 @@ int perturb_einstein(
   if (_tensors_) {
 
     /* single einstein equation for tensor perturbations */
-    if (pba->has_smg == _TRUE_) {
-      perturb_einstein_tensor_smg(pba, ppw, k, tau, y);
-    }
-    else {
-      ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -2.*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-(k2+2.*pba->K)*y[ppw->pv->index_pt_gw]+ppw->gw_source;
-    }
+    ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -2.*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-(k2+2.*pba->K)*y[ppw->pv->index_pt_gw]+ppw->gw_source;
 
   }
 
@@ -6734,16 +6469,16 @@ int perturb_einstein(
 
 }
 
-int perturb_total_stress_energy(
-                                struct precision * ppr,
-                                struct background * pba,
-                                struct thermo * pth,
-                                struct perturbs * ppt,
-                                int index_md,
-                                double k,
-                                double * y,
-                                struct perturb_workspace * ppw
-                                ) {
+int perturbations_total_stress_energy(
+                                      struct precision * ppr,
+                                      struct background * pba,
+                                      struct thermodynamics * pth,
+                                      struct perturbations * ppt,
+                                      int index_md,
+                                      double k,
+                                      double * y,
+                                      struct perturbations_workspace * ppw
+                                      ) {
   /** Summary: */
 
   /** - define local variables */
@@ -6836,11 +6571,11 @@ int perturb_total_stress_energy(
         shear_g = 0.; /* in the synchronous gauge, the expression of
                          shear_g (at first-order in a tight-coupling
                          expansion) is a function of h' and eta'; but h'
-                         and eta' are calculated in perturb_einstein()
+                         and eta' are calculated in perturbations_einstein()
                          as a function of delta_g and theta_g.  Hence,
                          we set shear_g temporarily to zero, and set it
                          to the right first-order value in
-                         perturb_einstein(), just before using the
+                         perturbations_einstein(), just before using the
                          Einstein equation for the shear. */
       }
     }
@@ -6888,7 +6623,7 @@ int perturb_total_stress_energy(
             if(ppt->gauge == newtonian)
               shear_idr = 0.5*(8./15./ppw->pvecthermo[pth->index_th_dmu_idm_dr]/ppt->alpha_idm_dr[0]*(y[ppw->pv->index_pt_theta_idr]));
             else
-              shear_idr = 0.; /* this is set in perturb_einstein, so here it's set to 0 */
+              shear_idr = 0.; /* this is set in perturbations_einstein, so here it's set to 0 */
           }
           else{
             shear_idr = y[ppw->pv->index_pt_shear_idr];
@@ -6911,10 +6646,8 @@ int perturb_total_stress_energy(
       + ppw->pvecback[pba->index_bg_rho_b]*y[ppw->pv->index_pt_theta_b]; // contribution to total perturbed stress-energy
     ppw->rho_plus_p_shear = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g; // contribution to total perturbed stress-energy
     ppw->delta_p = 1./3.*ppw->pvecback[pba->index_bg_rho_g]*delta_g
-    + ppw->pvecback[pba->index_bg_rho_b]*delta_p_b_over_rho_b; // contribution to total perturbed stress-energy
+      + ppw->pvecback[pba->index_bg_rho_b]*delta_p_b_over_rho_b; // contribution to total perturbed stress-energy
     ppw->rho_plus_p_tot = 4./3. * ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_b];
-    ppw->delta_rho_r = ppw->pvecback[pba->index_bg_rho_g]*delta_g;
-    ppw->rho_plus_p_theta_r = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*theta_g;
 
     if (ppt->has_source_delta_m == _TRUE_) {
       delta_rho_m = ppw->pvecback[pba->index_bg_rho_b]*y[ppw->pv->index_pt_delta_b]; // contribution to delta rho_matter
@@ -6949,6 +6682,15 @@ int perturb_total_stress_energy(
       ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_idm_dr]*y[ppw->pv->index_pt_delta_idm_dr];
       ppw->rho_plus_p_theta += ppw->pvecback[pba->index_bg_rho_idm_dr]*y[ppw->pv->index_pt_theta_idm_dr];
       ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_idm_dr];
+      if (ppt->has_source_delta_m == _TRUE_) {
+        delta_rho_m += ppw->pvecback[pba->index_bg_rho_idm_dr]*y[ppw->pv->index_pt_delta_idm_dr]; // contribution to delta rho_matter
+        rho_m += ppw->pvecback[pba->index_bg_rho_idm_dr];
+      }
+      if ((ppt->has_source_delta_m == _TRUE_) || (ppt->has_source_theta_m == _TRUE_)) {
+        if (ppt->gauge == newtonian)
+          rho_plus_p_theta_m += ppw->pvecback[pba->index_bg_rho_idm_dr]*y[ppw->pv->index_pt_theta_idm_dr]; // contribution to [(rho+p)theta]_matter
+        rho_plus_p_m += ppw->pvecback[pba->index_bg_rho_idm_dr];
+      }
     }
 
     /* dcdm contribution */
@@ -6992,9 +6734,8 @@ int perturb_total_stress_energy(
       ppw->rho_plus_p_theta = ppw->rho_plus_p_theta + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*theta_ur;
       ppw->rho_plus_p_shear = ppw->rho_plus_p_shear + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*shear_ur;
       ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
+
       ppw->rho_plus_p_tot += 4./3. * ppw->pvecback[pba->index_bg_rho_ur];
-      ppw->delta_rho_r = ppw->delta_rho_r + ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
-      ppw->rho_plus_p_theta_r = ppw->rho_plus_p_theta_r + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*theta_ur;
     }
 
     /* interacting dark radiation */
@@ -7052,7 +6793,7 @@ int perturb_total_stress_energy(
           rho_plus_p_theta_ncdm = 0.0;
           rho_plus_p_shear_ncdm = 0.0;
           delta_p_ncdm = 0.0;
-          factor = pba->factor_ncdm[n_ncdm]*pow(pba->a_today/a,4);
+          factor = pba->factor_ncdm[n_ncdm]/pow(a,4);
 
           for (index_q=0; index_q < ppw->pv->q_size_ncdm[n_ncdm]; index_q ++) {
 
@@ -7241,14 +6982,14 @@ int perturb_total_stress_energy(
 
     /* don't add more species here, add them before the fluid contribution: because of the PPF scheme, the fluid must be the last one! */
 
-    /* store delta_m in the current gauge. In perturb_einstein, this
+    /* store delta_m in the current gauge. In perturbations_einstein, this
        will be transformed later on into the gauge-independent variable D
        = delta_m + 3 a H \theta_m/k^2 .  */
 
     if (ppt->has_source_delta_m == _TRUE_)
       ppw->delta_m = delta_rho_m/rho_m;
 
-    /* store theta_m in the current gauge. In perturb_einstein, this
+    /* store theta_m in the current gauge. In perturbations_einstein, this
        will be transformed later on into the gauge-independent variable
        Theta . Note that computing theta_m is necessary also if we want
        the delta_m source only, because the gauge-invariant delta_m
@@ -7342,7 +7083,7 @@ int perturb_total_stress_energy(
 
         gwncdm = 0.;
 
-        factor = pba->factor_ncdm[n_ncdm]*pow(pba->a_today/a,4);
+        factor = pba->factor_ncdm[n_ncdm]/pow(a,4);
 
         for (index_q=0; index_q < ppw->pv->q_size_ncdm[n_ncdm]; index_q ++) {
 
@@ -7388,19 +7129,19 @@ int perturb_total_stress_energy(
  * @param y                        Input: vector of perturbations
  * @param dy                       Input: vector of time derivative of perturbations
  * @param index_tau                Input: index in the array tau_sampling
- * @param parameters_and_workspace Input/Output: in input, all parameters needed by perturb_derivs, in output, source terms
+ * @param parameters_and_workspace Input/Output: in input, all parameters needed by perturbations_derivs, in output, source terms
  * @param error_message            Output: error message
  * @return the error status
  */
 
-int perturb_sources(
-                    double tau,
-                    double * y,
-                    double * dy,
-                    int index_tau,
-                    void * parameters_and_workspace,
-                    ErrorMsg error_message
-                    ) {
+int perturbations_sources(
+                          double tau,
+                          double * y,
+                          double * dy,
+                          int index_tau,
+                          void * parameters_and_workspace,
+                          ErrorMsg error_message
+                          ) {
   /** Summary: */
 
   /** - define local variables */
@@ -7408,17 +7149,17 @@ int perturb_sources(
   double P;
   int index_tp;
 
-  struct perturb_parameters_and_workspace * pppaw;
+  struct perturbations_parameters_and_workspace * pppaw;
   struct precision * ppr;
   struct background * pba;
-  struct thermo * pth;
-  struct perturbs * ppt;
+  struct thermodynamics * pth;
+  struct perturbations * ppt;
   int index_md;
   int index_ic;
   int index_k;
   double k;
   double z;
-  struct perturb_workspace * ppw;
+  struct perturbations_workspace * ppw;
   double * pvecback;
   double * pvecthermo;
   double * pvecmetric;
@@ -7429,7 +7170,7 @@ int perturb_sources(
   double w_fld,dw_over_da_fld,integral_fld;
   int switch_isw = 1;
 
-  double a_rel, a2_rel, f_dr;
+  double a, a2, f_dr;
 
   double H_T_Nb_prime=0., rho_tot;
   double theta_over_k2,theta_shift;
@@ -7455,27 +7196,28 @@ int perturb_sources(
 
   class_call(background_at_tau(pba,
                                tau,
-                               pba->normal_info,
-                               pba->inter_closeby,
+                               normal_info,
+                               inter_closeby,
                                &(ppw->last_index_back),
                                pvecback),
              pba->error_message,
              error_message);
 
-  z = pba->a_today/pvecback[pba->index_bg_a]-1.;
+  /* redshift (remember that a in the code stands for (a/a_0)) */
+  z = 1./pvecback[pba->index_bg_a]-1.;
 
   class_call(thermodynamics_at_z(pba,
                                  pth,
                                  z,  /* redshift z=1/a-1 */
-                                 pth->inter_closeby,
+                                 inter_closeby,
                                  &(ppw->last_index_thermo),
                                  pvecback,
                                  pvecthermo),
              pth->error_message,
              error_message);
 
-  a_rel = ppw->pvecback[pba->index_bg_a]/pba->a_today;
-  a2_rel = a_rel * a_rel;
+  a = ppw->pvecback[pba->index_bg_a];
+  a2 = a * a;
 
   a_prime_over_a = pvecback[pba->index_bg_a] * pvecback[pba->index_bg_H]; /* (a'/a)=aH */
   a_prime_over_a_prime = pvecback[pba->index_bg_H_prime] * pvecback[pba->index_bg_a] + pow(pvecback[pba->index_bg_H] * pvecback[pba->index_bg_a],2); /* (a'/a)' = aH'+(aH)^2 */
@@ -7485,25 +7227,17 @@ int perturb_sources(
 
     /** - --> compute metric perturbations */
 
-    class_call(perturb_einstein(ppr,
-                                pba,
-                                pth,
-                                ppt,
-                                index_md,
-                                k,
-                                tau,
-                                y,
-                                ppw),
+    class_call(perturbations_einstein(ppr,
+                                      pba,
+                                      pth,
+                                      ppt,
+                                      index_md,
+                                      k,
+                                      tau,
+                                      y,
+                                      ppw),
                ppt->error_message,
                error_message);
-
-    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0)) { // not only _smg
-      double check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
-      class_test(
-        fabs(check_einstein00)>ppr->tol_einstein00_reldev,
-        ppt->error_message,
-        "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace==FALSE to get a consistent evolution. Otherwise you can increase tol_einstein00_reldev if you can tolerate larger deviations to this equation.", a_rel, k);
-    }
 
     /** - --> compute quantities depending on approximation schemes */
 
@@ -7627,13 +7361,13 @@ int perturb_sources(
           this last term. If needed, the term could be restored: you
           can see how T. Tram did it in a previous commit
           beec79548877e1e43403d1f4de5ddee6741a3c16 (28.02.2019) - then
-          it had to go to spectra.c, now it could stay in this
+          it had to go to harmonic.c, now it could stay in this
           module. Later this feature was removed for simplicity. Note
           that to compute the transfer functions in the N-body gauge
           we do not need k2gamma anyway. */
 
       if (ppt->has_source_k2gamma_Nb == _TRUE_){
-        _set_source_(ppt->index_tp_k2gamma_Nb) = -a_prime_over_a*H_T_Nb_prime+9./2.*a2_rel*ppw->rho_plus_p_shear;
+        _set_source_(ppt->index_tp_k2gamma_Nb) = -a_prime_over_a*H_T_Nb_prime+9./2.*a2*ppw->rho_plus_p_shear;
       }
     }
 
@@ -7760,7 +7494,7 @@ int perturb_sources(
     /* delta_dcdm */
     if (ppt->has_source_delta_dcdm == _TRUE_) {
       _set_source_(ppt->index_tp_delta_dcdm) = y[ppw->pv->index_pt_delta_dcdm]
-        + (3.*a_prime_over_a+a_rel*pba->Gamma_dcdm)*theta_over_k2; // N-body gauge correction;
+        + (3.*a_prime_over_a+a*pba->Gamma_dcdm)*theta_over_k2; // N-body gauge correction;
     }
 
     /* delta_fld */
@@ -7773,28 +7507,23 @@ int perturb_sources(
     if (ppt->has_source_delta_scf == _TRUE_) {
       if (ppt->gauge == synchronous){
         delta_rho_scf =  1./3.*
-          (1./a2_rel*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
+          (1./a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
            + ppw->pvecback[pba->index_bg_dV_scf]*y[ppw->pv->index_pt_phi_scf])
           + 3.*a_prime_over_a*(1.+pvecback[pba->index_bg_p_scf]/pvecback[pba->index_bg_rho_scf])*theta_over_k2; // N-body gauge correction
       }
       else{
         delta_rho_scf =  1./3.*
-          (1./a2_rel*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
+          (1./a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_prime_scf]
            + ppw->pvecback[pba->index_bg_dV_scf]*y[ppw->pv->index_pt_phi_scf]
-           - 1./a2_rel*pow(ppw->pvecback[pba->index_bg_phi_prime_scf],2)*ppw->pvecmetric[ppw->index_mt_psi])
+           - 1./a2*pow(ppw->pvecback[pba->index_bg_phi_prime_scf],2)*ppw->pvecmetric[ppw->index_mt_psi])
           + 3.*a_prime_over_a*(1.+pvecback[pba->index_bg_p_scf]/pvecback[pba->index_bg_rho_scf])*theta_over_k2; // N-body gauge correction
       }
       _set_source_(ppt->index_tp_delta_scf) = delta_rho_scf/pvecback[pba->index_bg_rho_scf];
     }
 
-    /* TODO: either change the name of the source or write delta_phi_dot */
-    if(ppt->has_source_phi_smg == _TRUE_) {
-      _set_source_(ppt->index_tp_phi_smg) = pvecmetric[ppw->index_mt_x_smg];
-    }
-
     /* delta_dr */
     if (ppt->has_source_delta_dr == _TRUE_) {
-      f_dr = pow(a2_rel/pba->H0,2)*pvecback[pba->index_bg_rho_dr];
+      f_dr = pow(a2/pba->H0,2)*pvecback[pba->index_bg_rho_dr];
       _set_source_(ppt->index_tp_delta_dr) = y[ppw->pv->index_pt_F0_dr]/f_dr
         + 4.*a_prime_over_a*theta_over_k2; // N-body gauge correction
     }
@@ -7893,7 +7622,7 @@ int perturb_sources(
     /* theta_fld */
     if (ppt->has_source_theta_fld == _TRUE_) {
 
-      class_call(background_w_fld(pba,a_rel*pba->a_today,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
+      class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, ppt->error_message);
 
       _set_source_(ppt->index_tp_theta_fld) = ppw->rho_plus_p_theta_fld/(1.+w_fld)/pvecback[pba->index_bg_rho_fld]
         + theta_shift; // N-body gauge correction
@@ -7903,7 +7632,7 @@ int perturb_sources(
     if (ppt->has_source_theta_scf == _TRUE_) {
 
       rho_plus_p_theta_scf = 1./3.*
-        k*k/a2_rel*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_scf];
+        k*k/a2*ppw->pvecback[pba->index_bg_phi_prime_scf]*y[ppw->pv->index_pt_phi_scf];
 
       _set_source_(ppt->index_tp_theta_scf) = rho_plus_p_theta_scf/(pvecback[pba->index_bg_rho_scf]+pvecback[pba->index_bg_p_scf])
         + theta_shift; // N-body gauge correction
@@ -7912,7 +7641,7 @@ int perturb_sources(
     /* theta_dr */
     if (ppt->has_source_theta_dr == _TRUE_) {
 
-      f_dr = pow(a2_rel/pba->H0,2)*pvecback[pba->index_bg_rho_dr];
+      f_dr = pow(a2/pba->H0,2)*pvecback[pba->index_bg_rho_dr];
 
       _set_source_(ppt->index_tp_theta_dr) = 3./4.*k*y[ppw->pv->index_pt_F0_dr+1]/f_dr
         + theta_shift; // N-body gauge correction
@@ -8011,14 +7740,14 @@ int perturb_sources(
  *
  */
 
-int perturb_print_variables(double tau,
+int perturbations_print_variables(double tau,
                             double * y,
                             double * dy,
                             void * parameters_and_workspace,
                             ErrorMsg error_message
                             ) {
 
-  struct perturb_parameters_and_workspace * pppaw;
+  struct perturbations_parameters_and_workspace * pppaw;
   /** Summary: */
 
   /** - define local variables */
@@ -8027,9 +7756,9 @@ int perturb_print_variables(double tau,
 
   struct precision * ppr;
   struct background * pba;
-  struct thermo * pth;
-  struct perturbs * ppt;
-  struct perturb_workspace * ppw;
+  struct thermodynamics * pth;
+  struct perturbations * ppt;
+  struct perturbations_workspace * ppw;
   double * pvecback;
   double * pvecthermo;
   double * pvecmetric;
@@ -8044,9 +7773,6 @@ int perturb_print_variables(double tau,
   double delta_idr=0., theta_idr=0., shear_idr=0.;
   double delta_rho_scf=0., rho_plus_p_theta_scf=0.;
   double delta_scf=0., theta_scf=0.;
-  double h_prime=0., eta=0.;
-  double h_prime_prime=0., eta_prime=0.;
-  double alpha_mt_prime=0., alpha_mt=0.;
   /** - ncdm sector begins */
   int n_ncdm;
   double *delta_ncdm=NULL, *theta_ncdm=NULL, *shear_ncdm=NULL, *delta_p_over_delta_rho_ncdm=NULL;
@@ -8085,8 +7811,8 @@ int perturb_print_variables(double tau,
 
   class_call(background_at_tau(pba,
                                tau,
-                               pba->normal_info,
-                               pba->inter_closeby,
+                               normal_info,
+                               inter_closeby,
                                &(ppw->last_index_back),
                                pvecback),
              pba->error_message,
@@ -8095,7 +7821,7 @@ int perturb_print_variables(double tau,
   class_call(thermodynamics_at_z(pba,
                                  pth,
                                  1./pvecback[pba->index_bg_a]-1.,
-                                 pth->inter_closeby,
+                                 inter_closeby,
                                  &(ppw->last_index_thermo),
                                  pvecback,
                                  pvecthermo),
@@ -8104,15 +7830,15 @@ int perturb_print_variables(double tau,
 
   /** - update metric perturbations in this point */
 
-  class_call(perturb_einstein(ppr,
-                              pba,
-                              pth,
-                              ppt,
-                              index_md,
-                              k,
-                              tau,
-                              y,
-                              ppw),
+  class_call(perturbations_einstein(ppr,
+                                    pba,
+                                    pth,
+                                    ppt,
+                                    index_md,
+                                    k,
+                                    tau,
+                                    y,
+                                    ppw),
              ppt->error_message,
              error_message);
 
@@ -8270,7 +7996,7 @@ int perturb_print_variables(double tau,
           rho_plus_p_theta_ncdm = 0.0;
           rho_plus_p_shear_ncdm = 0.0;
           delta_p_ncdm = 0.0;
-          factor = pba->factor_ncdm[n_ncdm]*pow(pba->a_today/a,4);
+          factor = pba->factor_ncdm[n_ncdm]/pow(a,4);
 
           for (index_q=0; index_q < ppw->pv->q_size_ncdm[n_ncdm]; index_q ++) {
 
@@ -8342,14 +8068,6 @@ int perturb_print_variables(double tau,
     /* converting synchronous variables to newtonian ones */
     if (ppt->gauge == synchronous) {
 
-      /* metric perturbations */
-      h_prime = ppw->pvecmetric[ppw->index_mt_h_prime];
-      h_prime_prime = ppw->pvecmetric[ppw->index_mt_h_prime_prime];
-      eta = ppw->pvecmetric[ppw->index_mt_eta];
-      eta_prime = ppw->pvecmetric[ppw->index_mt_eta_prime];
-      alpha_mt = ppw->pvecmetric[ppw->index_mt_alpha];
-      alpha_mt_prime = ppw->pvecmetric[ppw->index_mt_alpha_prime];
-
       /* density and velocity perturbations (comment out if you wish to keep synchronous variables) */
 
       delta_g -= 4. * pvecback[pba->index_bg_H]*pvecback[pba->index_bg_a]*alpha;
@@ -8402,7 +8120,7 @@ int perturb_print_variables(double tau,
 
     }
 
-    //    fprintf(ppw->perturb_output_file," ");
+    //    fprintf(ppw->perturbations_output_file," ");
     /** - --> Handle (re-)allocation */
     if (ppt->scalar_perturbations_data[ppw->index_ikout] == NULL){
       class_alloc(ppt->scalar_perturbations_data[ppw->index_ikout],
@@ -8432,9 +8150,6 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, theta_b, _TRUE_, storeidx);
     class_store_double(dataptr, psi, _TRUE_, storeidx);
     class_store_double(dataptr, phi, _TRUE_, storeidx);
-
-
-
     /* perturbed recombination */
     class_store_double(dataptr, delta_temp, ppt->has_perturbed_recombination, storeidx);
     class_store_double(dataptr, delta_chi, ppt->has_perturbed_recombination, storeidx);
@@ -8447,7 +8162,7 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, theta_idr, pba->has_idr, storeidx);
     if ((pba->has_idr==_TRUE_) && (ppt->idr_nature == idr_free_streaming))
       class_store_double(dataptr, shear_idr, _TRUE_, storeidx);
-    /* Interacting dark matter */
+    /* Interacting dark matter with dark radiation */
     class_store_double(dataptr, delta_idm_dr, pba->has_idm_dr, storeidx);
     class_store_double(dataptr, theta_idm_dr, pba->has_idm_dr, storeidx);
     /* Cold dark matter */
@@ -8476,23 +8191,7 @@ int perturb_print_variables(double tau,
     class_store_double(dataptr, ppw->delta_rho_fld, pba->has_fld, storeidx);
     class_store_double(dataptr, ppw->rho_plus_p_theta_fld, pba->has_fld, storeidx);
     class_store_double(dataptr, ppw->delta_p_fld, pba->has_fld, storeidx);
-    //fprintf(ppw->perturb_output_file,"\n");
-    class_store_double(dataptr, h_prime, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, h_prime_prime, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, eta, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, eta_prime, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, alpha_mt, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, alpha_mt_prime, ppt->gauge == synchronous, storeidx);
-    class_store_double(dataptr, ppw->pvecmetric[ppw->index_mt_einstein00], ppt->gauge == synchronous, storeidx);
-
-    if (pba->has_smg == _TRUE_) {
-      class_call(
-        perturb_print_variables_smg(pba, ppt,  ppw, k, tau, dataptr, &storeidx),
-        ppt->error_message,
-        ppt->error_message
-      );
-    }
-
+    //fprintf(ppw->perturbations_output_file,"\n");
 
   }
   /** - for tensor modes: */
@@ -8549,7 +8248,7 @@ int perturb_print_variables(double tau,
       ppt->size_tensor_perturbation_data[ppw->index_ikout];
     ppt->size_tensor_perturbation_data[ppw->index_ikout] += ppt->number_of_tensor_titles;
 
-    //fprintf(ppw->perturb_output_file," ");
+    //fprintf(ppw->perturbations_output_file," ");
     class_store_double(dataptr, tau, _TRUE_, storeidx);
     class_store_double(dataptr, pvecback[pba->index_bg_a], _TRUE_, storeidx);
     class_store_double(dataptr, delta_g, _TRUE_, storeidx);
@@ -8577,7 +8276,7 @@ int perturb_print_variables(double tau,
         rho_plus_p_theta_ncdm = 0.0;
         rho_plus_p_shear_ncdm = 0.0;
         delta_p_ncdm = 0.0;
-        factor = pba->factor_ncdm[n_ncdm]*pow(pba->a_today/a,4);
+        factor = pba->factor_ncdm[n_ncdm]/pow(a,4);
 
         for (index_q=0; index_q < ppw->pv->q_size_ncdm[n_ncdm]; index_q ++) {
 
@@ -8611,7 +8310,7 @@ int perturb_print_variables(double tau,
       }
     }
 
-    //    fprintf(ppw->perturb_output_file,"\n");
+    //    fprintf(ppw->perturbations_output_file,"\n");
 
   }
 
@@ -8648,12 +8347,12 @@ int perturb_print_variables(double tau,
  * @param error_message            Output: error message
  */
 
-int perturb_derivs(double tau,
-                   double * y,
-                   double * dy,
-                   void * parameters_and_workspace,
-                   ErrorMsg error_message
-                   ) {
+int perturbations_derivs(double tau,
+                         double * y,
+                         double * dy,
+                         void * parameters_and_workspace,
+                         ErrorMsg error_message
+                         ) {
   /** Summary: */
 
   /** - define local variables */
@@ -8665,19 +8364,19 @@ int perturb_derivs(double tau,
   double a,a2,a_prime_over_a,R;
 
   /* short-cut names for the fields of the input structure */
-  struct perturb_parameters_and_workspace * pppaw;
+  struct perturbations_parameters_and_workspace * pppaw;
   double k,k2;
   int index_md;
   struct precision * ppr;
   struct background * pba;
-  struct thermo * pth;
-  struct perturbs * ppt;
-  struct perturb_workspace * ppw;
+  struct thermodynamics * pth;
+  struct perturbations * ppt;
+  struct perturbations_workspace * ppw;
   double * pvecback;
   double * pvecthermo;
   double * pvecmetric;
   double * s_l;
-  struct perturb_vector * pv;
+  struct perturbations_vector * pv;
 
   /* short-cut notations for the perturbations */
   double delta_g=0.,theta_g=0.,shear_g=0.;
@@ -8738,8 +8437,8 @@ int perturb_derivs(double tau,
 
   class_call(background_at_tau(pba,
                                tau,
-                               pba->normal_info,
-                               pba->inter_closeby,
+                               normal_info,
+                               inter_closeby,
                                &(ppw->last_index_back),
                                pvecback),
              pba->error_message,
@@ -8748,23 +8447,23 @@ int perturb_derivs(double tau,
   class_call(thermodynamics_at_z(pba,
                                  pth,
                                  1./pvecback[pba->index_bg_a]-1.,  /* redshift z=1/a-1 */
-                                 pth->inter_closeby,
+                                 inter_closeby,
                                  &(ppw->last_index_thermo),
                                  pvecback,
                                  pvecthermo),
              pth->error_message,
              error_message);
 
-  /** - get metric perturbations with perturb_einstein() */
-  class_call(perturb_einstein(ppr,
-                              pba,
-                              pth,
-                              ppt,
-                              index_md,
-                              k,
-                              tau,
-                              y,
-                              ppw),
+  /** - get metric perturbations with perturbations_einstein() */
+  class_call(perturbations_einstein(ppr,
+                                    pba,
+                                    pth,
+                                    ppt,
+                                    index_md,
+                                    k,
+                                    tau,
+                                    y,
+                                    ppw),
              ppt->error_message,
              error_message);
 
@@ -8817,6 +8516,7 @@ int perturb_derivs(double tau,
     cb2 = pvecthermo[pth->index_th_cb2];
     delta_p_b_over_rho_b = cb2*delta_b; /* for baryons, (delta p)/rho with Ma & Bertschinger approximation: sound speed = adiabatic sound speed */
 
+
     /** - --> (b) perturbed recombination **/
 
     if ((ppt->has_perturbed_recombination == _TRUE_)&&(ppw->approx[ppw->index_ap_tca]==(int)tca_off)){
@@ -8834,7 +8534,7 @@ int perturb_derivs(double tau,
       Nnow = 3.*H0*H0*pba->Omega0_b*(1.-pth->YHe)/(8.*_PI_*_G_*_m_H_);
 
       // total amount of hydrogen today
-      n_H = (pba->a_today/a)*(pba->a_today/a)*(pba->a_today/a)* Nnow;
+      n_H = Nnow/pow(a,3);
 
       // Helium-to-hydrogen ratio
       fHe = pth->YHe / (_not4_*(1-pth->YHe));
@@ -8890,7 +8590,7 @@ int perturb_derivs(double tau,
       metric_ufa_class = -6.*pvecmetric[ppw->index_mt_phi_prime];
     }
 
-    /** - --> (d) if some approximation schemes are turned on, enforce a few y[] values computed in perturb_einstein */
+    /** - --> (d) if some approximation schemes are turned on, enforce a few y[] values computed in perturbations_einstein */
 
     if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
       delta_g = ppw->rsa_delta_g;
@@ -8936,7 +8636,7 @@ int perturb_derivs(double tau,
     else {
 
       /* with tca */
-      class_call(perturb_tca_slip_and_shear(y,pppaw,error_message),
+      class_call(perturbations_tca_slip_and_shear(y,pppaw,error_message),
                  error_message,
                  error_message);
 
@@ -9090,6 +8790,7 @@ int perturb_derivs(double tau,
       }
     }
 
+
     /* perturbed recombination */
     /* computes the derivatives of delta x_e and delta T_b */
 
@@ -9100,8 +8801,8 @@ int perturb_derivs(double tau,
 
       /* see the documentation for this formula */
       dy[ppw->pv->index_pt_perturbed_recombination_delta_temp] =  2./3. * dy[ppw->pv->index_pt_delta_b] - a * Compton_CR
-        * pow(pba->T_cmb/a, 4) * chi / (1.+chi+fHe) * ( (1.-pba->T_cmb*pba->a_today/a/pvecthermo[pth->index_th_Tb])*(delta_g + delta_chi*(1.+fHe)/(1.+chi+fHe))
-                                                        + pba->T_cmb*pba->a_today/a/pvecthermo[pth->index_th_Tb] *(delta_temp - 1./4. * delta_g) );
+        * pow(pba->T_cmb/a, 4) * chi / (1.+chi+fHe) * ( (1.-pba->T_cmb/a/pvecthermo[pth->index_th_Tb])*(delta_g + delta_chi*(1.+fHe)/(1.+chi+fHe))
+                                                        + pba->T_cmb/a/pvecthermo[pth->index_th_Tb] *(delta_temp - 1./4. * delta_g) );
 
     }
 
@@ -9126,7 +8827,7 @@ int perturb_derivs(double tau,
          rho_crit_today = H0^2.
       */
 
-      f_dr = pow(pow(a/pba->a_today,2)/pba->H0,2)*pvecback[pba->index_bg_rho_dr];
+      f_dr = pow(pow(a,2)/pba->H0,2)*pvecback[pba->index_bg_rho_dr];
       fprime_dr = pba->Gamma_dcdm*pvecback[pba->index_bg_rho_dcdm]*pow(a,5)/pow(pba->H0,2);
 
       /** - ----> dr F0 */
@@ -9258,14 +8959,6 @@ int perturb_derivs(double tau,
 
         }
       }
-    }
-
-    if (pba->has_smg == _TRUE_) {
-      class_call(
-        perturb_derivs_smg(ppt, ppw, pv, dy, pvecmetric),
-        ppt->error_message,
-        ppt->error_message
-      );
     }
 
     /** - ---> ultra-relativistic neutrino/relics (ur) */
@@ -9494,11 +9187,6 @@ int perturb_derivs(double tau,
 
       dy[pv->index_pt_eta] = pvecmetric[ppw->index_mt_eta_prime];
 
-
-    }
-
-    if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) {
-      dy[pv->index_pt_h_prime_from_trace] = pvecmetric[ppw->index_mt_h_prime_prime];
     }
 
     if (ppt->gauge == newtonian) {
@@ -9824,10 +9512,10 @@ int perturb_derivs(double tau,
  * @param error_message            Output: error message
  */
 
-int perturb_tca_slip_and_shear(double * y,
-                               void * parameters_and_workspace,
-                               ErrorMsg error_message
-                               ) {
+int perturbations_tca_slip_and_shear(double * y,
+                                     void * parameters_and_workspace,
+                                     ErrorMsg error_message
+                                     ) {
   /** Summary: */
 
   /** - define local variables */
@@ -9843,17 +9531,17 @@ int perturb_tca_slip_and_shear(double * y,
   double F=0.,F_prime=0.,F_prime_prime=0.;
 
   /* short-cut names for the fields of the input structure */
-  struct perturb_parameters_and_workspace * pppaw;
+  struct perturbations_parameters_and_workspace * pppaw;
   double k,k2;
   struct precision * ppr;
   struct background * pba;
-  struct thermo * pth;
-  struct perturbs * ppt;
-  struct perturb_workspace * ppw;
+  struct thermodynamics * pth;
+  struct perturbations * ppt;
+  struct perturbations_workspace * ppw;
   double * pvecback;
   double * pvecthermo;
   double * pvecmetric;
-  struct perturb_vector * pv;
+  struct perturbations_vector * pv;
 
   /* short-cut notations for the perturbations */
   double delta_g=0.,theta_g=0.,shear_g=0.;
@@ -9888,7 +9576,6 @@ int perturb_tca_slip_and_shear(double * y,
   a = pvecback[pba->index_bg_a];
   a_prime_over_a = pvecback[pba->index_bg_H] * a;
   a_primeprime_over_a = pvecback[pba->index_bg_H_prime] * a + 2. * a_prime_over_a * a_prime_over_a;
-  //z = pba->a_today-1.;
   R = 4./3. * pvecback[pba->index_bg_rho_g]/pvecback[pba->index_bg_rho_b];
   s2_squared = 1.-3.*pba->K/k2;
 
@@ -9950,7 +9637,7 @@ int perturb_tca_slip_and_shear(double * y,
     metric_shear_prime = 0.;
   }
 
-  /** - --> (d) if some approximation schemes are turned on, enforce a few y[ ] values computed in perturb_einstein */
+  /** - --> (d) if some approximation schemes are turned on, enforce a few y[ ] values computed in perturbations_einstein */
 
   /* free-streaming photon velocity */
   if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on)
@@ -10132,32 +9819,28 @@ int perturb_tca_slip_and_shear(double * y,
  * @param error_message            Output: error message
  */
 
-int perturb_rsa_delta_and_theta(
-                                struct precision * ppr,
-                                struct background * pba,
-                                struct thermo * pth,
-                                struct perturbs * ppt,
-                                double k,
-                                double * y,
-                                double a_prime_over_a,
-                                double * pvecthermo,
-                                struct perturb_workspace * ppw
-                                ) {
+int perturbations_rsa_delta_and_theta(
+                                      struct precision * ppr,
+                                      struct background * pba,
+                                      struct thermodynamics * pth,
+                                      struct perturbations * ppt,
+                                      double k,
+                                      double * y,
+                                      double a_prime_over_a,
+                                      double * pvecthermo,
+                                      struct perturbations_workspace * ppw,
+                                      ErrorMsg error_message
+                                      ) {
   /* - define local variables */
 
   double k2;
 
   k2 = k*k;
 
-  double a2;
-
-  a2 = pow(ppw->pvecback[pba->index_bg_a],2.);
-
   class_test(ppw->approx[ppw->index_ap_rsa] == (int)rsa_off,
              "this function should not have been called now, bug was introduced",
              ppt->error_message,
              ppt->error_message);
-
 
   // formulas below TBC for curvaturema
 
@@ -10208,18 +9891,9 @@ int perturb_rsa_delta_and_theta(
     }
     else {
 
-      if (pba->has_smg == _TRUE_) {
-        ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                                   -k2*y[ppw->pv->index_pt_eta]
-                                  +9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
-      }
-      else {
-        ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+      ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
                                 -k2*y[ppw->pv->index_pt_eta]);
-      }
-
       ppw->rsa_theta_g = -0.5*ppw->pvecmetric[ppw->index_mt_h_prime];
-
     }
 
     if (ppr->radiation_streaming_approximation == rsa_MD_with_reio) {
@@ -10227,63 +9901,42 @@ int perturb_rsa_delta_and_theta(
       ppw->rsa_delta_g +=
         -4./k2*ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_b]+0.5*ppw->pvecmetric[ppw->index_mt_h_prime]);
 
-        if (pba->has_smg == _TRUE_) {
-          ppw->rsa_theta_g +=
-            3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
-                 (y[ppw->pv->index_pt_theta_b]
-                  +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
-                 +ppw->pvecthermo[pth->index_th_dkappa]*
-                 (-a_prime_over_a*y[ppw->pv->index_pt_theta_b]
-                  + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
-                  -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                  +k2*y[ppw->pv->index_pt_eta]
-                  -9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]));
-        }
-        else {
-          ppw->rsa_theta_g +=
-            3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
-                 (y[ppw->pv->index_pt_theta_b]
-                  +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
-                 +ppw->pvecthermo[pth->index_th_dkappa]*
-                 (-a_prime_over_a*y[ppw->pv->index_pt_theta_b]
-                  + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
-                  -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                  +k2*y[ppw->pv->index_pt_eta]));
-        }
-
+      ppw->rsa_theta_g +=
+        3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
+               (y[ppw->pv->index_pt_theta_b]
+                +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
+               +ppw->pvecthermo[pth->index_th_dkappa]*
+               (-a_prime_over_a*y[ppw->pv->index_pt_theta_b]
+                + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
+                -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                +k2*y[ppw->pv->index_pt_eta]));
     }
 
     if (pba->has_ur == _TRUE_) {
 
-        if (ppr->radiation_streaming_approximation == rsa_null) {
-          ppw->rsa_delta_ur = 0.;
-          ppw->rsa_theta_ur = 0.;
-        }
-        else {
-          ppw->rsa_delta_ur = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                                     -k2*y[ppw->pv->index_pt_eta]);
-          ppw->rsa_theta_ur = -0.5*ppw->pvecmetric[ppw->index_mt_h_prime];
-
-          if(pba->has_smg == _TRUE_) {
-            ppw->rsa_delta_ur = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                                     -k2*y[ppw->pv->index_pt_eta]
-                                    +9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
-          }
-        }
+      if (ppr->radiation_streaming_approximation == rsa_null) {
+        ppw->rsa_delta_ur = 0.;
+        ppw->rsa_theta_ur = 0.;
+      }
+      else {
+        ppw->rsa_delta_ur = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                                   -k2*y[ppw->pv->index_pt_eta]);
+        ppw->rsa_theta_ur = -0.5*ppw->pvecmetric[ppw->index_mt_h_prime];
       }
     }
+  }
 
-    /* update total delta and theta given rsa approximation results */
+  /* update total delta and theta given rsa approximation results */
 
-    ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
-    ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
-    ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
+  ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
+  ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
+  ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
 
-    if (pba->has_ur == _TRUE_) {
-      ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
-      ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
-      ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
-    }
+  if (pba->has_ur == _TRUE_) {
+    ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
+    ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
+    ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
+  }
 
   return _SUCCESS_;
 
@@ -10305,17 +9958,18 @@ int perturb_rsa_delta_and_theta(
  * @param error_message            Output: error message
  */
 
-int perturb_rsa_idr_delta_and_theta(
-                                    struct precision * ppr,
-                                    struct background * pba,
-                                    struct thermo * pth,
-                                    struct perturbs * ppt,
-                                    double k,
-                                    double * y,
-                                    double a_prime_over_a,
-                                    double * pvecthermo,
-                                    struct perturb_workspace * ppw
-                                    ) {
+int perturbations_rsa_idr_delta_and_theta(
+                                          struct precision * ppr,
+                                          struct background * pba,
+                                          struct thermodynamics * pth,
+                                          struct perturbations * ppt,
+                                          double k,
+                                          double * y,
+                                          double a_prime_over_a,
+                                          double * pvecthermo,
+                                          struct perturbations_workspace * ppw,
+                                          ErrorMsg error_message
+                                          ) {
   /* - define local variables */
 
   double k2;
