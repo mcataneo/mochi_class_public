@@ -1,5 +1,6 @@
 #Some Makefile for CLASS.
 #Julien Lesgourgues, 28.11.2011
+#Nils Schöneberg, Matteo Lucca, 27.02.2019
 
 MDIR := $(shell pwd)
 WRKDIR = $(MDIR)/build
@@ -28,12 +29,11 @@ AR        = ar rv
 # In order to use Python 3, you can manually
 # substitute python3 to python in the line below, or you can simply
 # add a compilation option on the terminal command line:
-# "PYTHON=python3 make all" (THanks to Marius Millea for pyhton3
-# compatibility)
+# "PYTHON=python3 make all" (Thanks to Marius Millea for python3 compatibility)
 PYTHON ?= python
 
 # your optimization flag
-OPTFLAG = -O4 -ffast-math #-march=native
+OPTFLAG = -O3
 #OPTFLAG = -Ofast -ffast-math #-march=native
 #OPTFLAG = -fast
 
@@ -47,8 +47,10 @@ CCFLAG = -g -fPIC
 LDFLAG = -g -fPIC
 
 # leave blank to compile without HyRec, or put path to HyRec directory
-# (with no slash at the end: e.g. hyrec or ../hyrec)
-HYREC = hyrec
+# (with no slash at the end: e.g. "external/RecfastCLASS")
+HYREC = external/HyRec2020
+RECFAST = external/RecfastCLASS
+HEATING = external/heating
 
 # path to hi_class external modules (with no slash at the end).
 # do not leave blank otherwise the code does not compile
@@ -63,17 +65,31 @@ CCFLAG += -D__CLASSDIR__='"$(MDIR)"'
 
 # where to find include files *.h
 INCLUDES = -I../include
+HEADERFILES = $(wildcard ./include/*.h)
 
 # automatically add external programs if needed. First, initialize to blank.
 EXTERNAL =
 
-# eventually update flags for including HyRec
+vpath %.c $(RECFAST)
+#CCFLAG += -DRECFAST
+INCLUDES += -I../$(RECFAST)
+EXTERNAL += wrap_recfast.o
+HEADERFILES += $(wildcard ./$(RECFAST)/*.h)
+
+vpath %.c $(HEATING)
+#CCFLAG += -DHEATING
+INCLUDES += -I../$(HEATING)
+EXTERNAL += injection.o noninjection.o
+HEADERFILES += $(wildcard ./$(HEATING)/*.h)
+
+# update flags for including HyRec
 ifneq ($(HYREC),)
 vpath %.c $(HYREC)
 CCFLAG += -DHYREC
 #LDFLAGS += -DHYREC
-INCLUDES += -I../hyrec
-EXTERNAL += hyrectools.o helium.o hydrogen.o history.o
+INCLUDES += -I../$(HYREC)
+EXTERNAL += hyrectools.o helium.o hydrogen.o history.o wrap_hyrec.o energy_injection.o
+HEADERFILES += $(wildcard ./$(HYREC)/*.h)
 endif
 
 # eventually update flags for including gravity_smg
@@ -85,12 +101,12 @@ INCLUDES += -I../gravity_smg
 EXTERNAL += input_smg.o background_smg.o perturbations_smg.o nonlinear_smg.o gravity_functions_smg.o gravity_models_smg.o
 endif
 
-%.o:  %.c .base
+%.o:  %.c .base $(HEADERFILES)
 	cd $(WRKDIR);$(CC) $(OPTFLAG) $(OMPFLAG) $(CCFLAG) $(INCLUDES) -c ../$< -o $*.o
 
 TOOLS = growTable.o dei_rkck.o sparse.o evolver_rkck.o  evolver_ndf15.o arrays.o parser.o quadrature.o hyperspherical.o common.o rootfinder.o trigonometric_integrals.o
 
-SOURCE = input.o background.o thermodynamics.o perturbations.o primordial.o nonlinear.o transfer.o spectra.o lensing.o
+SOURCE = input.o background.o thermodynamics.o perturbations.o primordial.o fourier.o transfer.o harmonic.o lensing.o distortions.o
 
 INPUT = input.o
 
@@ -106,11 +122,13 @@ TRANSFER = transfer.o
 
 PRIMORDIAL = primordial.o
 
-SPECTRA = spectra.o
+HARMONIC = harmonic.o
 
-NONLINEAR = nonlinear.o
+FOURIER = fourier.o
 
 LENSING = lensing.o
+
+DISTORTIONS = distortions.o
 
 OUTPUT = output.o
 
@@ -120,11 +138,11 @@ TEST_LOOPS = test_loops.o
 
 TEST_LOOPS_OMP = test_loops_omp.o
 
-TEST_SPECTRA = test_spectra.o
+TEST_HARMONIC = test_harmonic.o
 
 TEST_TRANSFER = test_transfer.o
 
-TEST_NONLINEAR = test_nonlinear.o
+TEST_FOURIER = test_fourier.o
 
 TEST_PERTURBATIONS = test_perturbations.o
 
@@ -136,7 +154,7 @@ TEST_HYPERSPHERICAL = test_hyperspherical.o
 
 C_TOOLS =  $(addprefix tools/, $(addsuffix .c,$(basename $(TOOLS))))
 C_SOURCE = $(addprefix source/, $(addsuffix .c,$(basename $(SOURCE) $(OUTPUT))))
-C_TEST = $(addprefix test/, $(addsuffix .c,$(basename $(TEST_DEGENERACY) $(TEST_LOOPS) $(TEST_TRANSFER) $(TEST_NONLINEAR) $(TEST_PERTURBATIONS) $(TEST_THERMODYNAMICS))))
+C_TEST = $(addprefix test/, $(addsuffix .c,$(basename $(TEST_DEGENERACY) $(TEST_LOOPS) $(TEST_TRANSFER) $(TEST_FOURIER) $(TEST_PERTURBATIONS) $(TEST_THERMODYNAMICS))))
 C_MAIN = $(addprefix main/, $(addsuffix .c,$(basename $(CLASS))))
 C_ALL = $(C_MAIN) $(C_TOOLS) $(C_SOURCE)
 H_ALL = $(addprefix include/, common.h svnversion.h $(addsuffix .h, $(basename $(notdir $(C_ALL)))))
@@ -159,13 +177,13 @@ test_loops: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_LOOPS)
 test_loops_omp: $(TOOLS) $(SOURCE) $(EXTERNAL) $(OUTPUT) $(TEST_LOOPS_OMP)
 	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o $@ $(addprefix build/,$(notdir $^)) -lm
 
-test_spectra: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_SPECTRA)
+test_harmonic: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_HARMONIC)
 	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
 
 test_transfer: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_TRANSFER)
 	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
 
-test_nonlinear: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_NONLINEAR)
+test_fourier: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_FOURIER)
 	$(CC) $(OPTFLAG) $(OMPFLAG) $(LDFLAG) -o  $@ $(addprefix build/,$(notdir $^)) -lm
 
 test_perturbations: $(TOOLS) $(SOURCE) $(EXTERNAL) $(TEST_PERTURBATIONS)
@@ -198,3 +216,4 @@ clean: .base
 	rm -f libclass.a
 	rm -f $(MDIR)/python/classy.c
 	rm -rf $(MDIR)/python/build
+	rm -f python/autosetup.py
