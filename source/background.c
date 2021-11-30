@@ -113,6 +113,7 @@
  */
 
 #include "background.h"
+#include "hi_class.h"
 
 /**
  * Background quantities at given redshift z.
@@ -390,6 +391,8 @@ int background_functions(
   double rho_r;
   /* total non-relativistic density */
   double rho_m;
+  /* total dark energy density */
+  double rho_de;
   /* background ncdm quantities */
   double rho_ncdm,p_ncdm,pseudo_p_ncdm;
   /* index for n_ncdm species */
@@ -411,7 +414,9 @@ int background_functions(
   dp_dloga = 0.;
   rho_r=0.;
   rho_m=0.;
+  rho_de = 0.;
 
+  // TODO_EB: in hi_class w ewere calling class_test_except with free(pvecback);free(pvecback_B);background_free_input(pba). Really necessary?
   class_test(a <= 0.,
              pba->error_message,
              "a = %e instead of strictly positive",a);
@@ -526,6 +531,7 @@ int background_functions(
     pvecback[pba->index_bg_rho_lambda] = pba->Omega0_lambda * pow(pba->H0,2);
     rho_tot += pvecback[pba->index_bg_rho_lambda];
     p_tot -= pvecback[pba->index_bg_rho_lambda];
+    rho_de += pvecback[pba->index_bg_rho_lambda];
   }
 
   /* fluid with w(a) and constant cs2 */
@@ -575,11 +581,32 @@ int background_functions(
   /** - compute expansion rate H from Friedmann equation: this is the
       only place where the Friedmann equation is assumed. Remember
       that densities are all expressed in units of \f$ [3c^2/8\pi G] \f$, ie
-      \f$ \rho_{class} = [8 \pi G \rho_{physical} / 3 c^2]\f$ */
-  pvecback[pba->index_bg_H] = sqrt(rho_tot-pba->K/a/a);
+      \f$ \rho_{class} = [8 \pi G \rho_{physical} / 3 c^2]\f$
+      NOTE: different computation if scalar field (_smg) is present */
+  if (pba->has_smg == _TRUE_) {
+    class_call(background_gravity_functions_smg(pba,
+              pvecback_B,
+              return_format,
+              pvecback,
+              &rho_tot,
+              &p_tot,
+              &rho_de),
+      pba->error_message,
+      pba->error_message);
+  }
+  else {
+    // not only _smg!!
+    if (pba->hubble_evolution == _TRUE_)
+      pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H]; //sqrt(rho_tot-pba->K/a/a);
+    else
+    pvecback[pba->index_bg_H] = sqrt(rho_tot - pba->K/a/a);
 
-  /** - compute derivative of H with respect to conformal time */
-  pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+    /** - compute derivative of H with respect to conformal time: friction added */
+    pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
+    // not only _smg!!
+    if (pba->hubble_evolution == _TRUE_)
+      pvecback[pba->index_bg_H_prime] += - a* pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - (rho_tot-pba->K/a/a) );
+  }
 
   /* Total energy density*/
   pvecback[pba->index_bg_rho_tot] = rho_tot;
@@ -598,12 +625,16 @@ int background_functions(
 
   /** - compute critical density */
   rho_crit = rho_tot-pba->K/a/a;
+  // TODO_EB: here the condition in hi_class was (rho_crit <= 0.) && (pba->has_smg == _FALSE_). Why?
   class_test(rho_crit <= 0.,
              pba->error_message,
              "rho_crit = %e instead of strictly positive",rho_crit);
 
   /** - compute relativistic density to total density ratio */
   pvecback[pba->index_bg_Omega_r] = rho_r / rho_crit;
+
+  /** - compute dark energy density to total density ratio (_smg) */
+  pvecback[pba->index_bg_Omega_de] = rho_de / rho_tot;
 
   /** - compute other quantities in the exhaustive, redundant format */
   if (return_format == long_info) {
@@ -811,11 +842,13 @@ int background_init(
 
   /** - write class version */
   if (pba->background_verbose > 0) {
-    printf("Running CLASS version %s\n",_VERSION_);
+    // _smg
+    printf("Running hi_class version %s (CLASS version %s)\n",_HI_CLASS_VERSION_, _VERSION_);
     printf("Computing background\n");
   }
 
   /** - if shooting failed during input, catch the error here */
+  // TODO_EB: in hi_class w ewere calling class_test_except with background_free_input(pba). Really necessary?
   class_test(pba->shooting_failed == _TRUE_,
              pba->error_message,
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
@@ -946,6 +979,10 @@ int background_free_input(
     if (pba->scf_parameters != NULL)
       free(pba->scf_parameters);
   }
+  if (pba->Omega0_smg != 0.) {
+    background_free_smg(pba);
+  }
+
   return _SUCCESS_;
 }
 
@@ -983,6 +1020,7 @@ int background_indices(
   pba->has_idm_dr = _FALSE_;
   pba->has_curvature = _FALSE_;
   pba->has_varconst  = _FALSE_;
+  pba->has_smg = _FALSE_; /*Scalar field*/
 
   if (pba->Omega0_cdm != 0.)
     pba->has_cdm = _TRUE_;
@@ -1019,6 +1057,9 @@ int background_indices(
 
   if (pba->varconst_dep != varconst_none)
     pba->has_varconst = _TRUE_;
+
+  if (pba->Omega0_smg != 0.)
+    pba->has_smg = _TRUE_;
 
   /** - initialize all indices */
 
@@ -1088,11 +1129,23 @@ int background_indices(
   /* - index for Omega_r (relativistic density fraction) */
   class_define_index(pba->index_bg_Omega_r,_TRUE_,index_bg,1);
 
+  /* - index for Omega_de (dark energy density fraction) (_smg) */
+  class_define_index(pba->index_bg_Omega_de,_TRUE_,index_bg,1);
+
   /* - index interacting for dark radiation */
   class_define_index(pba->index_bg_rho_idr,pba->has_idr,index_bg,1);
 
   /* - index for interacting dark matter */
   class_define_index(pba->index_bg_rho_idm_dr,pba->has_idm_dr,index_bg,1);
+
+  /* - indices for scalar field (modified gravity) */
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      hi_class_define_indices_bg(pba, &index_bg),
+      pba->error_message,
+      pba->error_message
+    );
+  }
 
   /* - put here additional ingredients that you want to appear in the
      normal vector */
@@ -1164,6 +1217,18 @@ int background_indices(
   /* -> scalar field and its derivative wrt conformal time (Zuma) */
   class_define_index(pba->index_bi_phi_scf,pba->has_scf,index_bi,1);
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
+
+  /* index for Hubble rate (_smg) */
+  class_define_index(pba->index_bi_H,pba->hubble_evolution,*index_bi,1);
+
+  /* - indices for scalar field (modified gravity _smg) */
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      hi_class_define_indices_bi(pba, &index_bi),
+      pba->error_message,
+      pba->error_message
+    );
+  }
 
   /* End of {B} variables */
   pba->bi_B_size = index_bi;
@@ -2035,6 +2100,26 @@ int background_solve(
              pba->error_message,
              pba->error_message);
 
+   if (pba->has_smg == _TRUE_) {
+     class_call(
+       background_hi_class_second_loop(pba, pvecback),
+       pba->error_message,
+       pba->error_message
+     );
+
+     class_call(
+       background_stability_tests_smg(pba, pvecback, pvecback_integration),
+       pba->error_message,
+       pba->error_message
+     );
+
+     class_call(
+       background_hi_class_third_loop(pba, pvecback, pvecback_integration),
+       pba->error_message,
+       pba->error_message
+     );
+   }
+
   /** - compute remaining "related parameters" */
 
   /**  - so-called "effective neutrino number", computed at earliest
@@ -2078,6 +2163,13 @@ int background_solve(
         printf("%.3f, ",pba->scf_parameters[index_scf]);
       }
       printf("%.3f]\n",pba->scf_parameters[pba->scf_parameters_size-1]);
+    }
+    if (pba->has_smg == _TRUE_) {
+      class_call(
+        background_print_smg(pba, pvecback, pvecback_integration),
+        pba->error_message,
+        pba->error_message
+      );
     }
   }
 
@@ -2284,22 +2376,48 @@ int background_initial_conditions(
                pvecback_integration[pba->index_bi_phi_scf]);
   }
 
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      background_initial_conditions_smg(pba, pvecback, pvecback_integration,&rho_rad),
+      pba->error_message,
+      pba->error_message
+    );
+  }
+
   /* Infer pvecback from pvecback_integration */
   class_call(background_functions(pba, a, pvecback_integration, normal_info, pvecback),
              pba->error_message,
              pba->error_message);
 
+  /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation (not only _smg!!) */
+  if (pba->hubble_evolution == _TRUE_){
+   if (pba->has_smg == _TRUE_) {
+     pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];
+   }
+   else {
+     pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
+     pvecback_integration[pba->index_bi_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
+   }
+  }
+
+  /* Declare the smg initial conditions as set */
+  if (pba->has_smg) {
+   pba->initial_conditions_set_smg = _TRUE_;
+  }
+
   /* Just checking that our initial time indeed is deep enough in the radiation
-     dominated regime */
-  class_test(fabs(pvecback[pba->index_bg_Omega_r]-1.) > ppr->tol_initial_Omega_r,
+     dominated regime (_smg) */
+  // TODO_EB: rethink this test (r+(de?)). There was a class_test_except with free(pvecback);free(pvecback_integration);background_free(pba)
+  class_test(fabs(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
              pba->error_message,
-             "Omega_r = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
-             pvecback[pba->index_bg_Omega_r]);
+             "Omega_r = %e, Omega_de = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
+             pvecback[pba->index_bg_Omega_r],pvecback[pba->index_bg_Omega_de]);
 
   /** - compute initial proper time, assuming radiation-dominated
       universe since Big Bang and therefore \f$ t=1/(2H) \f$ (good
       approximation for most purposes) */
 
+  // TODO_EB: There was a class_test_except with free(pvecback);free(pvecback_integration);background_free(pba)
   class_test(pvecback[pba->index_bg_H] <= 0.,
              pba->error_message,
              "H = %e instead of strictly positive",pvecback[pba->index_bg_H]);
@@ -2469,6 +2587,14 @@ int background_output_titles(
   class_store_columntitle(titles,"rel. alpha",pba->has_varconst);
   class_store_columntitle(titles,"rel. m_e",pba->has_varconst);
 
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      background_store_columntitles_smg(pba, titles),
+      pba->error_message,
+      pba->error_message
+    );
+  }
+
   return _SUCCESS_;
 }
 
@@ -2541,6 +2667,14 @@ int background_output_data(
 
     class_store_double(dataptr,pvecback[pba->index_bg_varc_alpha],pba->has_varconst,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_varc_me],pba->has_varconst,storeidx);
+
+    if (pba->has_smg == _TRUE_) {
+      class_call(
+        background_store_doubles_smg(pba, pvecback, dataptr, &storeidx),
+        pba->error_message,
+        pba->error_message
+      );
+    }
   }
 
   return _SUCCESS_;
@@ -2611,6 +2745,11 @@ int background_derivs(
   /** - calculate derivative of conformal time \f$ d\tau/dloga = 1/aH \f$ */
   dy[pba->index_bi_tau] = 1./a/H;
 
+  /** - calculate /f$ H'= (...) + stabilization /f$ (not only _smg) */
+  if (pba->hubble_evolution == _TRUE_) {
+    dy[pba->index_bi_H] = pvecback[pba->index_bg_H_prime];
+  }
+
   class_test(pvecback[pba->index_bg_rho_g] <= 0.,
              error_message,
              "rho_g = %e instead of strictly positive",pvecback[pba->index_bg_rho_g]);
@@ -2651,6 +2790,14 @@ int background_derivs(
         written as \f$ d\phi/dlna = phi' / (aH) \f$ and \f$ d\phi'/dlna = -2*phi' - (a/H) dV \f$ */
     dy[pba->index_bi_phi_scf] = y[pba->index_bi_phi_prime_scf]/a/H;
     dy[pba->index_bi_phi_prime_scf] = - 2*y[pba->index_bi_phi_prime_scf] - a*dV_scf(pba,y[pba->index_bi_phi_scf])/H ;
+  }
+
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      background_derivs_smg(pba, pvecback, y, dy),
+      pba->error_message,
+      pba->error_message
+    );
   }
 
   return _SUCCESS_;
@@ -2829,7 +2976,7 @@ int background_output_budget(
       }
     }
 
-    if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_curvature == _TRUE_)) {
+    if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_curvature == _TRUE_) || (pba->has_smg == _TRUE_)) {
       printf(" ---> Other Content \n");
     }
     if (pba->has_lambda == _TRUE_) {
@@ -2847,6 +2994,10 @@ int background_output_budget(
     if (pba->has_curvature == _TRUE_) {
       class_print_species("Spatial Curvature",k);
       budget_other+=pba->Omega0_k;
+    }
+    if (pba->has_smg == _TRUE_) {
+      class_print_species("Scalar Modified Gravity",smg);
+      budget_other+=pba->Omega0_smg;
     }
 
     printf(" ---> Total budgets \n");
