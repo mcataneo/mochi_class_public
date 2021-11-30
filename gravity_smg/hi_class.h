@@ -11,6 +11,6 @@
 #include "input_smg.h"
 #include "background_smg.h"
 #include "perturbations_smg.h"
-#include "nonlinear_smg.h"
+#include "fourier_smg.h"
 
 #endif

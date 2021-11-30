@@ -1,6 +1,6 @@
-#include "nonlinear_smg.h"
+#include "fourier_smg.h"
 
-int nonlinear_hmcode_correct_Delta_v_0_smg(
+int fourier_hmcode_correct_Delta_v_0_smg(
   struct background *pba,
   double z_at_tau,
   double * Delta_v_0

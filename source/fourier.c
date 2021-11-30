@@ -12,6 +12,7 @@
  */
 
 #include "fourier.h"
+#include "hi_class.h"
 
 /**
  * Return the P(k,z) for a given redshift z and pk type (_m, _cb)
@@ -3138,7 +3139,7 @@ int fourier_hmcode(
   double mmin, mmax, nu_min;
 
   double sigma_disp, sigma_disp100, sigma8;
-  double delta_c, Delta_v;
+  double delta_c, Delta_v, Delta_v_0;
   double fraction;
 
   double sigma_nl, nu_nl, r_nl;
@@ -3264,8 +3265,21 @@ int fourier_hmcode(
   delta_c = delta_c*(1.+0.0123*log10(Omega_m)); //Nakamura & Suto (1997) fitting formula for LCDM models (as in Mead 2016)
   delta_c = delta_c*(1.+0.262*fnu); //Mead et al. (2016; arXiv 1602.02154) neutrino addition
 
+  Delta_v_0 = 418.;
+
+  // Correct the LCDM virialized overdensity
+  if (pba->has_smg) {
+    class_call(
+      fourier_hmcode_correct_Delta_v_0_smg(
+        pba,
+        z_at_tau,
+        & Delta_v_0
+      ),
+      pnl->error_message, pnl->error_message);
+  };
+
   // virialized overdensity
-  Delta_v=418.*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
+  Delta_v=Delta_v_0*pow(Omega_m, -0.352); //Mead et al. (2015; arXiv 1505.07833)
   Delta_v=Delta_v*(1.+0.916*fnu); //Mead et al. (2016; arXiv 1602.02154) neutrino addition
 
   // mass or radius fraction respectively
@@ -3427,6 +3441,10 @@ int fourier_hmcode(
     //find growth rate at formation
     g_form = delta_c*growth/sigmaf_r[index_mass];
     if (g_form > 1.) g_form = 1.;
+    /** Here we correct the formation growth for extreme models where it is
+        g_form is very little and outside the precumputed table. */
+    if ((pba->has_smg == _TRUE_) && (g_form < pnw->growtable[0]))
+      g_form = pnw->growtable[0];
 
     //
     class_call(array_interpolate_two_arrays_one_column(

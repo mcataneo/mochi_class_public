@@ -1,8 +1,8 @@
-#ifndef __NONLINEAR_SMG__
-#define __NONLINEAR_SMG__
+#ifndef __FOURIER_SMG__
+#define __FOURIER_SMG__
 
 #include "common.h"
-#include "nonlinear.h"
+#include "fourier.h"
 
 /**
  * Boilerplate for C++
@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-int nonlinear_hmcode_correct_Delta_v_0_smg(
+int fourier_hmcode_correct_Delta_v_0_smg(
   struct background *pba,
   double z_at_tau,
   double * Delta_v_0
