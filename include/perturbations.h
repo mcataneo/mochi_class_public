@@ -284,8 +284,8 @@ struct perturbations
   short has_source_eta_prime;  /**< do we need source for metric fluctuation eta'? */
   short has_source_H_T_Nb_prime; /**< do we need source for metric fluctuation H_T_Nb'? */
   short has_source_k2gamma_Nb; /**< do we need source for metric fluctuation gamma in Nbody gauge? */
-  short has_source_phi_smg;     /**< do we need source for scalar field smg? */
-  short has_source_phi_prime_smg;/**< do we need source for scalar field smg prime? */
+  short has_source_x_smg;     /**< do we need source for scalar field smg? */
+  short has_source_x_prime_smg;/**< do we need source for scalar field smg prime? */
 
 
   /* remember that the temperature source function includes three
@@ -338,8 +338,8 @@ struct perturbations
   int index_tp_eta_prime;    /**< index value for metric fluctuation eta' */
   int index_tp_H_T_Nb_prime; /**< index value for metric fluctuation H_T_Nb' */
   int index_tp_k2gamma_Nb;   /**< index value for metric fluctuation gamma times k^2 in Nbody gauge */
-  int index_tp_phi_smg;  /**< index value for scalar field smg */
-  int index_tp_phi_prime_smg;  /**< index value for scalar field smg prime */
+  int index_tp_x_smg;  /**< index value for scalar field smg */
+  int index_tp_x_prime_smg;  /**< index value for scalar field smg prime */
 
   int * tp_size; /**< number of types tp_size[index_md] included in computation for each mode */
 
@@ -591,7 +591,7 @@ struct perturbations_workspace
   int index_mt_einstein00; /**< measure the deviations from the Einstein 00 equation. Useful if get_h_from_trace == _TRUE_ but also to add a friction term to the Einstein trace equation for h'' (not only _smg!!) */
   int index_mt_x_smg;       /**< scalar field perturbation */
   int index_mt_x_prime_smg; /**< first derivative of the scalar field perturb wrt conformal time */
-  int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturb_einstein and passed to the integrator */
+  int index_mt_x_prime_prime_smg;/**< second derivative of the scalar field perturb wrt confromal time - computed in perturbations_einstein and passed to the integrator */
   int index_mt_rsa_p_smg;    /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
   int mt_size;                /**< size of metric perturbation vector */
 

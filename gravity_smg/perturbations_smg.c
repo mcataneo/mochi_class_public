@@ -1507,8 +1507,8 @@ int hi_class_define_indices_tp(
 				 int * index_type
 			 ) {
 
-  class_define_index(ppt->index_tp_phi_smg,    ppt->has_source_phi_smg,   *index_type,1);
-  class_define_index(ppt->index_tp_phi_prime_smg,  ppt->has_source_phi_prime_smg, *index_type,1);
+  class_define_index(ppt->index_tp_x_smg,    ppt->has_source_x_smg,   *index_type,1);
+  class_define_index(ppt->index_tp_x_prime_smg,  ppt->has_source_x_prime_smg, *index_type,1);
 
   return _SUCCESS_;
 }
