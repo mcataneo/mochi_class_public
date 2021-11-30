@@ -6,6 +6,7 @@
  */
 
 #include "input.h"
+#include "hi_class.h"
 
 /* The input module fills variables belonging to the structures of
    essentially all other modules. Thus we need to include all the
@@ -527,7 +528,9 @@ int input_shooting(struct file_content * pfc,
                                        "Omega_scf",
                                        "Omega_ini_dcdm",
                                        "omega_ini_dcdm",
-                                       "sigma8"};
+                                       "sigma8",
+                                       "Omega_smg",
+                                       "M_pl_today_smg"};
 
   /* array of corresponding parameters that must be adjusted in order to meet the target (= unknown parameters) */
   char * const unknown_namestrings[] = {"h",                        /* unknown param for target '100*theta_s' */
@@ -536,22 +539,30 @@ int input_shooting(struct file_content * pfc,
                                         "scf_shooting_parameter",   /* unknown param for target 'Omega_scf' */
                                         "Omega_dcdmdr",             /* unknown param for target 'Omega_ini_dcdm' */
                                         "omega_dcdmdr",             /* unknown param for target 'omega_ini_dcdm' */
-                                        "A_s"};                     /* unknown param for target 'sigma8' */
+                                        "A_s",                      /* unknown param for target 'sigma8' */
+                                        "shooting_parameter_smg",   /* unknown param for target 'Omega_smg' */
+                                        "param_shoot_M_pl_smg"};    /* unknown param for target 'M_pl_today_smg' */
 
   /* for each target, module up to which we need to run CLASS in order
      to compute the targetted quantities (not running the whole code
      each time to saves a lot of time) */
+  // TODO_EB: here we didn't add any computation stage in the previous version of hi_class, I think we should. Check it
   enum computation_stage target_cs[] = {cs_thermodynamics, /* computation stage for target '100*theta_s' */
                                         cs_background,     /* computation stage for target 'Omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'Omega_scf' */
                                         cs_background,     /* computation stage for target 'Omega_ini_dcdm' */
                                         cs_background,     /* computation stage for target 'omega_ini_dcdm' */
-                                        cs_nonlinear};       /* computation stage for target 'sigma8' */
+                                        cs_nonlinear,      /* computation stage for target 'sigma8' */
+                                        cs_background,     /* computation stage for target 'Omega_smg' */
+                                        cs_background};    /* computation stage for target 'M_pl_today_smg' */
 
   struct fzerofun_workspace fzw;
 
   *has_shooting=_FALSE_;
+
+  /* for smg: no tuned parameters yet */
+  pba->parameters_tuned_smg = _FALSE_;
 
   /** Do we need to fix unknown parameters? */
   unknown_parameters_size = 0;
@@ -754,6 +765,17 @@ int input_shooting(struct file_content * pfc,
     free(fzw.target_value);
   }
 
+  /* Now Horndeski should be tuned */
+  pba->parameters_tuned_smg = _TRUE_;
+
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      input_warnings_smg(ppt, input_verbose),
+      errmsg,
+      errmsg
+    );
+  }
+
   return _SUCCESS_;
 
 }
@@ -791,6 +813,8 @@ int input_needs_shooting_for_target(struct file_content * pfc,
       if (target_value == 0.)
         *needs_shooting = _FALSE_;
       break;
+    case Omega_smg:
+    case M_pl_today_smg:
     default:
       /* Default is no additional checks */
       *needs_shooting = _TRUE_;
@@ -1160,6 +1184,14 @@ int input_get_guess(double *xguess,
       xguess[index_guess] = 2.43e-9/0.87659*pfzw->target_value[index_guess];
       dxdy[index_guess] = 2.43e-9/0.87659;
       break;
+    case Omega_smg:
+      xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
+      dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
+      break;
+    case M_pl_today_smg:
+      xguess[index_guess] = ba.parameters_smg[ba.tuning_index_2_smg];
+      dxdy[index_guess] = 1;
+      break;
     }
   }
 
@@ -1358,6 +1390,24 @@ int input_try_unknown_parameters(double * unknown_parameter,
     case sigma8:
       output[i] = fo.sigma8[fo.index_pk_m]-pfzw->target_value[i];
       break;
+    case Omega_smg:
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2) - ba.Omega0_smg;
+      if (input_verbose > 2)
+        printf(" param[%i] = %e, Omega_smg = %.3e, %.3e, target = %.2e \n",ba.tuning_index_smg,
+          ba.parameters_smg[ba.tuning_index_smg],
+          ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+              /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit], ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
+              /pow(ba.H0,2),output[i]);
+      break;
+    case M_pl_today_smg:
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg] - ba.M_pl_today_smg;
+      if (input_verbose > 2)
+        printf("M_pl = %e, want %e, param=%e\n",
+         ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg],
+         ba.M_pl_today_smg,
+         ba.parameters_smg[ba.tuning_index_2_smg]
+        );
+      break;
     }
   }
 
@@ -1462,6 +1512,14 @@ int input_read_precisions(struct file_content * pfc,
   #define __PARSE_PRECISION_PARAMETER__
   #include "precisions.h"
   #undef __PARSE_PRECISION_PARAMETER__
+
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      input_readjust_precision(ppr),
+      errmsg,
+      errmsg
+    );
+  }
 
   return _SUCCESS_;
 
@@ -2170,6 +2228,37 @@ int input_read_parameters_general(struct file_content * pfc,
     class_read_double("bbn_alpha_sensitivity",pth->bbn_alpha_sensitivity);
   }
 
+  /** 11) The Hubble parameter is integrated instead of getting it from
+          the Friedmann constraint. (not only _smg) */
+  class_call(parser_read_string(pfc, "hubble_evolution", &string1, &flag1, errmsg),
+    errmsg,
+    errmsg);
+
+  if (flag1 == _TRUE_){
+    if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+      pba->hubble_evolution = _TRUE_;
+      class_read_double("hubble_friction",pba->hubble_friction);
+    }
+    else{
+      pba->hubble_evolution = _FALSE_;
+    }
+  }
+
+  /** 12) The sync metric perturbation h should be obtained with the Einstein 00
+          equation algebraically or integrting the trace equation. (not only _smg) */
+  class_call(parser_read_string(pfc, "get_h_from_trace", &string1, &flag1, errmsg),
+    errmsg,
+    errmsg);
+
+  if (flag1 == _TRUE_){
+    if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+      ppt->get_h_from_trace = _TRUE_;
+    }
+    else{
+      ppt->get_h_from_trace = _FALSE_;
+    }
+  }
+
   return _SUCCESS_;
 
 }
@@ -2823,7 +2912,7 @@ int input_read_parameters_species(struct file_content * pfc,
   /* At this point all the species should be set, and used for the budget equation below */
   /** 8) Dark energy
          Omega_0_lambda (cosmological constant), Omega0_fld (dark energy
-         fluid), Omega0_scf (scalar field) */
+         fluid), Omega0_scf (scalar field), Omega0_smg (scalar modified gravity) */
   /* Read */
   class_call(parser_read_double(pfc,"Omega_Lambda",&param1,&flag1,errmsg),
              errmsg,
@@ -2834,20 +2923,43 @@ int input_read_parameters_species(struct file_content * pfc,
   class_call(parser_read_double(pfc,"Omega_scf",&param3,&flag3,errmsg),
              errmsg,
              errmsg);
+  // _smg
+  int flag4;
+  double param4;
+  class_call(parser_read_double(pfc,"Omega_smg",&param4,&flag4,errmsg),
+            errmsg,
+            errmsg);
+  /* Look for Omega_smg_debug if Omega_smg is not specified */
+  if (flag4 == _FALSE_){
+      class_call(parser_read_double(pfc,"Omega_smg_debug",&param4,&flag4,errmsg),
+                 errmsg,
+                 errmsg);
+      if (flag4 == _TRUE_)
+          pba->Omega_smg_debug = param4;
+  }
   /* Test */
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)),
+  class_test((flag3 == _TRUE_) && (flag4 == _TRUE_),
+             errmsg,
+             "'Omega_scf' or 'Omega_smg' must be zero. It is not possible to have both scalar fields present.");
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && ((flag3 == _FALSE_) || (param3 >= 0.)) && (flag4 == _FALSE_),
              errmsg,
              "'Omega_Lambda' or 'Omega_fld' must be left unspecified, except if 'Omega_scf' is set and < 0.");
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_) && (flag3 == _FALSE_) && ((flag4 == _FALSE_) || (param4 >= 0.)),
+           errmsg,
+           "'Omega_Lambda' or 'Omega_fld' must be left unspecified, except if 'Omega_smg' is set and < 0.");
   class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag3 == _TRUE_) && (param3 < 0.)),
              errmsg,
              "You have entered 'Omega_scf' < 0 , so you have to specify both 'Omega_lambda' and 'Omega_fld'.");
+  class_test(((flag1 == _FALSE_)||(flag2 == _FALSE_)) && ((flag4 == _TRUE_) && (param4 < 0.)),
+            errmsg,
+            "You have entered 'Omega_smg' < 0 , so you have to specify both 'Omega_lambda' and 'Omega_fld'.");
   /* Complete set of parameters
-     Case of (flag3 == _FALSE_) || (param3 >= 0.) means that either we have not
-     read Omega_scf so we are ignoring it (unlike lambda and fld!) OR we have
+     Case of (flag3(4) == _FALSE_) || (param3(4) >= 0.) means that either we have not
+     read Omega_scf(smg) so we are ignoring it (unlike lambda and fld!) OR we have
      read it, but it had a positive value and should not be used for filling.
      We now proceed in two steps:
         1) set each Omega0 and add to the total for each specified component.
-        2) go through the components in order {lambda, fld, scf} and fill using
+        2) go through the components in order {lambda, fld, scf(smg)} and fill using
            first unspecified component. */
 
   /* ** BUDGET EQUATION ** -> Add your species here */
@@ -2872,6 +2984,10 @@ int input_read_parameters_species(struct file_content * pfc,
     pba->Omega0_scf = param3;
     Omega_tot += pba->Omega0_scf;
   }
+  if ((flag4 == _TRUE_) && (param4 >= 0.)) {
+    pba->Omega0_smg = param4;
+    Omega_tot += pba->Omega0_smg;
+  }
   /* Step 2 */
   if (flag1 == _FALSE_) {
     /* Fill with Lambda */
@@ -2893,6 +3009,11 @@ int input_read_parameters_species(struct file_content * pfc,
     if (input_verbose > 0){
       printf(" -> matched budget equations by adjusting Omega_scf = %g\n",pba->Omega0_scf);
     }
+  }
+  else if ((flag4 == _TRUE_) && (param4 < 0.)){
+    // Fill up with scalar field
+    pba->Omega0_smg = 1. - pba->Omega0_k - Omega_tot;
+    if (input_verbose > 0) printf(" -> budget equations require Omega_smg = %e\n",pba->Omega0_smg);
   }
 
   /* ** END OF BUDGET EQUATION ** */
@@ -3004,6 +3125,15 @@ int input_read_parameters_species(struct file_content * pfc,
       printf("'scf_lambda' = %e < 3 won't be tracking (for exp quint) unless overwritten by tuning function.",scf_lambda);
     }
   }
+
+  /** 8.c) If Omega scalar modified gravity (SMG) is different from 0 */
+  if (pba->Omega0_smg != 0.) {
+    class_call(
+      input_read_parameters_smg(pfc, ppr, pba, ppt, errmsg),
+      errmsg,
+      errmsg
+    );
+  };
 
   return _SUCCESS_;
 
@@ -5759,6 +5889,8 @@ int input_default_params(struct background *pba,
   ple->lensing_verbose = 0;
   psd->distortions_verbose = 0;
   pop->output_verbose = 0;
+
+  input_default_params_smg(pba, ppt);
 
   return _SUCCESS_;
 

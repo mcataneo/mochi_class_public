@@ -726,8 +726,8 @@ int input_readjust_precision(
   /** readjust some precision parameters for modified gravity */
 
   //otherwise problems with ISW effect
-  if (ppr->perturb_sampling_stepsize > 0.05)
-    ppr->perturb_sampling_stepsize=0.05;
+  if (ppr->perturbations_sampling_stepsize > 0.05)
+    ppr->perturbations_sampling_stepsize=0.05;
 
   return _SUCCESS_;
 }
