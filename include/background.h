@@ -19,6 +19,21 @@ enum spatial_curvature {flat,open,closed};
 enum equation_of_state {CLP,EDE};
 
 
+/** list of possible theories and models (_smg) */
+
+enum gravity_model {propto_omega, propto_scale,
+    constant_alphas,
+    eft_alphas_power_law, eft_gammas_power_law, eft_gammas_exponential,
+    galileon, nkgb,
+    brans_dicke,
+    quintessence_monomial, quintessence_tracker,
+    alpha_attractor_canonical
+};
+
+/** parameterized expansion, only for non-self consistent Horndeski theories (_smg) */
+
+enum expansion_model {lcdm, wowa, wowa_w, wede};
+
 /** list of possible parametrizations of the varying fundamental constants */
 
 enum varconst_dependence {varconst_none,varconst_instant};

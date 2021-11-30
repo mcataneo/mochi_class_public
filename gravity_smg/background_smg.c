@@ -12,6 +12,7 @@
  */
 int background_gravity_functions_smg(
 				 struct background *pba,
+				 double a,
 				 double * pvecback_B,
 				 short return_format,
 				 double * pvecback,
@@ -36,7 +37,7 @@ int background_gravity_functions_smg(
   if (pba->field_evolution_smg == _TRUE_) {
 
     /* declare variables and set defaults to zero */
-    double a, phi, phi_prime, H;
+    double phi, phi_prime, H;
     double x,f,df;
     int n, n_max=100;
     double X,rho_tot,p_tot;
@@ -69,7 +70,6 @@ int background_gravity_functions_smg(
     double F5_phi=0, F5_Xphi=0, F5_XXphi=0;
     double F5_phiphi=0, F5_Xphiphi=0;
 
-    a = pvecback_B[pba->index_bi_a];
     if (pba->hubble_evolution == _TRUE_)
       H = pvecback_B[pba->index_bi_H];
 
@@ -902,11 +902,10 @@ int background_gravity_functions_smg(
   }// end of if pba->field_evolution_smg
   else{
 
-    double a, delta_M_pl;
+    double delta_M_pl;
     double rho_tot, p_tot;
     double Omega_smg;
 
-    a = pvecback_B[pba->index_bi_a];
     delta_M_pl = pvecback_B[pba->index_bi_delta_M_pl_smg];
 
     rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
@@ -1208,7 +1207,6 @@ int background_gravity_functions_smg(
 
     /* Check required conditions for the gravity_models. */
   if ( (pba->skip_stability_tests_smg == _FALSE_) && (pba->parameters_tuned_smg == _TRUE_) && (pba->Omega_smg_debug == 0) ){
-      double a = pvecback_B[pba->index_bi_a];
       if (pba->is_quintessence_smg == _TRUE_){
           /*  Check that w is not lower than w < -1 for quintessence */
          class_test( (pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg] < -(1 + pba->quintessence_w_safe_smg)),
@@ -1423,8 +1421,8 @@ int background_derivs_alphas_smg(
 	//Need to update pvecback
 	class_call(background_at_tau(pba,
 			 pba->tau_table[i],
-			 pba->long_info,
-			 pba->inter_normal,
+			 long_info,
+			 inter_normal,
 			 &last_index, //should be no problem to use the same one as for the derivatives
 			 pvecback),
 	pba->error_message,
@@ -2185,12 +2183,12 @@ int background_hi_class_second_loop(
 	for (i=0; i < pba->bt_size; i++) {
 
 	  // write the derivatives in the structure
-	  class_call(array_derivate_spline(pba->tau_table, // x_array
+	  class_call(array_derivate_spline(pba->loga_table, // x_array
 				     pba->bt_size, // int n_lines
 				     pba->background_table, // array
-				     pba->d2background_dtau2_table, // double * array_splined
+				     pba->d2background_dloga2_table, // double * array_splined
 				     pba->bg_size, // n_columns
-				     pba->tau_table[i], // double x -> tau
+				     pba->loga_table[i], // double x -> tau
 				     &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
 				     pvecback_derivs, // double * result
 				     pba->bg_size, //result_size, from 1 to n_columns
@@ -2235,12 +2233,12 @@ int background_hi_class_third_loop(
 	for (i=0; i < pba->bt_size; i++) {
 
     //write the derivatives in the structure
-    class_call(array_derivate_spline(pba->tau_table, // x_array
+    class_call(array_derivate_spline(pba->loga_table, // x_array
 			       pba->bt_size, // int n_lines
 			       pba->background_table, // array
-			       pba->d2background_dtau2_table, // double * array_splined
+			       pba->d2background_dloga2_table, // double * array_splined
 			       pba->bg_size, // n_columns
-			       pba->tau_table[i], // double x -> tau
+			       pba->loga_table[i], // double x -> tau
 			       &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
 			       pvecback_derivs, // double * result
 			       pba->bg_size, //result_size, from 1 to n_columns
@@ -2371,8 +2369,8 @@ int background_hi_class_third_loop(
 
 	   class_call(background_at_tau(pba,
 				   pba->tau_table[i],
-				   pba->long_info,
-				   pba->inter_normal,
+				   long_info,
+				   inter_normal,
 				   &last_index, //should be no problem to use the same one as for the derivatives
 				   pvecback),
 		 pba->error_message,
@@ -2397,6 +2395,7 @@ int background_hi_class_third_loop(
 
 int background_initial_conditions_smg(
         struct background *pba,
+				double a,
 				double * pvecback,
         double * pvecback_integration,
 				double * ptr_rho_rad
@@ -2405,8 +2404,6 @@ int background_initial_conditions_smg(
 	double rho_rad = *ptr_rho_rad;
 	double phi_scale, V_scale,p1,p2,p3; //smg related variables
 	int i = 0;
-
-	double a = pvecback_integration[pba->index_bi_a];
 
 	/** - fix initial value of modified gravity
 	* run over all possible model cases
@@ -3073,6 +3070,7 @@ int background_print_smg(
 
 int background_derivs_smg(
 			  struct background *pba,
+				double a,
 				double * pvecback,
 				double * y,
 				double * dy
@@ -3090,7 +3088,7 @@ int background_derivs_smg(
 	}
 	/** - Planck mass equation (if parameterization in terms of alpha_m **/
 	if (pba->M_pl_evolution_smg == _TRUE_)
-	  dy[pba->index_bi_delta_M_pl_smg] = y[pba->index_bi_a]*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
+	  dy[pba->index_bi_delta_M_pl_smg] = a*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
 
 	return _SUCCESS_;
 }

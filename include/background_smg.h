@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "background.h"
+#include "rootfinder.h"
 
 /**
  * Boilerplate for C++
@@ -13,6 +14,7 @@ extern "C" {
 
 int background_gravity_functions_smg(
         struct background *pba,
+        double a,
         double * pvecback_B,
         short return_format,
         double * pvecback,
@@ -64,6 +66,7 @@ int background_hi_class_third_loop(
 
 int background_initial_conditions_smg(
         struct background *pba,
+        double a,
         double * pvecback,
         double * pvecback_integration,
         double * ptr_rho_rad
@@ -97,6 +100,7 @@ int background_print_smg(
 
 int background_derivs_smg(
 			  struct background *pba,
+        double a,
 				double * pvecback,
 				double * y,
 				double * dy

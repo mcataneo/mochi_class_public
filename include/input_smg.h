@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 int input_warnings_smg(
-  struct perturbs * ppt,
+  struct perturbations * ppt,
   int input_verbose
   );
 
@@ -20,7 +20,7 @@ int input_read_parameters_smg(
   struct file_content * pfc,
   struct precision * ppr,
   struct background * pba,
-  struct perturbs * ppt,
+  struct perturbations * ppt,
   ErrorMsg errmsg
 );
 
@@ -30,7 +30,7 @@ int input_readjust_precision(
 
 int input_default_params_smg(
   struct background * pba,
-  struct perturbs * ppt
+  struct perturbations * ppt
 );
 
 

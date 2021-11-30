@@ -585,6 +585,7 @@ int background_functions(
       NOTE: different computation if scalar field (_smg) is present */
   if (pba->has_smg == _TRUE_) {
     class_call(background_gravity_functions_smg(pba,
+              a,
               pvecback_B,
               return_format,
               pvecback,
@@ -1219,7 +1220,7 @@ int background_indices(
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
 
   /* index for Hubble rate (_smg) */
-  class_define_index(pba->index_bi_H,pba->hubble_evolution,*index_bi,1);
+  class_define_index(pba->index_bi_H,pba->hubble_evolution,index_bi,1);
 
   /* - indices for scalar field (modified gravity _smg) */
   if (pba->has_smg == _TRUE_) {
@@ -2378,7 +2379,7 @@ int background_initial_conditions(
 
   if (pba->has_smg == _TRUE_) {
     class_call(
-      background_initial_conditions_smg(pba, pvecback, pvecback_integration,&rho_rad),
+      background_initial_conditions_smg(pba, a, pvecback, pvecback_integration,&rho_rad),
       pba->error_message,
       pba->error_message
     );
@@ -2408,7 +2409,7 @@ int background_initial_conditions(
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime (_smg) */
   // TODO_EB: rethink this test (r+(de?)). There was a class_test_except with free(pvecback);free(pvecback_integration);background_free(pba)
-  class_test(fabs(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
+  class_test(fabs(pvecback[pba->index_bg_Omega_r]+pvecback[pba->index_bg_Omega_de]-1.) > ppr->tol_initial_Omega_r,
              pba->error_message,
              "Omega_r = %e, Omega_de = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
              pvecback[pba->index_bg_Omega_r],pvecback[pba->index_bg_Omega_de]);
@@ -2794,7 +2795,7 @@ int background_derivs(
 
   if (pba->has_smg == _TRUE_) {
     class_call(
-      background_derivs_smg(pba, pvecback, y, dy),
+      background_derivs_smg(pba, a, pvecback, y, dy),
       pba->error_message,
       pba->error_message
     );

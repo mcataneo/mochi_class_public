@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "perturbations.h"
+#include "rootfinder.h"
 
 /**
  * Boilerplate for C++
@@ -13,10 +14,10 @@ extern "C" {
 
 int perturbations_tests_smg(struct precision * ppr,
                      struct background * pba,
-                     struct perturbs * ppt);
+                     struct perturbations * ppt);
 
 int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
-                                            struct perturbs * ppt,
+                                            struct perturbations * ppt,
                                             double k,
                                             double tau,
                                             double *mass2,
@@ -27,21 +28,21 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
 
 int perturbations_test_at_k_qs_smg(struct precision * ppr,
                             struct background * pba,
-                            struct perturbs * ppt,
+                            struct perturbations * ppt,
                             double k,
                             double tau,
                             int *approx);
 
 int perturbations_test_ini_qs_smg(struct precision * ppr,
                            struct background * pba,
-                           struct perturbs * ppt,
+                           struct perturbations * ppt,
                            double k_min,
                            double k_max,
                            double a_ini);
 
 int perturbations_find_scheme_qs_smg(struct precision * ppr,
                               struct background * pba,
-                              struct perturbs * ppt,
+                              struct perturbations * ppt,
                               struct perturbations_workspace * ppw,
                               double k,
                               double tau_ini,
@@ -49,7 +50,7 @@ int perturbations_find_scheme_qs_smg(struct precision * ppr,
 
 int sample_functions_qs_smg(struct precision * ppr,
                            struct background * pba,
-                           struct perturbs * ppt,
+                           struct perturbations * ppt,
                            double k,
                            double tau_ini,
                            double tau_end,
@@ -61,7 +62,7 @@ int sample_functions_qs_smg(struct precision * ppr,
 
 int functions_to_approx_qs_smg(struct precision * ppr,
                               struct background * pba,
-                              struct perturbs * ppt,
+                              struct perturbations * ppt,
                               double tau_ini,
                               double tau_end,
                               double * tau_sample,
@@ -82,7 +83,7 @@ int shorten_first_qs_smg(double * tau_sample,
 
 int correct_with_slope_qs_smg(struct precision * ppr,
                              struct background * pba,
-                             struct perturbs * ppt,
+                             struct perturbations * ppt,
                              double tau_ini,
                              double tau_end,
                              double * tau_array,
@@ -105,11 +106,11 @@ int fit_real_scheme_qs_smg(double tau_end,
 
 int perturbations_test_ini_grav_ic_smg(struct precision * ppr,
       struct background * pba,
-      struct perturbs * ppt);
+      struct perturbations * ppt);
 
 int perturbations_test_ini_extfld_ic_smg(struct precision * ppr,
       struct background * pba,
-      struct perturbs * ppt);
+      struct perturbations * ppt);
 
 int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, double ten, double DelM2,
                       double Omx, double wx, double l1, double l2, double l3, double l4,
@@ -117,7 +118,7 @@ int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, do
                       double * amplitude);
 
 int get_gravity_coefficients_smg(
-                               struct perturbs * ppt,
+                               struct perturbations * ppt,
                                struct background * pba,
                                double * pvecback,
                                double * delM2, double * M2, double * kin, double * bra,
@@ -134,13 +135,13 @@ int get_gravity_coefficients_smg(
 int get_x_x_prime_qs_smg(
                         struct precision * ppr,
                         struct background * pba,
-                        struct perturbs * ppt,
+                        struct perturbations * ppt,
                         struct perturbations_workspace * ppw,
                         double k, double * x_qs_smg, double * x_prime_qs_smg
                         );
 
 int hi_class_define_indices_tp(
-         struct perturbs * ppt,
+         struct perturbations * ppt,
 				 int * index_type
 			 );
 
@@ -151,14 +152,14 @@ int hi_class_define_indices_mt(
 
 int perturbations_hi_class_qs(struct precision * ppr,
                        struct background * pba,
-                       struct perturbs * ppt,
+                       struct perturbations * ppt,
                        struct perturbations_workspace * ppw,
                        double k,
                        double * tau_ini,
                        double tau_end);
 
 int perturbations_store_columntitles_smg(
-				struct perturbs * ppt
+				struct perturbations * ppt
 			  );
 
 // int perturbations_store_doubles_smg(
@@ -169,7 +170,7 @@ int perturbations_store_columntitles_smg(
 // 			  );
 
 int perturbations_verbose_qs_smg(
-				struct perturbs * ppt,
+				struct perturbations * ppt,
         struct perturbations_workspace * ppw,
         double k,
         double tau_switch,
@@ -192,7 +193,7 @@ int perturbations_vector_init_smg(
 int perturbations_adiabatic_ic_smg(
       struct precision * ppr,
       struct background * pba,
-      struct perturbs * ppt,
+      struct perturbations * ppt,
       struct perturbations_workspace * ppw,
       double * ptr_eta,
       double * ptr_delta_ur,
@@ -210,7 +211,7 @@ int perturbations_adiabatic_ic_smg(
 int perturbations_isocurvature_cdm_ic_smg(
      struct precision * ppr,
      struct background * pba,
-     struct perturbs * ppt,
+     struct perturbations * ppt,
      struct perturbations_workspace * ppw,
      double tau,
      double k,
@@ -221,7 +222,7 @@ int perturbations_isocurvature_cdm_ic_smg(
 int perturbations_isocurvature_b_ic_smg(
     struct precision * ppr,
     struct background * pba,
-    struct perturbs * ppt,
+    struct perturbations * ppt,
     struct perturbations_workspace * ppw,
     double tau,
     double k,
@@ -232,7 +233,7 @@ int perturbations_isocurvature_b_ic_smg(
 int perturbations_isocurvature_urd_ic_smg(
    struct precision * ppr,
    struct background * pba,
-   struct perturbs * ppt,
+   struct perturbations * ppt,
    struct perturbations_workspace * ppw,
    double tau,
    double k,
@@ -245,7 +246,7 @@ int perturbations_isocurvature_urd_ic_smg(
 int perturbations_isocurvature_urv_ic_smg(
   struct precision * ppr,
   struct background * pba,
-  struct perturbs * ppt,
+  struct perturbations * ppt,
   struct perturbations_workspace * ppw,
   double tau,
   double k,
@@ -268,7 +269,7 @@ int perturbations_get_h_prime_ic_from_00(
 			 );
 
 int perturbations_approximations_smg(
-  struct perturbs * ppt,
+  struct perturbations * ppt,
   struct perturbations_workspace * ppw,
   double tau
 );
@@ -276,8 +277,8 @@ int perturbations_approximations_smg(
 int perturbations_einstein_smg(
   struct precision * ppr,
   struct background * pba,
-  struct thermo * pth,
-  struct perturbs * ppt,
+  struct thermodynamics * pth,
+  struct perturbations * ppt,
   struct perturbations_workspace * ppw,
   double k,
   double tau,
@@ -294,7 +295,7 @@ int perturbations_einstein_tensor_smg(
 
 int perturbations_print_variables_smg(
   struct background * pba,
-  struct perturbs * ppt,
+  struct perturbations * ppt,
   struct perturbations_workspace * ppw,
   double k,
   double tau,
@@ -303,7 +304,7 @@ int perturbations_print_variables_smg(
 );
 
 int perturbations_derivs_smg(
-  struct perturbs * ppt,
+  struct perturbations * ppt,
   struct perturbations_workspace * ppw,
   struct perturbations_vector * pv,
   double * dy,

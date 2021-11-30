@@ -3275,7 +3275,7 @@ int fourier_hmcode(
         z_at_tau,
         & Delta_v_0
       ),
-      pnl->error_message, pnl->error_message);
+      pfo->error_message, pfo->error_message);
   };
 
   // virialized overdensity

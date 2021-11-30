@@ -126,6 +126,19 @@ extern "C" {
 		       ErrorMsg errmsg
 		       );
 
+  int array_derivate_spline(
+                           double * x_array,
+                           int n_lines,
+                           double * array,
+                           double * array_splined,
+                           int n_columns,
+                           double x,
+                           int * last_index,
+                           double * result,
+                           int result_size, /** from 1 to n_columns */
+                           ErrorMsg errmsg
+  		   );
+
   int array_logspline_table_lines(
 				  double * x,
 				  int x_size,

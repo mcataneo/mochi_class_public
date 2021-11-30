@@ -2565,6 +2565,7 @@ int perturbations_workspace_init(
     if (ppt->gauge == synchronous) {
       class_define_index(ppw->index_mt_h_prime,_TRUE_,index_mt,1);       /* h' */
       class_define_index(ppw->index_mt_h_prime_prime,_TRUE_,index_mt,1); /* h'' */
+      class_define_index(ppw->index_mt_eta,_TRUE_,index_mt,1);           /* eta */
       class_define_index(ppw->index_mt_eta_prime,_TRUE_,index_mt,1);     /* eta' */
       class_define_index(ppw->index_mt_alpha,_TRUE_,index_mt,1);         /* alpha = (h' + 6 tau') / (2 k**2) */
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
@@ -6525,6 +6526,9 @@ int perturbations_einstein(
       }
       else { // Standard equations
 
+        /* Get eta from the integrator */
+        ppw->pvecmetric[ppw->index_mt_eta] = y[ppw->pv->index_pt_eta];
+
         /* first equation involving total density fluctuation (not only _smg) */
         if (ppt->get_h_from_trace == _TRUE_) {
           ppw->pvecmetric[ppw->index_mt_h_prime] = y[ppw->pv->index_pt_h_prime_from_trace];
@@ -6865,6 +6869,8 @@ int perturbations_total_stress_energy(
     ppw->delta_p = 1./3.*ppw->pvecback[pba->index_bg_rho_g]*delta_g
       + ppw->pvecback[pba->index_bg_rho_b]*delta_p_b_over_rho_b; // contribution to total perturbed stress-energy
     ppw->rho_plus_p_tot = 4./3. * ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_b];
+    ppw->delta_rho_r = ppw->pvecback[pba->index_bg_rho_g]*delta_g;
+    ppw->rho_plus_p_theta_r = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*theta_g;
 
     if (ppt->has_source_delta_m == _TRUE_) {
       delta_rho_m = ppw->pvecback[pba->index_bg_rho_b]*y[ppw->pv->index_pt_delta_b]; // contribution to delta rho_matter
@@ -6953,6 +6959,8 @@ int perturbations_total_stress_energy(
       ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
 
       ppw->rho_plus_p_tot += 4./3. * ppw->pvecback[pba->index_bg_rho_ur];
+      ppw->delta_rho_r = ppw->delta_rho_r + ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
+      ppw->rho_plus_p_theta_r = ppw->rho_plus_p_theta_r + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*theta_ur;
     }
 
     /* interacting dark radiation */
@@ -7457,11 +7465,11 @@ int perturbations_sources(
                error_message);
 
     if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_) && (ppr->tol_einstein00_reldev>0)) { // not only _smg
-     double check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a_rel,2)/ppw->pvecmetric[ppw->index_mt_eta];
+     double check_einstein00 = pvecmetric[ppw->index_mt_einstein00]/2./k/k*pow(a,2)/y[ppw->pv->index_pt_eta];
      class_test(
        fabs(check_einstein00)>ppr->tol_einstein00_reldev,
        ppt->error_message,
-       "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace==FALSE to get a consistent evolution. Otherwise you can increase tol_einstein00_reldev if you can tolerate larger deviations to this equation.", a_rel, k);
+       "The Einstein 00 equation is not satisfied at a=%e and k=%e. Try to set get_h_from_trace==FALSE to get a consistent evolution. Otherwise you can increase tol_einstein00_reldev if you can tolerate larger deviations to this equation.", a, k);
     }
 
     /** - --> compute quantities depending on approximation schemes */
@@ -7998,6 +8006,9 @@ int perturbations_print_variables(double tau,
   double * pvecthermo;
   double * pvecmetric;
 
+  double h_prime=0., eta=0.;
+  double h_prime_prime=0., eta_prime=0.;
+  double alpha_mt_prime=0., alpha_mt=0.;
   double delta_g,theta_g,shear_g,l4_g,pol0_g,pol1_g,pol2_g,pol4_g;
   double delta_b,theta_b;
   double delta_cdm=0.,theta_cdm=0.;
@@ -8306,7 +8317,7 @@ int perturbations_print_variables(double tau,
       /* metric perturbations (not only _smg) */
       h_prime = ppw->pvecmetric[ppw->index_mt_h_prime];
       h_prime_prime = ppw->pvecmetric[ppw->index_mt_h_prime_prime];
-      eta = ppw->pvecmetric[ppw->index_mt_eta];
+      eta = y[ppw->pv->index_pt_eta];
       eta_prime = ppw->pvecmetric[ppw->index_mt_eta_prime];
       alpha_mt = ppw->pvecmetric[ppw->index_mt_alpha];
       alpha_mt_prime = ppw->pvecmetric[ppw->index_mt_alpha_prime];
@@ -10104,6 +10115,8 @@ int perturbations_rsa_delta_and_theta(
   double k2;
 
   k2 = k*k;
+
+  double a2 = pow(ppw->pvecback[pba->index_bg_a],2.);
 
   class_test(ppw->approx[ppw->index_ap_rsa] == (int)rsa_off,
              "this function should not have been called now, bug was introduced",

@@ -1,11 +1,11 @@
 #include "perturbations_smg.h"
 
 
-//Here we do the smg tests. It is important to have them after perturb_indices_of_perturbs because we need
+//Here we do the smg tests. It is important to have them after perturbations_indices_of_perturbs because we need
 //quantities as k_min and k_max.
-int perturb_tests_smg(struct precision * ppr,
+int perturbations_tests_smg(struct precision * ppr,
                       struct background * pba,
-                      struct perturbs * ppt) {
+                      struct perturbations * ppt) {
 
         class_test(ppt->gauge == newtonian,
                    ppt->error_message,
@@ -16,9 +16,8 @@ int perturb_tests_smg(struct precision * ppr,
                    "The initial time for testing the QS approximation (qs_smg) must be bigger than the background initial time (a_ini_test_qs_smg>=a_ini_over_a_today_default).");
 
         if ( ppt->pert_initial_conditions_smg == gravitating_attr ) {
-                class_test_except((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
+                class_test((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
                                   ppt->error_message,
-                                  perturb_free_nosource(ppt),
                                   "Isocurvature initial conditions for early modified gravity (Gravitating Attractor) not implemented.");
         }
 
@@ -27,15 +26,14 @@ int perturb_tests_smg(struct precision * ppr,
 
         if (ppt->method_qs_smg == automatic) {
                 //Check if at the initial time all the k modes start with the same kind of qs_smg approximation
-                class_call_except(perturb_test_ini_qs_smg(ppr,
+                class_call(perturbations_test_ini_qs_smg(ppr,
                                                           pba,
                                                           ppt,
                                                           ppt->k[ppt->index_md_scalars][0],
                                                           ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
                                                           ppr->a_ini_test_qs_smg),
                                   ppt->error_message,
-                                  ppt->error_message,
-                                  perturb_free_nosource(ppt));
+                                  ppt->error_message);
         }
 
         if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==_TRUE_))) {
@@ -48,23 +46,21 @@ int perturb_tests_smg(struct precision * ppr,
                         // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
                         // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and
                         // the initial amplitude supplied to hi_class.
-                        class_call_except(perturb_test_ini_grav_ic_smg(ppr,
+                        class_call(perturbations_test_ini_grav_ic_smg(ppr,
                                                                        pba,
                                                                        ppt),
                                           ppt->error_message,
-                                          ppt->error_message,
-                                          perturb_free_nosource(ppt));
+                                          ppt->error_message);
                 }
                 else if( ppt->pert_initial_conditions_smg == ext_field_attr) {
                         //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
                         // If have it, fail, because we can't set the ICs properly
 
-                        class_call_except(perturb_test_ini_extfld_ic_smg(ppr,
+                        class_call(perturbations_test_ini_extfld_ic_smg(ppr,
                                                                          pba,
                                                                          ppt),
                                           ppt->error_message,
-                                          ppt->error_message,
-                                          perturb_free_nosource(ppt));
+                                          ppt->error_message);
                 }
         }
 
@@ -72,8 +68,8 @@ int perturb_tests_smg(struct precision * ppr,
 
 }
 
-int perturb_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
-                                             struct perturbs * ppt,
+int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
+                                             struct perturbations * ppt,
                                              double k,
                                              double tau,
                                              double *mass2,
@@ -90,8 +86,8 @@ int perturb_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
         class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
         class_call(background_at_tau(pba,
                                      tau,
-                                     pba->normal_info,
-                                     pba->inter_normal,
+                                     normal_info,
+                                     inter_normal,
                                      &first_index_back,
                                      pvecback),
                    pba->error_message,
@@ -154,9 +150,9 @@ int perturb_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
 
 }
 
-int perturb_test_at_k_qs_smg(struct precision * ppr,
+int perturbations_test_at_k_qs_smg(struct precision * ppr,
                              struct background * pba,
-                             struct perturbs * ppt,
+                             struct perturbations * ppt,
                              double k,
                              double tau,
                              int *approx) {
@@ -164,7 +160,7 @@ int perturb_test_at_k_qs_smg(struct precision * ppr,
         //Define local variables
         double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
 
-        perturb_qs_functions_at_tau_and_k_qs_smg(
+        perturbations_qs_functions_at_tau_and_k_qs_smg(
                 pba,
                 ppt,
                 k,
@@ -201,9 +197,9 @@ int perturb_test_at_k_qs_smg(struct precision * ppr,
 
 }
 
-int perturb_test_ini_qs_smg(struct precision * ppr,
+int perturbations_test_ini_qs_smg(struct precision * ppr,
                             struct background * pba,
-                            struct perturbs * ppt,
+                            struct perturbations * ppt,
                             double k_min,
                             double k_max,
                             double a_ini) {
@@ -221,7 +217,7 @@ int perturb_test_ini_qs_smg(struct precision * ppr,
                    ppt->error_message);
 
         //Approximation for k_min
-        perturb_test_at_k_qs_smg(
+        perturbations_test_at_k_qs_smg(
                 ppr,
                 pba,
                 ppt,
@@ -231,7 +227,7 @@ int perturb_test_ini_qs_smg(struct precision * ppr,
                 );
 
         //Approximation for k_max
-        perturb_test_at_k_qs_smg(
+        perturbations_test_at_k_qs_smg(
                 ppr,
                 pba,
                 ppt,
@@ -253,10 +249,10 @@ int perturb_test_ini_qs_smg(struct precision * ppr,
 
 }
 
-int perturb_find_scheme_qs_smg(struct precision * ppr,
+int perturbations_find_scheme_qs_smg(struct precision * ppr,
                                struct background * pba,
-                               struct perturbs * ppt,
-                               struct perturb_workspace * ppw,
+                               struct perturbations * ppt,
+                               struct perturbations_workspace * ppw,
                                double k,
                                double tau_ini,
                                double tau_end) {
@@ -418,7 +414,7 @@ int perturb_find_scheme_qs_smg(struct precision * ppr,
 
 int sample_functions_qs_smg(struct precision * ppr,
                             struct background * pba,
-                            struct perturbs * ppt,
+                            struct perturbations * ppt,
                             double k,
                             double tau_ini,
                             double tau_end,
@@ -439,7 +435,7 @@ int sample_functions_qs_smg(struct precision * ppr,
         * interesting quantities for the quasi-static approximation */
         while (tau < tau_end) {
 
-                perturb_qs_functions_at_tau_and_k_qs_smg(
+                perturbations_qs_functions_at_tau_and_k_qs_smg(
                         pba,
                         ppt,
                         k,
@@ -479,7 +475,7 @@ int sample_functions_qs_smg(struct precision * ppr,
 
 int functions_to_approx_qs_smg(struct precision * ppr,
                                struct background * pba,
-                               struct perturbs * ppt,
+                               struct perturbations * ppt,
                                double tau_ini,
                                double tau_end,
                                double * tau_sample,
@@ -584,7 +580,7 @@ int shorten_first_qs_smg(double * tau_sample,
 
 int correct_with_slope_qs_smg(struct precision * ppr,
                               struct background * pba,
-                              struct perturbs * ppt,
+                              struct perturbations * ppt,
                               double tau_ini,
                               double tau_end,
                               double * tau_array,
@@ -603,8 +599,8 @@ int correct_with_slope_qs_smg(struct precision * ppr,
                         class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
                         class_call(background_at_tau(pba,
                                                      tau_array[i],
-                                                     pba->short_info,
-                                                     pba->inter_normal,
+                                                     short_info,
+                                                     inter_normal,
                                                      &first_index_back,
                                                      pvecback),
                                    pba->error_message,
@@ -787,9 +783,9 @@ int fit_real_scheme_qs_smg(double tau_end,
  * Test for stability of solutions in RD before initialisation of
  * perturbations: if standard solution not stable, cannot set ICs properly.
  */
-int perturb_test_ini_grav_ic_smg(struct precision * ppr,
+int perturbations_test_ini_grav_ic_smg(struct precision * ppr,
                                  struct background * pba,
-                                 struct perturbs * ppt){
+                                 struct perturbations * ppt){
 // test stability of gravitating_attr ICs
 
         double kin, bra, run, ten, DelM2, Omx, wx;
@@ -812,8 +808,8 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
 
         class_call(background_at_tau(pba,
                                      tau_ini,
-                                     pba->long_info,
-                                     pba->inter_normal,
+                                     long_info,
+                                     inter_normal,
                                      &first_index_back,
                                      pvecback),
                    pba->error_message,
@@ -989,9 +985,9 @@ int perturb_test_ini_grav_ic_smg(struct precision * ppr,
  * Test for tachyonic instability of x_smg in RD before initialisation of
  * perturbations: if not stable, cannot set ICs properly.
  */
-int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
+int perturbations_test_ini_extfld_ic_smg(struct precision * ppr,
                                    struct background * pba,
-                                   struct perturbs * ppt){
+                                   struct perturbations * ppt){
 
 
         double kin, bra, run, ten, DelM2, Omx, wx;
@@ -1012,8 +1008,8 @@ int perturb_test_ini_extfld_ic_smg(struct precision * ppr,
 
         class_call(background_at_tau(pba,
                                      tau_ini,
-                                     pba->long_info,
-                                     pba->inter_normal,
+                                     long_info,
+                                     inter_normal,
                                      &first_index_back,
                                      pvecback),
                    pba->error_message,
@@ -1172,7 +1168,7 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
 }
 
 int get_gravity_coefficients_smg(
-        struct perturbs * ppt,
+        struct perturbations * ppt,
         struct background * pba,
         double * pvecback,
         double * delM2, double * M2, double * kin, double * bra,
@@ -1278,8 +1274,8 @@ int get_gravity_coefficients_smg(
 int get_x_x_prime_qs_smg(
         struct precision * ppr,
         struct background * pba,
-        struct perturbs * ppt,
-        struct perturb_workspace * ppw,
+        struct perturbations * ppt,
+        struct perturbations_workspace * ppw,
         double k, double * x_qs_smg, double * x_prime_qs_smg
         ){
 
@@ -1350,7 +1346,7 @@ int get_x_x_prime_qs_smg(
          * - we used the conservation equation for radiation to get rid of delta_rho_r'
          * - we used the Einstein equations to get rid of eta', h'', alpha'
          * The result is approximated when rsa is on since the velocity of radiation gets updated only after
-         * this call in perturb_einstein */
+         * this call in perturbations_einstein */
 
         if (ppt->get_h_from_trace == _TRUE_) {
                 /* Numerator of the scalar field derivative in QS with h' */
@@ -1503,7 +1499,7 @@ int get_x_x_prime_qs_smg(
 }
 
 int hi_class_define_indices_tp(
-         struct perturbs * ppt,
+         struct perturbations * ppt,
 				 int * index_type
 			 ) {
 
@@ -1514,7 +1510,7 @@ int hi_class_define_indices_tp(
 }
 
 int hi_class_define_indices_mt(
-        struct perturb_workspace * ppw,
+        struct perturbations_workspace * ppw,
   			int * index_mt
 			 ) {
 
@@ -1526,10 +1522,10 @@ int hi_class_define_indices_mt(
   return _SUCCESS_;
 }
 
-int perturb_hi_class_qs(struct precision * ppr,
+int perturbations_hi_class_qs(struct precision * ppr,
                        struct background * pba,
-                       struct perturbs * ppt,
-                       struct perturb_workspace * ppw,
+                       struct perturbations * ppt,
+                       struct perturbations_workspace * ppw,
                        double k,
                        double * tau_ini,
                        double tau_end) {
@@ -1549,7 +1545,7 @@ int perturb_hi_class_qs(struct precision * ppr,
     is_early_enough = _FALSE_;
     while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
       int approx;
-      perturb_test_at_k_qs_smg(ppr,
+      perturbations_test_at_k_qs_smg(ppr,
                               pba,
                               ppt,
                               k,
@@ -1571,7 +1567,7 @@ int perturb_hi_class_qs(struct precision * ppr,
   class_alloc(ppw->tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
 
   if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
-  class_call(perturb_find_scheme_qs_smg(ppr,
+  class_call(perturbations_find_scheme_qs_smg(ppr,
                                        pba,
 			                                 ppt,
                                        ppw,
@@ -1586,8 +1582,8 @@ int perturb_hi_class_qs(struct precision * ppr,
   return _SUCCESS_;
 }
 
-int perturb_store_columntitles_smg(
-				struct perturbs * ppt
+int perturbations_store_columntitles_smg(
+				struct perturbations * ppt
       ) {
 
   if (ppt->use_pert_var_deltaphi_smg==_TRUE_) {
@@ -1611,9 +1607,9 @@ int perturb_store_columntitles_smg(
   return _SUCCESS_;
 }
 
-int perturb_verbose_qs_smg(
-				struct perturbs * ppt,
-        struct perturb_workspace * ppw,
+int perturbations_verbose_qs_smg(
+				struct perturbations * ppt,
+        struct perturbations_workspace * ppw,
         double k,
         double tau_switch,
         int * ap_ini,
@@ -1635,8 +1631,8 @@ int perturb_verbose_qs_smg(
 }
 
 int hi_class_define_indices_pt(
-        struct perturb_workspace * ppw,
-        struct perturb_vector * ppv,
+        struct perturbations_workspace * ppw,
+        struct perturbations_vector * ppv,
 				int * index_pt
       ) {
 
@@ -1651,9 +1647,9 @@ int hi_class_define_indices_pt(
   return _SUCCESS_;
 }
 
-int perturb_vector_init_smg(
-        struct perturb_workspace * ppw,
-        struct perturb_vector * ppv,
+int perturbations_vector_init_smg(
+        struct perturbations_workspace * ppw,
+        struct perturbations_vector * ppv,
         int * pa_old
       ) {
 
@@ -1679,11 +1675,11 @@ int perturb_vector_init_smg(
   return _SUCCESS_;
 }
 
-int perturb_adiabatic_ic_smg(
+int perturbations_adiabatic_ic_smg(
       struct precision * ppr,
       struct background * pba,
-      struct perturbs * ppt,
-      struct perturb_workspace * ppw,
+      struct perturbations * ppt,
+      struct perturbations_workspace * ppw,
       double * ptr_eta,
       double * ptr_delta_ur,
       double * ptr_theta_ur,
@@ -2207,7 +2203,7 @@ int perturb_adiabatic_ic_smg(
     We know that the standard solution for eta' is k^2*tau, so we will require that the QS solution
     at the scale of initialisation is no more than an order 1 correction to that. If this test is failed
     then quit with error. If it is passed, we don't actually change any ICs, since all matter species are standard
-    and the x_smg/x_smg' are assigned in perturb_einstein
+    and the x_smg/x_smg' are assigned in perturbations_einstein
     */
 
     double delta_g = 0., delta_rho = 0., delta_rho_r = 0., delta_p = 0;
@@ -2223,7 +2219,7 @@ int perturb_adiabatic_ic_smg(
     rho_plus_p_theta = 4. / 3. * rho_r * ppw->pv->y[ppw->pv->index_pt_theta_g];
     rho_plus_p_theta_r = rho_plus_p_theta;
 
-    // Below QS equations are copied from perturb_einstein: make sure any changes there are reflected
+    // Below QS equations are copied from perturbations_einstein: make sure any changes there are reflected
     // QS-IC-change
 
     x_smg = (4. * cs2num * pow(k, 2) * M2 * eta + 6. * l2 * delta_rho * pow(a, 2) +
@@ -2318,11 +2314,11 @@ TODO: Gravitating attractor isocurvature modes.
 */
 
 
-int perturb_isocurvature_cdm_ic_smg(
+int perturbations_isocurvature_cdm_ic_smg(
      struct precision * ppr,
      struct background * pba,
-     struct perturbs * ppt,
-     struct perturb_workspace * ppw,
+     struct perturbations * ppt,
+     struct perturbations_workspace * ppw,
      double tau,
      double k,
      double fraccdm,
@@ -2391,11 +2387,11 @@ int perturb_isocurvature_cdm_ic_smg(
   return _SUCCESS_;
 }
 
-int perturb_isocurvature_b_ic_smg(
+int perturbations_isocurvature_b_ic_smg(
     struct precision * ppr,
     struct background * pba,
-    struct perturbs * ppt,
-    struct perturb_workspace * ppw,
+    struct perturbations * ppt,
+    struct perturbations_workspace * ppw,
     double tau,
     double k,
     double fracb,
@@ -2462,11 +2458,11 @@ int perturb_isocurvature_b_ic_smg(
   return _SUCCESS_;
 }
 
-int perturb_isocurvature_urd_ic_smg(
+int perturbations_isocurvature_urd_ic_smg(
     struct precision * ppr,
     struct background * pba,
-    struct perturbs * ppt,
-    struct perturb_workspace * ppw,
+    struct perturbations * ppt,
+    struct perturbations_workspace * ppw,
     double tau,
     double k,
     double fracnu,
@@ -2552,11 +2548,11 @@ int perturb_isocurvature_urd_ic_smg(
   return _SUCCESS_;
 }
 
-int perturb_isocurvature_urv_ic_smg(
+int perturbations_isocurvature_urv_ic_smg(
     struct precision * ppr,
     struct background * pba,
-    struct perturbs * ppt,
-    struct perturb_workspace * ppw,
+    struct perturbations * ppt,
+    struct perturbations_workspace * ppw,
     double tau,
     double k,
     double fracnu,
@@ -2638,8 +2634,8 @@ int perturb_isocurvature_urv_ic_smg(
   return _SUCCESS_;
 }
 
-int perturb_get_x_x_prime_newtonian(
- struct perturb_workspace * ppw
+int perturbations_get_x_x_prime_newtonian(
+ struct perturbations_workspace * ppw
 ) {
 
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
@@ -2653,9 +2649,9 @@ int perturb_get_x_x_prime_newtonian(
   return _SUCCESS_;
 }
 
-int perturb_get_h_prime_ic_from_00(
+int perturbations_get_h_prime_ic_from_00(
   struct background * pba,
-  struct perturb_workspace * ppw,
+  struct perturbations_workspace * ppw,
   double k,
   double eta,
   double delta_rho_tot
@@ -2677,9 +2673,9 @@ int perturb_get_h_prime_ic_from_00(
   return _SUCCESS_;
 }
 
-int perturb_approximations_smg(
-  struct perturbs * ppt,
-  struct perturb_workspace * ppw,
+int perturbations_approximations_smg(
+  struct perturbations * ppt,
+  struct perturbations_workspace * ppw,
   double tau
 ) {
 
@@ -2725,12 +2721,12 @@ int perturb_approximations_smg(
   return _SUCCESS_;
 }
 
-int perturb_einstein_smg(
+int perturbations_einstein_smg(
   struct precision * ppr,
   struct background * pba,
-  struct thermo * pth,
-  struct perturbs * ppt,
-  struct perturb_workspace * ppw,
+  struct thermodynamics * pth,
+  struct perturbations * ppt,
+  struct perturbations_workspace * ppw,
   double k,
   double tau,
   double * y
@@ -2836,14 +2832,14 @@ int perturb_einstein_smg(
       )*pow(a,-2)
     )/cD;
 
-    class_call(perturb_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
+    class_call(perturbations_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
       ppt->error_message,
       ppt->error_message);
   }
 
   if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
 
-    class_call(perturb_rsa_idr_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw),
+    class_call(perturbations_rsa_idr_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
                ppt->error_message,
                ppt->error_message);
 
@@ -2956,9 +2952,9 @@ int perturb_einstein_smg(
   return _SUCCESS_;
 }
 
-int perturb_einstein_tensor_smg(
+int perturbations_einstein_tensor_smg(
   struct background * pba,
-  struct perturb_workspace * ppw,
+  struct perturbations_workspace * ppw,
   double k,
   double tau,
   double * y
@@ -2977,10 +2973,10 @@ int perturb_einstein_tensor_smg(
   return _SUCCESS_;
 }
 
-int perturb_print_variables_smg(
+int perturbations_print_variables_smg(
   struct background * pba,
-  struct perturbs * ppt,
-  struct perturb_workspace * ppw,
+  struct perturbations * ppt,
+  struct perturbations_workspace * ppw,
   double k,
   double tau,
   double * dataptr,
@@ -2995,7 +2991,7 @@ int perturb_print_variables_smg(
   double x_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
   double x_prime_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg];
 
-  perturb_qs_functions_at_tau_and_k_qs_smg(
+  perturbations_qs_functions_at_tau_and_k_qs_smg(
                                           pba,
                                           ppt,
                                           k,
@@ -3022,10 +3018,10 @@ int perturb_print_variables_smg(
   return _SUCCESS_;
 }
 
-int perturb_derivs_smg(
-  struct perturbs * ppt,
-  struct perturb_workspace * ppw,
-  struct perturb_vector * pv,
+int perturbations_derivs_smg(
+  struct perturbations * ppt,
+  struct perturbations_workspace * ppw,
+  struct perturbations_vector * pv,
   double * dy,
   double * pvecmetric
 ) {
@@ -3042,7 +3038,7 @@ int perturb_derivs_smg(
     /** ---> scalar field velocity */
     dy[pv->index_pt_x_smg] =  pvecmetric[ppw->index_mt_x_prime_smg];
 
-    /** ---> Scalar field acceleration (passes the value obtained in perturb_einstein) */
+    /** ---> Scalar field acceleration (passes the value obtained in perturbations_einstein) */
     dy[pv->index_pt_x_prime_smg] =  pvecmetric[ppw->index_mt_x_prime_prime_smg];
 
   }

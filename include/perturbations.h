@@ -79,6 +79,9 @@ enum possible_gauges {
 
 //@}
 
+// list of possible initial conditions for the perturbations (_smg)
+enum pert_possible_initial_conditions {single_clock, zero, kin_only, gravitating_attr, ext_field_attr};
+
 //@{
 
 /**
@@ -547,6 +550,7 @@ struct perturbations_vector
   int index_pt_phi;	      /**< newtonian gauge metric perturbation phi */
   int index_pt_hv_prime;  /**< vector metric perturbation h_v' in synchronous gauge */
   int index_pt_V;         /**< vector metric perturbation V in Newtonian gauge */
+  int index_pt_h_prime_from_trace; /**< synchronous gauge metric perturbation h_prime from the integrator (not only _smg) */
 
   int index_pt_gw;        /**< tensor metric perturbation h (gravitational waves) */
   int index_pt_gwdot;     /**< its time-derivative */
@@ -582,6 +586,7 @@ struct perturbations_workspace
   int index_mt_phi_prime;     /**< (d phi/d conf.time) in longitudinal gauge */
   int index_mt_h_prime;       /**< h' (wrt conf. time) in synchronous gauge */
   int index_mt_h_prime_prime; /**< h'' (wrt conf. time) in synchronous gauge */
+  int index_mt_eta;           /**< eta in synchronous gauge */
   int index_mt_eta_prime;     /**< eta' (wrt conf. time) in synchronous gauge */
   int index_mt_alpha;         /**< \f$ \alpha = (h' + 6 \eta') / (2 k^2) \f$ in synchronous gauge */
   int index_mt_alpha_prime;   /**< \f$ \alpha'\f$ wrt conf. time) in synchronous gauge */
@@ -614,6 +619,8 @@ struct perturbations_workspace
   double rho_plus_p_theta;	/**< total (rho+p)*theta perturbation (gives delta Toi) */
   double rho_plus_p_shear;	/**< total (rho+p)*shear (gives delta Tij) */
   double delta_p;		    /**< total pressure perturbation (gives Tii) */
+  double delta_rho_r;		    /**< radiation density perturbation */
+  double rho_plus_p_theta_r; /**< radiation (rho+p)*theta perturbation */
 
   double rho_plus_p_tot;    /**< total (rho+p) (used to infer theta_tot from rho_plus_p_theta) */
 

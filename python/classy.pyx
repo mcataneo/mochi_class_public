@@ -1452,7 +1452,7 @@ cdef class Class:
         if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if background_at_tau(&self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+        if background_at_tau(&self.ba,tau,long_info,inter_normal,&last_index,pvecback)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
         G_eff = pvecback[self.ba.index_bg_G_eff_smg]
@@ -1486,7 +1486,7 @@ cdef class Class:
         if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if background_at_tau(&self.ba,tau,self.ba.long_info,self.ba.inter_normal,&last_index,pvecback)==_FAILURE_:
+        if background_at_tau(&self.ba,tau,long_info,inter_normal,&last_index,pvecback)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
         slip = pvecback[self.ba.index_bg_slip_eff_smg]
@@ -1854,7 +1854,7 @@ cdef class Class:
         if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if perturb_qs_functions_at_tau_and_k_qs_smg(&self.ba,&self.pt, k, tau,
+        if perturbations_qs_functions_at_tau_and_k_qs_smg(&self.ba,&self.pt, k, tau,
           &mass2_qs, &mass2_qs_p, &rad2_qs, &friction_qs, &slope_qs)==_FAILURE_:
             raise CosmoSevereError(self.pt.error_message)
 

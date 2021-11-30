@@ -32,4 +32,7 @@
 #include "lensing.h"
 #include "output.h"
 
+/* hi_class modules */
+#include "hi_class.h"
+
 #endif

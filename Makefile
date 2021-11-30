@@ -98,7 +98,7 @@ vpath %.c $(HI_CLASS_PATH)
 CCFLAG += -DHI_CLASS_PATH
 #LDFLAGS += -DHI_CLASS_PATH
 INCLUDES += -I../gravity_smg
-EXTERNAL += input_smg.o background_smg.o perturbations_smg.o nonlinear_smg.o gravity_functions_smg.o gravity_models_smg.o
+EXTERNAL += input_smg.o background_smg.o perturbations_smg.o fourier_smg.o gravity_functions_smg.o gravity_models_smg.o
 endif
 
 %.o:  %.c .base $(HEADERFILES)
