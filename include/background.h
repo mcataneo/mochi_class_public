@@ -363,11 +363,11 @@ struct background
   int index_bg_C12_prime_smg;
   int index_bg_C13_prime_smg;
 
-
   int index_bg_kinetic_D_smg;
   int index_bg_kinetic_D_prime_smg;
   int index_bg_kinetic_D_over_phiphi_smg;
   int index_bg_kinetic_D_over_phiphi_prime_smg;
+
   int index_bg_lambda_1_smg;
   int index_bg_lambda_2_smg;
   int index_bg_lambda_3_smg;
