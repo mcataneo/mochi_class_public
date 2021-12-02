@@ -689,32 +689,40 @@ pba->skip_stability_tests_smg = _FALSE_;
    /** Read the desired Planck mass and check that the necessary information is provided.
     *  if needed re-assign shooting parameter for the Planck mass
     */
-   flag1==_FALSE_;
-   class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
-   if (flag1==_TRUE_){
+    class_call(parser_read_string(pfc, "M_pl_tuning_smg", &string1, &flag1, errmsg),
+      errmsg,
+      errmsg);
 
-     class_test(pba->gravity_model_smg!=brans_dicke,
- 	 errmsg,
- 	 "You asked to tune M_pl(today) to %e but currently this is only allowed for Brans-Dicke\n",
- 	 pba->M_pl_today_smg);
+    if (flag1 == _TRUE_){
+      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
 
-     class_call(parser_read_string(pfc,"normalize_G_NR",
- 			  &string1,
- 			  &flag1,
- 			  errmsg),
- 	errmsg,
- 	errmsg);
+        pba->M_pl_tuning_smg = _TRUE_;
 
-   if (flag1 == _TRUE_){
-     if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-         double omega_BD = pba->parameters_smg[1];
-         pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
-     }
-   }
+        class_test(pba->gravity_model_smg!=brans_dicke,
+    	    errmsg,
+    	    "You asked to tune M_pl(today) to %e but currently this is only allowed for Brans-Dicke\n",
+    	    pba->M_pl_today_smg);
 
-     class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
- //       printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
-   }
+        class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
+
+        class_call(parser_read_string(pfc,"normalize_G_NR",
+      		&string1,
+      		&flag1,
+      		errmsg),
+      	errmsg,
+      	errmsg);
+
+        if (flag1 == _TRUE_){
+          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+            double omega_BD = pba->parameters_smg[1];
+            pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
+          }
+        }
+
+        class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
+        // printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
+      }
+    }
 
   //how much info on background.dat?
   class_read_double("output_background_smg",pba->output_background_smg);
