@@ -2073,10 +2073,16 @@ int background_gravity_functions_A_C_smg(
 	       "cannot copy data back to pba->background_table");
 
 
+	// TODO_EB: revisit G_eff and slip_eff for beyond horndeski
 	double beta_1 = (run + (-1.)*ten)*2. + (1. + ten)*bra;
 	double beta_2 = 2.*beta_1 + (2. + (-2.)*M2 + bra*M2)*(rho_tot + p_tot)*(-3.)*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)*pow(H,-2) + 2.*pow(H,-1)*bra_p*pow(a,-1);
 
-	pvecback[pba->index_bg_G_eff_smg] = pow(M2,-1) + (-1.)*bra*beta_1*pow(bra*beta_1 + (-1.)*beta_2,-1)*pow(M2,-1);
+	if (bra*beta_1 == 0.) {
+		pvecback[pba->index_bg_G_eff_smg] = 1./M2;
+	}
+	else {
+		pvecback[pba->index_bg_G_eff_smg] = (1. - bra*beta_1*pow(bra*beta_1 - beta_2,-1))/M2;
+	}
 
 	     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_G_eff_smg,
 	     &pvecback[pba->index_bg_G_eff_smg],
@@ -2086,7 +2092,12 @@ int background_gravity_functions_A_C_smg(
 	       "cannot copy data back to pba->background_table");
 
 
-	pvecback[pba->index_bg_slip_eff_smg] = 1. + ((run + (-1.)*ten)*(-2.)*beta_1 + beta_2 + (1. + ten)*(-1.)*beta_2)*pow((run + (-1.)*ten)*2.*beta_1 + (1. + ten)*beta_2,-1);
+				 if (2.*(run - ten)*beta_1 + ten*beta_2 == 0.) {
+					 pvecback[pba->index_bg_slip_eff_smg] = 1.;
+			 	}
+			 	else {
+					pvecback[pba->index_bg_slip_eff_smg] = 1. - (2.*(run - ten)*beta_1 + ten*beta_2)*pow((run - ten)*2.*beta_1 + (1. + ten)*beta_2,-1);
+			 	}
 
 	     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_slip_eff_smg,
 	     &pvecback[pba->index_bg_slip_eff_smg],
