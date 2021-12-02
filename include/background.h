@@ -474,7 +474,7 @@ struct background
   int index_bi_phi_scf;       /**< {B} scalar field value */
   int index_bi_phi_prime_scf; /**< {B} scalar field derivative wrt conformal time */
 
-  int index_bi_H;       /**< {B} Hubble rate factor */
+  int index_bi_logH;       /**< {B} Hubble rate factor */
   int index_bi_phi_smg;   /**< scalar field */
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
   int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/

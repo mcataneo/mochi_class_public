@@ -598,9 +598,9 @@ int background_functions(
   else {
     // not only _smg!!
     if (pba->hubble_evolution == _TRUE_)
-      pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H]; //sqrt(rho_tot-pba->K/a/a);
+      pvecback[pba->index_bg_H] = exp(pvecback_B[pba->index_bi_logH]); //sqrt(rho_tot-pba->K/a/a);
     else
-    pvecback[pba->index_bg_H] = sqrt(rho_tot - pba->K/a/a);
+      pvecback[pba->index_bg_H] = sqrt(rho_tot - pba->K/a/a);
 
     /** - compute derivative of H with respect to conformal time: friction added */
     pvecback[pba->index_bg_H_prime] = - (3./2.) * (rho_tot + p_tot) * a + pba->K/a;
@@ -1220,7 +1220,7 @@ int background_indices(
   class_define_index(pba->index_bi_phi_prime_scf,pba->has_scf,index_bi,1);
 
   /* index for Hubble rate (_smg) */
-  class_define_index(pba->index_bi_H,pba->hubble_evolution,index_bi,1);
+  class_define_index(pba->index_bi_logH,pba->hubble_evolution,index_bi,1);
 
   /* - indices for scalar field (modified gravity _smg) */
   if (pba->has_smg == _TRUE_) {
@@ -2386,18 +2386,18 @@ int background_initial_conditions(
   }
 
   /* Infer pvecback from pvecback_integration */
-  class_call(background_functions(pba, a, pvecback_integration, normal_info, pvecback),
+  class_call(background_functions(pba, a, pvecback_integration, long_info, pvecback),
              pba->error_message,
              pba->error_message);
 
   /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation (not only _smg!!) */
   if (pba->hubble_evolution == _TRUE_){
    if (pba->has_smg == _TRUE_) {
-     pvecback_integration[pba->index_bi_H] = pvecback[pba->index_bg_H];
+     pvecback_integration[pba->index_bi_logH] = log(pvecback[pba->index_bg_H]);
    }
    else {
      pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
-     pvecback_integration[pba->index_bi_H] = sqrt(pvecback[pba->index_bg_rho_crit]);
+     pvecback_integration[pba->index_bi_logH] = log(sqrt(pvecback[pba->index_bg_rho_crit]));
    }
   }
 
@@ -2746,9 +2746,9 @@ int background_derivs(
   /** - calculate derivative of conformal time \f$ d\tau/dloga = 1/aH \f$ */
   dy[pba->index_bi_tau] = 1./a/H;
 
-  /** - calculate /f$ H'= (...) + stabilization /f$ (not only _smg) */
+  /** - calculate /f$ dlogH/dloga = (...) + stabilization /f$ (not only _smg) */
   if (pba->hubble_evolution == _TRUE_) {
-    dy[pba->index_bi_H] = pvecback[pba->index_bg_H_prime];
+    dy[pba->index_bi_logH] = pvecback[pba->index_bg_H_prime]/a/H/H;
   }
 
   class_test(pvecback[pba->index_bg_rho_g] <= 0.,

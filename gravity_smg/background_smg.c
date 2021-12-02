@@ -71,7 +71,7 @@ int background_gravity_functions_smg(
     double F5_phiphi=0, F5_Xphiphi=0;
 
     if (pba->hubble_evolution == _TRUE_)
-      H = pvecback_B[pba->index_bi_H];
+      H = exp(pvecback_B[pba->index_bi_logH]);
 
     phi = pvecback_B[pba->index_bi_phi_smg];
     phi_prime = pvecback_B[pba->index_bi_phi_prime_smg];
@@ -1109,9 +1109,9 @@ int background_gravity_functions_smg(
 
     //add friction term
     if (pba->hubble_evolution == _TRUE_ && pba->initial_conditions_set_smg == _TRUE_){
-      pvecback[pba->index_bg_H] = pvecback_B[pba->index_bi_H];
+      pvecback[pba->index_bg_H] = exp(pvecback_B[pba->index_bi_logH]);
       /** - compute derivative of H with respect to conformal time */
-      pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(pvecback_B[pba->index_bi_H]*pvecback_B[pba->index_bi_H] - rho_tot - pba->K/a/a);
+      pvecback[pba->index_bg_H_prime] += - a*pba->hubble_friction*(pvecback[pba->index_bg_H]*pvecback[pba->index_bg_H] - rho_tot - pba->K/a/a);
     }
 
     // Compute time derivative of rho_smg
@@ -3076,19 +3076,22 @@ int background_derivs_smg(
 				double * dy
 			) {
 
-	/** - calculate /f$ \rho'= -3aH (1+w) \rho /f$ */
+	double H = pvecback[pba->index_bg_H];
+
+	/** - calculate /f$ \rho'(\tau)= -3aH (1+w) \rho /f$ written as \f$ d\rho/dloga = \rho' / (aH) \f$ */
 	if (pba->rho_evolution_smg == _TRUE_){
-	  dy[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_prime_smg];
+	  dy[pba->index_bi_rho_smg] = pvecback[pba->index_bg_rho_prime_smg]/a/H;
 	}
 
-	/** - Scalar field equation: \f$ \phi'' + 2 a H \phi' + a^2 dV = 0 \f$  (note H is wrt cosmic time)**/
+	/** - Scalar field equation: \f$ \phi''(t) + 2 a H \phi'(t) + a^2 dV = 0 \f$
+				(note H is wrt cosmic time) **/
 	if(pba->field_evolution_smg){
-	  dy[pba->index_bi_phi_smg] = y[pba->index_bi_phi_prime_smg];
-	  dy[pba->index_bi_phi_prime_smg] = pvecback[pba->index_bg_phi_prime_prime_smg];
+	  dy[pba->index_bi_phi_smg] = y[pba->index_bi_phi_prime_smg]/a/H;
+	  dy[pba->index_bi_phi_prime_smg] = pvecback[pba->index_bg_phi_prime_prime_smg]/a/H;
 	}
 	/** - Planck mass equation (if parameterization in terms of alpha_m **/
 	if (pba->M_pl_evolution_smg == _TRUE_)
-	  dy[pba->index_bi_delta_M_pl_smg] = a*pvecback[pba->index_bg_H]*pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
+	  dy[pba->index_bi_delta_M_pl_smg] = pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
 
 	return _SUCCESS_;
 }
