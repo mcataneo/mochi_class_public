@@ -1434,86 +1434,100 @@ int background_derivs_alphas_smg(
 	pba->error_message,
 	pba->error_message);
 
+	// TODO_EB: note that the derivative is now calculated w.r.t. loga, while our _prime are w.r.t. tau
+	double factor = pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H];
+	double d_over_dtau;
+
 	/*NOTE: here we compute the derivatives of quantities coputed in background_gravity_functions_smg during the integration.
 	 * for quantities that depend on these derivatives (e.g. the gamma_i functions determining the effective mass)
 	 * there is an additional loop at the end of background_solve
 	 */
 
 	// Kineticity'
+	d_over_dtau = factor*pvecback_derivs[pba->index_bg_kineticity_smg];
 	memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kineticity_prime_smg,
-				&pvecback_derivs[pba->index_bg_kineticity_smg],
+				&d_over_dtau,
 				1*sizeof(double));
 	class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kineticity_prime_smg,
 					 pba->error_message,
 					 "cannot copy data back to pba->background_table");
 
    //Braiding'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_braiding_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_braiding_prime_smg,
-		      &pvecback_derivs[pba->index_bg_braiding_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_braiding_prime_smg,
             pba->error_message,
             "cannot copy data back to pba->background_table");
 
    //Planck mass run rate'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_mpl_running_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_prime_smg,
-		      &pvecback_derivs[pba->index_bg_mpl_running_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_prime_smg,
             pba->error_message,
             "cannot copy data back to pba->background_table");
 
    //Tensor excess'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_tensor_excess_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_tensor_excess_prime_smg,
-		      &pvecback_derivs[pba->index_bg_tensor_excess_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_tensor_excess_prime_smg,
             pba->error_message,
             "cannot copy data back to pba->background_table");
 
   //Beyond horndeski'
+	d_over_dtau = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_smg];
   memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_prime_smg,
-		      &pvecback_derivs[pba->index_bg_beyond_horndeski_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
   class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_prime_smg,
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
    //Braiding_over_phi'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_braiding_over_phi_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
-		      &pvecback_derivs[pba->index_bg_braiding_over_phi_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
             pba->error_message,
             "cannot copy data back to pba->background_table");
 
   //Beyond_horndeski_over_phi'
+	d_over_dtau = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_over_phi_smg];
   memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
-		      &pvecback_derivs[pba->index_bg_beyond_horndeski_over_phi_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
   class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
    //H''
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_H_prime];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_H_prime_prime,
-      		&pvecback_derivs[pba->index_bg_H_prime],
+      		&d_over_dtau,
       		1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_H_prime_prime,
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
    // p_tot_wo_smg'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_tot_wo_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_p_tot_wo_prime_smg,
-         &pvecback_derivs[pba->index_bg_p_tot_wo_smg],
+         &d_over_dtau,
          1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_p_tot_wo_prime_smg,
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
    // p_smg'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_p_prime_smg,
-         &pvecback_derivs[pba->index_bg_p_smg],
+         &d_over_dtau,
          1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_p_prime_smg,
            pba->error_message,
@@ -1525,7 +1539,7 @@ int background_derivs_alphas_smg(
 
 	if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
 
-		double alpha_M = pvecback_derivs[pba->index_bg_delta_M2_smg]/pvecback[pba->index_bg_M2_smg]/pvecback[pba->index_bg_a]/pvecback[pba->index_bg_H];
+		double alpha_M = pvecback_derivs[pba->index_bg_delta_M2_smg]/pvecback[pba->index_bg_M2_smg];
 
 		memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_mpl_running_smg,
 			&alpha_M, //write using the address
@@ -1535,8 +1549,8 @@ int background_derivs_alphas_smg(
 		 "cannot copy data back to pba->background_table");
 	}
 
-	if(pba->background_verbose > 15 && fabs(1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H])>1e-8)
-printf("a = %g, (delta H')/H' = %g \n", pvecback[pba->index_bg_a], 1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]);
+	if(pba->background_verbose > 15 && fabs(1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]/factor)>1e-8)
+printf("a = %g, (delta H')/H' = %g \n", pvecback[pba->index_bg_a], 1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]/factor);
 
 	return _SUCCESS_;
 }
@@ -1578,13 +1592,15 @@ int background_gravity_functions_A_C_smg(
 
 	//need to update the time derivatives of the interesting functions
 
-	double kin_p = pvecback_derivs[pba->index_bg_kineticity_smg];
-	double bra_p = pvecback_derivs[pba->index_bg_braiding_smg];
-	double run_p = pvecback_derivs[pba->index_bg_mpl_running_smg];
-	double ten_p = pvecback_derivs[pba->index_bg_tensor_excess_smg];
-	double beh_p = pvecback_derivs[pba->index_bg_beyond_horndeski_smg];
-	double p_tot_p = pvecback_derivs[pba->index_bg_p_tot_wo_smg];
-	double p_smg_p = pvecback_derivs[pba->index_bg_p_smg];
+	double factor = a*H;
+
+	double kin_p = factor*pvecback_derivs[pba->index_bg_kineticity_smg];
+	double bra_p = factor*pvecback_derivs[pba->index_bg_braiding_smg];
+	double run_p = factor*pvecback_derivs[pba->index_bg_mpl_running_smg];
+	double ten_p = factor*pvecback_derivs[pba->index_bg_tensor_excess_smg];
+	double beh_p = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_smg];
+	double p_tot_p = factor*pvecback_derivs[pba->index_bg_p_tot_wo_smg];
+	double p_smg_p = factor*pvecback_derivs[pba->index_bg_p_smg];
 
 
   // kinetic term D
@@ -2252,6 +2268,20 @@ int background_hi_class_third_loop(
 	 */
 	for (i=0; i < pba->bt_size; i++) {
 
+		//Need to update pvecback
+		class_call(background_at_tau(pba,
+				 pba->tau_table[i],
+				 long_info,
+				 inter_normal,
+				 &last_index, //should be no problem to use the same one as for the derivatives
+				 pvecback),
+		pba->error_message,
+		pba->error_message);
+
+		// TODO_EB: note that the derivative is now calculated w.r.t. loga, while our _prime are w.r.t. tau
+		double factor = pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H];
+		double d_over_dtau;
+
     //write the derivatives in the structure
     class_call(array_derivate_spline(pba->loga_table, // x_array
 			       pba->bt_size, // int n_lines
@@ -2267,16 +2297,18 @@ int background_hi_class_third_loop(
 	  pba->error_message);
 
     //cs2num'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_cs2num_smg];
     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
-		      &pvecback_derivs[pba->index_bg_cs2num_smg],
+		      &d_over_dtau,
 		      1*sizeof(double));
     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_cs2num_prime_smg,
              pba->error_message,
              "cannot copy data back to pba->background_table");
 
      //D'
+		 d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_smg];
      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
-			      &pvecback_derivs[pba->index_bg_kinetic_D_smg],
+			      &d_over_dtau,
 			      1*sizeof(double));
      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_prime_smg,
               pba->error_message,
@@ -2284,8 +2316,9 @@ int background_hi_class_third_loop(
 
 			if (pba->field_evolution_smg == _TRUE_) {
 				//D_over_phiphi'
+				d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_over_phiphi_smg];
 	      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
-	 			      &pvecback_derivs[pba->index_bg_kinetic_D_over_phiphi_smg],
+	 			      &d_over_dtau,
 	 			      1*sizeof(double));
 	      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_kinetic_D_over_phiphi_prime_smg,
 	               pba->error_message,
@@ -2293,32 +2326,36 @@ int background_hi_class_third_loop(
 			}
 
      //A9'
+		 d_over_dtau = factor*pvecback_derivs[pba->index_bg_A9_smg];
      memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A9_prime_smg,
-     	      &pvecback_derivs[pba->index_bg_A9_smg],
+     	      &d_over_dtau,
      	      1*sizeof(double));
      class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A9_prime_smg,
             pba->error_message,
             "cannot copy data back to pba->background_table");
 
     //A10'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A10_smg];
     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A10_prime_smg,
-    	      &pvecback_derivs[pba->index_bg_A10_smg],
+    	      &d_over_dtau,
     	      1*sizeof(double));
     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A10_prime_smg,
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
    //A12'
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_A12_smg];
    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A12_prime_smg,
-   	      &pvecback_derivs[pba->index_bg_A12_smg],
+   	      &d_over_dtau,
    	      1*sizeof(double));
    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A12_prime_smg,
           pba->error_message,
           "cannot copy data back to pba->background_table");
 
     //A13'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A13_smg];
     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_A13_prime_smg,
-    	      &pvecback_derivs[pba->index_bg_A13_smg],
+    	      &d_over_dtau,
     	      1*sizeof(double));
     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_A13_prime_smg,
            pba->error_message,
@@ -2326,32 +2363,36 @@ int background_hi_class_third_loop(
 
 		 if (pba->field_evolution_smg == _TRUE_) {
 	     //C9'
+			 d_over_dtau = factor*pvecback_derivs[pba->index_bg_C9_smg];
 	     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C9_prime_smg,
-	     	      &pvecback_derivs[pba->index_bg_C9_smg],
+	     	      &d_over_dtau,
 	     	      1*sizeof(double));
 	     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C9_prime_smg,
 	            pba->error_message,
 	            "cannot copy data back to pba->background_table");
 
 	    //C10'
+			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C10_smg];
 	    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C10_prime_smg,
-	    	      &pvecback_derivs[pba->index_bg_C10_smg],
+	    	      &d_over_dtau,
 	    	      1*sizeof(double));
 	    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C10_prime_smg,
 	           pba->error_message,
 	           "cannot copy data back to pba->background_table");
 
 	    //C12'
+			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C12_smg];
 	    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C12_prime_smg,
-	    	      &pvecback_derivs[pba->index_bg_C12_smg],
+	    	      &d_over_dtau,
 	    	      1*sizeof(double));
 	    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C12_prime_smg,
 	          pba->error_message,
 	          "cannot copy data back to pba->background_table");
 
 	    //C13'
+			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C13_smg];
 	    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_C13_prime_smg,
-	    	      &pvecback_derivs[pba->index_bg_C13_smg],
+	    	      &d_over_dtau,
 	    	      1*sizeof(double));
 	    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_C13_prime_smg,
 	           pba->error_message,
@@ -2359,46 +2400,41 @@ int background_hi_class_third_loop(
 		}
 
     //lambda_2'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_2_smg];
     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
-    	      &pvecback_derivs[pba->index_bg_lambda_2_smg],
+    	      &d_over_dtau,
     	      1*sizeof(double));
     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_2_prime_smg,
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
     //lambda_8'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_8_smg];
     memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
-          &pvecback_derivs[pba->index_bg_lambda_8_smg],
+          &d_over_dtau,
           1*sizeof(double));
     class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_8_prime_smg,
           pba->error_message,
          "cannot copy data back to pba->background_table");
 
          //lambda_9'
+				 d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_9_smg];
          memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
-         	      &pvecback_derivs[pba->index_bg_lambda_9_smg],
+         	      &d_over_dtau,
          	      1*sizeof(double));
          class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_9_prime_smg,
                 pba->error_message,
                 "cannot copy data back to pba->background_table");
 
         //lambda_11'
+				d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_11_smg];
         memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_prime_smg,
-        	      &pvecback_derivs[pba->index_bg_lambda_11_smg],
+        	      &d_over_dtau,
         	      1*sizeof(double));
         class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_lambda_11_prime_smg,
                pba->error_message,
                "cannot copy data back to pba->background_table");
 
-
-	   class_call(background_at_tau(pba,
-				   pba->tau_table[i],
-				   long_info,
-				   inter_normal,
-				   &last_index, //should be no problem to use the same one as for the derivatives
-				   pvecback),
-		 pba->error_message,
-		 pba->error_message);
 
 	   // check if any of the values becomes nan
 	  int j = 0;
