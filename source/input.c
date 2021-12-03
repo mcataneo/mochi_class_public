@@ -814,6 +814,9 @@ int input_needs_shooting_for_target(struct file_content * pfc,
         *needs_shooting = _FALSE_;
       break;
     case Omega_smg:
+      if (target_value == 0.)
+        *needs_shooting = _FALSE_;
+      break;
     case M_pl_today_smg:
     default:
       /* Default is no additional checks */
