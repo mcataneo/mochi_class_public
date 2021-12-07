@@ -1245,16 +1245,16 @@ int hi_class_define_indices_bg(
 				 int * index_bg
 			 ) {
 
-	class_define_index(pba->index_bg_phi_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_phi_prime_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_phi_prime_prime_smg,pba->field_evolution_smg,*index_bg,1);
+	class_define_index(pba->index_bg_phi_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_phi_prime_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_phi_prime_prime_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_rho_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_p_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_rho_prime_smg,pba->rho_evolution_smg,*index_bg,1);
+	class_define_index(pba->index_bg_rho_prime_smg,pba->rho_evolution_smg == _TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_w_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_current_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_shift_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_current_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_shift_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_M2_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_delta_M2_smg,_TRUE_,*index_bg,1);
@@ -1358,17 +1358,17 @@ int hi_class_define_indices_bg(
 	class_define_index(pba->index_bg_lambda_9_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_lambda_11_prime_smg,_TRUE_,*index_bg,1);
 
-	class_define_index(pba->index_bg_E0_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_E1_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_E2_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_E3_smg,pba->field_evolution_smg,*index_bg,1);
+	class_define_index(pba->index_bg_E0_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_E1_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_E2_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_E3_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
 
-	class_define_index(pba->index_bg_P0_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_P1_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_P2_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_R0_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_R1_smg,pba->field_evolution_smg,*index_bg,1);
-	class_define_index(pba->index_bg_R2_smg,pba->field_evolution_smg,*index_bg,1);
+	class_define_index(pba->index_bg_P0_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_P1_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_P2_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_R0_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_R1_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_R2_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_rho_tot_wo_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_p_tot_wo_smg,_TRUE_,*index_bg,1);
