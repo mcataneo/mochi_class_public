@@ -1138,8 +1138,10 @@ int background_gravity_functions_smg(
   pvecback[pba->index_bg_cs2_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_prime_smg] = 0.;
-  pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] = 0.;
-  pvecback[pba->index_bg_kinetic_D_over_phiphi_prime_smg] = 0.;
+	if (pba->field_evolution_smg == _TRUE_) {
+	  pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] = 0.;
+	  pvecback[pba->index_bg_kinetic_D_over_phiphi_prime_smg] = 0.;
+	}
   pvecback[pba->index_bg_cs2num_smg] = 0.;
   pvecback[pba->index_bg_cs2num_prime_smg] = 0.;
   pvecback[pba->index_bg_A0_smg] = 0.;
@@ -1264,11 +1266,11 @@ int hi_class_define_indices_bg(
 	class_define_index(pba->index_bg_mpl_running_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_beyond_horndeski_smg,_TRUE_,*index_bg,1);
 
-	class_define_index(pba->index_bg_kineticity_over_phiphi_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_braiding_over_phi_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_beyond_horndeski_over_phi_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_braiding_over_phi_prime_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_beyond_horndeski_over_phi_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_kineticity_over_phiphi_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_braiding_over_phi_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_beyond_horndeski_over_phi_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_braiding_over_phi_prime_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_beyond_horndeski_over_phi_prime_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_kineticity_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_braiding_prime_smg,_TRUE_,*index_bg,1);
@@ -1281,8 +1283,10 @@ int hi_class_define_indices_bg(
 	class_define_index(pba->index_bg_cs2num_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_kinetic_D_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_kinetic_D_prime_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_kinetic_D_over_phiphi_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_kinetic_D_over_phiphi_prime_smg,_TRUE_,*index_bg,1);
+	if (pba->field_evolution_smg == _TRUE_) {
+		class_define_index(pba->index_bg_kinetic_D_over_phiphi_smg,_TRUE_,*index_bg,1);
+		class_define_index(pba->index_bg_kinetic_D_over_phiphi_prime_smg,_TRUE_,*index_bg,1);
+	}
 	class_define_index(pba->index_bg_A0_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_A1_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_A2_smg,_TRUE_,*index_bg,1);
@@ -1586,10 +1590,6 @@ int background_gravity_functions_A_C_smg(
 	double beh = pvecback[pba->index_bg_beyond_horndeski_smg];
 	double dM2 = pvecback[pba->index_bg_delta_M2_smg];
 
-	double kin_ss = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
-	double bra_s = pvecback[pba->index_bg_braiding_over_phi_smg];
-	double beh_s = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
-
 	//need to update the time derivatives of the interesting functions
 
 	double factor = a*H;
@@ -1825,6 +1825,10 @@ int background_gravity_functions_A_C_smg(
 	         pba->error_message, "cannot copy data back to pba->background_table");
 
 	if (pba->field_evolution_smg == _TRUE_) {
+
+		double kin_ss = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
+		double bra_s = pvecback[pba->index_bg_braiding_over_phi_smg];
+		double beh_s = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
 
 		double B0 = pvecback[pba->index_bg_B0_smg];
 		double B1 = pvecback[pba->index_bg_B1_smg];
