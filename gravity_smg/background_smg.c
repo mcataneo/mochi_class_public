@@ -1492,23 +1492,25 @@ int background_derivs_alphas_smg(
            pba->error_message,
            "cannot copy data back to pba->background_table");
 
-   //Braiding_over_phi'
-	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_braiding_over_phi_smg];
-   memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
-		      &d_over_dtau,
-		      1*sizeof(double));
-   class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
+	if (pba->field_evolution_smg == _TRUE_) {
+		//Braiding_over_phi'
+ 	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_braiding_over_phi_smg];
+    memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
+ 		      &d_over_dtau,
+ 		      1*sizeof(double));
+    class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_braiding_over_phi_prime_smg,
+             pba->error_message,
+             "cannot copy data back to pba->background_table");
+
+   //Beyond_horndeski_over_phi'
+ 	d_over_dtau = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_over_phi_smg];
+   memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
+ 		      &d_over_dtau,
+ 		      1*sizeof(double));
+   class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
             pba->error_message,
             "cannot copy data back to pba->background_table");
-
-  //Beyond_horndeski_over_phi'
-	d_over_dtau = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_over_phi_smg];
-  memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
-		      &d_over_dtau,
-		      1*sizeof(double));
-  class_test(memcopy_result != pba->background_table + i*pba->bg_size + pba->index_bg_beyond_horndeski_over_phi_prime_smg,
-           pba->error_message,
-           "cannot copy data back to pba->background_table");
+	}
 
    //H''
 	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_H_prime];
