@@ -1563,7 +1563,7 @@ cdef class Class:
         k_range = trans['k (h/Mpc)']*self.h()
         aH = interpolate.interp1d(back['z'], back['H [1/Mpc]']/(1+back['z']))(z)
         # Get matter species
-        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg']
+        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg','(.)rho_lambda']
         all_sp = [x for x in back.keys() if '(.)rho_' in x]
         all_sp = [x for x in all_sp if x not in no_mat]
         all_sp = [x.replace('(.)rho_', '') for x in all_sp]
@@ -1687,39 +1687,10 @@ cdef class Class:
         z : float
                 Desired redshift
         """
-        # Get background and transfer
-        back = self.get_background()
-        trans = self.get_transfer(z=z)
-        k_range = trans['k (h/Mpc)']*self.h()
-        aH = interpolate.interp1d(back['z'], back['H [1/Mpc]']/(1+back['z']))(z)
-        # Get matter species
-        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg']
-        all_sp = [x for x in back.keys() if '(.)rho_' in x]
-        all_sp = [x for x in all_sp if x not in no_mat]
-        all_sp = [x.replace('(.)rho_', '') for x in all_sp]
-        # Get metric potentials
-        phi = trans['phi']
-        psi = trans['psi']
-        # Calculate the density perturbations
-        # for each species and then we sum up
-        delta_rho = np.zeros_like(phi)
-        for one_sp in all_sp:
-            rho = interpolate.interp1d(back['z'], back['(.)rho_'+one_sp])(z)
-            if one_sp in ['b', 'cdm']:
-                w = 0.
-            elif one_sp in ['g', 'ur']:
-                w = 1./3.
-            else:
-                w = interpolate.interp1d(
-                  back['z'], back['(.)p_'+one_sp]/back['(.)rho_'+one_sp])(z)
-            delta = trans['d_'+one_sp]
-            if one_sp == 'cdm':
-                theta = np.zeros_like(delta)
-            else:
-                theta = trans['t_'+one_sp]
-            delta_rho += 3.*rho*(delta+3*aH*(1.+w)*theta/k_range**2.)
+        k_range, G_eff = self.G_eff_at_z_smg(z)
+        _, slip = self.slip_eff_at_z_smg(z)
 
-        G_matter = -2*k_range**2*(z+1.)**2*psi/delta_rho
+        G_matter = G_eff/slip
         return k_range, G_matter
 
     def G_matter_at_k_and_z_smg(self, k, z):
@@ -1764,39 +1735,10 @@ cdef class Class:
         z : float
                 Desired redshift
         """
-        # Get background and transfer
-        back = self.get_background()
-        trans = self.get_transfer(z=z)
-        k_range = trans['k (h/Mpc)']*self.h()
-        aH = interpolate.interp1d(back['z'], back['H [1/Mpc]']/(1+back['z']))(z)
-        # Get matter species
-        no_mat = ['(.)rho_tot', '(.)rho_crit', '(.)rho_smg']
-        all_sp = [x for x in back.keys() if '(.)rho_' in x]
-        all_sp = [x for x in all_sp if x not in no_mat]
-        all_sp = [x.replace('(.)rho_', '') for x in all_sp]
-        # Get metric potentials
-        phi = trans['phi']
-        psi = trans['psi']
-        # Calculate the density perturbations
-        # for each species and then we sum up
-        delta_rho = np.zeros_like(phi)
-        for one_sp in all_sp:
-            rho = interpolate.interp1d(back['z'], back['(.)rho_'+one_sp])(z)
-            if one_sp in ['b', 'cdm']:
-                w = 0.
-            elif one_sp in ['g', 'ur']:
-                w = 1./3.
-            else:
-                w = interpolate.interp1d(
-                  back['z'], back['(.)p_'+one_sp]/back['(.)rho_'+one_sp])(z)
-            delta = trans['d_'+one_sp]
-            if one_sp == 'cdm':
-                theta = np.zeros_like(delta)
-            else:
-                theta = trans['t_'+one_sp]
-            delta_rho += 3.*rho*(delta+3*aH*(1.+w)*theta/k_range**2.)
+        k_range, G_eff = self.G_eff_at_z_smg(z)
+        _, slip = self.slip_eff_at_z_smg(z)
 
-        G_light = -k_range**2*(z+1.)**2*(phi+psi)/delta_rho
+        G_light = (slip + 1)*G_eff/slip/2
         return k_range, G_light
 
     def G_light_at_k_and_z_smg(self, k, z):
