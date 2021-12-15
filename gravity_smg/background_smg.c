@@ -2094,7 +2094,13 @@ int background_gravity_functions_A_C_smg(
 	       "cannot copy data back to pba->background_table");
 
 
-	pvecback[pba->index_bg_cs2_smg] = pvecback[pba->index_bg_cs2num_smg]/pvecback[pba->index_bg_kinetic_D_smg];
+ // TODO_EB: reconsider the if statements for cs2, G_eff and slip
+	if (pvecback[pba->index_bg_cs2num_smg] == pvecback[pba->index_bg_kinetic_D_smg]) {
+		pvecback[pba->index_bg_cs2_smg] = 1.;
+	}
+	else {
+		pvecback[pba->index_bg_cs2_smg] = pvecback[pba->index_bg_cs2num_smg]/pvecback[pba->index_bg_kinetic_D_smg];
+	}
 
 	memcopy_result = memcpy(pba->background_table + i*pba->bg_size + pba->index_bg_cs2_smg,
 	     &pvecback[pba->index_bg_cs2_smg],
