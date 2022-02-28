@@ -1,10 +1,11 @@
-# Bunch of declarations from C to python. The idea here is to define only the
-# quantities that will be used, for input, output or intermediate manipulation,
-# by the python wrapper. For instance, in the precision structure, the only
-# item used here is its error message. That is why nothing more is defined from
-# this structure. The rest is internal in Class.
-# If, for whatever reason, you need an other, existing parameter from Class,
-# remember to add it inside this cdef.
+# Bunch of declarations from C to python. The idea here is to define
+# only the quantities that will be used, for input, output or
+# intermediate manipulation, by the python wrapper. For instance, in
+# the precision structure, the only item used here are the error
+# message and one parameter used for an error message. That is why
+# nothing more is defined from this structure. The rest is internal in
+# Class.  If, for whatever reason, you need an other, existing
+# parameter from Class, remember to add it inside this cdef.
 
 DEF _MAX_NUMBER_OF_K_FILES_ = 30
 DEF _MAXTITLESTRINGLENGTH_ = 8000
@@ -53,6 +54,7 @@ cdef extern from "class.h":
         out_sigma_disp
 
     cdef struct precision:
+        double nonlinear_min_k_max
         ErrorMsg error_message
 
     cdef struct background:
@@ -69,12 +71,19 @@ cdef extern from "class.h":
         int index_bg_G_eff_smg
         int index_bg_slip_eff_smg
         int index_bg_rho_tot_wo_smg
+        int index_bg_rho_b
+        int index_bg_rho_cdm
+        int index_bg_rho_ncdm1
+        int index_bg_rho_crit
+        short has_cdm
         short  has_ncdm
+        int N_ncdm
         double T_cmb
         double h
         double H0
         double age
         double conformal_age
+        double K
         double * m_ncdm_in_eV
         double Neff
         double Omega0_g
@@ -177,9 +186,22 @@ cdef extern from "class.h":
         double * alpha_idm_dr
         double * beta_idr
 
+        int k_size_pk
         int * k_size
+        double ** k
+
         int * ic_size
+        int index_ic_ad
+
+        int md_size
         int index_md_scalars
+
+        int * tp_size
+        int index_tp_delta_m
+
+        double * ln_tau
+        int ln_tau_size
+        int index_ln_tau_pk
 
     cdef struct transfer:
         ErrorMsg error_message
@@ -304,7 +326,9 @@ cdef extern from "class.h":
         int ic_size
         int ic_ic_size
         int k_size
+        int k_size_pk
         int ln_tau_size
+        int index_ln_tau_pk
         int tau_size
         int index_tau_min_nl
         double * k
@@ -365,7 +389,9 @@ cdef extern from "class.h":
     int thermodynamics_output_titles(void * pba, void *pth, char titles[_MAXTITLESTRINGLENGTH_])
     int thermodynamics_output_data(void *pba, void *pth, int number_of_titles, double *data)
 
-    int perturbations_output_data(void *pba,void *ppt, file_format output_format, double z, int number_of_titles, double *data)
+    int perturbations_output_data_at_z(void *pba,void *ppt, file_format output_format, double z, int number_of_titles, double *data)
+    int perturbations_output_data_at_index_tau(void *pba,void *ppt, file_format output_format, int ondex_tau, int number_of_titles, double *data)
+    int perturbations_output_data(void *pba,void *ppt, file_format output_format, double * tkfull, int number_of_titles, double *data)
     int perturbations_output_firstline_and_ic_suffix(void *ppt, int index_ic, char first_line[_LINE_LENGTH_MAX_], FileName ic_suffix)
     int perturbations_output_titles(void *pba, void *ppt,  file_format output_format, char titles[_MAXTITLESTRINGLENGTH_])
     int perturbations_qs_functions_at_tau_and_k_qs_smg(void * pba, void * ppt, double k, double tau, double *mass2, double *mass2_p, double *rad2, double *friction, double *slope)
