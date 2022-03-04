@@ -1,6 +1,20 @@
 #include "fourier_smg.h"
 
-int fourier_hmcode_correct_Delta_v_0_smg(
+
+/**
+ * Computes the correction to the virialized halo overdensity in
+ * modified gravity models. This is necessary to correct the HMCode
+ * method presented in Mead et al. 1505.07833.
+ * For now corrections have been calculated only for Jordan-Brans-Dicke
+ * models with a procedure described in Joudaki et al. 2010.15278.
+ *
+ * @param pba        Input: pointer to background structure
+ * @param z_at_tau   Input: redshift, at which to compute the nl correction
+ * @param Delta_v_0  Input/Output: value of the virialized overdensity
+ * @return the error status
+ */
+
+int fourier_hmcode_Delta_v_0_smg(
   struct background *pba,
   double z_at_tau,
   double * Delta_v_0

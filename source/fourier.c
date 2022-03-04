@@ -3272,7 +3272,7 @@ int fourier_hmcode(
   // Correct the LCDM virialized overdensity
   if (pba->has_smg) {
     class_call(
-      fourier_hmcode_correct_Delta_v_0_smg(
+      fourier_hmcode_Delta_v_0_smg(
         pba,
         z_at_tau,
         & Delta_v_0
