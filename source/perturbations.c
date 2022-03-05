@@ -818,7 +818,6 @@ int perturbations_init(
   }
 
   if (pba->has_smg == _TRUE_) {
-    // TODO_EB: in hi_class w ewere calling class_test_except with perturbations_free_nosource(ppt). Really necessary?
     class_call(
       perturbations_tests_smg(ppr, pba, ppt),
       ppt->error_message,
@@ -1545,7 +1544,8 @@ int perturbations_indices(
       class_define_index(ppt->index_tp_eta_prime,  ppt->has_source_eta_prime, index_type,1);
       class_define_index(ppt->index_tp_H_T_Nb_prime,ppt->has_source_H_T_Nb_prime,index_type,1);
       class_define_index(ppt->index_tp_k2gamma_Nb, ppt->has_source_k2gamma_Nb,index_type,1);
-      hi_class_define_indices_tp(ppt,&index_type); // _smg
+      if (pba->has_smg == _TRUE_)
+        perturbations_define_indices_tp_smg(ppt,&index_type);
       ppt->tp_size[index_md] = index_type;
 
       class_test(index_type == 0,
@@ -2830,7 +2830,7 @@ int perturbations_workspace_init(
       class_define_index(ppw->index_mt_alpha_prime,_TRUE_,index_mt,1);   /* alpha' */
       class_define_index(ppw->index_mt_einstein00,_TRUE_,index_mt,1); // not only _smg
       if (pba->has_smg == _TRUE_)
-        hi_class_define_indices_mt(ppw, &index_mt);
+        perturbations_define_indices_mt_smg(ppw, &index_mt);
 
     }
 
@@ -2881,7 +2881,7 @@ int perturbations_workspace_init(
     class_define_index(ppw->index_ap_tca_idm_dr,pba->has_idm_dr,index_ap,1);
     class_define_index(ppw->index_ap_rsa_idr,pba->has_idr,index_ap,1);
     if (pba->has_smg == _TRUE_)
-      class_define_index(ppw->index_ap_qs_smg,_TRUE_,index_ap,1);
+      perturbations_define_indices_ap_smg(ppw, &index_ap);
 
   }
 
@@ -3210,8 +3210,13 @@ int perturbations_solve(
   tau = tau_mid;
 
   if (pba->has_smg == _TRUE_) {
-    class_call(
-      perturbations_hi_class_qs(ppr, pba, ppt, ppw, k, &tau, ppt->tau_sampling[tau_actual_size-1]),
+    class_call(perturbations_approximation_qs_smg(ppr,
+                                                  pba,
+                                                  ppt,
+                                                  ppw,
+                                                  k,
+                                                  &tau,
+                                                  ppt->tau_sampling[tau_actual_size-1]),
       ppt->error_message,
       ppt->error_message
     );

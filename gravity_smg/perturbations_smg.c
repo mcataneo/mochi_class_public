@@ -1,72 +1,393 @@
 #include "perturbations_smg.h"
 
 
-//Here we do the smg tests. It is important to have them after perturbations_indices_of_perturbs because we need
-//quantities as k_min and k_max.
-int perturbations_tests_smg(struct precision * ppr,
-                      struct background * pba,
-                      struct perturbations * ppt) {
+/**
+ * Perform preliminary tests on gravity (smg) before solving for
+ * the perturbations.
+ *
+ * @param ppr              Input: pointer to precision structure
+ * @param pba              Input: pointer to background structure
+ * @param ppt              Input: pointer to perturbation structure
+ * @return the error status
+ */
+int perturbations_tests_smg(
+                            struct precision * ppr,
+                            struct background * pba,
+                            struct perturbations * ppt
+                            ) {
 
-        class_test(ppt->gauge == newtonian,
-                   ppt->error_message,
-                   "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
+  class_test(ppt->gauge == newtonian,
+             ppt->error_message,
+             "Asked for scalar modified gravity AND Newtonian gauge. Not yet implemented");
 
-        class_test(ppr->a_ini_test_qs_smg < ppr->a_ini_over_a_today_default,
-                   ppt->error_message,
-                   "The initial time for testing the QS approximation (qs_smg) must be bigger than the background initial time (a_ini_test_qs_smg>=a_ini_over_a_today_default).");
+  class_test(ppr->a_ini_test_qs_smg < ppr->a_ini_over_a_today_default,
+             ppt->error_message,
+             "The initial time for testing the QS approximation (qs_smg) must be larger than the background initial time (a_ini_test_qs_smg>=a_ini_over_a_today_default).");
 
-        if ( ppt->pert_initial_conditions_smg == gravitating_attr ) {
-                class_test((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
-                                  ppt->error_message,
-                                  "Isocurvature initial conditions for early modified gravity (Gravitating Attractor) not implemented.");
-        }
+  if ( ppt->pert_initial_conditions_smg == gravitating_attr ) {
+    class_test((ppt->has_cdi == _TRUE_) || (ppt->has_bi == _TRUE_) || (ppt->has_nid == _TRUE_) || (ppt->has_niv == _TRUE_),
+               ppt->error_message,
+               "Isocurvature initial conditions for early modified gravity (Gravitating Attractor) not implemented.");
+  }
 
 
-        // TODO: think of some suitable tests for the scalar field
+  if (ppt->method_qs_smg == automatic) {
+    /*
+    * At least at some initial time (ppr->a_ini_test_qs_smg) all k modes
+    * should have the same qs_smg approximation status. This time is by
+    * default much earlier than the usual times at which perturbations
+    * start being integrated. This check is done to be sure there is a
+    * moment in the evolution of the universe when nothing interesting
+    * is happening. When, for each k mode, Class decides at which time
+    * has to start the integration of the perturbations, it checks that
+    * the qs_smg status is the same as the one found here. In case it is
+    * not, it anticipate the initial time.
+    */
+    class_call(perturbations_test_ini_qs_smg(ppr,
+                                             pba,
+                                             ppt,
+                                             ppt->k[ppt->index_md_scalars][0],
+                                             ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
+                                             ppr->a_ini_test_qs_smg),
+               ppt->error_message,
+               ppt->error_message);
+  }
 
-        if (ppt->method_qs_smg == automatic) {
-                //Check if at the initial time all the k modes start with the same kind of qs_smg approximation
-                class_call(perturbations_test_ini_qs_smg(ppr,
-                                                          pba,
-                                                          ppt,
-                                                          ppt->k[ppt->index_md_scalars][0],
-                                                          ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
-                                                          ppr->a_ini_test_qs_smg),
-                                  ppt->error_message,
-                                  ppt->error_message);
-        }
-
-        if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==_TRUE_))) {
-
-                // if scalar is dynamical or always quasi-static, test for stability at the initial time.
-                // Only in the case it is QS because of a trigger test (through "automatic" method_qs),
-                // we already know mass is positive and therefore can assume it is stable, so skip this.
-
-                if( ppt->pert_initial_conditions_smg == gravitating_attr) {
-                        // If we are in gravitating_attr ICs, make sure the standard solution is dominant at some early redshift.
-                        // If it is not, curvature is not conserved and we have lost the connection between the amplitude from inflation and
-                        // the initial amplitude supplied to hi_class.
-                        class_call(perturbations_test_ini_grav_ic_smg(ppr,
-                                                                       pba,
-                                                                       ppt),
-                                          ppt->error_message,
-                                          ppt->error_message);
-                }
-                else if( ppt->pert_initial_conditions_smg == ext_field_attr) {
-                        //If we have the ext_field_attr, test for tachyon instability in RD before pert initialisation
-                        // If have it, fail, because we can't set the ICs properly
-
-                        class_call(perturbations_test_ini_extfld_ic_smg(ppr,
-                                                                         pba,
-                                                                         ppt),
-                                          ppt->error_message,
-                                          ppt->error_message);
-                }
-        }
+  if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==_TRUE_))) {
+    /*
+    * If scalar is dynamical or always quasi-static, test for stability
+    * at the initial time. We do not need to have this test when we are
+    * QS because of a trigger (through "automatic" method_qs). In such
+    * a case we know that the mass is positive.
+    */
+    if( ppt->pert_initial_conditions_smg == gravitating_attr) {
+      /*
+      * If we are in gravitating_attr ICs, make sure the standard solution
+      * is dominant at some early redshift. If it is not, curvature is not
+      * conserved and we have lost the connection between the amplitude
+      * from inflation and the initial amplitude supplied to hi_class.
+      */
+      class_call(perturbations_test_ini_grav_ic_smg(ppr,
+                                                    pba,
+                                                    ppt),
+                 ppt->error_message,
+                 ppt->error_message);
+    }
+    else if( ppt->pert_initial_conditions_smg == ext_field_attr) {
+      /*
+      * If we have the ext_field_attr, test for tachyon instability
+      * in radiation domination before pertubations initialisation.
+      * If have it, fail, because we can't set the ICs properly.
+      */
+      class_call(perturbations_test_ini_extfld_ic_smg(ppr,
+                                                      pba,
+                                                      ppt),
+                 ppt->error_message,
+                 ppt->error_message);
+    }
+  }
 
         return _SUCCESS_;
-
 }
+
+
+/**
+ * Define _smg tp indices.
+ *
+ * @param ppt              Input/Output: pointer to perturbation structure
+ * @param index_type       Input/Output: counter of how many tp variables are defined
+ * @return the error status
+ */
+int perturbations_define_indices_tp_smg(
+                                        struct perturbations * ppt,
+				                                int * index_type
+			                                  ) {
+
+  class_define_index(ppt->index_tp_x_smg, ppt->has_source_x_smg, *index_type,1);
+  class_define_index(ppt->index_tp_x_prime_smg, ppt->has_source_x_prime_smg, *index_type,1);
+
+  return _SUCCESS_;
+}
+
+
+/**
+ * Define _smg mt indices.
+ *
+ * @param ppw              Input/Output: pointer to perturbation workspace structure
+ * @param index_mt         Input/Output: counter of how many mt variables are defined
+ * @return the error status
+ */
+int perturbations_define_indices_mt_smg(
+                                        struct perturbations_workspace * ppw,
+  			                                int * index_mt
+			                                  ) {
+
+  class_define_index(ppw->index_mt_x_smg,_TRUE_,*index_mt,1);   /* x_smg (can be dynamical or not) */
+  class_define_index(ppw->index_mt_x_prime_smg,_TRUE_,*index_mt,1);   /* x_smg' (can be dynamical or not) */
+  class_define_index(ppw->index_mt_x_prime_prime_smg,_TRUE_,*index_mt,1);   /* x_smg'' (passed to integrator) */
+  class_define_index(ppw->index_mt_rsa_p_smg,_TRUE_,*index_mt,1);   /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
+
+  return _SUCCESS_;
+}
+
+
+/**
+ * Define _smg ap indices.
+ *
+ * @param ppw              Input/Output: pointer to perturbation workspace structure
+ * @param index_ap         Input/Output: counter of how many mt variables are defined
+ * @return the error status
+ */
+int perturbations_define_indices_ap_smg(
+                                        struct perturbations_workspace * ppw,
+  			                                int * index_ap
+			                                  ) {
+
+  class_define_index(ppw->index_ap_qs_smg,_TRUE_,*index_ap,1); /* for QS approximation scheme */
+
+  return _SUCCESS_;
+}
+
+
+/**
+ * The goal of this function is twofold:
+ *  i) check that at the initial integration time the qs_smg status
+ *     is the same as the one found at ppr->a_ini_test_qs_smg. In case
+ *     it is not, do a loop to anticipate the time for IC. This is to
+ *     avoid possibly important features happening between
+ *     ppr->a_ini_test_qs_smg and the perturbations IC;
+ * ii) if the method_qs_smg is automatic, determine at which time each
+ *     k mode should switch approximation status.
+ *
+ * @param ppr              Input: pointer to precision structure
+ * @param pba              Input: pointer to background structure
+ * @param ppt              Input: pointer to perturbation structure
+ * @param ppw              Input/Output: pointer to perturbation workspace structure
+ * @param k                Input: k mode
+ * @param tau_ini          Input/Output: pointer to initial time
+ * @param tau_end          Input: final time (today)
+ * @return the error status
+ */
+int perturbations_approximation_qs_smg(
+                                       struct precision * ppr,
+                                       struct background * pba,
+                                       struct perturbations * ppt,
+                                       struct perturbations_workspace * ppw,
+                                       double k,
+                                       double * tau_ini,
+                                       double tau_end
+                                       ) {
+
+  /* Define local variables */
+  double tau_lower;
+  double tau_upper = *tau_ini;
+  int is_early_enough = _FALSE_;
+  int approx;
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+
+  class_alloc(ppw->tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
+
+
+  /* Loop to anticipate the initial integration time if the qs_smg
+     state is different from ppt->initial_approx_qs_smg. This uses
+     a bisection method between tau_lower and tau_upper.
+  */
+  if (ppt->method_qs_smg == automatic) {
+
+    /* Get tau_lower */
+    class_call(background_tau_of_z(pba,
+                                   1./ppr->a_ini_test_qs_smg-1.,
+                                   &tau_lower),
+               pba->error_message,
+               ppt->error_message);
+
+    /* Main loop */
+    while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
+      find_approximation_at_k_qs_smg(ppr,
+                                     pba,
+                                     ppt,
+                                     k,
+                                     tau_upper,
+                                     &approx);
+      if (approx == ppt->initial_approx_qs_smg) {
+        is_early_enough = _TRUE_;
+      }
+      else {
+        tau_upper = 0.5*(tau_lower + tau_upper);
+      }
+    }
+    *tau_ini = tau_upper;
+  }
+
+
+  /** Find the intervals over which the approximation scheme for qs_smg is constant */
+  if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
+
+    int size_sample = ppr->n_max_qs_smg;
+
+    double * tau_sample;
+    double * mass2_sample;
+    double * rad2_sample;
+    double * slope_sample;
+
+    class_alloc(tau_sample,size_sample*sizeof(double),ppt->error_message);
+    class_alloc(mass2_sample,size_sample*sizeof(double),ppt->error_message);
+    class_alloc(rad2_sample,size_sample*sizeof(double),ppt->error_message);
+    class_alloc(slope_sample,size_sample*sizeof(double),ppt->error_message);
+
+    /**
+     * Input: background table
+     * Output: sample of the time, mass, decaying rate of the oscillations (slope)
+     *   and radiation density.
+     **/
+    sample_functions_qs_smg(
+            ppr,
+            pba,
+            ppt,
+            k,
+            *tau_ini,
+            tau_end,
+            tau_sample,
+            mass2_sample,
+            rad2_sample,
+            slope_sample,
+            &size_sample
+            );
+
+
+    int * approx_sample;
+
+    class_alloc(approx_sample,size_sample*sizeof(int),ppt->error_message);
+
+    /**
+     * Input: sample of the time, mass and radiation density
+     * Output: sample of the approx scheme
+     **/
+    functions_to_approx_qs_smg(
+            ppr,
+            pba,
+            ppt,
+            *tau_ini,
+            tau_end,
+            tau_sample,
+            mass2_sample,
+            rad2_sample,
+            approx_sample,
+            size_sample
+            );
+
+    free(mass2_sample);
+    free(rad2_sample);
+
+    double * tau_array;
+    double * slope_array;
+    int * approx_array;
+    int size_array = size_sample;
+
+    class_alloc(tau_array,size_array*sizeof(double),ppt->error_message);
+    class_alloc(slope_array,size_array*sizeof(double),ppt->error_message);
+    class_alloc(approx_array,size_array*sizeof(int),ppt->error_message);
+
+    /**
+     * Input: sample of the time, slope and approximation scheme
+     *   at small time interval
+     * Output: arrays containing the time, the slope and the approximation
+     * scheme only when it changes
+     **/
+    shorten_first_qs_smg(
+            tau_sample,
+            slope_sample,
+            approx_sample,
+            size_sample,
+            tau_array,
+            slope_array,
+            approx_array,
+            &size_array,
+            tau_end
+            );
+
+    free(tau_sample);
+    free(slope_sample);
+    free(approx_sample);
+
+    /**
+     * Input: arrays with time, slope and approximation schemes
+     * Output: arrays with time and approximation scheme corrected with the slope
+     **/
+    correct_with_slope_qs_smg(
+            ppr,
+            pba,
+            ppt,
+            *tau_ini,
+            tau_end,
+            tau_array,
+            slope_array,
+            approx_array,
+            size_array
+            );
+
+    free(slope_array);
+
+    double * tau_scheme;
+    int * approx_scheme;
+    int size_scheme = size_array;
+
+    class_alloc(tau_scheme,size_scheme*sizeof(double),ppt->error_message);
+    class_alloc(approx_scheme,size_scheme*sizeof(int),ppt->error_message);
+
+    /**
+     * Input: arrays of time and approximation after correcting with the slope
+     *   (there is the possibility that the same number in approx_array is repeated)
+     * Output: shortened arrays of time and approximation
+     **/
+    shorten_second_qs_smg(
+            tau_array,
+            approx_array,
+            size_array,
+            tau_scheme,
+            approx_scheme,
+            &size_scheme
+            );
+
+    free(tau_array);
+    free(approx_array);
+
+    /**
+     * Input: real approx_scheme and tau_scheme
+     * Output: approx scheme (ppw->tau_scheme_qs_smg) adjusted to fit the implemented one
+     **/
+    fit_real_scheme_qs_smg(
+            tau_end,
+            approx_scheme,
+            tau_scheme,
+            size_scheme,
+            ppw->tau_scheme_qs_smg
+            );
+
+    free(tau_scheme);
+    free(approx_scheme);
+
+    //   // DEBUG: Initial and final times
+    //   printf("6 - Interval tau       = {%.1e, %.1e}\n", *tau_ini, tau_end);
+    //   printf("7 - k mode             = {%.1e}\n", k);
+
+  }
+
+  return _SUCCESS_;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
                                              struct perturbations * ppt,
@@ -150,7 +471,7 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
 
 }
 
-int perturbations_test_at_k_qs_smg(struct precision * ppr,
+int find_approximation_at_k_qs_smg(struct precision * ppr,
                              struct background * pba,
                              struct perturbations * ppt,
                              double k,
@@ -217,7 +538,7 @@ int perturbations_test_ini_qs_smg(struct precision * ppr,
                    ppt->error_message);
 
         //Approximation for k_min
-        perturbations_test_at_k_qs_smg(
+        find_approximation_at_k_qs_smg(
                 ppr,
                 pba,
                 ppt,
@@ -227,7 +548,7 @@ int perturbations_test_ini_qs_smg(struct precision * ppr,
                 );
 
         //Approximation for k_max
-        perturbations_test_at_k_qs_smg(
+        find_approximation_at_k_qs_smg(
                 ppr,
                 pba,
                 ppt,
@@ -249,167 +570,6 @@ int perturbations_test_ini_qs_smg(struct precision * ppr,
 
 }
 
-int perturbations_find_scheme_qs_smg(struct precision * ppr,
-                               struct background * pba,
-                               struct perturbations * ppt,
-                               struct perturbations_workspace * ppw,
-                               double k,
-                               double tau_ini,
-                               double tau_end) {
-
-        int size_sample = ppr->n_max_qs_smg;
-
-        double * tau_sample;
-        double * mass2_sample;
-        double * rad2_sample;
-        double * slope_sample;
-
-        class_alloc(tau_sample,size_sample*sizeof(double),ppt->error_message);
-        class_alloc(mass2_sample,size_sample*sizeof(double),ppt->error_message);
-        class_alloc(rad2_sample,size_sample*sizeof(double),ppt->error_message);
-        class_alloc(slope_sample,size_sample*sizeof(double),ppt->error_message);
-
-        /**
-         * Input: background table
-         * Output: sample of the time, mass, decaying rate of the oscillations (slope)
-         *   and radiation density.
-         **/
-        sample_functions_qs_smg(
-                ppr,
-                pba,
-                ppt,
-                k,
-                tau_ini,
-                tau_end,
-                tau_sample,
-                mass2_sample,
-                rad2_sample,
-                slope_sample,
-                &size_sample
-                );
-
-
-        int * approx_sample;
-
-        class_alloc(approx_sample,size_sample*sizeof(int),ppt->error_message);
-
-        /**
-         * Input: sample of the time, mass and radiation density
-         * Output: sample of the approx scheme
-         **/
-        functions_to_approx_qs_smg(
-                ppr,
-                pba,
-                ppt,
-                tau_ini,
-                tau_end,
-                tau_sample,
-                mass2_sample,
-                rad2_sample,
-                approx_sample,
-                size_sample
-                );
-
-        free(mass2_sample);
-        free(rad2_sample);
-
-
-        double * tau_array;
-        double * slope_array;
-        int * approx_array;
-        int size_array = size_sample;
-
-        class_alloc(tau_array,size_array*sizeof(double),ppt->error_message);
-        class_alloc(slope_array,size_array*sizeof(double),ppt->error_message);
-        class_alloc(approx_array,size_array*sizeof(int),ppt->error_message);
-
-        /**
-         * Input: sample of the time, slope and approximation scheme
-         *   at small time interval
-         * Output: arrays containing the time, the slope and the approximation
-         * scheme only when it changes
-         **/
-        shorten_first_qs_smg(
-                tau_sample,
-                slope_sample,
-                approx_sample,
-                size_sample,
-                tau_array,
-                slope_array,
-                approx_array,
-                &size_array,
-                tau_end
-                );
-
-        free(tau_sample);
-        free(slope_sample);
-        free(approx_sample);
-
-        /**
-         * Input: arrays with time, slope and approximation schemes
-         * Output: arrays with time and approximation scheme corrected with the slope
-         **/
-        correct_with_slope_qs_smg(
-                ppr,
-                pba,
-                ppt,
-                tau_ini,
-                tau_end,
-                tau_array,
-                slope_array,
-                approx_array,
-                size_array
-                );
-
-        free(slope_array);
-
-        double * tau_scheme;
-        int * approx_scheme;
-        int size_scheme = size_array;
-
-        class_alloc(tau_scheme,size_scheme*sizeof(double),ppt->error_message);
-        class_alloc(approx_scheme,size_scheme*sizeof(int),ppt->error_message);
-
-        /**
-         * Input: arrays of time and approximation after correcting with the slope
-         *   (there is the possibility that the same number in approx_array is repeated)
-         * Output: shortened arrays of time and approximation
-         **/
-        shorten_second_qs_smg(
-                tau_array,
-                approx_array,
-                size_array,
-                tau_scheme,
-                approx_scheme,
-                &size_scheme
-                );
-
-        free(tau_array);
-        free(approx_array);
-
-        /**
-         * Input: real approx_scheme and tau_scheme
-         * Output: approx scheme (ppw->tau_scheme_qs_smg) adjusted to fit the implemented one
-         **/
-        fit_real_scheme_qs_smg(
-                tau_end,
-                approx_scheme,
-                tau_scheme,
-                size_scheme,
-                ppw->tau_scheme_qs_smg
-                );
-
-        free(tau_scheme);
-        free(approx_scheme);
-
-//   // DEBUG: Initial and final times
-//   printf("6 - Interval tau       = {%.1e, %.1e}\n", tau_ini, tau_end);
-//   printf("7 - k mode             = {%.1e}\n", k);
-
-
-        return _SUCCESS_;
-
-}
 
 
 int sample_functions_qs_smg(struct precision * ppr,
@@ -1496,90 +1656,6 @@ int get_x_x_prime_qs_smg(
         *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
 
         return _SUCCESS_;
-}
-
-int hi_class_define_indices_tp(
-         struct perturbations * ppt,
-				 int * index_type
-			 ) {
-
-  class_define_index(ppt->index_tp_x_smg,    ppt->has_source_x_smg,   *index_type,1);
-  class_define_index(ppt->index_tp_x_prime_smg,  ppt->has_source_x_prime_smg, *index_type,1);
-
-  return _SUCCESS_;
-}
-
-int hi_class_define_indices_mt(
-        struct perturbations_workspace * ppw,
-  			int * index_mt
-			 ) {
-
-  class_define_index(ppw->index_mt_x_smg,_TRUE_,*index_mt,1);   /* x_smg (can be dynamical or not) */
-  class_define_index(ppw->index_mt_x_prime_smg,_TRUE_,*index_mt,1);   /* x_smg' (can be dynamical or not) */
-  class_define_index(ppw->index_mt_x_prime_prime_smg,_TRUE_,*index_mt,1);   /* x_smg'' (passed to integrator) */
-  class_define_index(ppw->index_mt_rsa_p_smg,_TRUE_,*index_mt,1);   /**< correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times*/
-
-  return _SUCCESS_;
-}
-
-int perturbations_hi_class_qs(struct precision * ppr,
-                       struct background * pba,
-                       struct perturbations * ppt,
-                       struct perturbations_workspace * ppw,
-                       double k,
-                       double * tau_ini,
-                       double tau_end) {
-
-  double tau_lower = pba->tau_table[0];
-  double tau_upper = *tau_ini;
-  int is_early_enough;
-
-  /* A second loop starts here to anticipate the initial time if the qs_smg
-    state is different from ppt->initial_approx_qs_smg. */
-  if (ppt->method_qs_smg == automatic) {
-    class_call(background_tau_of_z(pba,
-                                   1./ppr->a_ini_test_qs_smg-1.,
-                                   &tau_lower),
-               pba->error_message,
-               ppt->error_message);
-    is_early_enough = _FALSE_;
-    while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
-      int approx;
-      perturbations_test_at_k_qs_smg(ppr,
-                              pba,
-                              ppt,
-                              k,
-                              tau_upper,
-                              &approx);
-      if (approx == ppt->initial_approx_qs_smg) {
-        is_early_enough = _TRUE_;
-      }
-      else {
-        tau_upper = 0.5*(tau_lower + tau_upper);
-      }
-    }
-    *tau_ini = tau_upper;
-  }
-
-  /** - find the intervals over which the approximation scheme for qs_smg is constant */
-
-  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
-  class_alloc(ppw->tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
-
-  if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
-  class_call(perturbations_find_scheme_qs_smg(ppr,
-                                       pba,
-			                                 ppt,
-                                       ppw,
-                                       k,
-                                       *tau_ini,
-                                       tau_end),
-             ppt->error_message,
-             ppt->error_message);
-  }
-
-
-  return _SUCCESS_;
 }
 
 int perturbations_store_columntitles_smg(

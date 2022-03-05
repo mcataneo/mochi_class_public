@@ -15,10 +15,10 @@
  */
 
 int fourier_hmcode_Delta_v_0_smg(
-  struct background *pba,
-  double z_at_tau,
-  double * Delta_v_0
-) {
+                                 struct background *pba,
+                                 double z_at_tau,
+                                 double * Delta_v_0
+                                 ) {
 
   // Corrections are implemented only for Brans-Dicke
   if (pba->gravity_model_smg == brans_dicke) {

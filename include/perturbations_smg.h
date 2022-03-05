@@ -13,8 +13,32 @@ extern "C" {
 #endif
 
 int perturbations_tests_smg(struct precision * ppr,
-                     struct background * pba,
-                     struct perturbations * ppt);
+                            struct background * pba,
+                            struct perturbations * ppt);
+
+int perturbations_define_indices_tp_smg(struct perturbations * ppt,
+				                                int * index_type);
+
+int perturbations_define_indices_mt_smg(struct perturbations_workspace * ppw,
+				                                int * index_mt);
+
+int perturbations_define_indices_ap_smg(struct perturbations_workspace * ppw,
+  			                                int * index_ap);
+
+int perturbations_approximation_qs_smg(struct precision * ppr,
+                                       struct background * pba,
+                                       struct perturbations * ppt,
+                                       struct perturbations_workspace * ppw,
+                                       double k,
+                                       double * tau_ini,
+                                       double tau_end);
+
+
+
+
+
+
+
 
 int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
                                             struct perturbations * ppt,
@@ -26,7 +50,7 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
                                             double *friction,
                                             double *slope);
 
-int perturbations_test_at_k_qs_smg(struct precision * ppr,
+int find_approximation_at_k_qs_smg(struct precision * ppr,
                             struct background * pba,
                             struct perturbations * ppt,
                             double k,
@@ -39,14 +63,6 @@ int perturbations_test_ini_qs_smg(struct precision * ppr,
                            double k_min,
                            double k_max,
                            double a_ini);
-
-int perturbations_find_scheme_qs_smg(struct precision * ppr,
-                              struct background * pba,
-                              struct perturbations * ppt,
-                              struct perturbations_workspace * ppw,
-                              double k,
-                              double tau_ini,
-                              double tau_end);
 
 int sample_functions_qs_smg(struct precision * ppr,
                            struct background * pba,
@@ -139,24 +155,6 @@ int get_x_x_prime_qs_smg(
                         struct perturbations_workspace * ppw,
                         double k, double * x_qs_smg, double * x_prime_qs_smg
                         );
-
-int hi_class_define_indices_tp(
-         struct perturbations * ppt,
-				 int * index_type
-			 );
-
-int hi_class_define_indices_mt(
-        struct perturbations_workspace * ppw,
-				int * index_mt
-			 );
-
-int perturbations_hi_class_qs(struct precision * ppr,
-                       struct background * pba,
-                       struct perturbations * ppt,
-                       struct perturbations_workspace * ppw,
-                       double k,
-                       double * tau_ini,
-                       double tau_end);
 
 int perturbations_store_columntitles_smg(
 				struct perturbations * ppt
