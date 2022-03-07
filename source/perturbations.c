@@ -3210,13 +3210,13 @@ int perturbations_solve(
   tau = tau_mid;
 
   if (pba->has_smg == _TRUE_) {
-    class_call(perturbations_approximation_qs_smg(ppr,
-                                                  pba,
-                                                  ppt,
-                                                  ppw,
-                                                  k,
-                                                  &tau,
-                                                  ppt->tau_sampling[tau_actual_size-1]),
+    class_call(perturbations_get_approximation_qs_smg(ppr,
+                                                      pba,
+                                                      ppt,
+                                                      ppw,
+                                                      k,
+                                                      &tau,
+                                                      ppt->tau_sampling[tau_actual_size-1]),
       ppt->error_message,
       ppt->error_message
     );
@@ -3492,10 +3492,9 @@ int perturbations_prepare_k_output(struct background * pba,
       class_store_columntitle(ppt->scalar_titles, "delta_rho_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "rho_plus_p_theta_fld", pba->has_fld);
       class_store_columntitle(ppt->scalar_titles, "delta_p_fld", pba->has_fld);
-      /* Scalar field smg */
       if (pba->has_smg == _TRUE_) {
         class_call(
-          perturbations_store_columntitles_smg(ppt),
+          perturbations_prepare_k_output_smg(ppt),
           ppt->error_message,
           ppt->error_message
         );
@@ -3889,7 +3888,6 @@ int perturbations_find_approximation_switches(
           if (pba->has_smg == _TRUE_) {
             class_call(
               perturbations_verbose_qs_smg(
-                ppt,
                 ppw,
                 k,
                 interval_limit[index_switch],
@@ -4116,7 +4114,7 @@ int perturbations_vector_init(
 
     if (pba->has_smg == _TRUE_) {
       class_call(
-        hi_class_define_indices_pt(ppw, ppv, &index_pt),
+        perturbations_define_indices_pt_smg(ppw, ppv, &index_pt),
         ppt->error_message,
         ppt->error_message
       );
@@ -4606,7 +4604,7 @@ int perturbations_vector_init(
 
       if (pba->has_smg == _TRUE_) {
         class_call(
-          perturbations_vector_init_smg(ppw, ppv, pa_old),
+          perturbations_vector_init_qs_smg(ppw, ppv, pa_old),
           ppt->error_message,
           ppt->error_message
         );
@@ -5901,7 +5899,7 @@ int perturbations_initial_conditions(struct precision * ppr,
           + ppw->pvecback[pba->index_bg_rho_b]*ppw->pv->y[ppw->pv->index_pt_delta_b]
           + ppw->pvecback[pba->index_bg_rho_cdm]*ppw->pv->y[ppw->pv->index_pt_delta_cdm];
         if(pba->has_smg == _TRUE_) {
-          perturbations_get_h_prime_ic_from_00(pba, ppw, k, eta, delta_rho_tot);
+          perturbations_get_h_prime_ic_from_00_smg(pba, ppw, k, eta, delta_rho_tot);
         }
         else {
           ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace] = (2.*pow(k, 2)*eta + 3.*a*a*delta_rho_tot)/a/ppw->pvecback[pba->index_bg_H];
@@ -6002,7 +6000,7 @@ int perturbations_initial_conditions(struct precision * ppr,
 
       if (pba->has_smg == _TRUE_) {
         class_call(
-          perturbations_get_x_x_prime_newtonian(ppw),
+          perturbations_get_x_x_prime_newtonian_smg(ppw),
           ppt->error_message,
           ppt->error_message
         );
@@ -6450,7 +6448,7 @@ int perturbations_approximations(
 
     if (pba->has_smg == _TRUE_) {
       class_call(
-        perturbations_approximations_smg(ppt, ppw, tau),
+        perturbations_switch_approximation_qs_smg(ppt, ppw, tau),
         ppt->error_message,
         ppt->error_message
       );
@@ -6785,7 +6783,7 @@ int perturbations_einstein(
 
       if(pba->has_smg == _TRUE_) {
 
-        perturbations_einstein_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
+        perturbations_einstein_scalar_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
 
       }
       else { // Standard equations

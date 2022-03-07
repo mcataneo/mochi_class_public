@@ -25,13 +25,129 @@ int perturbations_define_indices_mt_smg(struct perturbations_workspace * ppw,
 int perturbations_define_indices_ap_smg(struct perturbations_workspace * ppw,
   			                                int * index_ap);
 
-int perturbations_approximation_qs_smg(struct precision * ppr,
-                                       struct background * pba,
-                                       struct perturbations * ppt,
-                                       struct perturbations_workspace * ppw,
-                                       double k,
-                                       double * tau_ini,
-                                       double tau_end);
+int perturbations_define_indices_pt_smg(struct perturbations_workspace * ppw,
+                                        struct perturbations_vector * ppv,
+			                                  int * index_pt);
+
+int perturbations_get_approximation_qs_smg(struct precision * ppr,
+                                           struct background * pba,
+                                           struct perturbations * ppt,
+                                           struct perturbations_workspace * ppw,
+                                           double k,
+                                           double * tau_ini,
+                                           double tau_end);
+
+int perturbations_switch_approximation_qs_smg(struct perturbations * ppt,
+                                             struct perturbations_workspace * ppw,
+                                             double tau);
+
+int perturbations_prepare_k_output_smg(struct perturbations * ppt);
+
+int perturbations_print_variables_smg(struct background * pba,
+                                      struct perturbations * ppt,
+                                      struct perturbations_workspace * ppw,
+                                      double k,
+                                      double tau,
+                                      double * dataptr,
+                                      int * ptr_storeidx);
+
+int perturbations_verbose_qs_smg(struct perturbations_workspace * ppw,
+                                 double k,
+                                 double tau_switch,
+                                 int * ap_ini,
+                                 int * ap_end);
+
+int perturbations_vector_init_qs_smg(struct perturbations_workspace * ppw,
+                                     struct perturbations_vector * ppv,
+                                     int * pa_old);
+
+int perturbations_adiabatic_ic_smg(struct precision * ppr,
+                                   struct background * pba,
+                                   struct perturbations * ppt,
+                                   struct perturbations_workspace * ppw,
+                                   double * ptr_eta,
+                                   double * ptr_delta_ur,
+                                   double * ptr_theta_ur,
+                                   double * ptr_shear_ur,
+                                   double * ptr_l3_ur,
+                                   double * ptr_delta_dr,
+                                   double tau,
+                                   double k,
+                                   double fracnu,
+                                   double om,
+                                   double rho_r);
+
+int perturbations_isocurvature_cdm_ic_smg(struct precision * ppr,
+                                          struct background * pba,
+                                          struct perturbations * ppt,
+                                          struct perturbations_workspace * ppw,
+                                          double tau,
+                                          double k,
+                                          double fraccdm,
+                                          double om);
+
+int perturbations_isocurvature_b_ic_smg(struct precision * ppr,
+                                        struct background * pba,
+                                        struct perturbations * ppt,
+                                        struct perturbations_workspace * ppw,
+                                        double tau,
+                                        double k,
+                                        double fracb,
+                                        double om);
+
+int perturbations_isocurvature_urd_ic_smg(struct precision * ppr,
+                                          struct background * pba,
+                                          struct perturbations * ppt,
+                                          struct perturbations_workspace * ppw,
+                                          double tau,
+                                          double k,
+                                          double fracnu,
+                                          double fracg,
+                                          double fracb,
+                                          double om);
+
+int perturbations_isocurvature_urv_ic_smg(struct precision * ppr,
+                                          struct background * pba,
+                                          struct perturbations * ppt,
+                                          struct perturbations_workspace * ppw,
+                                          double tau,
+                                          double k,
+                                          double fracnu,
+                                          double fracg,
+                                          double fracb,
+                                          double om);
+
+int perturbations_get_h_prime_ic_from_00_smg(struct background * pba,
+                                             struct perturbations_workspace * ppw,
+                                             double k,
+                                             double eta,
+                                             double delta_rho_tot);
+
+int perturbations_get_x_x_prime_newtonian_smg(struct perturbations_workspace * ppw);
+
+int perturbations_einstein_scalar_smg(struct precision * ppr,
+                                      struct background * pba,
+                                      struct thermodynamics * pth,
+                                      struct perturbations * ppt,
+                                      struct perturbations_workspace * ppw,
+                                      double k,
+                                      double tau,
+                                      double * y);
+
+int perturbations_einstein_tensor_smg(struct background * pba,
+                                      struct perturbations_workspace * ppw,
+                                      double k,
+                                      double tau,
+                                      double * y);
+
+int perturbations_derivs_smg(struct perturbations * ppt,
+                             struct perturbations_workspace * ppw,
+                             struct perturbations_vector * pv,
+                             double * dy,
+                             double * pvecmetric);
+
+
+
 
 
 
@@ -156,10 +272,6 @@ int get_x_x_prime_qs_smg(
                         double k, double * x_qs_smg, double * x_prime_qs_smg
                         );
 
-int perturbations_store_columntitles_smg(
-				struct perturbations * ppt
-			  );
-
 // int perturbations_store_doubles_smg(
 // 				struct background *pba,
 //        double * pvecback,
@@ -167,147 +279,6 @@ int perturbations_store_columntitles_smg(
 //        int * ptr_storeidx
 // 			  );
 
-int perturbations_verbose_qs_smg(
-				struct perturbations * ppt,
-        struct perturbations_workspace * ppw,
-        double k,
-        double tau_switch,
-        int * ap_ini,
-        int * ap_end
-			  );
-
-int hi_class_define_indices_pt(
-      struct perturbations_workspace * ppw,
-      struct perturbations_vector * ppv,
-			int * index_pt
-			);
-
-int perturbations_vector_init_smg(
-      struct perturbations_workspace * ppw,
-      struct perturbations_vector * ppv,
-      int * pa_old
-			);
-
-int perturbations_adiabatic_ic_smg(
-      struct precision * ppr,
-      struct background * pba,
-      struct perturbations * ppt,
-      struct perturbations_workspace * ppw,
-      double * ptr_eta,
-      double * ptr_delta_ur,
-      double * ptr_theta_ur,
-      double * ptr_shear_ur,
-      double * ptr_l3_ur,
-      double * ptr_delta_dr,
-      double tau,
-      double k,
-      double fracnu,
-      double om,
-      double rho_r
-			 );
-
-int perturbations_isocurvature_cdm_ic_smg(
-     struct precision * ppr,
-     struct background * pba,
-     struct perturbations * ppt,
-     struct perturbations_workspace * ppw,
-     double tau,
-     double k,
-     double fraccdm,
-     double om
-			 );
-
-int perturbations_isocurvature_b_ic_smg(
-    struct precision * ppr,
-    struct background * pba,
-    struct perturbations * ppt,
-    struct perturbations_workspace * ppw,
-    double tau,
-    double k,
-    double fracb,
-    double om
-			 );
-
-int perturbations_isocurvature_urd_ic_smg(
-   struct precision * ppr,
-   struct background * pba,
-   struct perturbations * ppt,
-   struct perturbations_workspace * ppw,
-   double tau,
-   double k,
-   double fracnu,
-   double fracg,
-   double fracb,
-   double om
-			 );
-
-int perturbations_isocurvature_urv_ic_smg(
-  struct precision * ppr,
-  struct background * pba,
-  struct perturbations * ppt,
-  struct perturbations_workspace * ppw,
-  double tau,
-  double k,
-  double fracnu,
-  double fracg,
-  double fracb,
-  double om
-			 );
-
-int perturbations_get_x_x_prime_newtonian(
- struct perturbations_workspace * ppw
-			 );
-
-int perturbations_get_h_prime_ic_from_00(
-  struct background * pba,
-  struct perturbations_workspace * ppw,
-  double k,
-  double eta,
-  double delta_rho_tot
-			 );
-
-int perturbations_approximations_smg(
-  struct perturbations * ppt,
-  struct perturbations_workspace * ppw,
-  double tau
-);
-
-int perturbations_einstein_smg(
-  struct precision * ppr,
-  struct background * pba,
-  struct thermodynamics * pth,
-  struct perturbations * ppt,
-  struct perturbations_workspace * ppw,
-  double k,
-  double tau,
-  double * y
-);
-
-int perturbations_einstein_tensor_smg(
-  struct background * pba,
-  struct perturbations_workspace * ppw,
-  double k,
-  double tau,
-  double * y
-);
-
-int perturbations_print_variables_smg(
-  struct background * pba,
-  struct perturbations * ppt,
-  struct perturbations_workspace * ppw,
-  double k,
-  double tau,
-  double * dataptr,
-  int * ptr_storeidx
-);
-
-int perturbations_derivs_smg(
-  struct perturbations * ppt,
-  struct perturbations_workspace * ppw,
-  struct perturbations_vector * pv,
-  double * dy,
-  double * pvecmetric
-);
 
 #ifdef __cplusplus
 }
