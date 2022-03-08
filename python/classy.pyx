@@ -2215,12 +2215,13 @@ cdef class Class:
         """
         cdef double tau
         cdef double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
+        cdef short approx_qs
 
         if background_tau_of_z(&self.ba,z,&tau)==_FAILURE_:
             raise CosmoSevereError(self.ba.error_message)
 
-        if perturbations_qs_functions_at_tau_and_k_qs_smg(&self.ba,&self.pt, k, tau,
-          &mass2_qs, &mass2_qs_p, &rad2_qs, &friction_qs, &slope_qs)==_FAILURE_:
+        if perturbations_qs_functions_at_tau_and_k_qs_smg(&self.pr,&self.ba,&self.pt, k, tau,
+          &mass2_qs, &mass2_qs_p, &rad2_qs, &friction_qs, &slope_qs, &approx_qs)==_FAILURE_:
             raise CosmoSevereError(self.pt.error_message)
 
         return mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs

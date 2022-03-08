@@ -12,6 +12,21 @@
 extern "C" {
 #endif
 
+int get_gravity_coefficients_smg(
+                               struct background * pba,
+                               struct perturbations * ppt,
+                               double * pvecback,
+                               double * delM2, double * M2, double * kin, double * bra,
+                               double * ten, double * run, double * beh, double * res,
+                               double * cD, double * cK, double * cB, double * cH, double * c0,
+                               double * c1, double * c2, double * c3, double * c4,
+                               double * c5, double * c6, double * c7, double * c8,
+                               double * c9, double * c10, double * c11, double * c12,
+                               double * c13, double * c14, double * c15, double * c16,
+                               double * res_p, double *  cD_p, double *  cB_p, double *  cH_p,
+                               double * c9_p, double * c10_p, double * c12_p, double * c13_p
+                             );
+
 int perturbations_tests_smg(struct precision * ppr,
                             struct background * pba,
                             struct perturbations * ppt);
@@ -43,7 +58,8 @@ int perturbations_switch_approximation_qs_smg(struct perturbations * ppt,
 
 int perturbations_prepare_k_output_smg(struct perturbations * ppt);
 
-int perturbations_print_variables_smg(struct background * pba,
+int perturbations_print_variables_smg(struct precision * ppr,
+                                      struct background * pba,
                                       struct perturbations * ppt,
                                       struct perturbations_workspace * ppw,
                                       double k,
@@ -146,6 +162,28 @@ int perturbations_derivs_smg(struct perturbations * ppt,
                              double * dy,
                              double * pvecmetric);
 
+int perturbations_qs_functions_at_tau_and_k_qs_smg(struct precision * ppr,
+                                                   struct background * pba,
+                                                   struct perturbations * ppt,
+                                                   double k,
+                                                   double tau,
+                                                   double *mass2,
+                                                   double *mass2_p,
+                                                   double *rad2,
+                                                   double *friction,
+                                                   double *slope,
+                                                   short *approx);
+
+int sample_approximation_qs_smg(struct precision * ppr,
+                                struct background * pba,
+                                struct perturbations * ppt,
+                                double k,
+                                double tau_ini,
+                                double tau_end,
+                                double * tau_sample,
+                                double * slope_sample,
+                                int * approx_sample,
+                                int *size_sample);
 
 
 
@@ -155,53 +193,6 @@ int perturbations_derivs_smg(struct perturbations * ppt,
 
 
 
-
-int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
-                                            struct perturbations * ppt,
-                                            double k,
-                                            double tau,
-                                            double *mass2,
-                                            double *mass2_p,
-                                            double *rad2,
-                                            double *friction,
-                                            double *slope);
-
-int find_approximation_at_k_qs_smg(struct precision * ppr,
-                            struct background * pba,
-                            struct perturbations * ppt,
-                            double k,
-                            double tau,
-                            int *approx);
-
-int perturbations_test_ini_qs_smg(struct precision * ppr,
-                           struct background * pba,
-                           struct perturbations * ppt,
-                           double k_min,
-                           double k_max,
-                           double a_ini);
-
-int sample_functions_qs_smg(struct precision * ppr,
-                           struct background * pba,
-                           struct perturbations * ppt,
-                           double k,
-                           double tau_ini,
-                           double tau_end,
-                           double * tau_sample,
-                           double * mass2_sample,
-                           double * rad2_sample,
-                           double * slope_sample,
-                           int *size_sample);
-
-int functions_to_approx_qs_smg(struct precision * ppr,
-                              struct background * pba,
-                              struct perturbations * ppt,
-                              double tau_ini,
-                              double tau_end,
-                              double * tau_sample,
-                              double * mass_sample,
-                              double * rad_sample,
-                              int * approx_sample,
-                              int size_sample);
 
 int shorten_first_qs_smg(double * tau_sample,
                         double * slope_sample,
@@ -248,21 +239,6 @@ int calc_extfld_ampl(int n,  double kin, double bra, double dbra, double run, do
                       double Omx, double wx, double l1, double l2, double l3, double l4,
                       double l5, double l6,double l7,double l8, double cs2num, double Dd, double ic_regulator_smg,
                       double * amplitude);
-
-int get_gravity_coefficients_smg(
-                               struct perturbations * ppt,
-                               struct background * pba,
-                               double * pvecback,
-                               double * delM2, double * M2, double * kin, double * bra,
-                               double * ten, double * run, double * beh, double * res,
-                               double * cD, double * cK, double * cB, double * cH, double * c0,
-                               double * c1, double * c2, double * c3, double * c4,
-                               double * c5, double * c6, double * c7, double * c8,
-                               double * c9, double * c10, double * c11, double * c12,
-                               double * c13, double * c14, double * c15, double * c16,
-                               double * res_p, double *  cD_p, double *  cB_p, double *  cH_p,
-                               double * c9_p, double * c10_p, double * c12_p, double * c13_p
-                             );
 
 int get_x_x_prime_qs_smg(
                         struct precision * ppr,

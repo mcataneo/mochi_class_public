@@ -1,4 +1,135 @@
+/** @file perturbations_smg.c
+ *
+ * Emilio Bellini, Ignacy Sawicki, Miguel Zumalacarregui, TODO_EB: date here xx.xx.xxxx
+ *
+ * Additional functions for the perturbation module.
+ * It contains all the hi_class related functions (_smg)
+ * that are used by perturbations.c. In this way the main hi_class
+ * modifications are stored here and the standard Class modules
+ * remain cleaner.
+ *
+ * The following nomenclature has been adopted:
+ *
+ * -# all the functions end with "_smg" to make them easily
+ *    recognizable
+ * -# all the functions starting with "perturbations_" are
+ *    directly called by perturbations.c or the classy wrapper
+ * -# all the functions that do not start with "perturbations_"
+ *    are only used internally in perturbations_smg.c
+ */
+
 #include "perturbations_smg.h"
+
+
+/**
+ * It returns the alphas and the coefficients of the Einstein equations
+ * that will be used to evaluate the perturbations and their initial
+ * conditions. This function uses use_pert_var_deltaphi_smg to decide which
+ * coefficients to output.
+ *
+ * @param pba              Input: pointer to background structure
+ * @param ppt              Input: pointer to perturbation structure
+ * @param pvecback         Input: pointer to background workspace
+ * @return the error status
+ */
+int get_gravity_coefficients_smg(
+                                 struct background * pba,
+                                 struct perturbations * ppt,
+                                 double * pvecback,
+                                 double * delM2, double * M2, double * kin, double * bra,
+                                 double * ten, double * run, double * beh, double * res,
+                                 double * cD, double * cK, double * cB, double * cH, double * c0,
+                                 double * c1, double * c2, double * c3, double * c4,
+                                 double * c5, double * c6, double * c7, double * c8,
+                                 double * c9, double * c10, double * c11, double * c12,
+                                 double * c13, double * c14, double * c15, double * c16,
+                                 double * res_p, double * cD_p, double * cB_p, double * cH_p,
+                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p
+                                 ){
+
+  double a = pvecback[pba->index_bg_a];
+  double H = pvecback[pba->index_bg_H];
+  double Hp = pvecback[pba->index_bg_H_prime];
+
+  *delM2 = pvecback[pba->index_bg_delta_M2_smg];
+  *M2 = pvecback[pba->index_bg_M2_smg];
+  *kin = pvecback[pba->index_bg_kineticity_smg];
+  *bra = pvecback[pba->index_bg_braiding_smg];
+  *ten = pvecback[pba->index_bg_tensor_excess_smg];
+  *run = pvecback[pba->index_bg_mpl_running_smg];
+  *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
+
+  if (ppt->use_pert_var_deltaphi_smg == _TRUE_) {
+    *res = 1.;
+    *cD  = pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
+    *cK  = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
+    *cB  = pvecback[pba->index_bg_braiding_over_phi_smg];
+    *cH  = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
+    *c0  = pvecback[pba->index_bg_C0_smg];
+    *c1  = pvecback[pba->index_bg_C1_smg];
+    *c2  = pvecback[pba->index_bg_C2_smg];
+    *c3  = pvecback[pba->index_bg_C3_smg];
+    *c4  = pvecback[pba->index_bg_C4_smg];
+    *c5  = pvecback[pba->index_bg_C5_smg];
+    *c6  = pvecback[pba->index_bg_C6_smg];
+    *c7  = pvecback[pba->index_bg_C7_smg];
+    *c8  = pvecback[pba->index_bg_C8_smg];
+    *c9  = pvecback[pba->index_bg_C9_smg];
+    *c10 = pvecback[pba->index_bg_C10_smg];
+    *c11 = pvecback[pba->index_bg_C11_smg];
+    *c12 = pvecback[pba->index_bg_C12_smg];
+    *c13 = pvecback[pba->index_bg_C13_smg];
+    *c14 = pvecback[pba->index_bg_C14_smg];
+    *c15 = pvecback[pba->index_bg_C15_smg];
+    *c16 = pvecback[pba->index_bg_C16_smg];
+    *res_p = 0.;
+    *cD_p  = pvecback[pba->index_bg_kinetic_D_over_phiphi_prime_smg];
+    *cB_p  = pvecback[pba->index_bg_braiding_over_phi_prime_smg];
+    *cH_p  = pvecback[pba->index_bg_beyond_horndeski_over_phi_prime_smg];
+    *c9_p  = pvecback[pba->index_bg_C9_prime_smg];
+    *c10_p = pvecback[pba->index_bg_C10_prime_smg];
+    *c12_p = pvecback[pba->index_bg_C12_prime_smg];
+    *c13_p = pvecback[pba->index_bg_C13_prime_smg];
+  }
+  else if (ppt->use_pert_var_deltaphi_smg == _FALSE_) {
+    *res = -a*H;
+    *cD  = pvecback[pba->index_bg_kinetic_D_smg];
+    *cK  = pvecback[pba->index_bg_kineticity_smg];
+    *cB  = pvecback[pba->index_bg_braiding_smg];
+    *cH  = pvecback[pba->index_bg_beyond_horndeski_smg];
+    *c0  = pvecback[pba->index_bg_A0_smg];
+    *c1  = pvecback[pba->index_bg_A1_smg];
+    *c2  = pvecback[pba->index_bg_A2_smg];
+    *c3  = pvecback[pba->index_bg_A3_smg];
+    *c4  = pvecback[pba->index_bg_A4_smg];
+    *c5  = pvecback[pba->index_bg_A5_smg];
+    *c6  = pvecback[pba->index_bg_A6_smg];
+    *c7  = pvecback[pba->index_bg_A7_smg];
+    *c8  = pvecback[pba->index_bg_A8_smg];
+    *c9  = pvecback[pba->index_bg_A9_smg];
+    *c10 = pvecback[pba->index_bg_A10_smg];
+    *c11 = pvecback[pba->index_bg_A11_smg];
+    *c12 = pvecback[pba->index_bg_A12_smg];
+    *c13 = pvecback[pba->index_bg_A13_smg];
+    *c14 = pvecback[pba->index_bg_A14_smg];
+    *c15 = pvecback[pba->index_bg_A15_smg];
+    *c16 = pvecback[pba->index_bg_A16_smg];
+    *res_p = -a*(Hp + a*H);
+    *cD_p  = pvecback[pba->index_bg_kinetic_D_prime_smg];
+    *cB_p  = pvecback[pba->index_bg_braiding_prime_smg];
+    *cH_p  = pvecback[pba->index_bg_beyond_horndeski_prime_smg];
+    *c9_p  = pvecback[pba->index_bg_A9_prime_smg];
+    *c10_p = pvecback[pba->index_bg_A10_prime_smg];
+    *c12_p = pvecback[pba->index_bg_A12_prime_smg];
+    *c13_p = pvecback[pba->index_bg_A13_prime_smg];
+  }
+  else {
+    printf("It was not possible to determine if oscillations of the background scalar field should be allowed or not.\n");
+    return _FAILURE_;
+  }
+
+  return _SUCCESS_;
+}
 
 
 /**
@@ -15,6 +146,17 @@ int perturbations_tests_smg(
                             struct background * pba,
                             struct perturbations * ppt
                             ) {
+
+  /* Define local variables */
+  double k_min = ppt->k[ppt->index_md_scalars][0];
+  double k_max = ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1];
+  double a_ini = ppr->a_ini_test_qs_smg;
+  double * pvecback;
+  int first_index_back;
+  double tau;
+  short approx_k_min, approx_k_max;
+  double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
+
 
   class_test(ppt->gauge == newtonian,
              ppt->error_message,
@@ -43,14 +185,48 @@ int perturbations_tests_smg(
     * the qs_smg status is the same as the one found here. In case it is
     * not, it anticipate the initial time.
     */
-    class_call(perturbations_test_ini_qs_smg(ppr,
-                                             pba,
-                                             ppt,
-                                             ppt->k[ppt->index_md_scalars][0],
-                                             ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1],
-                                             ppr->a_ini_test_qs_smg),
-               ppt->error_message,
+
+    //Get background quantities at a_ini
+    class_call(background_tau_of_z(pba,
+                                   1./a_ini-1.,
+                                   &tau),
+               pba->error_message,
                ppt->error_message);
+
+    //Approximation for k_min
+    perturbations_qs_functions_at_tau_and_k_qs_smg(
+                                            ppr,
+                                            pba,
+                                            ppt,
+                                            k_min,
+                                            tau,
+                                            &mass2_qs,
+                                            &mass2_qs_p,
+                                            &rad2_qs,
+                                            &friction_qs,
+                                            &slope_qs,
+                                            &approx_k_min);
+
+    //Approximation for k_max
+    perturbations_qs_functions_at_tau_and_k_qs_smg(
+                                            ppr,
+                                            pba,
+                                            ppt,
+                                            k_max,
+                                            tau,
+                                            &mass2_qs,
+                                            &mass2_qs_p,
+                                            &rad2_qs,
+                                            &friction_qs,
+                                            &slope_qs,
+                                            &approx_k_max);
+
+    class_test(approx_k_min != approx_k_max,
+               ppt->error_message,
+               "\n All the k modes should start evolving with the same type of initial conditions (either fully_dynamic or quasi_static).\n This is not the case at a = %e. Try to decrease a_ini_over_a_today_default.\n", ppr->a_ini_over_a_today_default);
+
+    ppt->initial_approx_qs_smg = approx_k_min;
+
   }
 
   if (!((ppt->method_qs_smg == automatic) && (ppt->initial_approx_qs_smg==_TRUE_))) {
@@ -87,7 +263,9 @@ int perturbations_tests_smg(
     }
   }
 
-        return _SUCCESS_;
+  free(pvecback);
+
+  return _SUCCESS_;
 }
 
 
@@ -208,8 +386,9 @@ int perturbations_get_approximation_qs_smg(
   double tau_lower;
   double tau_upper = *tau_ini;
   int is_early_enough = _FALSE_;
-  int approx;
+  short approx;
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+  double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
 
   class_alloc(ppw->tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
 
@@ -227,14 +406,20 @@ int perturbations_get_approximation_qs_smg(
                pba->error_message,
                ppt->error_message);
 
-    /* Main loop */
+    /* Main loop for antcipating the integration time */
     while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
-      find_approximation_at_k_qs_smg(ppr,
-                                     pba,
-                                     ppt,
-                                     k,
-                                     tau_upper,
-                                     &approx);
+      perturbations_qs_functions_at_tau_and_k_qs_smg(
+                                              ppr,
+                                              pba,
+                                              ppt,
+                                              k,
+                                              tau_upper,
+                                              &mass2_qs,
+                                              &mass2_qs_p,
+                                              &rad2_qs,
+                                              &friction_qs,
+                                              &slope_qs,
+                                              &approx);
       if (approx == ppt->initial_approx_qs_smg) {
         is_early_enough = _TRUE_;
       }
@@ -246,27 +431,43 @@ int perturbations_get_approximation_qs_smg(
   }
 
 
-  /** Find the intervals over which the approximation scheme for qs_smg is constant */
+  /*
+   * Find the intervals over which the approximation scheme for qs_smg
+   * is constant. This is the main pipeline to decide the approximation
+   * to be used at each time, eventually delaying it to take into
+   * account the oscillations. The steps are the following:
+   * - sample the proposed approximation and the decaying rate
+   *   of the oscillations over time. To estimate the approximation
+   *   to be used at each time step the mass and radiation triggers
+   *   are taken into account. In addition, everything is set to fully
+   *   dynamic if it happens after z_fd_qs_smg;
+   * - shorten the scheme to retain only the times where the
+   *   approximation changes;
+   * - eventually delay the starting of the qs approximation using the
+   *   previously calculated slope parameter to estimate the decaying
+   *   rate of the oscillations;
+   * - shorten again the scheme to retain only the times where the
+   *   approximation changes;
+   * - fit the scheme obtained to the implemented one.
+   */
   if ((ppt->method_qs_smg == automatic) || (ppt->method_qs_smg == fully_dynamic_debug) || (ppt->method_qs_smg == quasi_static_debug)) {
 
     int size_sample = ppr->n_max_qs_smg;
 
     double * tau_sample;
-    double * mass2_sample;
-    double * rad2_sample;
     double * slope_sample;
+    int * approx_sample;
 
     class_alloc(tau_sample,size_sample*sizeof(double),ppt->error_message);
-    class_alloc(mass2_sample,size_sample*sizeof(double),ppt->error_message);
-    class_alloc(rad2_sample,size_sample*sizeof(double),ppt->error_message);
     class_alloc(slope_sample,size_sample*sizeof(double),ppt->error_message);
+    class_alloc(approx_sample,size_sample*sizeof(int),ppt->error_message);
 
     /**
      * Input: background table
-     * Output: sample of the time, mass, decaying rate of the oscillations (slope)
-     *   and radiation density.
+     * Output: sample of the approx scheme and the decaying rate
+     * of the oscillations (slope)
      **/
-    sample_functions_qs_smg(
+    sample_approximation_qs_smg(
             ppr,
             pba,
             ppt,
@@ -274,36 +475,11 @@ int perturbations_get_approximation_qs_smg(
             *tau_ini,
             tau_end,
             tau_sample,
-            mass2_sample,
-            rad2_sample,
             slope_sample,
+            approx_sample,
             &size_sample
             );
 
-
-    int * approx_sample;
-
-    class_alloc(approx_sample,size_sample*sizeof(int),ppt->error_message);
-
-    /**
-     * Input: sample of the time, mass and radiation density
-     * Output: sample of the approx scheme
-     **/
-    functions_to_approx_qs_smg(
-            ppr,
-            pba,
-            ppt,
-            *tau_ini,
-            tau_end,
-            tau_sample,
-            mass2_sample,
-            rad2_sample,
-            approx_sample,
-            size_sample
-            );
-
-    free(mass2_sample);
-    free(rad2_sample);
 
     double * tau_array;
     double * slope_array;
@@ -519,6 +695,7 @@ int perturbations_prepare_k_output_smg(
  *
  */
 int perturbations_print_variables_smg(
+                                      struct precision * ppr,
                                       struct background * pba,
                                       struct perturbations * ppt,
                                       struct perturbations_workspace * ppw,
@@ -531,12 +708,14 @@ int perturbations_print_variables_smg(
   int storeidx = *ptr_storeidx;
 
   double mass2_qs=0., mass2_qs_p=0., rad2_qs=0., friction_qs=0., slope_qs=0.;
+  short approx;
 
   double x_smg = ppw->pvecmetric[ppw->index_mt_x_smg];
   double x_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
   double x_prime_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg];
 
   perturbations_qs_functions_at_tau_and_k_qs_smg(
+                                          ppr,
                                           pba,
                                           ppt,
                                           k,
@@ -545,7 +724,8 @@ int perturbations_print_variables_smg(
                                           &mass2_qs_p,
                                           &rad2_qs,
                                           &friction_qs,
-                                          &slope_qs);
+                                          &slope_qs,
+                                          &approx);
 
   /* Scalar field smg*/
   class_store_double(dataptr, x_smg, _TRUE_, storeidx);
@@ -1755,7 +1935,7 @@ int perturbations_einstein_scalar_smg(
   */
   class_call(
     get_gravity_coefficients_smg(
-      ppt, pba, ppw->pvecback,
+      pba, ppt, ppw->pvecback,
       & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
       & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
       & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
@@ -1997,12 +2177,12 @@ int perturbations_einstein_tensor_smg(
  * @return the error status
  */
 int perturbations_derivs_smg(
-  struct perturbations * ppt,
-  struct perturbations_workspace * ppw,
-  struct perturbations_vector * pv,
-  double * dy,
-  double * pvecmetric
-) {
+                             struct perturbations * ppt,
+                             struct perturbations_workspace * ppw,
+                             struct perturbations_vector * pv,
+                             double * dy,
+                             double * pvecmetric
+                             ) {
 
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
@@ -2025,304 +2205,238 @@ int perturbations_derivs_smg(
 }
 
 
+/**
+ * Calculate the functions necessary for the qs_smg approximation
+ * scheme at k and tau. The approximation value returned is
+ * independent of the history of the perturbations, i.e. corrections
+ * due to damped oscillations are not taken into account.
+ *
+ * This is used both in:
+ * - the algorithm for the qs_smg scheme
+ * - as a standalone function to debug
+ *
+ * @param ppr              Input: pointer to precision structure
+ * @param pba              Input: pointer to background structure
+ * @param ppt              Input: pointer to perturbation structure
+ * @param k                Input: k mode
+ * @param tau              Input: conformal time
+ * @param mass2            Output: squared mass of the scalar field
+ * @param mass2_p          Output: derivative of the squared mass of the scalar field
+ * @param rad2             Output: squared "radiation" mass
+ * @param friction         Output: friction term
+ * @param slope            Output: slope of oscillations term
+ * @param approx           Output: approximation status qs_smg (0->FD, 1->QS)
+ * @return the error status
+ */
+int perturbations_qs_functions_at_tau_and_k_qs_smg(
+                                                   struct precision * ppr,
+                                                   struct background * pba,
+                                                   struct perturbations * ppt,
+                                                   double k,
+                                                   double tau,
+                                                   double *mass2,
+                                                   double *mass2_p,
+                                                   double *rad2,
+                                                   double *friction,
+                                                   double *slope,
+                                                   short *approx
+                                                   ) {
+
+  /* Definition of local variables */
+  double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
+  double tau_fd;
+  short proposal;
+  double * pvecback;
+  int first_index_back;
+
+  class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
+
+  class_call(background_at_tau(pba,
+                               tau,
+                               normal_info,
+                               inter_normal,
+                               &first_index_back,
+                               pvecback),
+             pba->error_message,
+             ppt->error_message);
+
+  class_call(background_tau_of_z(pba,
+                                ppr->z_fd_qs_smg,
+                                &tau_fd),
+            pba->error_message,
+            ppt->error_message);
+
+  double delM2, M2, kin, bra, ten, run, beh;
+  double res, cD, cK, cB, cH;
+  double c0, c1, c2, c3, c4, c5, c6, c7, c8;
+  double c9, c10, c11, c12, c13, c14, c15, c16;
+  double c9_p, c10_p, c12_p, c13_p;
+  double res_p, cD_p, cB_p, cH_p;
+  double x_prime_qs_smg_num, x_prime_qs_smg_den;
+  double a, H, rho_tot, p_tot, rho_smg, p_smg, rho_r;
+  double k2 = k*k;
+
+  a = pvecback[pba->index_bg_a];
+  H = pvecback[pba->index_bg_H];
+  rho_r = pvecback[pba->index_bg_rho_g] + pvecback[pba->index_bg_rho_ur];
+  rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
+  p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
+  rho_smg = pvecback[pba->index_bg_rho_smg];
+  p_smg = pvecback[pba->index_bg_p_smg];
+
+  class_call(
+          get_gravity_coefficients_smg(
+                  pba, ppt, pvecback,
+                  &delM2, &M2, &kin, &bra, &ten, &run, &beh, &res,
+                  &cD, &cK, &cB, &cH, &c0, &c1, &c2, &c3,
+                  &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11,
+                  &c12, &c13, &c14, &c15, &c16, &res_p, &cD_p, &cB_p,
+                  &cH_p, &c9_p, &c10_p, &c12_p, &c13_p
+                  ),
+          ppt->error_message,
+          ppt->error_message);
 
 
+  mass2_qs = -(c12 + c13*k2*pow(a*H,-2))/cD;
 
+  mass2_qs_p =
+    -(
+      +c12_p - c12*cD_p/cD
+      + (c13_p - c13*cD_p/cD + (rho_tot + rho_smg + 3.*p_tot + 3.*p_smg)*c13*a/H)*pow(a*H,-2)*k2
+    )/cD;
 
+  rad2_qs = 3.*mass2_qs*pow(H,4)*pow(rho_r,-2)*pow(a*H,2)/k2;
 
+  friction_qs = -(c11 - c3*k2*pow(a*H,-2))/cD;
 
+  slope_qs = -1./4.*(1. - 2.*friction_qs + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_qs_p/mass2_qs/a/H);
 
+  //     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
+  //     double x = a;
+  //     mass2_qs = 1.5 + cos(10*_PI_*x);
+  //     rad2_qs = 1.;
+  //     friction_qs = 1.;
+  //     slope_qs = 1.;
 
+  *mass2 = mass2_qs;
+  *mass2_p = mass2_qs_p;
+  *rad2 = rad2_qs;
+  *friction = friction_qs;
+  *slope = slope_qs;
 
-int perturbations_qs_functions_at_tau_and_k_qs_smg(struct background * pba,
-                                             struct perturbations * ppt,
-                                             double k,
-                                             double tau,
-                                             double *mass2,
-                                             double *mass2_p,
-                                             double *rad2,
-                                             double *friction,
-                                             double *slope) {
+  //Approximation
+  if ((mass2_qs > pow(ppr->trigger_mass_qs_smg,2)) && (rad2_qs > pow(ppr->trigger_rad_qs_smg,2))) {
+    proposal = _TRUE_;
+  }
+  else {
+    proposal = _FALSE_;
+  }
+  if (tau <= tau_fd) {
+    *approx = proposal;
+  }
+  else {
+    *approx = _FALSE_;
+  }
 
-        /* Definition of local variables */
-        double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
-        double * pvecback;
-        int first_index_back;
+  free(pvecback);
 
-        class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
-        class_call(background_at_tau(pba,
-                                     tau,
-                                     normal_info,
-                                     inter_normal,
-                                     &first_index_back,
-                                     pvecback),
-                   pba->error_message,
-                   ppt->error_message);
-
-        double delM2, M2, kin, bra, ten, run, beh;
-        double res, cD, cK, cB, cH;
-        double c0, c1, c2, c3, c4, c5, c6, c7, c8;
-        double c9, c10, c11, c12, c13, c14, c15, c16;
-        double c9_p, c10_p, c12_p, c13_p;
-        double res_p, cD_p, cB_p, cH_p;
-        double x_prime_qs_smg_num, x_prime_qs_smg_den;
-        double a, H, rho_tot, p_tot, rho_smg, p_smg, rho_r;
-        double k2 = k*k;
-
-        a = pvecback[pba->index_bg_a];
-        H = pvecback[pba->index_bg_H];
-        rho_r = pvecback[pba->index_bg_rho_g] + pvecback[pba->index_bg_rho_ur];
-        rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
-        p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-        rho_smg = pvecback[pba->index_bg_rho_smg];
-        p_smg = pvecback[pba->index_bg_p_smg];
-
-        class_call(
-                get_gravity_coefficients_smg(
-                        ppt, pba, pvecback,
-                        &delM2, &M2, &kin, &bra, &ten, &run, &beh, &res,
-                        &cD, &cK, &cB, &cH, &c0, &c1, &c2, &c3,
-                        &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11,
-                        &c12, &c13, &c14, &c15, &c16, &res_p, &cD_p, &cB_p,
-                        &cH_p, &c9_p, &c10_p, &c12_p, &c13_p
-                        ),
-                ppt->error_message,
-                ppt->error_message);
-
-
-        mass2_qs = -(c12 + c13*k2*pow(a*H,-2))/cD;
-
-        mass2_qs_p =
-                -(
-                        +c12_p - c12*cD_p/cD
-                        + (c13_p - c13*cD_p/cD + (rho_tot + rho_smg + 3.*p_tot + 3.*p_smg)*c13*a/H)*pow(a*H,-2)*k2
-                        )/cD;
-
-        rad2_qs = 3.*mass2_qs*pow(H,4)*pow(rho_r,-2)*pow(a*H,2)/k2;
-
-        friction_qs = -(c11 - c3*k2*pow(a*H,-2))/cD;
-
-        slope_qs = -1./4.*(1. - 2.*friction_qs + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_qs_p/mass2_qs/a/H);
-
-        *mass2 = mass2_qs;
-        *mass2_p = mass2_qs_p;
-        *rad2 = rad2_qs;
-        *friction = friction_qs;
-        *slope = slope_qs;
-
-        free(pvecback);
-
-        return _SUCCESS_;
-
-}
-
-int find_approximation_at_k_qs_smg(struct precision * ppr,
-                             struct background * pba,
-                             struct perturbations * ppt,
-                             double k,
-                             double tau,
-                             int *approx) {
-
-        //Define local variables
-        double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
-
-        perturbations_qs_functions_at_tau_and_k_qs_smg(
-                pba,
-                ppt,
-                k,
-                tau,
-                &mass2_qs,
-                &mass2_qs_p,
-                &rad2_qs,
-                &friction_qs,
-                &slope_qs);
-
-        double tau_fd;
-        short proposal;
-
-        class_call(background_tau_of_z(pba,
-                                       ppr->z_fd_qs_smg,
-                                       &tau_fd),
-                   pba->error_message,
-                   ppt->error_message);
-        //Approximation
-        if ((mass2_qs > pow(ppr->trigger_mass_qs_smg,2)) && (rad2_qs > pow(ppr->trigger_rad_qs_smg,2))) {
-                proposal = _TRUE_;
-        }
-        else {
-                proposal = _FALSE_;
-        }
-        if (tau <= tau_fd) {
-                *approx = proposal;
-        }
-        else {
-                *approx = _FALSE_;
-        }
-
-        return _SUCCESS_;
-
-}
-
-int perturbations_test_ini_qs_smg(struct precision * ppr,
-                            struct background * pba,
-                            struct perturbations * ppt,
-                            double k_min,
-                            double k_max,
-                            double a_ini) {
-        //Define local variables
-        double * pvecback;
-        int first_index_back;
-        double tau;
-        int approx_k_min, approx_k_max;
-
-        //Get background quantities at a_ini
-        class_call(background_tau_of_z(pba,
-                                       1./a_ini-1.,
-                                       &tau),
-                   pba->error_message,
-                   ppt->error_message);
-
-        //Approximation for k_min
-        find_approximation_at_k_qs_smg(
-                ppr,
-                pba,
-                ppt,
-                k_min,
-                tau,
-                &approx_k_min
-                );
-
-        //Approximation for k_max
-        find_approximation_at_k_qs_smg(
-                ppr,
-                pba,
-                ppt,
-                k_max,
-                tau,
-                &approx_k_max
-                );
-
-        class_test_except(approx_k_min != approx_k_max,
-                          ppt->error_message,
-                          free(pvecback),
-                          "\n All the k modes should start evolving with the same type of initial conditions (either fully_dynamic or quasi_static).\n This is not the case at a = %e. Try to decrease a_ini_over_a_today_default.\n", ppr->a_ini_over_a_today_default);
-
-        ppt->initial_approx_qs_smg = approx_k_min;
-
-        free(pvecback);
-
-        return _SUCCESS_;
+  return _SUCCESS_;
 
 }
 
 
+/**
+ * Sample the approximation status over the evolution of the perturbations.
+ *
+ * @param ppr              Input: pointer to precision structure
+ * @param pba              Input: pointer to background structure
+ * @param ppt              Input: pointer to perturbation structure
+ * @param k                Input: k mode
+ * @param tau_ini          Input: initial conformal time
+ * @param tau_end          Input: final conformal time
+ * @param tau_sample       Output: sample of conformal time
+ * @param slope_sample     Output: sample of the slope of the oscillations
+ * @param approx_sample    Output: sample of the approximation status qs_smg (0->FD, 1->QS)
+ * @param size_sample      Output: size of the sample
+ * @return the error status
+ */
+int sample_approximation_qs_smg(
+                                struct precision * ppr,
+                                struct background * pba,
+                                struct perturbations * ppt,
+                                double k,
+                                double tau_ini,
+                                double tau_end,
+                                double * tau_sample,
+                                double * slope_sample,
+                                int * approx_sample,
+                                int *size_sample
+                                ) {
 
-int sample_functions_qs_smg(struct precision * ppr,
-                            struct background * pba,
-                            struct perturbations * ppt,
-                            double k,
-                            double tau_ini,
-                            double tau_end,
-                            double * tau_sample,
-                            double * mass2_sample,
-                            double * rad2_sample,
-                            double * slope_sample,
-                            int *size_sample) {
-
-        /* Definition of local variables */
-        double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
-        double tau = tau_ini;
-        double delta_tau = (tau_end - tau_ini)/ppr->n_max_qs_smg;
-        int count = 0;
-
-
-        /* Scan the time evolution and build several arrays containing
-        * interesting quantities for the quasi-static approximation */
-        while (tau < tau_end) {
-
-                perturbations_qs_functions_at_tau_and_k_qs_smg(
-                        pba,
-                        ppt,
-                        k,
-                        tau,
-                        &mass2_qs,
-                        &mass2_qs_p,
-                        &rad2_qs,
-                        &friction_qs,
-                        &slope_qs);
-
-//     DEBUG: To debug uncomment this and define a convenient function of time for each of these quantities
-//     double x = (tau - tau_ini)/(tau_end - tau_ini);
-//     mass2_qs = 1.5 + cos(10*_PI_*x);
-//     rad2_qs = 1.;
-//     slope_qs = 1.;
-
-                tau_sample[count] = tau;
-                mass2_sample[count] = mass2_qs;
-                rad2_sample[count] = rad2_qs;
-                slope_sample[count] = slope_qs;
-
-                delta_tau = fabs(2.*mass2_qs/mass2_qs_p)/sqrt(ppr->n_min_qs_smg*ppr->n_max_qs_smg);
-                delta_tau = MIN(delta_tau, (tau_end - tau_ini)/ppr->n_min_qs_smg);
-                delta_tau = MAX(delta_tau, (tau_end - tau_ini)/ppr->n_max_qs_smg);
-
-                tau += delta_tau;
-                count += 1;
-
-        }
-
-        *size_sample = count;
-
-        return _SUCCESS_;
-
-}
+  /* Definition of local variables */
+  double mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs;
+  short approx;
+  double tau = tau_ini;
+  double delta_tau = (tau_end - tau_ini)/ppr->n_max_qs_smg;
+  int count = 0;
 
 
-int functions_to_approx_qs_smg(struct precision * ppr,
-                               struct background * pba,
-                               struct perturbations * ppt,
-                               double tau_ini,
-                               double tau_end,
-                               double * tau_sample,
-                               double * mass2_sample,
-                               double * rad2_sample,
-                               int * approx_sample,
-                               int size_sample
-                               ) {
+  /* Scan the time evolution and build several arrays containing
+  * interesting quantities for the quasi-static approximation */
+  while (tau < tau_end) {
 
+    perturbations_qs_functions_at_tau_and_k_qs_smg(
+            ppr,
+            pba,
+            ppt,
+            k,
+            tau,
+            &mass2_qs,
+            &mass2_qs_p,
+            &rad2_qs,
+            &friction_qs,
+            &slope_qs,
+            &approx);
 
-        // Convert the input parameter z_fd into the corresponding conformal time
-        double tau_fd;
-        short proposal;
+    tau_sample[count] = tau;
+    slope_sample[count] = slope_qs;
+    approx_sample[count] = approx;
 
-        class_call(background_tau_of_z(pba,
-                                       ppr->z_fd_qs_smg,
-                                       &tau_fd),
-                   pba->error_message,
-                   ppt->error_message);
+    delta_tau = fabs(2.*mass2_qs/mass2_qs_p)/sqrt(ppr->n_min_qs_smg*ppr->n_max_qs_smg);
+    delta_tau = MIN(delta_tau, (tau_end - tau_ini)/ppr->n_min_qs_smg);
+    delta_tau = MAX(delta_tau, (tau_end - tau_ini)/ppr->n_max_qs_smg);
 
-        int i;
-        for (i = 0; i < size_sample; i++) {
+    tau += delta_tau;
+    count += 1;
 
-                if ((mass2_sample[i] > pow(ppr->trigger_mass_qs_smg,2)) && (rad2_sample[i] > pow(ppr->trigger_rad_qs_smg,2))) {
-                        proposal = 1;
-                }
-                else {
-                        proposal = 0;
-                }
+  }
 
-                if (tau_sample[i] <= tau_fd) {
-                        approx_sample[i] = proposal;
-                }
-                else {
-                        approx_sample[i] = 0;
-                }
+  *size_sample = count;
 
-        }
-
-        return _SUCCESS_;
+  return _SUCCESS_;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 int shorten_first_qs_smg(double * tau_sample,
@@ -2583,6 +2697,10 @@ int fit_real_scheme_qs_smg(double tau_end,
 
         return _SUCCESS_;
 }
+
+
+
+
 
 /*
  * Test for stability of solutions in RD before initialisation of
@@ -2972,110 +3090,6 @@ int calc_extfld_ampl(int nexpo,  double kin, double bra, double dbra, double run
         return _SUCCESS_;
 }
 
-int get_gravity_coefficients_smg(
-        struct perturbations * ppt,
-        struct background * pba,
-        double * pvecback,
-        double * delM2, double * M2, double * kin, double * bra,
-        double * ten, double * run, double * beh, double * res,
-        double * cD, double * cK, double * cB, double * cH, double * c0,
-        double * c1, double * c2, double * c3, double * c4,
-        double * c5, double * c6, double * c7, double * c8,
-        double * c9, double * c10, double * c11, double * c12,
-        double * c13, double * c14, double * c15, double * c16,
-        double * res_p, double * cD_p, double * cB_p, double * cH_p,
-        double * c9_p, double * c10_p, double * c12_p, double * c13_p
-        ){
-        /* It returns the alphas and the coefficients of the Einstein equations
-           that will be used to evaluate the perturbations and their initial
-           conditions. This function uses use_pert_var_deltaphi_smg to decide which
-           coefficients to output.
-         */
-
-        double a = pvecback[pba->index_bg_a];
-        double H = pvecback[pba->index_bg_H];
-        double Hp = pvecback[pba->index_bg_H_prime];
-
-        *delM2 = pvecback[pba->index_bg_delta_M2_smg];
-        *M2 = pvecback[pba->index_bg_M2_smg];
-        *kin = pvecback[pba->index_bg_kineticity_smg];
-        *bra = pvecback[pba->index_bg_braiding_smg];
-        *ten = pvecback[pba->index_bg_tensor_excess_smg];
-        *run = pvecback[pba->index_bg_mpl_running_smg];
-        *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
-
-        if (ppt->use_pert_var_deltaphi_smg == _TRUE_) {
-                *res = 1.;
-                *cD  = pvecback[pba->index_bg_kinetic_D_over_phiphi_smg];
-                *cK  = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
-                *cB  = pvecback[pba->index_bg_braiding_over_phi_smg];
-                *cH  = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
-                *c0  = pvecback[pba->index_bg_C0_smg];
-                *c1  = pvecback[pba->index_bg_C1_smg];
-                *c2  = pvecback[pba->index_bg_C2_smg];
-                *c3  = pvecback[pba->index_bg_C3_smg];
-                *c4  = pvecback[pba->index_bg_C4_smg];
-                *c5  = pvecback[pba->index_bg_C5_smg];
-                *c6  = pvecback[pba->index_bg_C6_smg];
-                *c7  = pvecback[pba->index_bg_C7_smg];
-                *c8  = pvecback[pba->index_bg_C8_smg];
-                *c9  = pvecback[pba->index_bg_C9_smg];
-                *c10 = pvecback[pba->index_bg_C10_smg];
-                *c11 = pvecback[pba->index_bg_C11_smg];
-                *c12 = pvecback[pba->index_bg_C12_smg];
-                *c13 = pvecback[pba->index_bg_C13_smg];
-                *c14 = pvecback[pba->index_bg_C14_smg];
-                *c15 = pvecback[pba->index_bg_C15_smg];
-                *c16 = pvecback[pba->index_bg_C16_smg];
-                *res_p = 0.;
-                *cD_p  = pvecback[pba->index_bg_kinetic_D_over_phiphi_prime_smg];
-                *cB_p  = pvecback[pba->index_bg_braiding_over_phi_prime_smg];
-                *cH_p  = pvecback[pba->index_bg_beyond_horndeski_over_phi_prime_smg];
-                *c9_p  = pvecback[pba->index_bg_C9_prime_smg];
-                *c10_p = pvecback[pba->index_bg_C10_prime_smg];
-                *c12_p = pvecback[pba->index_bg_C12_prime_smg];
-                *c13_p = pvecback[pba->index_bg_C13_prime_smg];
-        }
-        else if (ppt->use_pert_var_deltaphi_smg == _FALSE_) {
-                *res = -a*H;
-                *cD  = pvecback[pba->index_bg_kinetic_D_smg];
-                *cK  = pvecback[pba->index_bg_kineticity_smg];
-                *cB  = pvecback[pba->index_bg_braiding_smg];
-                *cH  = pvecback[pba->index_bg_beyond_horndeski_smg];
-                *c0  = pvecback[pba->index_bg_A0_smg];
-                *c1  = pvecback[pba->index_bg_A1_smg];
-                *c2  = pvecback[pba->index_bg_A2_smg];
-                *c3  = pvecback[pba->index_bg_A3_smg];
-                *c4  = pvecback[pba->index_bg_A4_smg];
-                *c5  = pvecback[pba->index_bg_A5_smg];
-                *c6  = pvecback[pba->index_bg_A6_smg];
-                *c7  = pvecback[pba->index_bg_A7_smg];
-                *c8  = pvecback[pba->index_bg_A8_smg];
-                *c9  = pvecback[pba->index_bg_A9_smg];
-                *c10 = pvecback[pba->index_bg_A10_smg];
-                *c11 = pvecback[pba->index_bg_A11_smg];
-                *c12 = pvecback[pba->index_bg_A12_smg];
-                *c13 = pvecback[pba->index_bg_A13_smg];
-                *c14 = pvecback[pba->index_bg_A14_smg];
-                *c15 = pvecback[pba->index_bg_A15_smg];
-                *c16 = pvecback[pba->index_bg_A16_smg];
-                *res_p = -a*(Hp + a*H);
-                *cD_p  = pvecback[pba->index_bg_kinetic_D_prime_smg];
-                *cB_p  = pvecback[pba->index_bg_braiding_prime_smg];
-                *cH_p  = pvecback[pba->index_bg_beyond_horndeski_prime_smg];
-                *c9_p  = pvecback[pba->index_bg_A9_prime_smg];
-                *c10_p = pvecback[pba->index_bg_A10_prime_smg];
-                *c12_p = pvecback[pba->index_bg_A12_prime_smg];
-                *c13_p = pvecback[pba->index_bg_A13_prime_smg];
-        }
-        else {
-                printf("It was not possible to determine if oscillations of the background scalar field should be allowed or not.\n");
-                return _FAILURE_;
-        }
-
-        return _SUCCESS_;
-}
-
 int get_x_x_prime_qs_smg(
         struct precision * ppr,
         struct background * pba,
@@ -3102,7 +3116,7 @@ int get_x_x_prime_qs_smg(
 
         class_call(
                 get_gravity_coefficients_smg(
-                        ppt, pba, ppw->pvecback,
+                        pba, ppt, ppw->pvecback,
                         &delM2, &M2, &kin, &bra, &ten, &run, &beh, &res,
                         &cD, &cK, &cB, &cH, &c0, &c1, &c2, &c3,
                         &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11,

@@ -394,7 +394,7 @@ cdef extern from "class.h":
     int perturbations_output_data(void *pba,void *ppt, file_format output_format, double * tkfull, int number_of_titles, double *data)
     int perturbations_output_firstline_and_ic_suffix(void *ppt, int index_ic, char first_line[_LINE_LENGTH_MAX_], FileName ic_suffix)
     int perturbations_output_titles(void *pba, void *ppt,  file_format output_format, char titles[_MAXTITLESTRINGLENGTH_])
-    int perturbations_qs_functions_at_tau_and_k_qs_smg(void * pba, void * ppt, double k, double tau, double *mass2, double *mass2_p, double *rad2, double *friction, double *slope)
+    int perturbations_qs_functions_at_tau_and_k_qs_smg(void * ppr, void * pba, void * ppt, double k, double tau, double *mass2, double *mass2_p, double *rad2, double *friction, double *slope, short *approx)
 
     int primordial_output_titles(void * ppt, void *ppm, char titles[_MAXTITLESTRINGLENGTH_])
     int primordial_output_data(void *ppt, void *ppm, int number_of_titles, double *data)

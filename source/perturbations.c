@@ -8710,7 +8710,7 @@ int perturbations_print_variables(double tau,
     //fprintf(ppw->perturbations_output_file,"\n");
     if (pba->has_smg == _TRUE_) {
       class_call(
-        perturbations_print_variables_smg(pba, ppt,  ppw, k, tau, dataptr, &storeidx),
+        perturbations_print_variables_smg(ppr, pba, ppt,  ppw, k, tau, dataptr, &storeidx),
         ppt->error_message,
         ppt->error_message
       );
