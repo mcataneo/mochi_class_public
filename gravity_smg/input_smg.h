@@ -11,27 +11,19 @@
 extern "C" {
 #endif
 
-int input_warnings_smg(
-  struct perturbations * ppt,
-  int input_verbose
-  );
+int input_warnings_smg(struct perturbations * ppt,
+                       int input_verbose);
 
-int input_read_parameters_smg(
-  struct file_content * pfc,
-  struct precision * ppr,
-  struct background * pba,
-  struct perturbations * ppt,
-  ErrorMsg errmsg
-);
+int input_read_parameters_smg(struct file_content * pfc,
+                              struct precision * ppr,
+                              struct background * pba,
+                              struct perturbations * ppt,
+                              ErrorMsg errmsg);
 
-int input_readjust_precision(
-  struct precision * ppr
-);
+int input_readjust_precision_smg(struct precision * ppr);
 
-int input_default_params_smg(
-  struct background * pba,
-  struct perturbations * ppt
-);
+int input_default_params_smg(struct background * pba,
+                             struct perturbations * ppt);
 
 
 #ifdef __cplusplus

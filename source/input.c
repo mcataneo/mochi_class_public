@@ -450,6 +450,15 @@ int input_read_from_file(struct file_content * pfc,
                errmsg);
   }
 
+  if (pba->has_smg == _TRUE_) {
+    class_call(
+      input_warnings_smg(ppt, input_verbose),
+      errmsg,
+      errmsg
+    );
+  }
+
+
   return _SUCCESS_;
 
 }
@@ -767,14 +776,6 @@ int input_shooting(struct file_content * pfc,
 
   /* Now Horndeski should be tuned */
   pba->parameters_tuned_smg = _TRUE_;
-
-  if (pba->has_smg == _TRUE_) {
-    class_call(
-      input_warnings_smg(ppt, input_verbose),
-      errmsg,
-      errmsg
-    );
-  }
 
   return _SUCCESS_;
 
@@ -1518,7 +1519,7 @@ int input_read_precisions(struct file_content * pfc,
 
   if (pba->has_smg == _TRUE_) {
     class_call(
-      input_readjust_precision(ppr),
+      input_readjust_precision_smg(ppr),
       errmsg,
       errmsg
     );

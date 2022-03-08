@@ -1,19 +1,49 @@
-#include "input_smg.h"
+/** @file input_smg.c
+ *
+ * Emilio Bellini, Ignacy Sawicki, Miguel Zumalacarregui, TODO_EB: date here xx.xx.xxxx
+ *
+ * Additional functions for the input module.
+ * It contains all the hi_class related functions (_smg)
+ * that are used by input.c. In this way the main hi_class
+ * modifications are stored here and the standard Class modules
+ * remain cleaner.
+ *
+ * The following nomenclature has been adopted:
+ *
+ * -# all the functions end with "_smg" to make them easily
+ *    recognizable
+ * -# all the functions starting with "input_" are
+ *    directly called by input.c or the classy wrapper
+ * -# all the functions that do not start with "input_"
+ *    are only used internally in input_smg.c
+ */
 
+#include "input_smg.h"
 #include "background.h"
 #include "perturbations.h"
 
+
+/**
+ * Place to put the warnings related to the hi_class input parameters.
+ *
+ * @param ppt              Input: pointer to perturbation structure
+ * @param input_verbose    Input: input verbosity
+ * @return the error status
+ */
 int input_warnings_smg(
-  struct perturbations * ppt,
-  int input_verbose
-) {
+                       struct perturbations * ppt,
+                       int input_verbose
+                       ) {
+
+  // TODO_EB: rethink this test. The default should have no warnings, and
+  // we have to be sure that get_h_from_trace == _TRUE_ is working properly
 
   /* Here we put a warning as we want to encourage hi_class users to get
   h_prime from the trace of the Einstein ij equation than from the Einstein 00
   equation. This is because the Einstein 00 equation has a gauge dependent
   singularity that can be removed using the trace of the Einstein ij equation.
   */
-  if (input_verbose > 0) {
+  if (input_verbose > 10) {
     if (ppt->get_h_from_trace == _FALSE_) {
       printf("\n");
       printf("WARNING: you set get_h_from_trace to False.\n");
@@ -41,13 +71,24 @@ int input_warnings_smg(
   return _SUCCESS_;
 }
 
+
+/**
+ * Parse the hi_class parameters.
+ *
+ * @param pfc              Input: pointer to local structure
+ * @param ppr              Input/Output: pointer to precision structure
+ * @param pba              Input/Output: pointer to background structure
+ * @param ppt              Input/Output: pointer to perturbation structure
+ * @param errmsg           Input: Error message
+ * @return the error status
+ */
 int input_read_parameters_smg(
-  struct file_content * pfc,
-  struct precision * ppr,
-  struct background * pba,
-  struct perturbations * ppt,
-  ErrorMsg errmsg
-) {
+                              struct file_content * pfc,
+                              struct precision * ppr,
+                              struct background * pba,
+                              struct perturbations * ppt,
+                              ErrorMsg errmsg
+                              ) {
 
   int flag1, flag2, flag3;
   double param1;
@@ -88,8 +129,8 @@ int input_read_parameters_smg(
   }
 
   class_call(parser_read_string(pfc, "use_pert_var_deltaphi_smg", &string1, &flag1, errmsg),
-    errmsg,
-    errmsg);
+             errmsg,
+             errmsg);
 
   if (flag1 == _TRUE_){
     if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
@@ -112,175 +153,175 @@ int input_read_parameters_smg(
    */
 
   class_call(parser_read_string(pfc,"gravity_model",&string1,&flag1,errmsg),
-       errmsg,
-       errmsg);
-
+             errmsg,
+             errmsg);
 
   if (flag1 == _FALSE_) {
     printf(" gravity_model not read, default will be used \n");
   }
   else {
-  /** Read tuning parameter and guess for the parameter variation range
-   * These can be adjusted latter on a model basis
-   */
-  int has_tuning_index_smg, has_dxdy_guess_smg;
+    /** Read tuning parameter and guess for the parameter variation range
+     * These can be adjusted latter on a model basis
+     */
+    int has_tuning_index_smg, has_dxdy_guess_smg;
 
-  class_read_int("tuning_index_smg",pba->tuning_index_smg);
-  has_tuning_index_smg = flag1;
+    class_read_int("tuning_index_smg",pba->tuning_index_smg);
+    has_tuning_index_smg = flag1;
 
-  class_read_double("tuning_dxdy_guess_smg",pba->tuning_dxdy_guess_smg);
-  has_dxdy_guess_smg = flag1;
-  if (has_dxdy_guess_smg == _FALSE_)
-    pba->tuning_dxdy_guess_smg = 1;
+    class_read_double("tuning_dxdy_guess_smg",pba->tuning_dxdy_guess_smg);
+    has_dxdy_guess_smg = flag1;
+    if (has_dxdy_guess_smg == _FALSE_)
+      pba->tuning_dxdy_guess_smg = 1;
 
-  /** Loop over the different models
-   * flag2 keeps track of whether model has been identified
-   */
+    /** Loop over the different models
+     * flag2 keeps track of whether model has been identified
+     */
     flag2=_FALSE_;
 
     if (strcmp(string1,"propto_omega") == 0) {
-pba->gravity_model_smg = propto_omega;
-pba->field_evolution_smg = _FALSE_;
-pba->M_pl_evolution_smg = _TRUE_;
-flag2=_TRUE_;
-pba->parameters_2_size_smg = 5;
-class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      pba->gravity_model_smg = propto_omega;
+      pba->field_evolution_smg = _FALSE_;
+      pba->M_pl_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
+      pba->parameters_2_size_smg = 5;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     }
 
     if (strcmp(string1,"propto_scale") == 0) {
-pba->gravity_model_smg = propto_scale;
-pba->field_evolution_smg = _FALSE_;
-pba->M_pl_evolution_smg = _TRUE_;
-flag2=_TRUE_;
-pba->parameters_2_size_smg = 5;
-class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      pba->gravity_model_smg = propto_scale;
+      pba->field_evolution_smg = _FALSE_;
+      pba->M_pl_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
+      pba->parameters_2_size_smg = 5;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     }
 
     if (strcmp(string1,"constant_alphas") == 0) {
-pba->gravity_model_smg = constant_alphas;
-pba->field_evolution_smg = _FALSE_;
-pba->M_pl_evolution_smg = _TRUE_;
-flag2=_TRUE_;
-pba->parameters_2_size_smg = 5;
-class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      pba->gravity_model_smg = constant_alphas;
+      pba->field_evolution_smg = _FALSE_;
+      pba->M_pl_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
+      pba->parameters_2_size_smg = 5;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     }
 
     if (strcmp(string1,"eft_alphas_power_law") == 0) {
-pba->gravity_model_smg = eft_alphas_power_law;
-pba->field_evolution_smg = _FALSE_;
-pba->M_pl_evolution_smg = _TRUE_;
-flag2=_TRUE_;
-pba->parameters_2_size_smg = 8;
-class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      pba->gravity_model_smg = eft_alphas_power_law;
+      pba->field_evolution_smg = _FALSE_;
+      pba->M_pl_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
+      pba->parameters_2_size_smg = 8;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     }
 
     if (strcmp(string1,"eft_gammas_power_law") == 0) {
-pba->gravity_model_smg = eft_gammas_power_law;
-pba->field_evolution_smg = _FALSE_;
-pba->M_pl_evolution_smg = _TRUE_;
-flag2=_TRUE_;
-pba->parameters_2_size_smg = 8;
-class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      pba->gravity_model_smg = eft_gammas_power_law;
+      pba->field_evolution_smg = _FALSE_;
+      pba->M_pl_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
+      pba->parameters_2_size_smg = 8;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     }
 
     if (strcmp(string1,"eft_gammas_exponential") == 0) {
-pba->gravity_model_smg = eft_gammas_exponential;
-pba->field_evolution_smg = _FALSE_;
-pba->M_pl_evolution_smg = _TRUE_;
-flag2=_TRUE_;
-pba->parameters_2_size_smg = 8;
-class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+      pba->gravity_model_smg = eft_gammas_exponential;
+      pba->field_evolution_smg = _FALSE_;
+      pba->M_pl_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
+      pba->parameters_2_size_smg = 8;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     }
 
-  if (strncmp("quintessence", string1, strlen("quintessence")) == 0){
-        // Check if gravity_model has quintessence as prefix.
-        // Add here all variables common to quintessence.
-        pba->is_quintessence_smg = _TRUE_;
-        class_read_double("quintessence_w_safe_smg", pba->quintessence_w_safe_smg);
+    if (strncmp("quintessence", string1, strlen("quintessence")) == 0) {
+      // Check if gravity_model has quintessence as prefix.
+      // Add here all variables common to quintessence.
+      pba->is_quintessence_smg = _TRUE_;
+      class_read_double("quintessence_w_safe_smg", pba->quintessence_w_safe_smg);
     }
 
-  if (strcmp(string1,"quintessence_monomial") == 0) {
-pba->gravity_model_smg = quintessence_monomial;
-pba->field_evolution_smg = _TRUE_;
-  pba->is_quintessence_smg = _TRUE_;
-flag2=_TRUE_;
+    if (strcmp(string1,"quintessence_monomial") == 0) {
+      pba->gravity_model_smg = quintessence_monomial;
+      pba->field_evolution_smg = _TRUE_;
+      pba->is_quintessence_smg = _TRUE_;
+      flag2=_TRUE_;
 
-pba->parameters_size_smg = 4;
-class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+      pba->parameters_size_smg = 4;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
-/* Guess for the parameter variation range.
-   *
-   * For the initial parameter one can use:
- *
- * 	rho_smg = 1/2*a_ini^-2*phi_prime_ini^2 + V0*3*H0^2/h^2*phi_ini^N
- *
- * However, for the range of variation it is better to use
- *
- * 	Omega = rho_smg/(rho_smg + rho_m)
- *
- * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
- * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
- * where we use rho_m ~ H_0^2
-   *
-   * drho_smg/dV0 = 10^-7*phi_ini^N
- */
+      /* Guess for the parameter variation range.
+         *
+         * For the initial parameter one can use:
+       *
+       * 	rho_smg = 1/2*a_ini^-2*phi_prime_ini^2 + V0*3*H0^2/h^2*phi_ini^N
+       *
+       * However, for the range of variation it is better to use
+       *
+       * 	Omega = rho_smg/(rho_smg + rho_m)
+       *
+       * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
+       * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
+       * where we use rho_m ~ H_0^2
+         *
+         * drho_smg/dV0 = 10^-7*phi_ini^N
+       */
 
-  double N = pba->parameters_smg[0];
-  double V0 = pba->parameters_smg[1];
-  double phi_prime_ini_smg = pba->parameters_smg[2];
-  double phi_ini_smg =  pba->parameters_smg[3];
+      double N = pba->parameters_smg[0];
+      double V0 = pba->parameters_smg[1];
+      double phi_prime_ini_smg = pba->parameters_smg[2];
+      double phi_ini_smg =  pba->parameters_smg[3];
 
-  double P_ini = pow(phi_ini_smg, N);  // V=cte*P(phi)
+      double P_ini = pow(phi_ini_smg, N);  // V=cte*P(phi)
 
-  double phi_end_guess = fmax(phi_ini_smg,2); //guess the final value of the field
+      double phi_end_guess = fmax(phi_ini_smg,2); //guess the final value of the field
 
-  // class_test( ((abs(N)<1) || (abs(N)>7)), errmsg, "Exponent out of range. N must be a interger in (1,7)-range" );
+      // class_test( ((abs(N)<1) || (abs(N)>7)), errmsg, "Exponent out of range. N must be a interger in (1,7)-range" );
 
-if (has_tuning_index_smg == _FALSE_)
-  pba->tuning_index_smg = 1; //use V0 for default tuning
+      if (has_tuning_index_smg == _FALSE_)
+        pba->tuning_index_smg = 1; //use V0 for default tuning
 
-if (has_dxdy_guess_smg == _FALSE_){
+      if (has_dxdy_guess_smg == _FALSE_) {
 
-  if(pba->tuning_index_smg == 1){
-//           if(phi_ini_smg != 0){
+        if(pba->tuning_index_smg == 1) {
+          // if(phi_ini_smg != 0){
           V0 = pba->Omega0_smg/pow(phi_end_guess,N);
           pba->tuning_dxdy_guess_smg = 1./pow(phi_end_guess,N);
           pba->parameters_smg[1] = V0;
-//           }
-//           else{
-//             V0 = pba->Omega0_smg/pow(1.e-40,N);
-//             pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N);
-//             pba->parameters_smg[1] = V0;
-//
-//           }
-  }
+          // }
+          // else{
+          //   V0 = pba->Omega0_smg/pow(1.e-40,N);
+          //   pba->tuning_dxdy_guess_smg = 1./pow(1.e-40,N);
+          //   pba->parameters_smg[1] = V0;
+          //
+          // }
+        }
 
-  if(pba->tuning_index_smg == 3){
-     phi_ini_smg = pow(pba->Omega0_smg/V0, 1./N);
-     pba->parameters_smg[3] = phi_ini_smg;
-     pba->tuning_dxdy_guess_smg = phi_ini_smg/(pba->Omega0_smg)/N;
-  }
-}//end of no has_dxdy_guess_smg
-    }//end of quintessence_monomial
+        if(pba->tuning_index_smg == 3){
+           phi_ini_smg = pow(pba->Omega0_smg/V0, 1./N);
+           pba->parameters_smg[3] = phi_ini_smg;
+           pba->tuning_dxdy_guess_smg = phi_ini_smg/(pba->Omega0_smg)/N;
+        }
+      }
+      //end of no has_dxdy_guess_smg
+    }
+    //end of quintessence_monomial
 
+    if (strcmp(string1,"quintessence_tracker") == 0) {
+      pba->gravity_model_smg = quintessence_tracker;
+      pba->field_evolution_smg = _TRUE_;
+      pba->is_quintessence_smg = _TRUE_;
+      flag2=_TRUE_;
 
-  if (strcmp(string1,"quintessence_tracker") == 0) {
-pba->gravity_model_smg = quintessence_tracker;
-pba->field_evolution_smg = _TRUE_;
-  pba->is_quintessence_smg = _TRUE_;
-flag2=_TRUE_;
+      pba->parameters_size_smg = 6;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
 
-pba->parameters_size_smg = 6;
-class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+      double K_ini = pba->parameters_smg[0];
+      double P_ini =  pba->parameters_smg[1];
+      double V0 = pba->parameters_smg[2];
+      double n = pba->parameters_smg[3];
+      double m = pba->parameters_smg[4];
+      double lambda = pba->parameters_smg[5];
 
-  double K_ini = pba->parameters_smg[0];
-  double P_ini =  pba->parameters_smg[1];
-  double V0 = pba->parameters_smg[2];
-  double n = pba->parameters_smg[3];
-  double m = pba->parameters_smg[4];
-  double lambda = pba->parameters_smg[5];
-
-     /* Guess for the parameter variation range.
+      /* Guess for the parameter variation range.
       *
       * For the initial parameter one can use:
       *  V = H0^2/h^2* V0 * phi^-n exp(lambda*phi^m)
@@ -295,255 +336,258 @@ class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_
       *
       */
 
-  double phi_0 = pow(n/lambda/m,1./m); /* minimum of the potential */
-  double v_0_guess = (pow(phi_0,-n) * exp(lambda*pow(phi_0,m))); /*V/V0 at the minimum*/
-
-if (has_tuning_index_smg == _FALSE_)
-  pba->tuning_index_smg = 2; //use V0 for default tuning
-
-if (has_dxdy_guess_smg == _FALSE_){
-  if(pba->tuning_index_smg == 2){
-
-            V0 = 3* pba->h * (pba->Omega0_smg)/v_0_guess;
-            pba->tuning_dxdy_guess_smg = 3. * pba->h/ (v_0_guess); //*(1-pba->Omega0_smg) -> removed, lead to instability!
-            pba->parameters_smg[2] = V0;
-        }
-    }//end of no has_dxdy_guess_smg
-    } //end of tracker
-
-
-    if (strcmp(string1,"alpha_attractor_canonical") == 0) {
-pba->gravity_model_smg = alpha_attractor_canonical;
-pba->field_evolution_smg = _TRUE_;
-  pba->is_quintessence_smg = _TRUE_;
-flag2=_TRUE_;
-
-pba->parameters_size_smg = 6;
-class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-
-  class_call(parser_read_string(pfc,"log_10_param_alpha",&string1,&flag1,errmsg),
-       errmsg,
-       errmsg);
-
-    if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
-      pba->parameters_smg[2] = pow(10, pba->parameters_smg[2]);
-    }
-
-  class_call(parser_read_string(pfc,"use_phi_no_f",&string1,&flag1,errmsg),
-       errmsg,
-       errmsg);
-
-    if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
-      pba->parameters_smg[1] =  pba->parameters_smg[1]/sqrt(pba->parameters_smg[2]);
-    }
-
-/* Guess for the parameter variation range. Copied from galileons.
-   *
-   * For the initial parameter one can use:
- *
- * However, for the range of variation it is better to use
- *
- * 	Omega = rho_smg/(rho_smg + rho_m)
- *
- * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
- * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
- * where we use rho_m ~ H_0^2
-   *
- */
-
-  //Note: f = phi/sqrt(alpha)
-
-    if (pba->Omega_smg_debug == 0.) {
-      double phi_prime_ini = pba->parameters_smg[0];
-      double f_ini = pba->parameters_smg[1];
-      double alpha = pba->parameters_smg[2];
-      double c = pba->parameters_smg[3];
-      double p = pba->parameters_smg[4];
-      double n = pba->parameters_smg[5];
-      double x = tanh(f_ini/(sqrt(6)));
-      double v = alpha* pow(x,p)/pow(1+x, 2*n); // v = V/c^2
-      double rho_c = pow(pba->H0, 2);
-
+      double phi_0 = pow(n/lambda/m,1./m); /* minimum of the potential */
+      double v_0_guess = (pow(phi_0,-n) * exp(lambda*pow(phi_0,m))); /*V/V0 at the minimum*/
 
       if (has_tuning_index_smg == _FALSE_)
-        pba->tuning_index_smg = 3; //use V0 for default tuning
+        pba->tuning_index_smg = 2; //use V0 for default tuning
 
       if (has_dxdy_guess_smg == _FALSE_){
-        if(pba->tuning_index_smg == 3){
-            c = sqrt(pba->Omega0_smg * rho_c / v);
-            pba->tuning_dxdy_guess_smg = pow((1 + 3*pba->Omega0_smg) * pba->H0,2)/(2*c*v);
-            pba->parameters_smg[3] = c;
+        if(pba->tuning_index_smg == 2){
+
+          V0 = 3* pba->h * (pba->Omega0_smg)/v_0_guess;
+          pba->tuning_dxdy_guess_smg = 3. * pba->h/ (v_0_guess); //*(1-pba->Omega0_smg) -> removed, lead to instability!
+          pba->parameters_smg[2] = V0;
         }
-      }//end of no has_dxdy_guess_smg
-    }//end Omega_smg_debug
+      }
+      //end of no has_dxdy_guess_smg
+    }
+    //end of tracker
 
-    } //endif  alpha_attractor_canonical
+    if (strcmp(string1,"alpha_attractor_canonical") == 0) {
+      pba->gravity_model_smg = alpha_attractor_canonical;
+      pba->field_evolution_smg = _TRUE_;
+      pba->is_quintessence_smg = _TRUE_;
+      flag2=_TRUE_;
+
+      pba->parameters_size_smg = 6;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+
+      class_call(parser_read_string(pfc,"log_10_param_alpha",&string1,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
+        pba->parameters_smg[2] = pow(10, pba->parameters_smg[2]);
+      }
+
+      class_call(parser_read_string(pfc,"use_phi_no_f",&string1,&flag1,errmsg),
+                 errmsg,
+                 errmsg);
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
+        pba->parameters_smg[1] =  pba->parameters_smg[1]/sqrt(pba->parameters_smg[2]);
+      }
+
+      /* Guess for the parameter variation range. Copied from galileons.
+         *
+         * For the initial parameter one can use:
+       *
+       * However, for the range of variation it is better to use
+       *
+       * 	Omega = rho_smg/(rho_smg + rho_m)
+       *
+       * => dOmega/dx_i = rho_m/(rho_smg+rho_m)^2 drho_smg/dx_i
+       * => tuning_dxdy_guess_smg = (dOmega/dx_i)^{-1}
+       * where we use rho_m ~ H_0^2
+         *
+       */
+
+      //Note: f = phi/sqrt(alpha)
+
+      if (pba->Omega_smg_debug == 0.) {
+        double phi_prime_ini = pba->parameters_smg[0];
+        double f_ini = pba->parameters_smg[1];
+        double alpha = pba->parameters_smg[2];
+        double c = pba->parameters_smg[3];
+        double p = pba->parameters_smg[4];
+        double n = pba->parameters_smg[5];
+        double x = tanh(f_ini/(sqrt(6)));
+        double v = alpha* pow(x,p)/pow(1+x, 2*n); // v = V/c^2
+        double rho_c = pow(pba->H0, 2);
 
 
+        if (has_tuning_index_smg == _FALSE_)
+          pba->tuning_index_smg = 3; //use V0 for default tuning
+
+        if (has_dxdy_guess_smg == _FALSE_){
+          if(pba->tuning_index_smg == 3){
+              c = sqrt(pba->Omega0_smg * rho_c / v);
+              pba->tuning_dxdy_guess_smg = pow((1 + 3*pba->Omega0_smg) * pba->H0,2)/(2*c*v);
+              pba->parameters_smg[3] = c;
+          }
+        }//end of no has_dxdy_guess_smg
+      }
+      //end Omega_smg_debug
+    }
+    //end of  alpha_attractor_canonical
 
     if (strcmp(string1,"galileon") == 0) {
-pba->gravity_model_smg = galileon;
-pba->field_evolution_smg = _TRUE_;
-pba->parameters_size_smg = 7;
-flag2=_TRUE_;
+      pba->gravity_model_smg = galileon;
+      pba->field_evolution_smg = _TRUE_;
+      pba->parameters_size_smg = 7;
+      flag2=_TRUE_;
 
-/* Galileon dynamics pulls towards the shift-symmetry attractor n = 0 with
- *
- * n/H0 = xi(c2 - 6c3 xi + 18c4 xi^2 + 5c5 xi^4)
- *
- * and xi = \dot\phi H /H0^2
- *
- * If attractor_ic_smg => n=0 is set in background_initial_conditions
-*/
-
-
-/* Guess for the parameter variation range. For the initial parameter one can use
- *
- * 	rho_smg*H^2/H_0^4 = c2 xi^2/6 - 2 c3 xi^3 + 15/2 c4 xi^4 + 7/3 c5 xi^5
- *
- * (Barreira+ '14 2.22 for z\neq 0), which equals Omega_smg at z=0 only if tuned.
- *
- * There are three submodels (taken on tracker):
- * 	1) rogue mode: user sets all (if Omega_smg_debug or NO attractor_ic_smg)
- * 	2) cubic attractor: c3, xi set for attractor
- * 	3) quartic/quintic attractor: c3, c4 set xi for attractor
- */
+      /* Galileon dynamics pulls towards the shift-symmetry attractor n = 0 with
+       *
+       * n/H0 = xi(c2 - 6c3 xi + 18c4 xi^2 + 5c5 xi^4)
+       *
+       * and xi = \dot\phi H /H0^2
+       *
+       * If attractor_ic_smg => n=0 is set in background_initial_conditions
+      */
 
 
-// read submodel: remember flag2 used for test over gravity models
-class_call(parser_read_string(pfc,"gravity_submodel",&string2,&flag3,errmsg),
-       errmsg,
-       errmsg);
-
-/*1) base galileon, user specifies everything!  */
-if (flag3==_FALSE_){
-
-  class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-
-}
-else {//a submodel is given
-
-  /*  temporary allocation, will be rewritten latter
-   *  order is xi, phi, c2, c3, c4, c5  */
-  class_alloc(pba->parameters_smg, sizeof(double*)*7,pba->error_message);
-  double * input_params_gal; //dummy allocation vector
-
-  double xi, c2, c3, c4, c5;
-  double phi0 = 0, c1 = 0;
-
-  /*2) cubic Galileon in the attractor
-    * Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
-    */
-  if (strcmp(string2,"cubic") == 0) {
-
-    c2 = -1.;
-    c3 = -sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
-    xi = c2/6./c3;
-    c4 = 0;
-    c5 = 0;
-
-  }//end of cubic
-   /* 3) quartic Galileon on the attractor
-    */
-  else if (strcmp(string2,"quartic") == 0) {
-
-    class_read_list_of_doubles("parameters_smg",input_params_gal,1);
-    xi = input_params_gal[0];
-    c2 = -1;
-    c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
-    c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
-    c5 = 0;
-
-  }/* 4) quartic Galileon on the attractor
-    */
-  else if (strcmp(string2,"quintic") == 0) {//Quintic case
-
-    class_read_list_of_doubles("parameters_smg",input_params_gal,2);
-    xi = input_params_gal[0];
-    c2 = -1;
-    c3 = input_params_gal[1];
-    c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
-    c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
-
-  }//end of quintic
-  else {
-        class_test(flag3 == _TRUE_,
-   errmsg,
-   "Galileon: you specified a gravity_submodel that could not be identified. \n Options are: cubic, quartic, quintic");
-  };
-
-  /* Set parameters for submodels */
-  pba->parameters_smg[0] = xi;
-  pba->parameters_smg[1] = c1;
-  pba->parameters_smg[2] = c2;
-  pba->parameters_smg[3] = c3;
-  pba->parameters_smg[4] = c4;
-  pba->parameters_smg[5] = c5;
-    pba->parameters_smg[6] = phi0;
-
-}//end of submodels
+      /* Guess for the parameter variation range. For the initial parameter one can use
+       *
+       * 	rho_smg*H^2/H_0^4 = c2 xi^2/6 - 2 c3 xi^3 + 15/2 c4 xi^4 + 7/3 c5 xi^5
+       *
+       * (Barreira+ '14 2.22 for z\neq 0), which equals Omega_smg at z=0 only if tuned.
+       *
+       * There are three submodels (taken on tracker):
+       * 	1) rogue mode: user sets all (if Omega_smg_debug or NO attractor_ic_smg)
+       * 	2) cubic attractor: c3, xi set for attractor
+       * 	3) quartic/quintic attractor: c3, c4 set xi for attractor
+       */
 
 
-/* default tuning index is 3 */
-if (has_tuning_index_smg == _FALSE_){
-  pba->tuning_index_smg = 3; //use c3 for default tuning
-  //Use the tracker condition for the cubic to define xi_0, in case xi is used as an IC.
-    pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[2]/6./pba->parameters_smg[3],3);
-  //pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3 and xi = c2/6./c3;
-}
-class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
-   errmsg,
-   "Galileon: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+      // read submodel: remember flag2 used for test over gravity models
+      class_call(parser_read_string(pfc,"gravity_submodel",&string2,&flag3,errmsg),
+             errmsg,
+             errmsg);
 
-  class_call(parser_read_string(pfc,"attractor_ic_smg",&string1,&flag1,errmsg),
-       errmsg,
-       errmsg);
+      /*1) base galileon, user specifies everything!  */
+      if (flag3==_FALSE_) {
 
-    if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
+        class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+
+      }
+      else {
+        //a submodel is given
+
+        /*  temporary allocation, will be rewritten latter
+         *  order is xi, phi, c2, c3, c4, c5  */
+        class_alloc(pba->parameters_smg, sizeof(double*)*7,pba->error_message);
+        double * input_params_gal; //dummy allocation vector
+
+        double xi, c2, c3, c4, c5;
+        double phi0 = 0, c1 = 0;
+
+        /*2) cubic Galileon in the attractor
+          * Omega = -c2^3/(6^3 c3^2) and xi = c2/(6c3)
+          */
+        if (strcmp(string2,"cubic") == 0) {
+
+          c2 = -1.;
+          c3 = -sqrt(-pow(c2/6.,3)/pba->Omega0_smg);
+          xi = c2/6./c3;
+          c4 = 0;
+          c5 = 0;
+
+        }//end of cubic
+         /* 3) quartic Galileon on the attractor
+          */
+        else if (strcmp(string2,"quartic") == 0) {
+
+          class_read_list_of_doubles("parameters_smg",input_params_gal,1);
+          xi = input_params_gal[0];
+          c2 = -1;
+          c3 = (4.*pba->Omega0_smg + c2*pow(xi,2))/(2.*pow(xi,3));
+          c4 = (6.*pba->Omega0_smg + c2*pow(xi,2))/(9.*pow(xi,4));
+          c5 = 0;
+
+        }/* 4) quartic Galileon on the attractor
+          */
+        else if (strcmp(string2,"quintic") == 0) {//Quintic case
+
+          class_read_list_of_doubles("parameters_smg",input_params_gal,2);
+          xi = input_params_gal[0];
+          c2 = -1;
+          c3 = input_params_gal[1];
+          c4 = -(10*pba->Omega0_smg + 3*c2*pow(xi,2) - 8*c3*pow(xi,3))/(9.*pow(xi,4));
+          c5 = (4*pba->Omega0_smg + pow(xi,2)*(c2 - 2*c3*xi))/pow(xi,5);
+
+        }//end of quintic
+        else {
+              class_test(flag3 == _TRUE_,
+         errmsg,
+         "Galileon: you specified a gravity_submodel that could not be identified. \n Options are: cubic, quartic, quintic");
+        };
+
+        /* Set parameters for submodels */
+        pba->parameters_smg[0] = xi;
+        pba->parameters_smg[1] = c1;
+        pba->parameters_smg[2] = c2;
+        pba->parameters_smg[3] = c3;
+        pba->parameters_smg[4] = c4;
+        pba->parameters_smg[5] = c5;
+        pba->parameters_smg[6] = phi0;
+
+      }
+      //end of submodels
+
+      /* default tuning index is 3 */
+      if (has_tuning_index_smg == _FALSE_){
+        pba->tuning_index_smg = 3; //use c3 for default tuning
+        //Use the tracker condition for the cubic to define xi_0, in case xi is used as an IC.
+          pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[2]/6./pba->parameters_smg[3],3);
+        //pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3 and xi = c2/6./c3;
+      }
+      class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
+                 errmsg,
+                 "Galileon: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+
+      class_call(parser_read_string(pfc,"attractor_ic_smg",&string1,&flag1,errmsg),
+           errmsg,
+           errmsg);
+
+      if(flag1 == _TRUE_ && ((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL))){
         pba->attractor_ic_smg = _TRUE_;
-    }
-    else{
+      }
+      else{
         pba->attractor_ic_smg = _FALSE_;
+      }
     }
+    //end of Galileon
 
-    }//end of Galileon
     if (strcmp(string1,"brans dicke") == 0 || strcmp(string1,"Brans Dicke") == 0 || strcmp(string1,"brans_dicke") == 0) {
-pba->gravity_model_smg = brans_dicke;
-pba->field_evolution_smg = _TRUE_;
-flag2=_TRUE_;
+      pba->gravity_model_smg = brans_dicke;
+      pba->field_evolution_smg = _TRUE_;
+      flag2=_TRUE_;
 
-pba->parameters_size_smg = 4;
-class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-pba->parameters_smg[0] = 2*pba->Omega0_smg;
-pba->tuning_dxdy_guess_smg = 0.5;
-pba->tuning_index_2_smg = 2;
+      pba->parameters_size_smg = 4;
+      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+      pba->parameters_smg[0] = 2*pba->Omega0_smg;
+      pba->tuning_dxdy_guess_smg = 0.5;
+      pba->tuning_index_2_smg = 2;
     }
 
-if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0 || strcmp(string1,"nKGB") == 0) {
-// This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
-pba->gravity_model_smg = nkgb;
-pba->field_evolution_smg = _TRUE_;
-if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
-  pba->tuning_index_smg = 0; //use g for default tuning
-}
-class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
-   errmsg,
-   "nKGB: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
-if(has_dxdy_guess_smg == _FALSE_){
-  pba->tuning_dxdy_guess_smg = -0.5;
-}
-flag2=_TRUE_;
+    if (strcmp(string1,"nkgb") == 0 || strcmp(string1,"n-kgb") == 0 || strcmp(string1,"N-KGB") == 0 || strcmp(string1,"nKGB") == 0) {
+      // This is self-accelerating KGB with K=-X and G(X)=1/n g^(2n-1)/2 * X^n
+      pba->gravity_model_smg = nkgb;
+      pba->field_evolution_smg = _TRUE_;
+      if (has_tuning_index_smg == _FALSE_ && pba->Omega_smg_debug == 0){
+        pba->tuning_index_smg = 0; //use g for default tuning
+      }
+      class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
+                 errmsg,
+                 "nKGB: you gave dxdy_guess_smg but no tuning_index_smg. You need to give both if you want to tune the model yourself");
+      if(has_dxdy_guess_smg == _FALSE_){
+        pba->tuning_dxdy_guess_smg = -0.5;
+      }
+      flag2=_TRUE_;
 
-pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
-class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
-class_test(pba->parameters_smg[1]<=0.5,errmsg,"In n-KGB G(X)=X^n n>1/2 for acceleration. Note that limit n->1/2 is singular and models become badly behaved for n<0.7");
-class_test(pba->parameters_smg[2]>=1.,errmsg,"In n-KGB, Rshift0<1 for positive energy density today.");
-class_test(pba->parameters_smg[2]<0.,errmsg,"In n-KGB, Rshift0>=0, or ICs for background can't be set.");
-}
+      pba->parameters_size_smg = 3; // g, n, xi0 == rho_DE_0(shift charge)/rho_DE_0(total)
+      class_read_list_of_doubles("parameters_smg",pba->parameters_smg,pba->parameters_size_smg);
+      class_test(pba->parameters_smg[1]<=0.5,errmsg,"In n-KGB G(X)=X^n n>1/2 for acceleration. Note that limit n->1/2 is singular and models become badly behaved for n<0.7");
+      class_test(pba->parameters_smg[2]>=1.,errmsg,"In n-KGB, Rshift0<1 for positive energy density today.");
+      class_test(pba->parameters_smg[2]<0.,errmsg,"In n-KGB, Rshift0>=0, or ICs for background can't be set.");
+    }
+    //end of nKGB
 
     class_test(flag2==_FALSE_,
-   errmsg,
-   "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
+               errmsg,
+               "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
 
   }// end of loop over models
 
@@ -552,44 +596,46 @@ class_test(pba->parameters_smg[2]<0.,errmsg,"In n-KGB, Rshift0>=0, or ICs for ba
     //TODO: include generic stuff for covariant theories
 
   }
-  else { //if no self-consistent evolution, need a parameterization for Omega_smg
+  else {
+    //if no self-consistent evolution, need a parameterization for Omega_smg
 
     class_test(ppt->use_pert_var_deltaphi_smg==_TRUE_,
-      errmsg,
-      "It is not consistent to evolve delta_phi_smg and choose parametrized models.");
+               errmsg,
+               "It is not consistent to evolve delta_phi_smg and choose parametrized models.");
 
     class_call(parser_read_string(pfc,"expansion_model",&string1,&flag1,errmsg),
-   errmsg,
-   errmsg);
+               errmsg,
+               errmsg);
     if (flag1 == _FALSE_)
-printf("No expansion model specified, will take default one \n");
+      printf("No expansion model specified, will take default one \n");
 
     flag2 = _FALSE_;
 
     //possible expansion histories. Can make tests, etc...
     if (strcmp(string1,"lcdm") == 0) {
-pba->expansion_model_smg = lcdm;
-flag2=_TRUE_;
-pba->parameters_size_smg = 1;
+      pba->expansion_model_smg = lcdm;
+      flag2=_TRUE_;
+      pba->parameters_size_smg = 1;
       pba->rho_evolution_smg=_FALSE_;
-class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
     }
     //accept different names
+
     if (strcmp(string1,"wowa") == 0 || strcmp(string1,"w0wa") == 0 || strcmp(string1,"cpl") == 0 ) {
-pba->expansion_model_smg = wowa;
-flag2=_TRUE_;
-pba->parameters_size_smg = 3;
+      pba->expansion_model_smg = wowa;
+      flag2=_TRUE_;
+      pba->parameters_size_smg = 3;
       pba->rho_evolution_smg=_FALSE_;
-class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
-    }
-    if (strcmp(string1,"wowa_w") == 0 || strcmp(string1,"w0wa_w") == 0 || strcmp(string1,"cpl_w") == 0 ) {
-pba->expansion_model_smg = wowa_w;
-flag2=_TRUE_;
-pba->parameters_size_smg = 3;
-      pba->rho_evolution_smg=_TRUE_;
-class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+      class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
     }
 
+    if (strcmp(string1,"wowa_w") == 0 || strcmp(string1,"w0wa_w") == 0 || strcmp(string1,"cpl_w") == 0 ) {
+      pba->expansion_model_smg = wowa_w;
+      flag2=_TRUE_;
+      pba->parameters_size_smg = 3;
+      pba->rho_evolution_smg=_TRUE_;
+      class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+    }
 
     if (strcmp(string1,"wede") == 0) {    //ILSWEDE
       pba->expansion_model_smg = wede;
@@ -601,9 +647,10 @@ class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pb
       // 	  pba->parameters_smg[0] = pba->Omega0_smg;
       // 	}
     }
+
     class_test(flag2==_FALSE_,
-   errmsg,
-   "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
+               errmsg,
+               "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
 
   }
 
@@ -639,31 +686,31 @@ class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pb
 
   if (flag1 == _TRUE_){
     if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-pba->skip_stability_tests_smg = _TRUE_;
+      pba->skip_stability_tests_smg = _TRUE_;
     }
     else{
-pba->skip_stability_tests_smg = _FALSE_;
+      pba->skip_stability_tests_smg = _FALSE_;
     }
   }
 
   //IC for perturbations
   class_call(parser_read_string(pfc,
-			  "pert_initial_conditions_smg",
-			  &string1,
-			  &flag1,
-			  errmsg),
-	errmsg,
-	errmsg);
+			       "pert_initial_conditions_smg",
+			       &string1,
+			       &flag1,
+			       errmsg),
+	         errmsg,
+	         errmsg);
 
   if (strcmp(string1,"single_clock") == 0) {
     ppt->pert_initial_conditions_smg = single_clock;
-    }
+  }
   else if (strcmp(string1,"gravitating_attr") == 0) {
     ppt->pert_initial_conditions_smg = gravitating_attr;
-    }
+  }
   else if (strcmp(string1,"zero") == 0) {
     ppt->pert_initial_conditions_smg = zero;
-    }
+  }
   else if (strcmp(string1,"kin_only") == 0) {
     ppt->pert_initial_conditions_smg = kin_only;
   }
@@ -671,10 +718,10 @@ pba->skip_stability_tests_smg = _FALSE_;
     ppt->pert_initial_conditions_smg = ext_field_attr;
   }
 
-//     else {
-//       if (ppt->perturbations_verbose > 1)
-// 	printf(" Initial conditions for Modified gravity perturbations not specified, using default \n");
-//     }
+  // else {
+  //   if (ppt->perturbations_verbose > 1)
+  //     printf(" Initial conditions for Modified gravity perturbations not specified, using default \n");
+  // }
 
   /** re-assign shooting parameter (for no-tuning debug mode) */
   if (pba->Omega_smg_debug == 0)
@@ -686,43 +733,43 @@ pba->skip_stability_tests_smg = _FALSE_;
        "Tuning index tuning_index_smg = %d is larger than the number of entries %d in parameters_smg. Check your .ini file.",
        pba->tuning_index_smg,pba->parameters_size_smg);
 
-   /** Read the desired Planck mass and check that the necessary information is provided.
-    *  if needed re-assign shooting parameter for the Planck mass
-    */
-    class_call(parser_read_string(pfc, "M_pl_tuning_smg", &string1, &flag1, errmsg),
+  /** Read the desired Planck mass and check that the necessary information is provided.
+   *  if needed re-assign shooting parameter for the Planck mass
+   */
+  class_call(parser_read_string(pfc, "M_pl_tuning_smg", &string1, &flag1, errmsg),
       errmsg,
       errmsg);
 
-    if (flag1 == _TRUE_){
-      if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+  if (flag1 == _TRUE_){
+    if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
 
-        pba->M_pl_tuning_smg = _TRUE_;
+      pba->M_pl_tuning_smg = _TRUE_;
 
-        class_test(pba->gravity_model_smg!=brans_dicke,
+      class_test(pba->gravity_model_smg!=brans_dicke,
     	    errmsg,
     	    "You asked to tune M_pl(today) to %e but currently this is only allowed for Brans-Dicke\n",
     	    pba->M_pl_today_smg);
 
-        class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
+      class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
 
-        class_call(parser_read_string(pfc,"normalize_G_NR",
+      class_call(parser_read_string(pfc,"normalize_G_NR",
       		&string1,
       		&flag1,
       		errmsg),
       	errmsg,
       	errmsg);
 
-        if (flag1 == _TRUE_){
-          if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
-            double omega_BD = pba->parameters_smg[1];
-            pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
-          }
+      if (flag1 == _TRUE_){
+        if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+          double omega_BD = pba->parameters_smg[1];
+          pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
         }
-
-        class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
-        // printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
       }
+
+      class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
+        // printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
     }
+  }
 
   //how much info on background.dat?
   class_read_double("output_background_smg",pba->output_background_smg);
@@ -730,9 +777,17 @@ pba->skip_stability_tests_smg = _FALSE_;
   return _SUCCESS_;
 }
 
-int input_readjust_precision(
-  struct precision * ppr
-) {
+
+/**
+ * Sometimes hi_class has higher precision parameters. This is where
+ * it is possible to readjust them.
+ *
+ * @param ppr              Input/Output: pointer to precision structure
+ * @return the error status
+ */
+int input_readjust_precision_smg(
+                                 struct precision * ppr
+                                 ) {
 
   /** readjust some precision parameters for modified gravity */
 
@@ -743,10 +798,18 @@ int input_readjust_precision(
   return _SUCCESS_;
 }
 
+
+/**
+ * List of default hi_class parameters.
+ *
+ * @param pba              Input/Output: pointer to background structure
+ * @param ppt              Input: pointer to perturbation structure
+ * @return the error status
+ */
 int input_default_params_smg(
-  struct background * pba,
-  struct perturbations * ppt
-) {
+                             struct background * pba,
+                             struct perturbations * ppt
+                             ) {
 
   /** - background structure */
 
@@ -807,4 +870,5 @@ int input_default_params_smg(
   ppt->use_pert_var_deltaphi_smg=_FALSE_;
 
   return _SUCCESS_;
+
 }
