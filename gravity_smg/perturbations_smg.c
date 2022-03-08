@@ -1,4 +1,4 @@
-/** @file perturbations_smg.c
+/** @file perturbations_smg.c Documented perturbations_smg module
  *
  * Emilio Bellini, Ignacy Sawicki, Miguel Zumalacarregui, TODO_EB: date here xx.xx.xxxx
  *

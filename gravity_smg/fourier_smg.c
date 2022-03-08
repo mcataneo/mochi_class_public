@@ -1,3 +1,23 @@
+/** @file fourier_smg.c Documented fourier_smg module
+ *
+ * Emilio Bellini, Ignacy Sawicki, Miguel Zumalacarregui, TODO_EB: date here xx.xx.xxxx
+ *
+ * Additional functions for the fourier module.
+ * It contains all the hi_class related functions (_smg)
+ * that are used by fourier.c. In this way the main hi_class
+ * modifications are stored here and the standard Class modules
+ * remain cleaner.
+ *
+ * The following nomenclature has been adopted:
+ *
+ * -# all the functions end with "_smg" to make them easily
+ *    recognizable
+ * -# all the functions starting with "fourier_" are
+ *    directly called by fourier.c or the classy wrapper
+ * -# all the functions that do not start with "fourier_"
+ *    are only used internally in fourier_smg.c
+ */
+
 #include "fourier_smg.h"
 
 
@@ -13,7 +33,6 @@
  * @param Delta_v_0  Input/Output: value of the virialized overdensity
  * @return the error status
  */
-
 int fourier_hmcode_Delta_v_0_smg(
                                  struct background *pba,
                                  double z_at_tau,

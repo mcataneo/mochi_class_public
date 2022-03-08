@@ -416,7 +416,6 @@ int background_functions(
   rho_m=0.;
   rho_de = 0.;
 
-  // TODO_EB: in hi_class w ewere calling class_test_except with free(pvecback);free(pvecback_B);background_free_input(pba). Really necessary?
   class_test(a <= 0.,
              pba->error_message,
              "a = %e instead of strictly positive",a);
@@ -587,7 +586,6 @@ int background_functions(
     class_call(background_gravity_functions_smg(pba,
               a,
               pvecback_B,
-              return_format,
               pvecback,
               &rho_tot,
               &p_tot,
@@ -849,7 +847,6 @@ int background_init(
   }
 
   /** - if shooting failed during input, catch the error here */
-  // TODO_EB: in hi_class w ewere calling class_test_except with background_free_input(pba). Really necessary?
   class_test(pba->shooting_failed == _TRUE_,
              pba->error_message,
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
@@ -1142,7 +1139,7 @@ int background_indices(
   /* - indices for scalar field (modified gravity) */
   if (pba->has_smg == _TRUE_) {
     class_call(
-      hi_class_define_indices_bg(pba, &index_bg),
+      background_define_indices_bg_smg(pba, &index_bg),
       pba->error_message,
       pba->error_message
     );
@@ -1225,7 +1222,7 @@ int background_indices(
   /* - indices for scalar field (modified gravity _smg) */
   if (pba->has_smg == _TRUE_) {
     class_call(
-      hi_class_define_indices_bi(pba, &index_bi),
+      background_define_indices_bi_smg(pba, &index_bi),
       pba->error_message,
       pba->error_message
     );
@@ -2106,25 +2103,11 @@ int background_solve(
              pba->error_message,
              pba->error_message);
 
-   if (pba->has_smg == _TRUE_) {
-     class_call(
-       background_hi_class_second_loop(pba, pvecback),
-       pba->error_message,
-       pba->error_message
-     );
-
-     class_call(
-       background_stability_tests_smg(pba, pvecback, pvecback_integration),
-       pba->error_message,
-       pba->error_message
-     );
-
-     class_call(
-       background_hi_class_third_loop(pba, pvecback, pvecback_integration),
-       pba->error_message,
-       pba->error_message
-     );
-   }
+  if (pba->has_smg == _TRUE_) {
+   class_call(background_solve_smg(pba, pvecback, pvecback_integration),
+              pba->error_message,
+              pba->error_message);
+  }
 
   /** - compute remaining "related parameters" */
 
@@ -2172,7 +2155,7 @@ int background_solve(
     }
     if (pba->has_smg == _TRUE_) {
       class_call(
-        background_print_smg(pba, pvecback, pvecback_integration),
+        background_print_stdout_smg(pba, pvecback, pvecback_integration),
         pba->error_message,
         pba->error_message
       );
@@ -2423,7 +2406,6 @@ int background_initial_conditions(
       universe since Big Bang and therefore \f$ t=1/(2H) \f$ (good
       approximation for most purposes) */
 
-  // TODO_EB: There was a class_test_except with free(pvecback);free(pvecback_integration);background_free(pba)
   class_test(pvecback[pba->index_bg_H] <= 0.,
              pba->error_message,
              "H = %e instead of strictly positive",pvecback[pba->index_bg_H]);
@@ -2676,7 +2658,7 @@ int background_output_data(
 
     if (pba->has_smg == _TRUE_) {
       class_call(
-        background_store_doubles_smg(pba, pvecback, dataptr, &storeidx),
+        background_output_data_smg(pba, pvecback, dataptr, &storeidx),
         pba->error_message,
         pba->error_message
       );

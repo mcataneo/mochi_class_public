@@ -1,4 +1,4 @@
-/** @file input_smg.c
+/** @file input_smg.c Documented input_smg module
  *
  * Emilio Bellini, Ignacy Sawicki, Miguel Zumalacarregui, TODO_EB: date here xx.xx.xxxx
  *
