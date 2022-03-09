@@ -73,6 +73,11 @@ int gravity_functions_A_C_smg(struct background *pba,
 
 int print_stdout_gravity_parameters_smg(struct background *pba);
 
+int copy_to_background_table_smg(struct background *pba,
+                                 int row,
+                                 int column,
+                                 double value);
+
 
 #ifdef __cplusplus
 }
