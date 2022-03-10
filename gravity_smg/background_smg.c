@@ -66,7 +66,16 @@ int background_gravity_functions_smg(
 
   if (pba->field_evolution_smg == _TRUE_) {
 
-    /* declare variables and set defaults to zero */
+		/* declare variables and set defaults to zero */
+		struct G_functions_and_derivs g_fun = DEFAULT_G_FUNCTIONS_AND_DERIVS;
+
+
+		/* - indices for scalar field (modified gravity) */
+ 	  class_call(gravity_models_get_Gs_smg(pba, &g_fun),
+ 	    pba->error_message,
+ 	    pba->error_message
+ 	  );
+
     double phi, phi_prime, H;
     double x,f,df;
     int n, n_max=100;
@@ -1494,6 +1503,8 @@ int background_solve_smg(
 	int last_index;
 	int i;
 
+	// basic background quantities
+	double a = pvecback[pba->index_bg_a];
 
 	/** - second loop over lines, overwrite derivatives that can't be analytically computed from background_functions
 	 * Fill the derivatives of the Bellini-Sawicki functions in pvecback
@@ -1525,10 +1536,95 @@ int background_solve_smg(
  	    pba->error_message
  	  );
 
- 	  class_call(gravity_functions_A_C_smg(pba,pvecback,pvecback_derivs,i),
- 	    pba->error_message,
- 	    pba->error_message
- 	  );
+
+		class_call(gravity_functions_As_from_alphas_smg(pba, pvecback, pvecback_derivs),
+							 pba->error_message,
+							 pba->error_message);
+
+		copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_smg, pvecback[pba->index_bg_kinetic_D_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback[pba->index_bg_A0_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback[pba->index_bg_A1_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback[pba->index_bg_A2_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pvecback[pba->index_bg_A3_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pvecback[pba->index_bg_A4_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pvecback[pba->index_bg_A5_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pvecback[pba->index_bg_A6_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pvecback[pba->index_bg_A7_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pvecback[pba->index_bg_A8_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pvecback[pba->index_bg_A9_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pvecback[pba->index_bg_A10_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pvecback[pba->index_bg_A11_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pvecback[pba->index_bg_A12_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pvecback[pba->index_bg_A13_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pvecback[pba->index_bg_A14_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pvecback[pba->index_bg_A15_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pvecback[pba->index_bg_A16_smg]);
+
+		if (pba->field_evolution_smg == _TRUE_) {
+
+			class_call(gravity_functions_Cs_from_Bs_smg(pba, pvecback, pvecback_derivs),
+								 pba->error_message,
+								 pba->error_message);
+
+			copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_smg, pvecback[pba->index_bg_kinetic_D_over_phiphi_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C0_smg, pvecback[pba->index_bg_C0_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C1_smg, pvecback[pba->index_bg_C1_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C2_smg, pvecback[pba->index_bg_C2_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C3_smg, pvecback[pba->index_bg_C3_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C4_smg, pvecback[pba->index_bg_C4_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C5_smg, pvecback[pba->index_bg_C5_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C6_smg, pvecback[pba->index_bg_C6_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C7_smg, pvecback[pba->index_bg_C7_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C8_smg, pvecback[pba->index_bg_C8_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C9_smg, pvecback[pba->index_bg_C9_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C10_smg, pvecback[pba->index_bg_C10_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C11_smg, pvecback[pba->index_bg_C11_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C12_smg, pvecback[pba->index_bg_C12_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C13_smg, pvecback[pba->index_bg_C13_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C14_smg, pvecback[pba->index_bg_C14_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C15_smg, pvecback[pba->index_bg_C15_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_C16_smg, pvecback[pba->index_bg_C16_smg]);
+		}
+
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pvecback[pba->index_bg_lambda_1_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pvecback[pba->index_bg_lambda_2_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pvecback[pba->index_bg_lambda_3_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pvecback[pba->index_bg_lambda_4_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pvecback[pba->index_bg_lambda_5_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pvecback[pba->index_bg_lambda_6_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pvecback[pba->index_bg_lambda_7_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback[pba->index_bg_lambda_8_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback[pba->index_bg_lambda_9_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback[pba->index_bg_lambda_10_smg]);
+	  copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback[pba->index_bg_lambda_11_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_smg, pvecback[pba->index_bg_cs2num_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_cs2_smg, pvecback[pba->index_bg_cs2_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback[pba->index_bg_G_eff_smg]);
+		copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback[pba->index_bg_slip_eff_smg]);
+
+		/* Here we update the minimum values of the stability quantities
+		* test will be performed based on the lowest values
+		*/
+		if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
+			if (pvecback[pba->index_bg_kinetic_D_smg] < pba->min_D_smg){
+				pba->min_D_smg = pvecback[pba->index_bg_kinetic_D_smg];
+			}
+			if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
+				pba->min_cs2_smg = pvecback[pba->index_bg_cs2_smg];
+			}
+			if (pvecback[pba->index_bg_M2_smg] < pba->min_M2_smg){
+				pba->min_M2_smg = pvecback[pba->index_bg_M2_smg];
+			}
+			if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
+				pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
+			}
+			if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
+				pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
+			}
+			if (pvecback[pba->index_bg_braiding_smg] > pba->max_bra_smg){
+				pba->max_bra_smg = pvecback[pba->index_bg_braiding_smg];
+			}
+		}
 
 	}
 
@@ -1574,35 +1670,35 @@ int background_solve_smg(
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_cs2num_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_prime_smg, d_over_dtau);
 
-     //D'
-		 d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_smg];
-		 copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_prime_smg, d_over_dtau);
+    //D'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_smg];
+		copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_prime_smg, d_over_dtau);
 
-			if (pba->field_evolution_smg == _TRUE_) {
-				//D_over_phiphi'
-				d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_over_phiphi_smg];
-				copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_prime_smg, d_over_dtau);
-			}
+		if (pba->field_evolution_smg == _TRUE_) {
+			//D_over_phiphi'
+			d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_over_phiphi_smg];
+			copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_prime_smg, d_over_dtau);
+		}
 
-     //A9'
-		 d_over_dtau = factor*pvecback_derivs[pba->index_bg_A9_smg];
-		 copy_to_background_table_smg(pba, i, pba->index_bg_A9_prime_smg, d_over_dtau);
+    //A9'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A9_smg];
+		copy_to_background_table_smg(pba, i, pba->index_bg_A9_prime_smg, d_over_dtau);
 
     //A10'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A10_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_A10_prime_smg, d_over_dtau);
 
-   //A12'
-	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_A12_smg];
+    //A12'
+	  d_over_dtau = factor*pvecback_derivs[pba->index_bg_A12_smg];
 
     //A13'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A13_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_A13_prime_smg, d_over_dtau);
 
 		if (pba->field_evolution_smg == _TRUE_) {
-	     //C9'
-			 d_over_dtau = factor*pvecback_derivs[pba->index_bg_C9_smg];
-			 copy_to_background_table_smg(pba, i, pba->index_bg_C9_prime_smg, d_over_dtau);
+	    //C9'
+			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C9_smg];
+			copy_to_background_table_smg(pba, i, pba->index_bg_C9_prime_smg, d_over_dtau);
 
 	    //C10'
 			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C10_smg];
@@ -1634,7 +1730,7 @@ int background_solve_smg(
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_prime_smg, d_over_dtau);
 
 
-	   // check if any of the values becomes nan
+	  // check if any of the values becomes nan
 	  int j = 0;
 	  while (j < pba->bg_size){
 	  	class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
@@ -2408,415 +2504,6 @@ int derivatives_alphas_smg(
 
 	if(pba->background_verbose > 15 && fabs(1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]/factor)>1e-8)
 printf("a = %g, (delta H')/H' = %g \n", pvecback[pba->index_bg_a], 1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]/factor);
-
-	return _SUCCESS_;
-}
-
-
-/**
-* Get gravity functions A and C.
-*
-* @param pba                  Input: pointer to background structure
-* @param pvecback             Input: vector of background quantities
-* @param pvecback_derivs      Output: vector of derivatives
-* @param i                    Input: counter for the time step
-* @return the error status
-*/
-int gravity_functions_A_C_smg(
-        											struct background *pba,
-        											double * pvecback,
-        											double * pvecback_derivs,
-        											int i
-															) {
-
-	double a = pvecback[pba->index_bg_a];
-	double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-	double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
-	double p_smg = pvecback[pba->index_bg_p_smg];
-	double rho_smg = pvecback[pba->index_bg_rho_smg];
-
-	//TODO: clean up this!!
-	// speed of sound, wanted for output
-
-	double H = pvecback[pba->index_bg_H];
-	double H_p = pvecback[pba->index_bg_H_prime];
-
-	double M2 = pvecback[pba->index_bg_M2_smg];
-	double DelM2 = pvecback[pba->index_bg_delta_M2_smg];
-	double kin = pvecback[pba->index_bg_kineticity_smg];
-	double bra = pvecback[pba->index_bg_braiding_smg];
-	double run = pvecback[pba->index_bg_mpl_running_smg];
-	double ten = pvecback[pba->index_bg_tensor_excess_smg];
-	double beh = pvecback[pba->index_bg_beyond_horndeski_smg];
-	double dM2 = pvecback[pba->index_bg_delta_M2_smg];
-
-	//need to update the time derivatives of the interesting functions
-
-	double factor = a*H;
-
-	double kin_p = factor*pvecback_derivs[pba->index_bg_kineticity_smg];
-	double bra_p = factor*pvecback_derivs[pba->index_bg_braiding_smg];
-	double run_p = factor*pvecback_derivs[pba->index_bg_mpl_running_smg];
-	double ten_p = factor*pvecback_derivs[pba->index_bg_tensor_excess_smg];
-	double beh_p = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_smg];
-	double p_tot_p = factor*pvecback_derivs[pba->index_bg_p_tot_wo_smg];
-	double p_smg_p = factor*pvecback_derivs[pba->index_bg_p_smg];
-
-
-  // kinetic term D
-  pvecback[pba->index_bg_kinetic_D_smg] = kin + 3./2.*pow(bra,2);
-	copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_smg, pvecback[pba->index_bg_kinetic_D_smg]);
-
-	// A0
-	pvecback[pba->index_bg_A0_smg] =
-	1./2.*(
-	 + bra - 3.*(rho_smg + p_smg + (rho_tot + p_tot)*DelM2/M2)*pow(H,-2)
-	);
-	copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback[pba->index_bg_A0_smg]);
-
-	// A1
-	pvecback[pba->index_bg_A1_smg] =
-	+ (1. + ten)*kin
-	- 3.*(beh*(1. + run) + run - ten + beh_p/a/H)*bra;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback[pba->index_bg_A1_smg]);
-
-	// A2
-	pvecback[pba->index_bg_A2_smg] =
-	- (kin + 3./2.*pow(bra,2))*(2. + run)
-	- 9./4.*bra*(
-	 + (2. - bra)*(rho_smg+p_smg)
-	 + (2.*DelM2/M2 - bra)*(rho_tot+p_tot)
-	)*pow(H,-2)
-	- 3./2.*bra*bra_p/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback[pba->index_bg_A2_smg]);
-
-	// A3
-	pvecback[pba->index_bg_A3_smg] = bra*beh;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pvecback[pba->index_bg_A3_smg]);
-
-	// A4
-	pvecback[pba->index_bg_A4_smg] =
-	9./2.*kin*(
-	 + (2. - bra)*(rho_smg+p_smg)
-	 + (2.*DelM2/M2 - bra)*(rho_tot+p_tot)
-	)*pow(H,-2)
-	+ 3.*(bra*kin_p - kin*bra_p)/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pvecback[pba->index_bg_A4_smg]);
-
-	// A5
-	pvecback[pba->index_bg_A5_smg] = - beh*kin;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pvecback[pba->index_bg_A5_smg]);
-
-	// A6
-	pvecback[pba->index_bg_A6_smg] =
-	+ 9./4.*(
-	 + (2.*kin + 9.*bra)*(2.*DelM2/M2 - bra)
-	 + 4.*(kin + 3./2.*pow(bra,2))*run
-	)
-	+ 9.*(kin + 9./2.*bra)*rho_smg*pow(H,-2)/M2
-	+ 9./2.*(
-	 + (kin + 9.*bra)*(2.*DelM2/M2 - bra)
-	 + 2.*(kin + 3./2.*pow(bra,2))*run
-	)*pow(H,-2)*p_tot
-	+ 81./4.*bra*(
-	 + 2.*rho_smg*(p_tot + p_smg)/M2
-	 - 2.*(1./M2 - 2. + bra)*p_tot*p_smg
-	 + (2. - bra)*pow(p_smg,2)
-	 + (2.*DelM2 - bra*M2)*pow(p_tot,2)/M2
-	)*pow(H,-4)
-	+ 9./2.*(
-	 - 9.*bra*(1./M2 - 2. + bra)
-	 + kin*(2. - bra)
-	 + 2.*(kin + 3./2.*pow(bra,2))*run
-	)*pow(H,-2)*p_smg
-	+ 3.*(
-	  + bra*kin_p
-	  - (kin - 9./2.*bra - 9./2.*bra*pow(H,-2)*(p_tot + p_smg))*bra_p
-	)/a/H
-	+ 9.*(
-	   + (kin*DelM2/M2 + 3./2.*pow(bra,2))*p_tot_p
-	   + (kin + 3./2.*pow(bra,2))*p_smg_p
-	)*pow(H,-3)/a;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pvecback[pba->index_bg_A6_smg]);
-
-	// A7
-	pvecback[pba->index_bg_A7_smg] =
-	- 2.*kin*beh
-	+ 3.*bra*(bra + 2.*beh)*(1. + run)
-	+ 2.*(kin + 3.*bra)*(run - ten)
-	+ 9./2.*bra*(
-	 + (2. - bra - 2.*beh)*(rho_smg + p_smg)
-	 + (2.*DelM2/M2 - bra - 2.*beh)*(rho_tot + p_tot)
-	)*pow(H,-2)
-	+ 3.*bra*(bra_p + 2.*beh_p)/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pvecback[pba->index_bg_A7_smg]);
-
-	// A8
-	pvecback[pba->index_bg_A8_smg] = run - ten - beh;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pvecback[pba->index_bg_A8_smg]);
-
-	// A9
-	pvecback[pba->index_bg_A9_smg] =
-	+ 3./4.*(
-	 + (2. - bra)*(rho_smg + p_smg)
-	 + (2.*DelM2/M2 - bra)*(rho_tot + p_tot)
-	)*pow(H,-2)
-	+ 1./2.*bra_p/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pvecback[pba->index_bg_A9_smg]);
-
-	// A10
-	pvecback[pba->index_bg_A10_smg] =
-	bra + 2.*run - (2. - bra)*ten + 2.*(1. + run)*beh + 2.*beh_p/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pvecback[pba->index_bg_A10_smg]);
-
-	// A11
-	pvecback[pba->index_bg_A11_smg] =
-	- (kin + 3./2.*pow(bra,2))*(4. + run)
-	+ 3./4.*(
-	 + (4.*kin + 6.*bra + 3.*pow(bra,2))*(rho_smg + p_smg)
-	 + (4.*kin + 6.*bra*DelM2/M2 + 3.*pow(bra,2))*(rho_tot + p_tot)
-	)*pow(H,-2)
-	- (kin_p + 3./2.*bra*bra_p)/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pvecback[pba->index_bg_A11_smg]);
-
-	// A12
-	pvecback[pba->index_bg_A12_smg] =
-	+ kin/2. - 3.*bra*(3./2. - bra) - run*(kin + 3./2.*pow(bra,2))
-	- 9./4.*(
-		+ (6.*DelM2/M2 + bra*(2./M2 - 7. + 2.*bra))*pow(H,-2)*rho_tot
-		+ (6.*DelM2/M2  - 2.*kin + bra*(2./M2 - 5. - 2.*bra))*pow(H,-2)*p_tot
-		+ (6. - 5.*bra - 2.*pow(bra,2) - 2.*kin)*pow(H,-2)*p_smg
-		- 6.*(1./M2 - 2. + bra)*pow(H,-4)*p_tot*p_smg
-		+ 3.*(2. - bra)*pow(H,-4)*pow(p_smg,2)
-		+ 3.*(2.*DelM2/M2 - bra)*(
-			+ rho_tot*p_tot + pow(p_tot,2) + rho_tot*p_smg
-		)*pow(H,-4)
-		+ (2. - bra)*(
-			+ 3. - 2.*bra + 3.*pow(H,-2)*(p_tot + p_smg)
-		)*pow(H,-2)*rho_smg
-		+ 2.*bra*pow(H,-3)*p_tot_p/a/M2
-	)
-	- (
-	 	+ kin_p
-	 	+ 3./2.*(3. + bra + 3.*pow(H,-2)*(p_tot + p_smg))*bra_p
-	)/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pvecback[pba->index_bg_A12_smg]);
-
-	// A13
-	pvecback[pba->index_bg_A13_smg] =
-	- bra - 2.*run + (2. - bra)*ten - (2. + bra + 2.*run)*beh
-	- 3./2.*(
-	 	+ (2. - bra - 2.*beh)*(rho_smg + p_smg)*pow(H,-2)
-	 	+ (2.*DelM2/M2 - bra - 2.*beh)*(rho_tot + p_tot)*pow(H,-2)
-	)
-	- (bra_p + 2.*beh_p)/a/H;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pvecback[pba->index_bg_A13_smg]);
-
-	// A14
-	pvecback[pba->index_bg_A14_smg] = - (kin + 3.*bra)/2.;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pvecback[pba->index_bg_A14_smg]);
-
-	// A15
-	pvecback[pba->index_bg_A15_smg] = - 1./2.*bra - beh;
-	copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pvecback[pba->index_bg_A15_smg]);
-
-	// A16
-	pvecback[pba->index_bg_A16_smg] =
-	- 1./2.*(kin + 3.*bra)
-	+ 9./4.*(
-	 + (2. - bra)*(rho_smg + p_smg)
-	 + (2.*DelM2/M2 - bra)*(rho_tot + p_tot)
-	)*pow(H,-2);
-	copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pvecback[pba->index_bg_A16_smg]);
-
-	if (pba->field_evolution_smg == _TRUE_) {
-
-		double kin_ss = pvecback[pba->index_bg_kineticity_over_phiphi_smg];
-		double bra_s = pvecback[pba->index_bg_braiding_over_phi_smg];
-		double beh_s = pvecback[pba->index_bg_beyond_horndeski_over_phi_smg];
-
-		double B0 = pvecback[pba->index_bg_B0_smg];
-		double B1 = pvecback[pba->index_bg_B1_smg];
-		double B2 = pvecback[pba->index_bg_B2_smg];
-		double B3 = pvecback[pba->index_bg_B3_smg];
-		double B4 = pvecback[pba->index_bg_B4_smg];
-		double B5 = pvecback[pba->index_bg_B5_smg];
-		double B6 = pvecback[pba->index_bg_B6_smg];
-		double B7 = pvecback[pba->index_bg_B7_smg];
-		double B8 = pvecback[pba->index_bg_B8_smg];
-		double B9 = pvecback[pba->index_bg_B9_smg];
-		double B10 = pvecback[pba->index_bg_B10_smg];
-		double B11 = pvecback[pba->index_bg_B11_smg];
-		double B12 = pvecback[pba->index_bg_B12_smg];
-
-		// kinetic term D over phiphi
-		pvecback[pba->index_bg_kinetic_D_over_phiphi_smg] =
-		+ kin_ss + 3./2.*pow(bra_s,2);
-		copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_smg, pvecback[pba->index_bg_kinetic_D_over_phiphi_smg]);
-
-		// C0
-		pvecback[pba->index_bg_C0_smg] = B0;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C0_smg, pvecback[pba->index_bg_C0_smg]);
-
-		// C1
-		pvecback[pba->index_bg_C1_smg] = kin_ss*(1. + ten) - 3./2.*bra_s*B6;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C1_smg, pvecback[pba->index_bg_C1_smg]);
-
-		// C2
-		pvecback[pba->index_bg_C2_smg] = - kin_ss*(2. + run) - 3.*bra_s*B5;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C2_smg, pvecback[pba->index_bg_C2_smg]);
-
-		// C3
-		pvecback[pba->index_bg_C3_smg] = bra_s*beh_s;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C3_smg, pvecback[pba->index_bg_C3_smg]);
-
-		// C4
-		pvecback[pba->index_bg_C4_smg] = kin_ss*B1 - 3.*bra_s*B7;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C4_smg, pvecback[pba->index_bg_C4_smg]);
-
-		// C5
-		pvecback[pba->index_bg_C5_smg] = - kin_ss*beh_s;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C5_smg, pvecback[pba->index_bg_C5_smg]);
-
-		// C6
-		pvecback[pba->index_bg_C6_smg] = kin_ss*B2 - 3.*bra_s*B9;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C6_smg, pvecback[pba->index_bg_C6_smg]);
-
-		// C7
-		pvecback[pba->index_bg_C7_smg] = kin_ss*B3 - 3.*bra_s*B8;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C7_smg, pvecback[pba->index_bg_C7_smg]);
-
-		// C8
-		pvecback[pba->index_bg_C8_smg] = B4;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C8_smg, pvecback[pba->index_bg_C8_smg]);
-
-		// C9
-		pvecback[pba->index_bg_C9_smg] = - bra_s - bra_s*run/2. + B5;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C9_smg, pvecback[pba->index_bg_C9_smg]);
-
-		// C10
-		pvecback[pba->index_bg_C10_smg] = bra_s*(1. + ten) + B6;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C10_smg, pvecback[pba->index_bg_C10_smg]);
-
-		// C11
-		pvecback[pba->index_bg_C11_smg] = bra_s*B1/2. + B7;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C11_smg, pvecback[pba->index_bg_C11_smg]);
-
-		// C12
-		pvecback[pba->index_bg_C12_smg] = bra_s*B2/2. + B9;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C12_smg, pvecback[pba->index_bg_C12_smg]);
-
-		// C13
-		pvecback[pba->index_bg_C13_smg] = bra_s*B3/2. + B8;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C13_smg, pvecback[pba->index_bg_C13_smg]);
-
-		// C14
-		pvecback[pba->index_bg_C14_smg] = B10;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C14_smg, pvecback[pba->index_bg_C14_smg]);
-
-		// C15
-		pvecback[pba->index_bg_C15_smg] = B11;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C15_smg, pvecback[pba->index_bg_C15_smg]);
-
-		// C16
-		pvecback[pba->index_bg_C16_smg] = B12;
-		copy_to_background_table_smg(pba, i, pba->index_bg_C16_smg, pvecback[pba->index_bg_C16_smg]);
-	}
-
-	pvecback[pba->index_bg_lambda_1_smg] = (run + (-1.)*ten)*(-3.)*bra + (1. + ten)*kin;
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pvecback[pba->index_bg_lambda_1_smg]);
-
-	pvecback[pba->index_bg_lambda_2_smg] = (- 2.*dM2 + bra*M2)*(rho_tot + p_tot)*(-3.)/2.*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/2.*pow(H,-2) + pow(H,-1)*bra_p*pow(a,-1);
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pvecback[pba->index_bg_lambda_2_smg]);
-
-	pvecback[pba->index_bg_lambda_3_smg] = (2. + run)*(-1.)/2.*pvecback[pba->index_bg_kinetic_D_smg] + (-3.)/4.*bra*pvecback[pba->index_bg_lambda_2_smg];
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pvecback[pba->index_bg_lambda_3_smg]);
-
-	pvecback[pba->index_bg_lambda_4_smg] = kin*pvecback[pba->index_bg_lambda_2_smg] + (2.*kin*bra_p + (-1.)*bra*kin_p)*(-1.)*pow(H,-1)*pow(a,-1);
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pvecback[pba->index_bg_lambda_4_smg]);
-
-	pvecback[pba->index_bg_lambda_5_smg] = (bra + 2.*run + (-2.)*ten + bra*ten)*3./2.*bra + (run + (-1.)*ten)*pvecback[pba->index_bg_kinetic_D_smg] + 3./2.*bra*pvecback[pba->index_bg_lambda_2_smg];
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pvecback[pba->index_bg_lambda_5_smg]);
-
-	pvecback[pba->index_bg_lambda_6_smg] = 3./2.*(((9./2.*bra + kin)*dM2*pow(M2,-1) + (-9.)/4.*pow(bra,2) - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*pow(rho_tot,2) + ((9.*bra + kin)*dM2*pow(M2,-1) + (-9.)/2.*pow(bra,2) - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*rho_tot*p_tot + 9./2.*bra*(dM2 - M2*bra/2.)*pow(M2,-1)*pow(p_tot,2) + (kin*dM2*pow(M2,-1) - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*(rho_tot + p_tot)*rho_smg + ((kin - bra*kin/2. + pvecback[pba->index_bg_kinetic_D_smg]*run)*rho_smg + ((9.*bra + kin)*(2. - bra)/2. + pvecback[pba->index_bg_kinetic_D_smg]*run - 9./2.*bra*pow(M2,-1))*rho_tot + 9.*bra*(1. - bra/2. - pow(M2,-1)/2.)*p_tot)*(rho_smg + p_smg) + 9./2.*bra*(1. - bra/2.)*pow(rho_smg + p_smg,2))*pow(H,-4) + (((9.*bra*(rho_tot + p_tot) - 2.*kin*(rho_tot + rho_smg)) + (rho_smg + p_smg)*9.*bra)*bra_p/2. + (rho_tot + rho_smg)*bra*kin_p + (2.*dM2*kin + 3.*pow(bra,2)*M2)*3./2.*pow(M2,-1)*p_tot_p + 3.*pvecback[pba->index_bg_kinetic_D_smg]*p_smg_p)*pow(H,-3)*pow(a,-1)/2.;
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pvecback[pba->index_bg_lambda_6_smg]);
-
-	pvecback[pba->index_bg_lambda_7_smg] = ((-2.) + bra)*(4. + run)*(-1.)/8.*pvecback[pba->index_bg_kinetic_D_smg] + ((-2.)*(2. + dM2) + bra*M2)*(rho_tot + p_tot)*3./16.*pow(H,-2)*pvecback[pba->index_bg_kinetic_D_smg]*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*3./16.*pow(H,-2)*pvecback[pba->index_bg_kinetic_D_smg] + (pvecback[pba->index_bg_kinetic_D_smg]*bra_p + ((-2.) + bra)*((-3.)*bra*bra_p + (-1.)*kin_p))*1./8.*pow(H,-1)*pow(a,-1);
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pvecback[pba->index_bg_lambda_7_smg]);
-
-	pvecback[pba->index_bg_lambda_8_smg] = ((-2.) + bra)*(4. + run)*1./8.*pvecback[pba->index_bg_kinetic_D_smg] + 3./8.*(rho_tot + p_tot)*(((-9.)*bra + (-2.)*pvecback[pba->index_bg_kinetic_D_smg]*(3. + 2.*dM2 - bra*M2))*(-1.)/2. + (-rho_tot*dM2 - (p_smg + rho_smg*M2))*9.*pow(H,-2)*pow(M2,-1))*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)/8.*pow(H,-2)*pvecback[pba->index_bg_kinetic_D_smg] + (-2.*dM2 + bra*M2)*(rho_tot + p_tot)*(p_tot + p_smg)*27./16.*pow(H,-4)*pow(M2,-2) + ((-9.)*(rho_tot + p_tot) + (-6.)*bra*pow(H,2)*M2 + 3.*pow(bra,2)*pow(H,2)*M2 + (-1.)*pow(H,2)*pvecback[pba->index_bg_kinetic_D_smg]*M2)*1./8.*pow(H,-3)*pow(M2,-1)*bra_p*pow(a,-1) + ((-2.) + bra)*1./8.*pow(H,-1)*kin_p*pow(a,-1) + ((-2.) + bra)*9./16.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback[pba->index_bg_lambda_8_smg]);
-
-	pvecback[pba->index_bg_lambda_9_smg] = ((-2.) + 3.*bra)*pvecback[pba->index_bg_kinetic_D_smg] + 2.*pvecback[pba->index_bg_lambda_3_smg] + (pvecback[pba->index_bg_kinetic_D_smg] + (-1.)*pvecback[pba->index_bg_lambda_2_smg])*(((-3.) + 2.*bra)*(-3.)/2. + (p_tot + p_smg)*9./2.*pow(H,-2)) + (3.*bra*bra_p + kin_p)*(-1.)*pow(H,-1)*pow(a,-1) + (-9.)/2.*bra*pow(H,-3)*pow(M2,-1)*p_tot_p*pow(a,-1);
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback[pba->index_bg_lambda_9_smg]);
-
-	pvecback[pba->index_bg_lambda_10_smg] = (pvecback[pba->index_bg_kinetic_D_smg] + (-1.)*pvecback[pba->index_bg_lambda_3_smg])*(-2.) + (3.*bra*dM2 + kin*M2)*(rho_tot + p_tot)*3.*pow(H,-2)*pow(M2,-1) + (3.*bra + kin)*(rho_smg + p_smg)*3.*pow(H,-2) + (-1.)*pow(H,-1)*kin_p*pow(a,-1);
-	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback[pba->index_bg_lambda_10_smg]);
-
-	 pvecback[pba->index_bg_lambda_11_smg] = bra + 2.*run - (2.-bra)*ten;
-	 copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback[pba->index_bg_lambda_11_smg]);
-
-	pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
-	copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_smg, pvecback[pba->index_bg_cs2num_smg]);
-
-	// TODO_EB: reconsider the if statements for cs2, G_eff and slip
-	if (pvecback[pba->index_bg_cs2num_smg] == pvecback[pba->index_bg_kinetic_D_smg]) {
-		pvecback[pba->index_bg_cs2_smg] = 1.;
-	}
-	else {
-		pvecback[pba->index_bg_cs2_smg] = pvecback[pba->index_bg_cs2num_smg]/pvecback[pba->index_bg_kinetic_D_smg];
-	}
-	copy_to_background_table_smg(pba, i, pba->index_bg_cs2_smg, pvecback[pba->index_bg_cs2_smg]);
-
-	// TODO_EB: revisit G_eff and slip_eff for beyond horndeski
-	double beta_1 = (run + (-1.)*ten)*2. + (1. + ten)*bra;
-	double beta_2 = 2.*beta_1 + (2. + (-2.)*M2 + bra*M2)*(rho_tot + p_tot)*(-3.)*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)*pow(H,-2) + 2.*pow(H,-1)*bra_p*pow(a,-1);
-
-	if (bra*beta_1 == 0.) {
-		pvecback[pba->index_bg_G_eff_smg] = 1./M2;
-	}
-	else {
-		pvecback[pba->index_bg_G_eff_smg] = (1. - bra*beta_1*pow(bra*beta_1 - beta_2,-1))/M2;
-	}
-	copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback[pba->index_bg_G_eff_smg]);
-
-	if (2.*(run - ten)*beta_1 + ten*beta_2 == 0.) {
-		pvecback[pba->index_bg_slip_eff_smg] = 1.;
-	}
-	else {
-		pvecback[pba->index_bg_slip_eff_smg] = 1. - (2.*(run - ten)*beta_1 + ten*beta_2)*pow((run - ten)*2.*beta_1 + (1. + ten)*beta_2,-1);
-	}
-	copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback[pba->index_bg_slip_eff_smg]);
-
-
-	/* Here we update the minimum values of the stability quantities
-	* test will be performed based on the lowest values
-	*/
-	//TODO_EB: move this to an appropriate place
-	if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
-		if (pvecback[pba->index_bg_kinetic_D_smg] < pba->min_D_smg){
-			pba->min_D_smg = pvecback[pba->index_bg_kinetic_D_smg];
-		}
-
-		if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
-			pba->min_cs2_smg = pvecback[pba->index_bg_cs2_smg];
-		}
-
-		if (pvecback[pba->index_bg_M2_smg] < pba->min_M2_smg){
-			pba->min_M2_smg = pvecback[pba->index_bg_M2_smg];
-		}
-
-		if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
-			pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
-		}
-
-		if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
-			pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
-		}
-		if (pvecback[pba->index_bg_braiding_smg] > pba->max_bra_smg){
-			pba->max_bra_smg = pvecback[pba->index_bg_braiding_smg];
-		}
-	}
 
 	return _SUCCESS_;
 }

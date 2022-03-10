@@ -4,6 +4,9 @@
 #include "common.h"
 #include "background.h"
 #include "rootfinder.h"
+#include "gravity_functions_smg.h"
+#include "gravity_models_smg.h"
+
 
 /**
  * Boilerplate for C++
@@ -65,11 +68,6 @@ int derivatives_alphas_smg(struct background *pba,
                            double * pvecback,
                            double * pvecback_derivs,
                            int i);
-
-int gravity_functions_A_C_smg(struct background *pba,
-                              double * pvecback,
-                              double * pvecback_derivs,
-                              int i);
 
 int print_stdout_gravity_parameters_smg(struct background *pba);
 
