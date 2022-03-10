@@ -120,6 +120,8 @@ extern "C" {
 int gravity_models_properties_smg();
 
 int gravity_models_get_Gs_smg(struct background *pba,
+                              double a,
+                              double * pvecback_B,
                               struct G_functions_and_derivs *g_fun);
 
 

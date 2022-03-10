@@ -65,16 +65,17 @@ int background_gravity_functions_smg(
 	     "has_smg with curvature K = %e not yet implemented",pba->K);
 
   if (pba->field_evolution_smg == _TRUE_) {
+		// printf("ccccccccccccccccccccccccccc a = %e\n", a);
 
 		/* declare variables and set defaults to zero */
-		struct G_functions_and_derivs g_fun = DEFAULT_G_FUNCTIONS_AND_DERIVS;
+		// struct G_functions_and_derivs g_fun = DEFAULT_G_FUNCTIONS_AND_DERIVS;
 
 
-		/* - indices for scalar field (modified gravity) */
- 	  class_call(gravity_models_get_Gs_smg(pba, &g_fun),
- 	    pba->error_message,
- 	    pba->error_message
- 	  );
+		// /* - indices for scalar field (modified gravity) */
+ 	  // class_call(gravity_models_get_Gs_smg(pba, a, pvecback_B, &g_fun),
+ 	  //   pba->error_message,
+ 	  //   pba->error_message
+ 	  // );
 
     double phi, phi_prime, H;
     double x,f,df;
