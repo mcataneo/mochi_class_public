@@ -11,7 +11,7 @@ int gravity_models_get_Gs_smg(
                               struct background *pba,
                               double a,
                               double * pvecback_B,
-                              struct G_functions_and_derivs *g_fun
+                              struct G_functions_and_derivs *pgf
                               ) {
 
   double phi = pvecback_B[pba->index_bi_phi_smg];
@@ -24,9 +24,9 @@ int gravity_models_get_Gs_smg(
     double N = pba->parameters_smg[0];
     double V0 = pba->parameters_smg[1];
 
-    g_fun->G2 = X - V0*pow(pba->H0/pba->h,2.)*pow(phi,N); // V written as in arXiv:1406.2301 in CLASS units
-    g_fun->G2_X = 1.;
-    g_fun->G2_phi = -N*V0*pow(pba->H0/pba->h,2.)*pow(phi,N-1.);
+    pgf->G2 = X - V0*pow(pba->H0/pba->h,2.)*pow(phi,N); // V written as in arXiv:1406.2301 in CLASS units
+    pgf->G2_X = 1.;
+    pgf->G2_phi = -N*V0*pow(pba->H0/pba->h,2.)*pow(phi,N-1.);
   }
 
   else if (pba->gravity_model_smg == quintessence_tracker) {
@@ -41,9 +41,9 @@ int gravity_models_get_Gs_smg(
     V = pow(pba->H0/pba->h,2)* V0 * pow(phi, -n) * exp(lambda*pow(phi, m));
     V_phi = (lambda * m * pow(phi, m) - n) /phi * V;
 
-    g_fun->G2 = X - V;
-    g_fun->G2_X = 1.;
-    g_fun->G2_phi = -V_phi;
+    pgf->G2 = X - V;
+    pgf->G2_X = 1.;
+    pgf->G2_phi = -V_phi;
   }
 
   else if (pba->gravity_model_smg == alpha_attractor_canonical) {
@@ -60,9 +60,9 @@ int gravity_models_get_Gs_smg(
 
     V_phi = sqrt(2*alpha/3)*c2* pow(x,p)* (p +(p-2*n)*x)/(y * pow(1+x,2*n +1));
 
-    g_fun->G2 = X - V;
-    g_fun->G2_X = 1.;
-    g_fun->G2_phi = -V_phi;
+    pgf->G2 = X - V;
+    pgf->G2_X = 1.;
+    pgf->G2_phi = -V_phi;
 
    class_test((phi < 0. ) && ( phi_prime > 0 )
            && (pba->parameters_tuned_smg == _TRUE_)
@@ -82,19 +82,19 @@ int gravity_models_get_Gs_smg(
     double Lambda4 = pba->parameters_smg[4]*pow(M3,-2);
     double Lambda5 = pba->parameters_smg[5]*pow(M3,-3);
 
-    g_fun->G2 = Lambda2*X - 0.5*Lambda1*phi;
-    g_fun->G2_X = Lambda2;
-    g_fun->G2_phi = - 0.5*Lambda1;
-    /*  g_fun->G_3 = -2*Lambda3*X */
-    g_fun->G3_X = -2.*Lambda3;
-    /* g_fun->G_4 = 1/2 + Lambda4 X^2 */
-    g_fun->DG4 = Lambda4*pow(X,2);
-    g_fun->G4 = 1/2. + g_fun->DG4;
-    g_fun->G4_X = 2.*Lambda4*X;
-    g_fun->G4_XX = 2.*Lambda4;
-    /* g_fun->G_5 = Lambda5*pow(X,2) */
-    g_fun->G5_X = 2.*Lambda5*X;
-    g_fun->G5_XX = 2.*Lambda5;
+    pgf->G2 = Lambda2*X - 0.5*Lambda1*phi;
+    pgf->G2_X = Lambda2;
+    pgf->G2_phi = - 0.5*Lambda1;
+    /*  pgf->G_3 = -2*Lambda3*X */
+    pgf->G3_X = -2.*Lambda3;
+    /* pgf->G_4 = 1/2 + Lambda4 X^2 */
+    pgf->DG4 = Lambda4*pow(X,2);
+    pgf->G4 = 1/2. + pgf->DG4;
+    pgf->G4_X = 2.*Lambda4*X;
+    pgf->G4_XX = 2.*Lambda4;
+    /* pgf->G_5 = Lambda5*pow(X,2) */
+    pgf->G5_X = 2.*Lambda5*X;
+    pgf->G5_XX = 2.*Lambda5;
   }
 
   else if(pba->gravity_model_smg == brans_dicke){
@@ -106,14 +106,14 @@ int gravity_models_get_Gs_smg(
     double V = 3.*pba->parameters_smg[0]*pow(pba->H0,2);
     double omega = pba->parameters_smg[1];
 
-    g_fun->G2 = -V + omega*X/phi;
-    g_fun->G2_X = omega/phi;
-    g_fun->G2_Xphi = -omega/pow(phi,2);
-    g_fun->G2_phi = -omega*X/pow(phi,2);
+    pgf->G2 = -V + omega*X/phi;
+    pgf->G2_X = omega/phi;
+    pgf->G2_Xphi = -omega/pow(phi,2);
+    pgf->G2_phi = -omega*X/pow(phi,2);
 
-    g_fun->DG4 = (phi-1.)/2.;
-    g_fun->G4 = phi/2.;
-    g_fun->G4_phi = 1./2.;
+    pgf->DG4 = (phi-1.)/2.;
+    pgf->G4 = phi/2.;
+    pgf->G4_phi = 1./2.;
 
   }
 
@@ -132,13 +132,13 @@ int gravity_models_get_Gs_smg(
     double ngpow = copysign(1.,g)*pow(fabs(g),(2.*npow-1.)/2.)/npow;
     double H0=pba->H0;
 
-    g_fun->G2    = -X;
-    g_fun->G2_X  = -1.;
+    pgf->G2    = -X;
+    pgf->G2_X  = -1.;
 
-    // g_fun->G3 = 1/n g^[(2n-1)/2] Lambda (X/Lambda^4)^n
+    // pgf->G3 = 1/n g^[(2n-1)/2] Lambda (X/Lambda^4)^n
 
-    g_fun->G3_X = npow*ngpow*pow(X,npow-1)/pow(H0,2*npow);
-    g_fun->G3_XX = npow*(npow-1.)*ngpow*pow(X,npow-2)/pow(H0,2*npow);
+    pgf->G3_X = npow*ngpow*pow(X,npow-1)/pow(H0,2*npow);
+    pgf->G3_XX = npow*(npow-1.)*ngpow*pow(X,npow-2)/pow(H0,2*npow);
 
   }
 
