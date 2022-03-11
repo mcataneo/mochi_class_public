@@ -4,6 +4,7 @@
 #include "common.h"
 #include "input.h"
 #include "background.h"
+#include "rootfinder.h"
 
 /**
  * structure containing the G's and F's functions, for Horndeski
@@ -117,12 +118,40 @@ extern "C" {
 #endif
 
 
-int gravity_models_properties_smg();
+int gravity_models_gravity_properties_smg(struct file_content * pfc,
+                                          struct background *pba,
+                                          char string1[_ARGUMENT_LENGTH_MAX_],
+                                          int has_tuning_index_smg,
+                                          int has_dxdy_guess_smg,
+                                          ErrorMsg errmsg);
+
+int gravity_models_expansion_properties_smg(struct file_content * pfc,
+                                            struct background *pba,
+                                            char string1[_ARGUMENT_LENGTH_MAX_],
+                                            ErrorMsg errmsg);
 
 int gravity_models_get_Gs_smg(struct background *pba,
                               double a,
                               double * pvecback_B,
                               struct G_functions_and_derivs *g_fun);
+
+int gravity_models_get_back_par_smg(struct background *pba,
+                                    double a,
+                                    double * pvecback,
+                                    double * pvecback_B);
+
+int gravity_models_get_alphas_par_smg(struct background *pba,
+                                      double a,
+                                      double * pvecback,
+                                      double * pvecback_B);
+
+int gravity_models_initial_conditions_smg(struct background *pba,
+											    								double a,
+																			    double * pvecback,
+        															    double * pvecback_integration,
+																			    double * ptr_rho_rad);
+
+int gravity_models_print_stdout_smg(struct background *pba);
 
 
 #ifdef __cplusplus

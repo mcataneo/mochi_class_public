@@ -21,6 +21,7 @@
 #include "gravity_functions_smg.h"
 
 
+// TODO_EB: reread all the documentation and check in particular Input/Output
 /**
 * Get gravity functions Es from Gs. These are the functions
 * entering the Friedmann time-time constraint, which is
@@ -55,6 +56,7 @@ int gravity_functions_Es_from_Gs_smg(
   double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
   double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
 
+  // TODO_EB: decide if it is better to keep it like this or add the pointers to the equations
   double G2=pgf->G2;
   double G2_X=pgf->G2_X, G2_XX=pgf->G2_XX, G2_XXX=pgf->G2_XXX;
   double G2_phi=pgf->G2_phi, G2_Xphi=pgf->G2_Xphi, G2_XXphi=pgf->G2_XXphi;

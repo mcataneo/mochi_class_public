@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "input.h"
+#include "gravity_models_smg.h"
 
 /**
  * Boilerplate for C++

@@ -69,8 +69,6 @@ int derivatives_alphas_smg(struct background *pba,
                            double * pvecback_derivs,
                            int i);
 
-int print_stdout_gravity_parameters_smg(struct background *pba);
-
 int copy_to_background_table_smg(struct background *pba,
                                  int row,
                                  int column,
