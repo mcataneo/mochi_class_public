@@ -822,8 +822,8 @@ int gravity_models_get_alphas_par_smg(
                                       ) {
 
 
-  double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
-  double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
+  double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
+  double p_tot = pvecback[pba->index_bg_p_tot_wo_smg]+pvecback[pba->index_bg_p_smg];
   double delta_M_pl = pvecback_B[pba->index_bi_delta_M_pl_smg];
   double Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
 
