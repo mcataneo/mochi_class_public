@@ -565,12 +565,12 @@ int background_solve_smg(
                          double * pvecback_integration
 											   ) {
 
+	/* define local variables */
+	double a;
+
 	/* necessary for calling array_interpolate(), but never used */
 	int last_index;
 	int i;
-
-	/* basic background quantities */
-	double a = pvecback[pba->index_bg_a];
 
 	/** - second loop over lines, overwrite derivatives that can't be analytically computed from background_functions
 	 * Fill the derivatives of the Bellini-Sawicki functions in pvecback
@@ -595,6 +595,18 @@ int background_solve_smg(
 				     pba->error_message),
 		pba->error_message,
 		pba->error_message);
+
+		//Need to update pvecback
+		class_call(background_at_tau(pba,
+				 pba->tau_table[i],
+				 long_info,
+				 inter_normal,
+				 &last_index, //should be no problem to use the same one as for the derivatives
+				 pvecback),
+		pba->error_message,
+		pba->error_message);
+
+		a = pvecback[pba->index_bg_a];
 
  	  /* - indices for scalar field (modified gravity) */
  	  class_call(derivatives_alphas_smg(pba, pvecback, pvecback_derivs, i),
@@ -674,15 +686,19 @@ int background_solve_smg(
 		if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
 			if (pvecback[pba->index_bg_kinetic_D_smg] < pba->min_D_smg){
 				pba->min_D_smg = pvecback[pba->index_bg_kinetic_D_smg];
+				pba->a_min_D_smg = a;
 			}
 			if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
 				pba->min_cs2_smg = pvecback[pba->index_bg_cs2_smg];
+				pba->a_min_cs2_smg = a;
 			}
 			if (pvecback[pba->index_bg_M2_smg] < pba->min_M2_smg){
 				pba->min_M2_smg = pvecback[pba->index_bg_M2_smg];
+				pba->a_min_M2_smg = a;
 			}
 			if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
 				pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
+				pba->a_min_ct2_smg = a;
 			}
 			if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
 				pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
@@ -1227,19 +1243,19 @@ int stability_tests_smg(
 	  class_test_except(pba->min_D_smg <= -fabs(pba->D_safe_smg),
 	      pba->error_message,
 	      free(pvecback);free(pvecback_integration);background_free(pba),
-	      "Ghost instability for scalar field perturbations with minimum D=%g \n",pba->min_D_smg);
+	      "Ghost instability for scalar field perturbations with minimum D=%g at a=%e\n", pba->min_D_smg, pba->a_min_D_smg);
 	  class_test_except(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
 	      pba->error_message,
 	      free(pvecback);free(pvecback_integration);background_free(pba),
-	      "Gradient instability for scalar field perturbations with minimum c_s^2=%g \n",pba->min_cs2_smg);
+	      "Gradient instability for scalar field perturbations with minimum c_s^2=%g at a=%e\n", pba->min_cs2_smg, pba->a_min_cs2_smg);
 	  class_test_except(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
 	      pba->error_message,
 	      free(pvecback);free(pvecback_integration);background_free(pba),
-	      "Ghost instability for metric tensor perturbations with minimum M*^2=%g \n",pba->min_M2_smg);
+	      "Ghost instability for metric tensor perturbations with minimum M*^2=%g at a=%e\n", pba->min_M2_smg, pba->a_min_M2_smg);
 	  class_test_except(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
 	      pba->error_message,
 	      free(pvecback);free(pvecback_integration);background_free(pba),
-	      "Gradient instability for metric tensor perturbations with minimum c_t^2=%g \n",pba->min_ct2_smg);
+	      "Gradient instability for metric tensor perturbations with minimum c_t^2=%g at a=%e\n",pba->min_ct2_smg,pba->a_min_ct2_smg);
 
 	 }
 
@@ -1272,16 +1288,6 @@ int derivatives_alphas_smg(
 
 	/* necessary for calling array_interpolate(), but never used */
 	int last_index;
-
-	//Need to update pvecback
-	class_call(background_at_tau(pba,
-			 pba->tau_table[i],
-			 long_info,
-			 inter_normal,
-			 &last_index, //should be no problem to use the same one as for the derivatives
-			 pvecback),
-	pba->error_message,
-	pba->error_message);
 
 	// TODO_EB: note that the derivative is now calculated w.r.t. loga, while our _prime are w.r.t. tau
 	double factor = pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H];

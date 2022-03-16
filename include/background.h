@@ -176,6 +176,10 @@ struct background
   double min_ct2_smg; /**< minimum value of tensor speed of sound squared (for stability test) */
   double min_D_smg; /**< minimum value of scalar kinetic term (for stability test) */
   double min_cs2_smg; /**< minimum value of scalar speed of sound squared (for stability test) */
+  double a_min_M2_smg; /**< scale factor of the minimum value of planck mass (for stability test) */
+  double a_min_ct2_smg; /**< scale factor of the minimum value of tensor speed of sound squared (for stability test) */
+  double a_min_D_smg; /**< scale factor of the minimum value of scalar kinetic term (for stability test) */
+  double a_min_cs2_smg; /**< scale factor of the minimum value of scalar speed of sound squared (for stability test) */
 
   double min_bra_smg; /**< minimum value of the braiding */
   double max_bra_smg; /**< maximum value of the braiding */

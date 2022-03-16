@@ -338,10 +338,14 @@ int input_default_params_smg(
 
 
   /*set stability quantities to nonzero values*/
-  pba->min_M2_smg = 1e10;
-  pba->min_ct2_smg = 1e10;
-  pba->min_D_smg = 1e10;
-  pba->min_cs2_smg = 1e10;
+  pba->min_M2_smg = 1.e10;
+  pba->min_ct2_smg = 1.e10;
+  pba->min_D_smg = 1.e10;
+  pba->min_cs2_smg = 1.e10;
+  pba->a_min_M2_smg = 0.;
+  pba->a_min_ct2_smg = 0.;
+  pba->a_min_D_smg = 0.;
+  pba->a_min_cs2_smg = 0.;
 
   pba->min_bra_smg = 4.;
   pba->max_bra_smg = 0.;
