@@ -8139,7 +8139,7 @@ int perturbations_sources(
     }
 
     /* x_prime_smg */
-    if(ppt->has_source_x_smg == _TRUE_) {
+    if(ppt->has_source_x_prime_smg == _TRUE_) {
       _set_source_(ppt->index_tp_x_prime_smg) = pvecmetric[ppw->index_mt_x_prime_smg];
     }
 
