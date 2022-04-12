@@ -97,7 +97,7 @@ ifneq ($(HI_CLASS_PATH),)
 vpath %.c $(HI_CLASS_PATH)
 CCFLAG += -DHI_CLASS_PATH
 #LDFLAGS += -DHI_CLASS_PATH
-INCLUDES += -I../gravity_smg
+INCLUDES += -I../gravity_smg/include
 EXTERNAL += input_smg.o background_smg.o perturbations_smg.o fourier_smg.o gravity_functions_smg.o gravity_models_smg.o
 endif
 

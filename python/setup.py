@@ -27,7 +27,7 @@ classy_folder = os.path.join(root_folder, "python")
 heat_folder = os.path.join(os.path.join(root_folder, "external"),"heating")
 recfast_folder = os.path.join(os.path.join(root_folder, "external"),"RecfastCLASS")
 hyrec_folder = os.path.join(os.path.join(root_folder, "external"),"HyRec2020")
-hiclass_folder = os.path.join(root_folder, "gravity_smg")
+hiclass_folder = os.path.join(os.path.join(root_folder, "gravity_smg"), "include")
 
 # Recover the CLASS version
 with open(os.path.join(include_folder, 'common.h'), 'r') as v_file:
