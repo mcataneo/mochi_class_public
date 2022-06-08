@@ -817,14 +817,6 @@ int perturbations_init(
 
   }
 
-  if (pba->has_smg == _TRUE_) {
-    class_call(
-      perturbations_tests_smg(ppr, pba, ppt),
-      ppt->error_message,
-      ppt->error_message
-    );
-  }
-
   class_test(ppt->has_vectors == _TRUE_,
              ppt->error_message,
              "Vectors not coded yet");
@@ -883,6 +875,17 @@ int perturbations_init(
              ppt->error_message);
 
 
+  /** Perform smg tests. We have to do it after calling perturbations_indices because we need
+   * k_min and k_max (they are calculated in perturbations_get_k_list)
+   **/
+  if (pba->has_smg == _TRUE_) {
+   class_call(
+     perturbations_tests_smg(ppr, pba, ppt),
+     ppt->error_message,
+     ppt->error_message
+   );
+  }
+
   if (ppt->z_max_pk > pth->z_rec) {
 
     class_test(ppt->has_cmb == _TRUE_,
@@ -904,7 +907,7 @@ int perturbations_init(
   /** - define the common time sampling for all sources using
       perturbations_timesampling_for_sources() */
 
-  // TODO_EB: in hi_class w ewere calling class_test_except with perturbations_free_nosources(ppt). Really necessary?
+  // TODO_EB: in hi_class we were calling class_test_except with perturbations_free_nosources(ppt). Really necessary?
   class_call(perturbations_timesampling_for_sources(ppr,
                                                     pba,
                                                     pth,
