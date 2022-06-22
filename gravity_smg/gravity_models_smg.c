@@ -1291,7 +1291,7 @@ int gravity_models_print_stdout_smg(
     break;
 
     default:
-      printf("Modified gravity: output not implemented in print_stdout_gravity_parameters_smg() \n");
+      printf("Modified gravity: output not implemented in gravity_models_print_stdout_smg() \n");
   }
 
   if(pba->field_evolution_smg==_FALSE_) {
@@ -1320,7 +1320,7 @@ int gravity_models_print_stdout_smg(
       break;
 
       default:
-        printf("Parameterized model: expansion history output not implemented in print_stdout_gravity_parameters_smg() \n");
+        printf("Parameterized model: expansion history output not implemented in gravity_models_print_stdout_smg() \n");
 
     }
   }
