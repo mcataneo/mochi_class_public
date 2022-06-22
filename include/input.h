@@ -203,7 +203,7 @@
  * For shooting method: definition of the possible targets
  */
 
-enum target_names {theta_s, Omega_dcdmdr, omega_dcdmdr, Omega_scf, Omega_ini_dcdm, omega_ini_dcdm, sigma8, Omega_smg, M_pl_today_smg};
+enum target_names {theta_s, Omega_dcdmdr, omega_dcdmdr, Omega_scf, Omega_ini_dcdm, omega_ini_dcdm, sigma8, Omega_smg, M2_today_smg};
 /* Important: Keep this number equal to the number of target_names */
 #define _NUM_TARGETS_ 9
 /* Important: add one for each new target_names */

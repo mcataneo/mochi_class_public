@@ -189,7 +189,7 @@ struct background
 
 
   int field_evolution_smg; /**< does the model require solving the equation for the scalar field at the background? this is typically not the case for parameterized models */
-  int M_pl_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
+  int M2_evolution_smg; /**< does the model require integrating the Planck mass from alpha_M? */
   int rho_evolution_smg; /**< does the model require integrating the energy density? */
 
    /* Modified gravity parameters
@@ -206,9 +206,9 @@ struct background
   double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
   int parameters_2_size_smg; /**< size of parameters_smg */
 
-  int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
+  int M2_tuning_smg; /**< whether we want secondary tuning for M2(today) */
   int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
-  double M_pl_today_smg;
+  double M2_today_smg;
 
   short output_background_smg; /**< flag regulating the amount of information printed onbackground.dat output */
 
@@ -288,11 +288,11 @@ struct background
   int index_bg_kineticity_smg;/**< scalar field kineticity alpha_k (BS eq A.8)*/
   int index_bg_braiding_smg;/**< scalar field braiding alpha_b (BS eq A.9)*/
   int index_bg_tensor_excess_smg;/**< scalar field tensor excess alpha_t (BS eq A.10)*/
-  int index_bg_mpl_running_smg; /**< scalar field relative Planck mass running*/
+  int index_bg_M2_running_smg; /**< scalar field relative Planck mass running*/
   int index_bg_beyond_horndeski_smg;/**<scalar field beyond horndeski alpha_H*/
   int index_bg_kineticity_prime_smg;/**< derivative of kineticity wrt tau (BS eq A.8)*/
   int index_bg_braiding_prime_smg;/**< derivative of braiding wrt tau (BS eq A.9)*/
-  int index_bg_mpl_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/
+  int index_bg_M2_running_prime_smg;/**< derivative of Planck mass running wrt tau (BS eq A.7)*/
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/
   int index_bg_beyond_horndeski_prime_smg;/**<derivative of beyond horndeski alpha_H*/
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
@@ -481,7 +481,7 @@ struct background
   int index_bi_logH;       /**< {B} Hubble rate factor */
   int index_bi_phi_smg;   /**< scalar field */
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
-  int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/
+  int index_bi_delta_M2_smg; //*> integrate the Planck mass (only in certain parameterizations **/
   int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */

@@ -318,11 +318,11 @@ int input_default_params_smg(
   pba->gravity_model_smg = propto_omega; /* gravitational model */
   pba->expansion_model_smg = lcdm; /*expansion model (only for parameterizations*/
   pba->Omega0_smg = 0.; /* Scalar field defaults */
-  pba->M_pl_today_smg = 1.; //*Planck mass today*/
-  pba->M_pl_tuning_smg = _FALSE_; //* Tune Planck mass?*/
+  pba->M2_today_smg = 1.; //*Planck mass today*/
+  pba->M2_tuning_smg = _FALSE_; //* Tune Planck mass?*/
   pba->Omega_smg_debug = 0;
   pba->field_evolution_smg = _FALSE_; /* does the model require solving the background equations? */
-  pba->M_pl_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */
+  pba->M2_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
   pba->a_min_stability_test_smg = 0; /** < skip stability tests for a < a_min */
 

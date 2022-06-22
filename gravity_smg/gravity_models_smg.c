@@ -38,7 +38,7 @@ int gravity_models_gravity_properties_smg(
 
   /** read the model and loop over models to set several flags and variables
   * field_evolution_smg: for self-consistent scalar tensor theories, need to evolve the background equations
-  * M_pl_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
+  * M2_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
   * Primary and secondary parameters: The tuning is alway in terms of a value in parameters_smg, therefore
   *  -> real models: "parameters_smg" to pba->parameters_smg
   *  -> parameterizations: "parameters_smg" to pba->parameters_2_smg
@@ -50,7 +50,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"propto_omega") == 0) {
      pba->gravity_model_smg = propto_omega;
      pba->field_evolution_smg = _FALSE_;
-     pba->M_pl_evolution_smg = _TRUE_;
+     pba->M2_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 5;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -59,7 +59,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"propto_scale") == 0) {
      pba->gravity_model_smg = propto_scale;
      pba->field_evolution_smg = _FALSE_;
-     pba->M_pl_evolution_smg = _TRUE_;
+     pba->M2_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 5;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -68,7 +68,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"constant_alphas") == 0) {
      pba->gravity_model_smg = constant_alphas;
      pba->field_evolution_smg = _FALSE_;
-     pba->M_pl_evolution_smg = _TRUE_;
+     pba->M2_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 5;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -77,7 +77,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"eft_alphas_power_law") == 0) {
      pba->gravity_model_smg = eft_alphas_power_law;
      pba->field_evolution_smg = _FALSE_;
-     pba->M_pl_evolution_smg = _TRUE_;
+     pba->M2_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -86,7 +86,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"eft_gammas_power_law") == 0) {
      pba->gravity_model_smg = eft_gammas_power_law;
      pba->field_evolution_smg = _FALSE_;
-     pba->M_pl_evolution_smg = _TRUE_;
+     pba->M2_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -95,7 +95,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"eft_gammas_exponential") == 0) {
      pba->gravity_model_smg = eft_gammas_exponential;
      pba->field_evolution_smg = _FALSE_;
-     pba->M_pl_evolution_smg = _TRUE_;
+     pba->M2_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -433,16 +433,16 @@ int gravity_models_gravity_properties_smg(
     /** Read the desired Planck mass and check that the necessary information is provided.
     *  if needed re-assign shooting parameter for the Planck mass
     */
-    class_call(parser_read_string(pfc, "M_pl_tuning_smg", &string3, &flag3, errmsg),
+    class_call(parser_read_string(pfc, "M2_tuning_smg", &string3, &flag3, errmsg),
          errmsg,
          errmsg);
 
     if (flag3 == _TRUE_){
       if((strstr(string3,"y") != NULL) || (strstr(string3,"Y") != NULL)){
 
-        pba->M_pl_tuning_smg = _TRUE_;
+        pba->M2_tuning_smg = _TRUE_;
 
-        class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
+        class_read_double("M2_today_smg",pba->M2_today_smg);
 
         class_call(parser_read_string(pfc,"normalize_G_NR",
          		&string3,
@@ -454,7 +454,7 @@ int gravity_models_gravity_properties_smg(
         if (flag3 == _TRUE_){
            if((strstr(string3,"y") != NULL) || (strstr(string3,"Y") != NULL)){
              double omega_BD = pba->parameters_smg[1];
-             pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
+             pba->M2_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
           }
         }
 
@@ -824,7 +824,7 @@ int gravity_models_get_alphas_par_smg(
 
   double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
   double p_tot = pvecback[pba->index_bg_p_tot_wo_smg]+pvecback[pba->index_bg_p_smg];
-  double delta_M_pl = pvecback_B[pba->index_bi_delta_M_pl_smg];
+  double delta_M2 = pvecback_B[pba->index_bi_delta_M2_smg];
   double Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
 
   if (pba->gravity_model_smg == propto_omega) {
@@ -837,9 +837,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k*Omega_smg;
     pvecback[pba->index_bg_braiding_smg] = c_b*Omega_smg;
     pvecback[pba->index_bg_tensor_excess_smg] = c_t*Omega_smg;
-    pvecback[pba->index_bg_mpl_running_smg] = c_m*Omega_smg;
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+    pvecback[pba->index_bg_M2_running_smg] = c_m*Omega_smg;
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
   }
 
   else if (pba->gravity_model_smg == propto_scale) {
@@ -852,9 +852,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k*a;
     pvecback[pba->index_bg_braiding_smg] = c_b*a;
     pvecback[pba->index_bg_tensor_excess_smg] = c_t*a;
-    pvecback[pba->index_bg_mpl_running_smg] = c_m*a;
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+    pvecback[pba->index_bg_M2_running_smg] = c_m*a;
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
   }
 
   else if (pba->gravity_model_smg == constant_alphas) {
@@ -867,9 +867,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k;
     pvecback[pba->index_bg_braiding_smg] = c_b;
     pvecback[pba->index_bg_tensor_excess_smg] = c_t;
-    pvecback[pba->index_bg_mpl_running_smg] = c_m;
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+    pvecback[pba->index_bg_M2_running_smg] = c_m;
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
   }
 
   else if (pba->gravity_model_smg == eft_alphas_power_law) {
@@ -886,9 +886,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k*pow(a, c_k_exp);
     pvecback[pba->index_bg_braiding_smg] = c_b*pow(a, c_b_exp);
     pvecback[pba->index_bg_tensor_excess_smg] = c_t*pow(a, c_t_exp);
-    pvecback[pba->index_bg_mpl_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+    pvecback[pba->index_bg_M2_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
   }
 
   else if ((pba->gravity_model_smg == eft_gammas_power_law) || (pba->gravity_model_smg == eft_gammas_exponential)) {
@@ -931,9 +931,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = 2.*(2.*g1*pow(pba->H0,2.)/rho_tot + c_over_H2)/(1. + Omega + g3);
     pvecback[pba->index_bg_braiding_smg] = -(g2*pba->H0/sqrt(rho_tot) + a*Omega_p)/(1. + Omega + g3);
     pvecback[pba->index_bg_tensor_excess_smg] = -g3/(1. + Omega + g3);
-    pvecback[pba->index_bg_mpl_running_smg] = a*(Omega_p + g3_p)/(1. + Omega + g3);
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+    pvecback[pba->index_bg_M2_running_smg] = a*(Omega_p + g3_p)/(1. + Omega + g3);
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
 
   }
 
@@ -1148,27 +1148,27 @@ int gravity_models_initial_conditions_smg(
 	    break;
 
 	  case propto_omega:
-			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
+			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[4]-1.;
 			break;
 
 	  case propto_scale:
-			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
+			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[4]-1.;
 			break;
 
 	  case constant_alphas:
-			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
+			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[4]-1.;
 			break;
 
 	  case eft_alphas_power_law:
-			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
+			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
 			break;
 
 	  case eft_gammas_power_law:
-			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
+			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
 			break;
 
 	  case eft_gammas_exponential:
-			pvecback_integration[pba->index_bi_delta_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -2.;
+			pvecback_integration[pba->index_bi_delta_M2_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -2.;
 			break;
 	  }
 

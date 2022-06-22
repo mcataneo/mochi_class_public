@@ -56,7 +56,7 @@ int get_gravity_coefficients_smg(
   *kin = pvecback[pba->index_bg_kineticity_smg];
   *bra = pvecback[pba->index_bg_braiding_smg];
   *ten = pvecback[pba->index_bg_tensor_excess_smg];
-  *run = pvecback[pba->index_bg_mpl_running_smg];
+  *run = pvecback[pba->index_bg_M2_running_smg];
   *beh = pvecback[pba->index_bg_beyond_horndeski_smg];
 
   if (ppt->use_pert_var_deltaphi_smg == _TRUE_) {
@@ -786,7 +786,7 @@ int perturbations_einstein_tensor_smg(
   double k2 = k*k;
   double a_prime_over_a = ppw->pvecback[pba->index_bg_H]*ppw->pvecback[pba->index_bg_a];
   double M2 = ppw->pvecback[pba->index_bg_M2_smg];
-  double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+  double run = ppw->pvecback[pba->index_bg_M2_running_smg];
   double c_t2 = (1. + ppw->pvecback[pba->index_bg_tensor_excess_smg]);
 
   ppw->pvecmetric[ppw->index_mt_gw_prime_prime] = -(2. + run)*a_prime_over_a*y[ppw->pv->index_pt_gwdot]-k2*c_t2*y[ppw->pv->index_pt_gw]+ppw->gw_source/M2;
@@ -2044,7 +2044,7 @@ int perturbations_adiabatic_ic_smg(
   bra = ppw->pvecback[pba->index_bg_braiding_smg];
   bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
   dbra= bra_p/(a*H) ; //Read in log(a) diff of braiding
-  run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+  run = ppw->pvecback[pba->index_bg_M2_running_smg];
   ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
   l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
   l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
@@ -2645,7 +2645,7 @@ int perturbations_isocurvature_cdm_ic_smg(
     double bra = ppw->pvecback[pba->index_bg_braiding_smg];
     double bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
     double dbra= bra_p/(a*H) ; //Read in log(a) diff of braiding
-    double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+    double run = ppw->pvecback[pba->index_bg_M2_running_smg];
     double ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
     double l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
     double l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
@@ -2729,7 +2729,7 @@ int perturbations_isocurvature_b_ic_smg(
     double bra = ppw->pvecback[pba->index_bg_braiding_smg];
     double bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
     double dbra= bra_p/(a*H) ; //Read in log(a) diff of braiding
-    double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+    double run = ppw->pvecback[pba->index_bg_M2_running_smg];
     double ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
     double l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
     double l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
@@ -2817,7 +2817,7 @@ int perturbations_isocurvature_urd_ic_smg(
     double bra = ppw->pvecback[pba->index_bg_braiding_smg];
     double bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
     double dbra= bra_p/(a*H) ; //Read in log(a) diff of braiding
-    double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+    double run = ppw->pvecback[pba->index_bg_M2_running_smg];
     double ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
     double l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
     double l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
@@ -2923,7 +2923,7 @@ int perturbations_isocurvature_urv_ic_smg(
     double bra = ppw->pvecback[pba->index_bg_braiding_smg];
     double bra_p = ppw->pvecback[pba->index_bg_braiding_prime_smg];
     double dbra= bra_p/(a*H) ; //Read in log(a) diff of braiding
-    double run = ppw->pvecback[pba->index_bg_mpl_running_smg];
+    double run = ppw->pvecback[pba->index_bg_M2_running_smg];
     double ten = ppw->pvecback[pba->index_bg_tensor_excess_smg];
     double l1 = ppw->pvecback[pba->index_bg_lambda_1_smg];
     double l2 = ppw->pvecback[pba->index_bg_lambda_2_smg];
@@ -3026,7 +3026,7 @@ int test_ini_grav_ic_smg(
   Omx = pvecback[pba->index_bg_rho_smg]/pow(pvecback[pba->index_bg_H],2);
   kin = pvecback[pba->index_bg_kineticity_smg];
   bra = pvecback[pba->index_bg_braiding_smg];
-  run = pvecback[pba->index_bg_mpl_running_smg];
+  run = pvecback[pba->index_bg_M2_running_smg];
   ten = pvecback[pba->index_bg_tensor_excess_smg];
   DelM2 = pvecback[pba->index_bg_delta_M2_smg];//M2-1
 
@@ -3229,7 +3229,7 @@ int test_ini_extfld_ic_smg(
   Omx = pvecback[pba->index_bg_rho_smg]/pow(pvecback[pba->index_bg_H],2);
   kin = pvecback[pba->index_bg_kineticity_smg];
   bra = pvecback[pba->index_bg_braiding_smg];
-  run = pvecback[pba->index_bg_mpl_running_smg];
+  run = pvecback[pba->index_bg_M2_running_smg];
   ten = pvecback[pba->index_bg_tensor_excess_smg];
   DelM2 = pvecback[pba->index_bg_delta_M2_smg];//M2-1
   l1 = pvecback[pba->index_bg_lambda_1_smg];

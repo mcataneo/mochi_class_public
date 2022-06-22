@@ -434,7 +434,7 @@ int gravity_functions_building_blocks_from_Gs_smg(
   )/pvecback[pba->index_bg_M2_smg];
 
   /* alpha_M: Planck mass running */
-  pvecback[pba->index_bg_mpl_running_smg] =
+  pvecback[pba->index_bg_M2_running_smg] =
   2.*(
     + 2.*X*(
       + G4_X - G5_phi + 2.*X*(G4_XX - G5_Xphi + 4.*F4)
@@ -495,7 +495,7 @@ int gravity_functions_As_from_alphas_smg(
   double DelM2 = pvecback[pba->index_bg_delta_M2_smg];
   double kin = pvecback[pba->index_bg_kineticity_smg];
   double bra = pvecback[pba->index_bg_braiding_smg];
-  double run = pvecback[pba->index_bg_mpl_running_smg];
+  double run = pvecback[pba->index_bg_M2_running_smg];
   double ten = pvecback[pba->index_bg_tensor_excess_smg];
   double beh = pvecback[pba->index_bg_beyond_horndeski_smg];
   double dM2 = pvecback[pba->index_bg_delta_M2_smg];
@@ -503,7 +503,7 @@ int gravity_functions_As_from_alphas_smg(
   // need to update the time derivatives of the interesting functions
   double kin_p = factor*pvecback_derivs[pba->index_bg_kineticity_smg];
   double bra_p = factor*pvecback_derivs[pba->index_bg_braiding_smg];
-  double run_p = factor*pvecback_derivs[pba->index_bg_mpl_running_smg];
+  double run_p = factor*pvecback_derivs[pba->index_bg_M2_running_smg];
   double ten_p = factor*pvecback_derivs[pba->index_bg_tensor_excess_smg];
   double beh_p = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_smg];
   double p_tot_p = factor*pvecback_derivs[pba->index_bg_p_tot_wo_smg];
@@ -1158,7 +1158,7 @@ int gravity_functions_Cs_from_Bs_smg(
   double DelM2 = pvecback[pba->index_bg_delta_M2_smg];
   double kin = pvecback[pba->index_bg_kineticity_smg];
   double bra = pvecback[pba->index_bg_braiding_smg];
-  double run = pvecback[pba->index_bg_mpl_running_smg];
+  double run = pvecback[pba->index_bg_M2_running_smg];
   double ten = pvecback[pba->index_bg_tensor_excess_smg];
   double beh = pvecback[pba->index_bg_beyond_horndeski_smg];
   double dM2 = pvecback[pba->index_bg_delta_M2_smg];
@@ -1166,7 +1166,7 @@ int gravity_functions_Cs_from_Bs_smg(
   // need to update the time derivatives of the interesting functions
   double kin_p = factor*pvecback_derivs[pba->index_bg_kineticity_smg];
   double bra_p = factor*pvecback_derivs[pba->index_bg_braiding_smg];
-  double run_p = factor*pvecback_derivs[pba->index_bg_mpl_running_smg];
+  double run_p = factor*pvecback_derivs[pba->index_bg_M2_running_smg];
   double ten_p = factor*pvecback_derivs[pba->index_bg_tensor_excess_smg];
   double beh_p = factor*pvecback_derivs[pba->index_bg_beyond_horndeski_smg];
   double p_tot_p = factor*pvecback_derivs[pba->index_bg_p_tot_wo_smg];

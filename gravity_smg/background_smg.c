@@ -216,7 +216,7 @@ int background_gravity_functions_smg(
     pvecback[pba->index_bg_beyond_horndeski_smg] = 0.;
     pvecback[pba->index_bg_M2_smg] = 1.;
     pvecback[pba->index_bg_delta_M2_smg] = 0.;
-    pvecback[pba->index_bg_mpl_running_smg] = 0.;
+    pvecback[pba->index_bg_M2_running_smg] = 0.;
 
 		/* get background parametrizations. */
 		class_call(gravity_models_get_alphas_par_smg(pba, a, pvecback, pvecback_B),
@@ -235,7 +235,7 @@ int background_gravity_functions_smg(
 
   pvecback[pba->index_bg_kineticity_prime_smg] = 0.;
   pvecback[pba->index_bg_braiding_prime_smg] = 0.;
-  pvecback[pba->index_bg_mpl_running_prime_smg] = 0.;
+  pvecback[pba->index_bg_M2_running_prime_smg] = 0.;
   pvecback[pba->index_bg_tensor_excess_prime_smg] = 0.;
   pvecback[pba->index_bg_beyond_horndeski_prime_smg] = 0.;
   pvecback[pba->index_bg_H_prime_prime] = 0.;
@@ -311,8 +311,8 @@ int background_gravity_functions_smg(
   pvecback[pba->index_bg_lambda_11_prime_smg] = 0.;
   pvecback[pba->index_bg_G_eff_smg] = 0.;
   pvecback[pba->index_bg_slip_eff_smg] = 0.;
-  if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
-    pvecback[pba->index_bg_mpl_running_smg] = 0.;
+  if (pba->field_evolution_smg == _FALSE_ && pba->M2_evolution_smg == _FALSE_){
+    pvecback[pba->index_bg_M2_running_smg] = 0.;
   }
 
     /* Check required conditions for the gravity_models. */
@@ -395,7 +395,7 @@ int background_define_indices_bg_smg(
 	class_define_index(pba->index_bg_kineticity_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_braiding_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_tensor_excess_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_mpl_running_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_M2_running_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_beyond_horndeski_smg,_TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_kineticity_over_phiphi_smg,pba->field_evolution_smg == _TRUE_,*index_bg,1);
@@ -406,7 +406,7 @@ int background_define_indices_bg_smg(
 
 	class_define_index(pba->index_bg_kineticity_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_braiding_prime_smg,_TRUE_,*index_bg,1);
-	class_define_index(pba->index_bg_mpl_running_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_M2_running_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_tensor_excess_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_beyond_horndeski_prime_smg,_TRUE_,*index_bg,1);
 
@@ -538,7 +538,7 @@ int background_define_indices_bi_smg(
 	class_define_index(pba->index_bi_phi_prime_smg, pba->field_evolution_smg,*index_bi,1);
 
 	//if model needs to integrate M_pl from alpha_M, declare an index
-	class_define_index(pba->index_bi_delta_M_pl_smg, pba->M_pl_evolution_smg,*index_bi,1);
+	class_define_index(pba->index_bi_delta_M2_smg, pba->M2_evolution_smg,*index_bi,1);
 
 	/* index for the smg energy density */
 	class_define_index(pba->index_bi_rho_smg, pba->rho_evolution_smg,*index_bi,1);
@@ -893,8 +893,8 @@ int background_initial_conditions_smg(
 	pba->initial_conditions_set_smg = _FALSE_;
 
 	//default value, can override later
-	if (pba->M_pl_evolution_smg ==_TRUE_){
-	  pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
+	if (pba->M2_evolution_smg ==_TRUE_){
+	  pvecback_integration[pba->index_bi_delta_M2_smg] = 0.;
 	}
 
 	class_call(gravity_models_initial_conditions_smg(pba, a, pvecback, pvecback_integration, &rho_rad),
@@ -911,9 +911,9 @@ int background_initial_conditions_smg(
 		 							   "initial phi = %e phi_prime = %e -> check initial conditions",
 		 							 	 pvecback_integration[pba->index_bi_phi_smg],pvecback_integration[pba->index_bi_phi_smg]);
 	 }
-	if (pba->M_pl_evolution_smg == _TRUE_)
+	if (pba->M2_evolution_smg == _TRUE_)
 	  if (pba->background_verbose>3)
-	    printf(" -> Initial conditions: delta_M_pl = %e \n",pvecback_integration[pba->index_bi_delta_M_pl_smg]);
+	    printf(" -> Initial conditions: delta_M2 = %e \n",pvecback_integration[pba->index_bi_delta_M2_smg]);
 
 	return _SUCCESS_;
 }
@@ -940,7 +940,7 @@ int background_store_columntitles_smg(
     class_store_columntitle(titles,"kineticity_smg",_TRUE_);
     class_store_columntitle(titles,"braiding_smg",_TRUE_);
     class_store_columntitle(titles,"tensor_excess_smg",_TRUE_);
-    class_store_columntitle(titles,"Mpl_running_smg",_TRUE_);
+    class_store_columntitle(titles,"M2_running_smg",_TRUE_);
     class_store_columntitle(titles,"beyond_horndeski_smg",_TRUE_);
     class_store_columntitle(titles,"c_s^2",_TRUE_);
     class_store_columntitle(titles,"kin (D)",_TRUE_);
@@ -1071,7 +1071,7 @@ int background_output_data_smg(
 		class_store_double(dataptr,pvecback[pba->index_bg_kineticity_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_braiding_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_tensor_excess_smg],_TRUE_,storeidx);
-		class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_M2_running_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_cs2_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_kinetic_D_smg],_TRUE_,storeidx);
@@ -1212,8 +1212,8 @@ int background_derivs_smg(
 	  dy[pba->index_bi_phi_prime_smg] = pvecback[pba->index_bg_phi_prime_prime_smg]/a/H;
 	}
 	/** - Planck mass equation (if parameterization in terms of alpha_m **/
-	if (pba->M_pl_evolution_smg == _TRUE_)
-	  dy[pba->index_bi_delta_M_pl_smg] = pvecback[pba->index_bg_mpl_running_smg]*(y[pba->index_bi_delta_M_pl_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
+	if (pba->M2_evolution_smg == _TRUE_)
+	  dy[pba->index_bi_delta_M2_smg] = pvecback[pba->index_bg_M2_running_smg]*(y[pba->index_bi_delta_M2_smg] + 1);   //in this case the running has to be integrated (eq 3.3 of 1404.3713 yields M2' = aH\alpha_M)
 
 	return _SUCCESS_;
 }
@@ -1307,8 +1307,8 @@ int derivatives_alphas_smg(
 	 copy_to_background_table_smg(pba, i, pba->index_bg_braiding_prime_smg, d_over_dtau);
 
    //Planck mass run rate'
-	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_mpl_running_smg];
-	 copy_to_background_table_smg(pba, i, pba->index_bg_mpl_running_prime_smg, d_over_dtau);
+	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_M2_running_smg];
+	 copy_to_background_table_smg(pba, i, pba->index_bg_M2_running_prime_smg, d_over_dtau);
 
    //Tensor excess'
 	 d_over_dtau = factor*pvecback_derivs[pba->index_bg_tensor_excess_smg];
@@ -1344,9 +1344,9 @@ int derivatives_alphas_smg(
 	// Only need to compute it if neither self consistent field evolution nor evolving M_pl in terms of alpha_M
 	// check equation 3.3 of Bellini & Sawicki 2014
 
-	if (pba->field_evolution_smg == _FALSE_ && pba->M_pl_evolution_smg == _FALSE_){
+	if (pba->field_evolution_smg == _FALSE_ && pba->M2_evolution_smg == _FALSE_){
 		double alpha_M = pvecback_derivs[pba->index_bg_delta_M2_smg]/pvecback[pba->index_bg_M2_smg];
-		copy_to_background_table_smg(pba, i, pba->index_bg_mpl_running_smg, alpha_M);
+		copy_to_background_table_smg(pba, i, pba->index_bg_M2_running_smg, alpha_M);
 	}
 
 	if(pba->background_verbose > 15 && fabs(1. - pvecback[pba->index_bg_H_prime]/pvecback_derivs[pba->index_bg_H]/factor)>1e-8)
