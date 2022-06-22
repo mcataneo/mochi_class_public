@@ -537,7 +537,7 @@ int background_define_indices_bi_smg(
 	class_define_index(pba->index_bi_phi_smg, pba->field_evolution_smg,*index_bi,1);
 	class_define_index(pba->index_bi_phi_prime_smg, pba->field_evolution_smg,*index_bi,1);
 
-	//if model needs to integrate M_pl from alpha_M, declare an index
+	//if model needs to integrate M2 from alpha_M, declare an index
 	class_define_index(pba->index_bi_delta_M2_smg, pba->M2_evolution_smg,*index_bi,1);
 
 	/* index for the smg energy density */
@@ -1341,7 +1341,7 @@ int derivatives_alphas_smg(
 	 copy_to_background_table_smg(pba, i, pba->index_bg_p_prime_smg, d_over_dtau);
 
 	// Planck's mass running
-	// Only need to compute it if neither self consistent field evolution nor evolving M_pl in terms of alpha_M
+	// Only need to compute it if neither self consistent field evolution nor evolving M2 in terms of alpha_M
 	// check equation 3.3 of Bellini & Sawicki 2014
 
 	if (pba->field_evolution_smg == _FALSE_ && pba->M2_evolution_smg == _FALSE_){

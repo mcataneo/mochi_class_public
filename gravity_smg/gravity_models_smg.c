@@ -38,7 +38,7 @@ int gravity_models_gravity_properties_smg(
 
   /** read the model and loop over models to set several flags and variables
   * field_evolution_smg: for self-consistent scalar tensor theories, need to evolve the background equations
-  * M2_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
+  * M2_evolution_smg: for some parameterizations, need to integrate M2 from alpha_M
   * Primary and secondary parameters: The tuning is alway in terms of a value in parameters_smg, therefore
   *  -> real models: "parameters_smg" to pba->parameters_smg
   *  -> parameterizations: "parameters_smg" to pba->parameters_2_smg
@@ -458,8 +458,8 @@ int gravity_models_gravity_properties_smg(
           }
         }
 
-        class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
-           // printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
+        class_read_double("param_shoot_M2_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
+           // printf("updating param = %e to tune M2 \n",pba->parameters_smg[pba->tuning_index_2_smg]);
        }
      }
    }

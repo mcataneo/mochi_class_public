@@ -550,7 +550,7 @@ int input_shooting(struct file_content * pfc,
                                         "omega_dcdmdr",             /* unknown param for target 'omega_ini_dcdm' */
                                         "A_s",                      /* unknown param for target 'sigma8' */
                                         "shooting_parameter_smg",   /* unknown param for target 'Omega_smg' */
-                                        "param_shoot_M_pl_smg"};    /* unknown param for target 'M2_today_smg' */
+                                        "param_shoot_M2_smg"};    /* unknown param for target 'M2_today_smg' */
 
   /* for each target, module up to which we need to run CLASS in order
      to compute the targetted quantities (not running the whole code

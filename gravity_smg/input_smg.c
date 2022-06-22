@@ -322,7 +322,7 @@ int input_default_params_smg(
   pba->M2_tuning_smg = _FALSE_; //* Tune Planck mass?*/
   pba->Omega_smg_debug = 0;
   pba->field_evolution_smg = _FALSE_; /* does the model require solving the background equations? */
-  pba->M2_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */
+  pba->M2_evolution_smg = _FALSE_; /* does the model require integrating M2 from alpha_M? */
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
   pba->a_min_stability_test_smg = 0; /** < skip stability tests for a < a_min */
 
