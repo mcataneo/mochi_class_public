@@ -47,6 +47,9 @@ int gravity_models_gravity_properties_smg(
   * to make it mandatory or allow for default values
   */
 
+  // TODO_EB: if parameters_smg is not specified it gives segfault. There are two cases:
+  // - gravity_model is not specified either. In this case we redirect to propto_omega. We should have default values also for the parameters
+  // - gravity_model is specified. In this case it should return a documented error rather than segfault.
   if (strcmp(string1,"propto_omega") == 0) {
      pba->gravity_model_smg = propto_omega;
      pba->field_evolution_smg = _FALSE_;
