@@ -827,8 +827,14 @@ int gravity_models_get_alphas_par_smg(
 
   double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
   double p_tot = pvecback[pba->index_bg_p_tot_wo_smg]+pvecback[pba->index_bg_p_smg];
-  double delta_M2 = pvecback_B[pba->index_bi_delta_M2_smg];
   double Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
+
+  /* defined always (otherwise the compiler complains), but used only
+   * if we need to integrate Mpl_running_smg */
+  double delta_M2;
+  if (pba->M2_evolution_smg == _TRUE_) {
+    delta_M2 = pvecback_B[pba->index_bi_delta_M2_smg];
+  }
 
   if (pba->gravity_model_smg == propto_omega) {
 
