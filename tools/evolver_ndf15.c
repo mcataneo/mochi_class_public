@@ -88,6 +88,7 @@ int evolver_ndf15(
   double alpha[5]={-37.0/200,-1.0/9.0,-8.23e-2,-4.15e-2, 0};
   double invGa[5],erconst[5];
   double abstol = 1e-15, eps=1e-16, threshold=abstol;
+  // double abstol = 1e-20, eps=1e-20, threshold=abstol;
   int maxit=4, maxk=5;
 
   /* Logicals: */
@@ -223,7 +224,6 @@ int evolver_ndf15(
 
   htspan = fabs(tfinal-t0);
   for(ii=0;ii<6;ii++) stepstat[ii] = 0;
-
   class_call_except((*derivs)(t0,y+1,f0+1,parameters_and_workspace_for_derivs,error_message),
 				error_message,
 				error_message,
@@ -237,7 +237,6 @@ int evolver_ndf15(
   }
   hmax = (tfinal-t0)/10.0;
   t = t0;
-
 
   nfenj=0;
   class_call_except(numjac((*derivs),t,y,f0,&jac,&nj_ws,abstol,neq,
@@ -313,7 +312,8 @@ int evolver_ndf15(
            "Too many steps in evolver! Current stepsize:%g, in interval: [%g:%g]\n",
            absh,t0,tfinal);*/
     maxtmp = MAX(hmin,absh);
-    absh = MIN(hmax, maxtmp);
+    // absh = MIN(hmax, maxtmp); // MC potential !!!BUG!!! for backward integration
+    absh = MIN(fabs(hmax), maxtmp); // bug fixed
     if (fabs(absh-hmin)<100*eps){
       /* If the stepsize has not changed */
       if (at_hmin==_TRUE_){

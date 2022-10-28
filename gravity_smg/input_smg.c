@@ -233,6 +233,12 @@ int input_read_parameters_smg(
     }
   }
 
+  // MC if gravity model is stable_params we always skip stability test and don't solve for Hubble 
+  if(pba->gravity_model_smg == stable_params){
+    pba->skip_stability_tests_smg = _TRUE_;
+    pba->hubble_evolution = _FALSE_;
+  }
+
   //IC for perturbations
   class_call(parser_read_string(pfc,
 			       "pert_initial_conditions_smg",
@@ -242,22 +248,27 @@ int input_read_parameters_smg(
 	         errmsg,
 	         errmsg);
 
-  if (strcmp(string1,"single_clock") == 0) {
-    ppt->pert_initial_conditions_smg = single_clock;
+  if(pba->gravity_model_smg==stable_params){
+    ppt->pert_initial_conditions_smg = zero; // force x_smg=0 and x_prime_smg=0 at initial time
+    // ppt->set_late_ic_smg = _TRUE_; // flag controlling activation of smg at late times; probably don't need this here
   }
-  else if (strcmp(string1,"gravitating_attr") == 0) {
-    ppt->pert_initial_conditions_smg = gravitating_attr;
+  else{
+    if (strcmp(string1,"single_clock") == 0) {
+      ppt->pert_initial_conditions_smg = single_clock;
+    }
+    else if (strcmp(string1,"gravitating_attr") == 0) {
+      ppt->pert_initial_conditions_smg = gravitating_attr;
+    }
+    else if (strcmp(string1,"zero") == 0) {
+      ppt->pert_initial_conditions_smg = zero;
+    }
+    else if (strcmp(string1,"kin_only") == 0) {
+      ppt->pert_initial_conditions_smg = kin_only;
+    }
+    else if (strcmp(string1,"ext_field_attr") == 0 ){//this is the default
+      ppt->pert_initial_conditions_smg = ext_field_attr;
+    }
   }
-  else if (strcmp(string1,"zero") == 0) {
-    ppt->pert_initial_conditions_smg = zero;
-  }
-  else if (strcmp(string1,"kin_only") == 0) {
-    ppt->pert_initial_conditions_smg = kin_only;
-  }
-  else if (strcmp(string1,"ext_field_attr") == 0 ){//this is the default
-    ppt->pert_initial_conditions_smg = ext_field_attr;
-  }
-
   // else {
   //   if (ppt->perturbations_verbose > 1)
   //     printf(" Initial conditions for Modified gravity perturbations not specified, using default \n");
@@ -318,11 +329,11 @@ int input_default_params_smg(
   pba->gravity_model_smg = propto_omega; /* gravitational model */
   pba->expansion_model_smg = lcdm; /*expansion model (only for parameterizations*/
   pba->Omega0_smg = 0.; /* Scalar field defaults */
-  pba->M2_today_smg = 1.; //*Planck mass today*/
-  pba->M2_tuning_smg = _FALSE_; //* Tune Planck mass?*/
+  pba->M_pl_today_smg = 1.; //*Planck mass today*/
+  pba->M_pl_tuning_smg = _FALSE_; //* Tune Planck mass?*/
   pba->Omega_smg_debug = 0;
   pba->field_evolution_smg = _FALSE_; /* does the model require solving the background equations? */
-  pba->M2_evolution_smg = _FALSE_; /* does the model require integrating M2 from alpha_M? */
+  pba->M_pl_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
   pba->a_min_stability_test_smg = 0; /** < skip stability tests for a < a_min */
 

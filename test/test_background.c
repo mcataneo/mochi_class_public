@@ -35,17 +35,49 @@ int main(int argc, char **argv) {
 	  quanitity you are interested in ******/
 
   int index_tau;
-
+  FILE * output_file;
+	// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass.dat","w");
+  // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_hiclass.dat","w");
+  output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_full_grid_hiclass.dat","w");
+  
   for (index_tau=0; index_tau<ba.bt_size; index_tau++) {
 
-    fprintf(stdout,
-	    "tau=%e z=%e a=%e H=%e\n",
-	    ba.tau_table[index_tau],
-	    ba.z_table[index_tau],
-	    ba.background_table[index_tau*ba.bg_size+ba.index_bg_a],
-	    ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]);
+    // fprintf(stdout,
+	  //   "tau=%e z=%e a=%e H=%e\n",
+	  //   ba.tau_table[index_tau],
+	  //   ba.z_table[index_tau],
+	  //   ba.background_table[index_tau*ba.bg_size+ba.index_bg_a],
+	  //   ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]);
 
-  }
+      // fprintf(stdout,
+	    // "%e \t %e \t %e \t %e \t %e\n",
+	    // log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+      // ba.background_table[index_tau*ba.bg_size+ba.index_bg_kineticity_smg],
+	    // ba.background_table[index_tau*ba.bg_size+ba.index_bg_braiding_smg],
+      // ba.background_table[index_tau*ba.bg_size+ba.index_bg_mpl_running_smg],
+      // ba.background_table[index_tau*ba.bg_size+ba.index_bg_tensor_excess_smg]);
+
+		fprintf(output_file,"%.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e\n",
+		log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+		ba.background_table[index_tau*ba.bg_size + ba.index_bg_mpl_running_smg],
+		ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_smg],
+		ba.background_table[index_tau*ba.bg_size + ba.index_bg_kineticity_smg],
+		ba.background_table[index_tau*ba.bg_size + ba.index_bg_delta_M2_smg],
+		ba.background_table[index_tau*ba.bg_size + ba.index_bg_cs2_smg],
+		ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_smg],
+    ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_mpl_running_prime_smg],
+		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_prime_smg],
+		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_kineticity_prime_smg],
+		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_prime_smg]);
+
+    // fprintf(output_file,"%.15e %.15e %.15e %.15e\n",
+		// log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+		// ba.background_table[index_tau*ba.bg_size + ba.index_bg_delta_M2_smg],
+		// ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_smg],
+    // ba.background_table[index_tau*ba.bg_size + ba.index_bg_cs2_smg]);
+	}
+	fclose(output_file);
+	// class_stop(pba->error_message,"Stop here, for now.");
 
   /****** all calculations done, now free the structures ******/
 

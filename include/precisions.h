@@ -13,6 +13,7 @@ class_precision_parameter(a_ini_over_a_today_default,double,1.e-14)
  * Number of background integration steps that are stored in the output vector
  */
 class_precision_parameter(background_Nloga,int,3000)
+// class_precision_parameter(background_Nloga,int,6000)
 /**
  * Evolver to be used for thermodynamics (rk, ndf15)
  */
@@ -22,6 +23,7 @@ class_type_parameter(background_evolver,int,enum evolver_type,ndf15)
  * (used by both evolvers)
  */
 class_precision_parameter(tol_background_integration,double,1.e-10)
+// class_precision_parameter(tol_background_integration,double,1.e-16)
 /**
  * Only relevant for rk evolver: the default integration step is given
  * by this number multiplied by the timescale defined in

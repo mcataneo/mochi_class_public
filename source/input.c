@@ -539,7 +539,7 @@ int input_shooting(struct file_content * pfc,
                                        "omega_ini_dcdm",
                                        "sigma8",
                                        "Omega_smg",
-                                       "M2_today_smg"};
+                                       "M_pl_today_smg"};
 
   /* array of corresponding parameters that must be adjusted in order to meet the target (= unknown parameters) */
   char * const unknown_namestrings[] = {"h",                        /* unknown param for target '100*theta_s' */
@@ -550,7 +550,7 @@ int input_shooting(struct file_content * pfc,
                                         "omega_dcdmdr",             /* unknown param for target 'omega_ini_dcdm' */
                                         "A_s",                      /* unknown param for target 'sigma8' */
                                         "shooting_parameter_smg",   /* unknown param for target 'Omega_smg' */
-                                        "param_shoot_M2_smg"};    /* unknown param for target 'M2_today_smg' */
+                                        "param_shoot_M_pl_smg"};    /* unknown param for target 'M_pl_today_smg' */
 
   /* for each target, module up to which we need to run CLASS in order
      to compute the targetted quantities (not running the whole code
@@ -564,7 +564,7 @@ int input_shooting(struct file_content * pfc,
                                         cs_background,     /* computation stage for target 'omega_ini_dcdm' */
                                         cs_nonlinear,      /* computation stage for target 'sigma8' */
                                         cs_background,     /* computation stage for target 'Omega_smg' */
-                                        cs_background};    /* computation stage for target 'M2_today_smg' */
+                                        cs_background};    /* computation stage for target 'M_pl_today_smg' */
 
   struct fzerofun_workspace fzw;
 
@@ -818,7 +818,7 @@ int input_needs_shooting_for_target(struct file_content * pfc,
       if (target_value == 0.)
         *needs_shooting = _FALSE_;
       break;
-    case M2_today_smg:
+    case M_pl_today_smg:
     default:
       /* Default is no additional checks */
       *needs_shooting = _TRUE_;
@@ -1192,7 +1192,7 @@ int input_get_guess(double *xguess,
       xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
       dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
       break;
-    case M2_today_smg:
+    case M_pl_today_smg:
       xguess[index_guess] = ba.parameters_smg[ba.tuning_index_2_smg];
       dxdy[index_guess] = 1;
       break;
@@ -1265,7 +1265,6 @@ int input_try_unknown_parameters(double * unknown_parameter,
                                    errmsg),
              errmsg,
              errmsg);
-
   class_call(input_read_parameters(&(pfzw->fc),&pr,&ba,&th,&pt,&tr,&pm,&hr,&fo,&le,&sd,&op,
                                    errmsg),
              errmsg,
@@ -1403,12 +1402,12 @@ int input_try_unknown_parameters(double * unknown_parameter,
               /ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_crit], ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]
               /pow(ba.H0,2),output[i]);
       break;
-    case M2_today_smg:
-      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg] - ba.M2_today_smg;
+    case M_pl_today_smg:
+      output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg] - ba.M_pl_today_smg;
       if (input_verbose > 2)
-        printf("M2 = %e, want %e, param=%e\n",
+        printf("M_pl = %e, want %e, param=%e\n",
          ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_M2_smg],
-         ba.M2_today_smg,
+         ba.M_pl_today_smg,
          ba.parameters_smg[ba.tuning_index_2_smg]
         );
       break;

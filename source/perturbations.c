@@ -984,9 +984,10 @@ int perturbations_init(
 
       abort = _FALSE_;
 
+// MC check setting private(ppt->set_late_ic_smg) is enough for correct multithreading 
 #pragma omp parallel                                                    \
   shared(pppw,ppr,pba,pth,ppt,index_md,index_ic,abort,number_of_threads) \
-  private(index_k,thread,tstart,tstop,tspent)                           \
+  private(index_k,thread,tstart,tstop,tspent,ppt->set_late_ic_smg)                           \
   num_threads(number_of_threads)
 
       {
@@ -997,6 +998,9 @@ int perturbations_init(
 #endif
 
 #pragma omp for schedule (dynamic)
+
+        // flag controlling activation of smg at late times (a>=a_smg) if gravity_model_smg == stable_params
+        if(pba->gravity_model_smg == stable_params) ppt->set_late_ic_smg == _TRUE_;
 
         /* integrating backwards is slightly more optimal for parallel runs */
         //for (index_k = 0; index_k < ppt->k_size; index_k++) {
@@ -6787,6 +6791,9 @@ int perturbations_einstein(
       if(pba->has_smg == _TRUE_) {
 
         perturbations_einstein_scalar_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
+        // printf("set_late_ic_smg=%d\n",ppt->set_late_ic_smg);
+        // printf("tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
+        // printf("%.15e %15e\n",a,ppw->pvecback[pba->index_bg_M2_smg]*ppw->pvecback[pba->index_bg_mpl_running_smg]*ppw->pvecback[pba->index_bg_H]*ppw->pvecmetric[ppw->index_mt_x_smg]);
 
       }
       else { // Standard equations

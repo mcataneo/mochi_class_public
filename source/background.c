@@ -1003,6 +1003,8 @@ int background_indices(
   int index_bg;
   /* a running index for the vector of background quantities to be integrated */
   int index_bi;
+  /* a running index for the vector of background quantities to be integrated backward*/
+  int index_bibw;
 
   /** - initialize all flags: which species are present? */
 
@@ -1219,6 +1221,8 @@ int background_indices(
   /* index for Hubble rate (_smg) */
   class_define_index(pba->index_bi_logH,pba->hubble_evolution,index_bi,1);
 
+  index_bibw=0;
+
   /* - indices for scalar field (modified gravity _smg) */
   if (pba->has_smg == _TRUE_) {
     class_call(
@@ -1226,6 +1230,16 @@ int background_indices(
       pba->error_message,
       pba->error_message
     );
+
+    if(pba->gravity_model_smg == stable_params){
+      class_call(  
+        background_define_indices_bibw_smg(pba, &index_bibw),
+        pba->error_message,
+        pba->error_message
+      );
+      /* End of {B} variables to be integrated backward*/
+      pba->bi_bw_B_size = index_bibw;  
+    }
   }
 
   /* End of {B} variables */
@@ -1941,6 +1955,8 @@ int background_solve(
   struct background_parameters_and_workspace bpaw;
   /* vector of quantities to be integrated */
   double * pvecback_integration;
+  /* vector of quantities to be integrated backward */
+  double * pvecback_bw_integration;
   /* vector of all background quantities */
   double * pvecback;
   /* comoving radius coordinate in Mpc (equal to conformal distance in flat case) */
@@ -1972,9 +1988,11 @@ int background_solve(
 
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
+  /** - allocate vector of quantities to be integrated backward */
+  class_alloc(pvecback_bw_integration,pba->bi_bw_B_size*sizeof(double),pba->error_message);
 
   /** - impose initial conditions with background_initial_conditions() */
-  class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration,&(loga_ini)),
+  class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration,pvecback_bw_integration,&(loga_ini)),
              pba->error_message,
              pba->error_message);
 
@@ -2037,7 +2055,7 @@ int background_solve(
                              NULL, //'print_variables' in evolver_rk could be set, but, not required
                              pba->error_message),
              pba->error_message,
-             pba->error_message);
+             pba->error_message);  
 
   /** - recover some quantities today */
   /* -> age in Gyears */
@@ -2104,7 +2122,7 @@ int background_solve(
              pba->error_message);
 
   if (pba->has_smg == _TRUE_) {
-   class_call(background_solve_smg(pba, pvecback, pvecback_integration),
+    class_call(background_solve_smg(ppr, pba, pvecback, pvecback_integration, pvecback_bw_integration),
               pba->error_message,
               pba->error_message);
   }
@@ -2184,6 +2202,7 @@ int background_solve(
 
   free(pvecback);
   free(pvecback_integration);
+  free(pvecback_bw_integration);
   free(used_in_output);
 
   return _SUCCESS_;
@@ -2206,6 +2225,7 @@ int background_initial_conditions(
                                   struct background *pba,
                                   double * pvecback, /* vector with argument pvecback[index_bg] (must be already allocated, normal format is sufficient) */
                                   double * pvecback_integration, /* vector with argument pvecback_integration[index_bi] (must be already allocated with size pba->bi_size) */
+                                  double * pvecback_bw_integration, /* vector with argument pvecback_bw_integration[index_bibw] (must be already allocated with size pba->bi_bw_B_size) */
                                   double * loga_ini
                                   ) {
 
@@ -2367,7 +2387,7 @@ int background_initial_conditions(
 
   if (pba->has_smg == _TRUE_) {
     class_call(
-      background_initial_conditions_smg(pba, a, pvecback, pvecback_integration,&rho_rad),
+      background_initial_conditions_smg(pba, a, pvecback, pvecback_integration, pvecback_bw_integration, &rho_rad),
       pba->error_message,
       pba->error_message
     );

@@ -284,6 +284,19 @@ int array_integrate_all_trapzd_or_spline(
 			       int result_size, /** from 1 to n_columns */
 			       ErrorMsg errmsg);
 
+/*  MC experimental function for multicolumn extrapolation/interpolation used by the Horndeski's external_alpha parameterization */
+  int array_interpolate_extrapolate_spline(
+			       double * __restrict__ x_array,
+			       int n_lines,
+			       double * __restrict__ array,
+			       double * __restrict__ array_splined,
+			       int n_columns,
+			       double x,
+			       int * __restrict__ last_index,
+			       double * __restrict__ result,
+			       int result_size, /** from 1 to n_columns */
+			       ErrorMsg errmsg);
+
   int array_interpolate_spline_transposed(double * array,
                                           int x_size,
                                           int y_size,

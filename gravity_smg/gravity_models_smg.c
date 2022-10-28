@@ -27,18 +27,19 @@ int gravity_models_gravity_properties_smg(
                                           ErrorMsg errmsg
                                           ) {
 
-  int flag2, flag3;
+  int flag1, flag2, flag3;
   char string2[_ARGUMENT_LENGTH_MAX_];
   char string3[_ARGUMENT_LENGTH_MAX_];
   /** Loop over the different models
   * flag2 keeps track of whether model has been identified
   */
 
+  flag1=_FALSE_;
   flag2=_FALSE_;
 
   /** read the model and loop over models to set several flags and variables
   * field_evolution_smg: for self-consistent scalar tensor theories, need to evolve the background equations
-  * M2_evolution_smg: for some parameterizations, need to integrate M2 from alpha_M
+  * M_pl_evolution_smg: for some parameterizations, need to integrate M_pl from alpha_M
   * Primary and secondary parameters: The tuning is alway in terms of a value in parameters_smg, therefore
   *  -> real models: "parameters_smg" to pba->parameters_smg
   *  -> parameterizations: "parameters_smg" to pba->parameters_2_smg
@@ -47,13 +48,10 @@ int gravity_models_gravity_properties_smg(
   * to make it mandatory or allow for default values
   */
 
-  // TODO_EB: if parameters_smg is not specified it gives segfault. There are two cases:
-  // - gravity_model is not specified either. In this case we redirect to propto_omega. We should have default values also for the parameters
-  // - gravity_model is specified. In this case it should return a documented error rather than segfault.
   if (strcmp(string1,"propto_omega") == 0) {
      pba->gravity_model_smg = propto_omega;
      pba->field_evolution_smg = _FALSE_;
-     pba->M2_evolution_smg = _TRUE_;
+     pba->M_pl_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 5;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -62,7 +60,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"propto_scale") == 0) {
      pba->gravity_model_smg = propto_scale;
      pba->field_evolution_smg = _FALSE_;
-     pba->M2_evolution_smg = _TRUE_;
+     pba->M_pl_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 5;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -71,7 +69,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"constant_alphas") == 0) {
      pba->gravity_model_smg = constant_alphas;
      pba->field_evolution_smg = _FALSE_;
-     pba->M2_evolution_smg = _TRUE_;
+     pba->M_pl_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 5;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -80,7 +78,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"eft_alphas_power_law") == 0) {
      pba->gravity_model_smg = eft_alphas_power_law;
      pba->field_evolution_smg = _FALSE_;
-     pba->M2_evolution_smg = _TRUE_;
+     pba->M_pl_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -89,7 +87,7 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"eft_gammas_power_law") == 0) {
      pba->gravity_model_smg = eft_gammas_power_law;
      pba->field_evolution_smg = _FALSE_;
-     pba->M2_evolution_smg = _TRUE_;
+     pba->M_pl_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
@@ -98,11 +96,275 @@ int gravity_models_gravity_properties_smg(
   if (strcmp(string1,"eft_gammas_exponential") == 0) {
      pba->gravity_model_smg = eft_gammas_exponential;
      pba->field_evolution_smg = _FALSE_;
-     pba->M2_evolution_smg = _TRUE_;
+     pba->M_pl_evolution_smg = _TRUE_;
      flag2=_TRUE_;
      pba->parameters_2_size_smg = 8;
      class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
    }
+
+// MC parametrization based on external input file
+  if (strcmp(string1,"external_alphas") == 0) {
+	pba->gravity_model_smg = external_alphas;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _TRUE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 1;
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+
+  class_call(parser_read_string(pfc,
+                                  "smg_file_name",
+                                  &string2,
+                                  &flag1,
+                                  errmsg),
+               errmsg,
+               errmsg);
+
+    if (flag1 == _TRUE_) {
+        pba->has_smg_file = _TRUE_;
+        class_read_string("smg_file_name",pba->smg_file_name);
+    }else{
+        class_stop(errmsg,"external_alphas parameterization requested. Please specify full path to file containing alpha functions");   
+    }
+
+  /* for reading alpha_X functions */
+  FILE * input_file;
+  int row,status;
+  double tmp1,tmp2,tmp3,tmp4,tmp5; // as many as the number of columns in input file
+  int index_alpha;
+
+  pba->ext_alphas_size_smg = 0;
+
+  if (pba->has_smg_file == _TRUE_) {
+
+    input_file = fopen(pba->smg_file_name,"r");
+    class_test(input_file == NULL,
+               errmsg,
+               "Could not open file %s",pba->smg_file_name);
+
+    /* Find size of table */
+    for (row=0,status=5; status==5; row++){
+      status = fscanf(input_file,"%lf %lf %lf %lf %lf",&tmp1,&tmp2,&tmp3,&tmp4,&tmp5);
+    }
+    rewind(input_file);
+    pba->ext_alphas_size_smg = row-1;
+
+    /** - define indices and allocate arrays for interpolation table*/
+
+    class_alloc(pba->ext_alphas_lna_smg,pba->ext_alphas_size_smg*sizeof(double),errmsg);
+
+    index_alpha = 0;
+    class_define_index(pba->index_bg_ext_kineticity_smg,_TRUE_,index_alpha,1);
+    class_define_index(pba->index_bg_ext_braiding_smg,_TRUE_,index_alpha,1);
+    class_define_index(pba->index_bg_ext_mpl_running_smg,_TRUE_,index_alpha,1);
+    class_define_index(pba->index_bg_ext_tensor_excess_smg,_TRUE_,index_alpha,1);
+    pba->ext_num_alphas = index_alpha;
+    class_alloc(pba->ext_alphas_smg,pba->ext_alphas_size_smg*pba->ext_num_alphas*sizeof(double),errmsg);
+    class_alloc(pba->ext_ddalphas_smg,pba->ext_alphas_size_smg*pba->ext_num_alphas*sizeof(double),errmsg);
+
+    /* - fill a table of ln(a) and alphas*/
+    for (row=0; row<pba->ext_alphas_size_smg; row++){
+      status = fscanf(input_file,"%lf %lf %lf %lf %lf",
+                      &pba->ext_alphas_lna_smg[row],
+                      &pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_kineticity_smg],
+                      &pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_braiding_smg],
+                      &pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_mpl_running_smg],
+                      &pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_tensor_excess_smg]);
+      // printf("%d: (lna, alpha_K, alpha_B, alpha_M, alpha_T) = (%e,%e,%e,%e,%e)\n",row,
+      //         pba->ext_alphas_lna_smg[row],
+      //         pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_kineticity_smg],
+      //         pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_braiding_smg],
+      //         pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_mpl_running_smg],
+      //         pba->ext_alphas_smg[row*pba->ext_num_alphas + pba->index_bg_ext_tensor_excess_smg]);
+    }
+    fclose(input_file);
+
+
+    /** - spline the table for later interpolation */
+
+    class_call(array_spline_table_lines(
+                                        pba->ext_alphas_lna_smg,
+                                        pba->ext_alphas_size_smg,
+                                        pba->ext_alphas_smg,
+                                        pba->ext_num_alphas,
+                                        pba->ext_ddalphas_smg,
+                                        _SPLINE_NATURAL_,
+                                        errmsg),
+              errmsg,errmsg);
+  }
+
+  }// MC end of external_alphas
+
+  // MC stable parametrization with external input file
+  if (strcmp(string1,"stable_params") == 0) {
+	pba->gravity_model_smg = stable_params;
+	pba->field_evolution_smg = _FALSE_;
+	pba->M_pl_evolution_smg = _FALSE_;
+	flag2=_TRUE_;
+	pba->parameters_2_size_smg = 2;
+  // read alpha_B(z=0) and scale factor to set initial conditions
+	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+  pba->a_smg = pba->parameters_2_smg[1];
+
+  class_call(parser_read_string(pfc,
+                                  "smg_file_name",
+                                  &string2,
+                                  &flag1,
+                                  errmsg),
+               errmsg,
+               errmsg);
+
+    if (flag1 == _TRUE_) {
+        pba->has_smg_file = _TRUE_;
+        class_read_string("smg_file_name",pba->smg_file_name);
+    }else{
+        class_stop(errmsg,"stable_params parameterization requested. Please specify full path to file containing M*^2, D_kin and cs^2 functions");   
+    }
+
+  /* for reading Delta_M_pl^2, D_kin and cs^2 functions */
+  FILE * input_file;
+  int row,status;
+  double tmp1,tmp2,tmp3,tmp4; // as many as the number of columns in input file
+  int index_stable_params, index_stable_params_derived, index_stable_params_aux;
+
+  pba->stable_params_size_smg = 0;
+
+  if (pba->has_smg_file == _TRUE_) {
+
+    input_file = fopen(pba->smg_file_name,"r");
+    class_test(input_file == NULL,
+               errmsg,
+               "Could not open file %s",pba->smg_file_name);
+
+    /* Find size of table */
+    for (row=0,status=4; status==4; row++){
+      status = fscanf(input_file,"%lf %lf %lf %lf",&tmp1,&tmp2,&tmp3,&tmp4);
+    }
+    rewind(input_file);
+    pba->stable_params_size_smg = row-1;
+
+    /** - define indices and allocate arrays for interpolation table*/
+
+    class_alloc(pba->stable_params_lna_smg,pba->stable_params_size_smg*sizeof(double),errmsg);
+
+    index_stable_params = 0;
+    class_define_index(pba->index_stable_Delta_Mpl_smg,_TRUE_,index_stable_params,1);
+    class_define_index(pba->index_stable_Dkin_smg,_TRUE_,index_stable_params,1);
+    class_define_index(pba->index_stable_cs2_smg,_TRUE_,index_stable_params,1);
+    class_define_index(pba->index_stable_Mpl_running_smg,_TRUE_,index_stable_params,1);
+    pba->num_stable_params = index_stable_params;
+    // parameters derived from ODE integration
+    index_stable_params_derived = 0;
+    class_define_index(pba->index_derived_braiding_smg,_TRUE_,index_stable_params_derived,1);
+    class_define_index(pba->index_derived_kineticity_smg,_TRUE_,index_stable_params_derived,1);
+    pba->num_stable_params_derived = index_stable_params_derived;
+    // auxiliary array to compute alpha_M from input Delta_M_pl^2
+    index_stable_params_aux = 0;
+    class_define_index(pba->index_aux_Delta_Mpl_smg,_TRUE_,index_stable_params_aux,1);
+    class_define_index(pba->index_aux_dMpl_smg,_TRUE_,index_stable_params_aux,1);
+    class_define_index(pba->index_aux_ddMpl_smg,_TRUE_,index_stable_params_aux,1);
+    pba->num_stable_params_aux = index_stable_params_aux;    
+    
+    /** - allocate various vectors */
+    class_alloc(pba->stable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
+    class_alloc(pba->ddstable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
+    class_alloc(pba->stable_params_derived_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+    class_alloc(pba->ddstable_params_derived_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+    class_alloc(pba->stable_params_aux_smg,pba->stable_params_size_smg*pba->num_stable_params_aux*sizeof(double),errmsg);
+
+    /* - fill a table of ln(a) and stable parameters*/
+    // FILE * output_file;
+    // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_Delta_Mpl_hiclass.dat","w");
+    for (row=0; row<pba->stable_params_size_smg; row++){
+      status = fscanf(input_file,"%lf %lf %lf %lf",
+                      &pba->stable_params_lna_smg[row],
+                      &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
+                      &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
+                      &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg]);
+      // Initialize alpha_M and update value below as dMpl/Mpl
+      pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = 0.;
+
+      // printf("%d: (lna, Delta_M_pl, D_kin, cs2) = (%.15e,%.15e,%.15e,%.15e)\n",row,
+      //         pba->stable_params_lna_smg[row],
+      //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
+      //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
+      //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg]);
+      // fprintf(output_file,"%.15e \t %.15e\n",pba->stable_params_lna_smg[row],pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
+    }
+    // fclose(output_file);
+    fclose(input_file);
+
+    /** - spline stable input parameters for later interpolation */
+    class_call(array_spline_table_lines(pba->stable_params_lna_smg,
+                                        pba->stable_params_size_smg,
+                                        pba->stable_params_smg,
+                                        pba->num_stable_params,
+                                        pba->ddstable_params_smg,
+                                        _SPLINE_EST_DERIV_,
+                                        pba->error_message),
+               pba->error_message,
+               pba->error_message);
+
+    /** - copy Delta_Mpl and ddMpl to auxiliary array */
+    for (row=0; row<pba->stable_params_size_smg; row++){
+      copy_to_aux_array_smg(pba,row,pba->index_aux_Delta_Mpl_smg,pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
+      copy_to_aux_array_smg(pba,row,pba->index_aux_ddMpl_smg,pba->ddstable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
+    }
+    /* Differentiate splined M_pl^2 to obtain alpha_m over the range of lna used by the ODE for alpha_b. */
+    // First step gives dM_pl^2/dlna 
+    class_call(array_derive_spline_table_line_to_line(pba->stable_params_lna_smg,
+                                                      pba->stable_params_size_smg,
+                                                      pba->stable_params_aux_smg,
+                                                      pba->num_stable_params_aux,
+                                                      pba->index_aux_Delta_Mpl_smg,
+                                                      pba->index_aux_ddMpl_smg,
+                                                      pba->index_aux_dMpl_smg,
+                                                      pba->error_message),
+               pba->error_message,
+               pba->error_message);
+
+    // Update value of alpha_M in pba->stable_params_smg
+    double Mpl, dMpl; // M_pl^2, dM_pl^2/dlna
+    // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_planck_running_hiclass.dat","w");
+    for (row=0; row<pba->stable_params_size_smg; row++){
+                    Mpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_Delta_Mpl_smg] + 1.;
+                    dMpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_dMpl_smg];
+                    pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = dMpl/Mpl;
+
+                    // printf("%d: (lna, alpha_M) = (%.15e,%.15e)\n",row,
+                    //         pba->stable_params_lna_smg[row],
+                    //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg]);
+
+                    // fprintf(output_file,"%.15e \t %.15e\n",pba->stable_params_lna_smg[row],pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg]);
+    }
+    // fclose(output_file);
+
+    /** - re-spline stable input parameters for later interpolation */
+    class_call(array_spline_table_lines(pba->stable_params_lna_smg,
+                                        pba->stable_params_size_smg,
+                                        pba->stable_params_smg,
+                                        pba->num_stable_params,
+                                        pba->ddstable_params_smg,
+                                        _SPLINE_EST_DERIV_,
+                                        pba->error_message),
+               pba->error_message,
+               pba->error_message);
+
+    // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_hiclass.dat","w");
+    // for (row=0; row<pba->stable_params_size_smg; row++){
+    //                 fprintf(output_file,"%.15e \t %.15e \t %.15e \t %.15e \t %.15e\n",
+    //                 pba->stable_params_lna_smg[row],
+    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
+    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
+    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg],
+    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg]);
+    // }
+    // fclose(output_file);
+
+    // class_stop(errmsg,"Stop here, for now.");  
+
+  }
+
+  }// MC end of stable_params
 
   if (strncmp("quintessence", string1, strlen("quintessence")) == 0) {
      // Check if gravity_model has quintessence as prefix.
@@ -436,16 +698,16 @@ int gravity_models_gravity_properties_smg(
     /** Read the desired Planck mass and check that the necessary information is provided.
     *  if needed re-assign shooting parameter for the Planck mass
     */
-    class_call(parser_read_string(pfc, "M2_tuning_smg", &string3, &flag3, errmsg),
+    class_call(parser_read_string(pfc, "M_pl_tuning_smg", &string3, &flag3, errmsg),
          errmsg,
          errmsg);
 
     if (flag3 == _TRUE_){
       if((strstr(string3,"y") != NULL) || (strstr(string3,"Y") != NULL)){
 
-        pba->M2_tuning_smg = _TRUE_;
+        pba->M_pl_tuning_smg = _TRUE_;
 
-        class_read_double("M2_today_smg",pba->M2_today_smg);
+        class_read_double("M_pl_today_smg",pba->M_pl_today_smg);
 
         class_call(parser_read_string(pfc,"normalize_G_NR",
          		&string3,
@@ -457,12 +719,12 @@ int gravity_models_gravity_properties_smg(
         if (flag3 == _TRUE_){
            if((strstr(string3,"y") != NULL) || (strstr(string3,"Y") != NULL)){
              double omega_BD = pba->parameters_smg[1];
-             pba->M2_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
+             pba->M_pl_today_smg = (4.+2.*omega_BD)/(3.+2.*omega_BD);
           }
         }
 
-        class_read_double("param_shoot_M2_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
-           // printf("updating param = %e to tune M2 \n",pba->parameters_smg[pba->tuning_index_2_smg]);
+        class_read_double("param_shoot_M_pl_smg",pba->parameters_smg[pba->tuning_index_2_smg]);
+           // printf("updating param = %e to tune M_pl \n",pba->parameters_smg[pba->tuning_index_2_smg]);
        }
      }
    }
@@ -492,7 +754,7 @@ int gravity_models_gravity_properties_smg(
 
   class_test(flag2==_FALSE_,
              errmsg,
-             "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
+             "could not identify gravity_theory value, check that it is one of 'propto_omega', 'propto_scale', 'constant_alphas', 'eft_alphas_power_law', 'eft_gammas_power_law', 'eft_gammas_exponential', 'external_alphas', 'stable_params', 'brans_dicke', 'galileon', 'nKGB', 'quintessence_monomial', 'quintessence_tracker', 'alpha_attractor_canonical' ...");
 
   return _SUCCESS_;
 }
@@ -825,16 +1087,14 @@ int gravity_models_get_alphas_par_smg(
                                       ) {
 
 
+  double * ext_alphas;
+  double lna = log(a);
+  int last_index=0;
+
   double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
   double p_tot = pvecback[pba->index_bg_p_tot_wo_smg]+pvecback[pba->index_bg_p_smg];
+  double delta_M_pl = pvecback_B[pba->index_bi_delta_M_pl_smg];
   double Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
-
-  /* defined always (otherwise the compiler complains), but used only
-   * if we need to integrate Mpl_running_smg */
-  double delta_M2;
-  if (pba->M2_evolution_smg == _TRUE_) {
-    delta_M2 = pvecback_B[pba->index_bi_delta_M2_smg];
-  }
 
   if (pba->gravity_model_smg == propto_omega) {
 
@@ -846,9 +1106,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k*Omega_smg;
     pvecback[pba->index_bg_braiding_smg] = c_b*Omega_smg;
     pvecback[pba->index_bg_tensor_excess_smg] = c_t*Omega_smg;
-    pvecback[pba->index_bg_M2_running_smg] = c_m*Omega_smg;
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
+    pvecback[pba->index_bg_mpl_running_smg] = c_m*Omega_smg;
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
   }
 
   else if (pba->gravity_model_smg == propto_scale) {
@@ -861,9 +1121,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k*a;
     pvecback[pba->index_bg_braiding_smg] = c_b*a;
     pvecback[pba->index_bg_tensor_excess_smg] = c_t*a;
-    pvecback[pba->index_bg_M2_running_smg] = c_m*a;
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
+    pvecback[pba->index_bg_mpl_running_smg] = c_m*a;
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
   }
 
   else if (pba->gravity_model_smg == constant_alphas) {
@@ -876,9 +1136,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k;
     pvecback[pba->index_bg_braiding_smg] = c_b;
     pvecback[pba->index_bg_tensor_excess_smg] = c_t;
-    pvecback[pba->index_bg_M2_running_smg] = c_m;
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
+    pvecback[pba->index_bg_mpl_running_smg] = c_m;
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
   }
 
   else if (pba->gravity_model_smg == eft_alphas_power_law) {
@@ -895,9 +1155,9 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = c_k*pow(a, c_k_exp);
     pvecback[pba->index_bg_braiding_smg] = c_b*pow(a, c_b_exp);
     pvecback[pba->index_bg_tensor_excess_smg] = c_t*pow(a, c_t_exp);
-    pvecback[pba->index_bg_M2_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
+    pvecback[pba->index_bg_mpl_running_smg] = M_0*M_0_exp*pow(a, M_0_exp)/(1. + M_0*pow(a, M_0_exp));
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
   }
 
   else if ((pba->gravity_model_smg == eft_gammas_power_law) || (pba->gravity_model_smg == eft_gammas_exponential)) {
@@ -940,11 +1200,81 @@ int gravity_models_get_alphas_par_smg(
     pvecback[pba->index_bg_kineticity_smg] = 2.*(2.*g1*pow(pba->H0,2.)/rho_tot + c_over_H2)/(1. + Omega + g3);
     pvecback[pba->index_bg_braiding_smg] = -(g2*pba->H0/sqrt(rho_tot) + a*Omega_p)/(1. + Omega + g3);
     pvecback[pba->index_bg_tensor_excess_smg] = -g3/(1. + Omega + g3);
-    pvecback[pba->index_bg_M2_running_smg] = a*(Omega_p + g3_p)/(1. + Omega + g3);
-    pvecback[pba->index_bg_delta_M2_smg] = delta_M2; //M2-1
-    pvecback[pba->index_bg_M2_smg] = 1.+delta_M2;
+    pvecback[pba->index_bg_mpl_running_smg] = a*(Omega_p + g3_p)/(1. + Omega + g3);
+    pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+    pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
 
   }
+  else if(pba->gravity_model_smg == external_alphas){
+      pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+      pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+
+      if(lna < pba->ext_alphas_lna_smg[0]){
+        // MC set all alphas to zero for scale factors smaller than those in the external input file
+        // pvecback[pba->index_bg_kineticity_smg] = 1.e-16;
+        // pvecback[pba->index_bg_braiding_smg] = 0.;
+        // pvecback[pba->index_bg_tensor_excess_smg] = 0.;
+        // pvecback[pba->index_bg_mpl_running_smg] = 1.e-16;
+        // MC set all alphas to first element in array for scale factors smaller than those in the external input file
+        pvecback[pba->index_bg_kineticity_smg] = pba->ext_alphas_smg[pba->index_bg_ext_kineticity_smg];
+        pvecback[pba->index_bg_braiding_smg] = pba->ext_alphas_smg[pba->index_bg_ext_braiding_smg];
+        pvecback[pba->index_bg_tensor_excess_smg] = pba->ext_alphas_smg[pba->index_bg_ext_tensor_excess_smg];
+        pvecback[pba->index_bg_mpl_running_smg] = pba->ext_alphas_smg[pba->index_bg_ext_mpl_running_smg];
+
+        // printf("lna=%e \t alpha_K=%e \t alpha_B=%e \t alpha_M=%e \t alpha_T=%e\n",
+        //       lna,
+        //       pvecback[pba->index_bg_kineticity_smg],
+        //       pvecback[pba->index_bg_braiding_smg],
+        //       pvecback[pba->index_bg_mpl_running_smg],
+        //       pvecback[pba->index_bg_tensor_excess_smg]);
+      }
+      else{
+        // MC interpolate/extrapolate alphas from values in input table
+        class_alloc(ext_alphas,pba->ext_num_alphas*sizeof(double),pba->error_message);
+
+        class_call(array_interpolate_extrapolate_spline(
+                                            pba->ext_alphas_lna_smg,
+                                            pba->ext_alphas_size_smg,
+                                            pba->ext_alphas_smg,
+                                            pba->ext_ddalphas_smg,
+                                            pba->ext_num_alphas,
+                                            lna,
+                                            &last_index,
+                                            ext_alphas,
+                                            pba->ext_num_alphas,
+                                            pba->error_message),
+                  pba->error_message,
+                  pba->error_message);
+
+        pvecback[pba->index_bg_kineticity_smg] = ext_alphas[pba->index_bg_ext_kineticity_smg];
+        pvecback[pba->index_bg_braiding_smg] = ext_alphas[pba->index_bg_ext_braiding_smg];
+        pvecback[pba->index_bg_tensor_excess_smg] = ext_alphas[pba->index_bg_ext_tensor_excess_smg];
+        pvecback[pba->index_bg_mpl_running_smg] = ext_alphas[pba->index_bg_ext_mpl_running_smg];
+
+        // printf("lna=%e \t alpha_K=%e \t alpha_B=%e \t alpha_M=%e \t alpha_T=%e\n",
+        //       lna,
+        //       pvecback[pba->index_bg_kineticity_smg],
+        //       pvecback[pba->index_bg_braiding_smg],
+        //       pvecback[pba->index_bg_mpl_running_smg],
+        //       pvecback[pba->index_bg_tensor_excess_smg]);
+
+        free(ext_alphas);
+      }
+  }
+  // else if(pba->gravity_model_smg == stable_params){
+  /* -- do nothing for this parametrization */
+  //       /* only reduced/scalar Horndeski models are considered and this values will be rescaled
+  //       for a<10^-2 after backward integration. Here we are simply extrapolating the alpha's to
+  //       early times with a propto_omega model. M_pl is integrated from alpha_M given the hard-coded
+  //       initial condition M_pl_ini = 1.*/
+  //       pvecback[pba->index_bg_kineticity_smg] = Omega_smg;
+  //       pvecback[pba->index_bg_braiding_smg] = Omega_smg;
+  //       pvecback[pba->index_bg_tensor_excess_smg] = 0.;
+  //       pvecback[pba->index_bg_mpl_running_smg] = Omega_smg;
+  //       pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
+  //       pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+  // }
+
 
   return _SUCCESS_;
 }
@@ -965,6 +1295,7 @@ int gravity_models_initial_conditions_smg(
 											    								double a,
 																			    double * pvecback,
         															    double * pvecback_integration,
+                                          double * pvecback_bw_integration,
 																			    double * ptr_rho_rad
 														  			      ) {
 
@@ -1157,28 +1488,41 @@ int gravity_models_initial_conditions_smg(
 	    break;
 
 	  case propto_omega:
-			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[4]-1.;
+			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
 			break;
 
 	  case propto_scale:
-			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[4]-1.;
+			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
 			break;
 
 	  case constant_alphas:
-			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[4]-1.;
+			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[4]-1.;
 			break;
 
 	  case eft_alphas_power_law:
-			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
+			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]*pow(a, pba->parameters_2_smg[4]);
 			break;
 
 	  case eft_gammas_power_law:
-			pvecback_integration[pba->index_bi_delta_M2_smg] = pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
+			pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4]) + pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7]);
 			break;
 
 	  case eft_gammas_exponential:
-			pvecback_integration[pba->index_bi_delta_M2_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -2.;
+			pvecback_integration[pba->index_bi_delta_M_pl_smg] = exp(pba->parameters_2_smg[0]*pow(a,pba->parameters_2_smg[4])) + exp(pba->parameters_2_smg[3]*pow(a,pba->parameters_2_smg[7])) -2.;
 			break;
+
+    case external_alphas:
+	    pvecback_integration[pba->index_bi_delta_M_pl_smg] = pba->parameters_2_smg[0]-1.;
+	    break;
+
+    case stable_params:
+      /* sets IC at a_initial for integration of alpha_M. It's only needed to initially fill in array and it will be adjusted
+      after backward integration to be delta_M_pl(a) = delta_M_pl(a) for a<10^-2*/
+	    pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
+      /* For each backward integrated variable fix the initial condition at a_final. */
+      pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = 1.; // Arbitrary constant. We set it to 1
+	    pvecback_bw_integration[pba->index_bibw_dB_tilde_smg] = 1. - 0.5 * pba->parameters_2_smg[0]; // 1 - alpha_B0/2
+	    break;
 	  }
 
   /* expansion_smg when w is parametrized and rho obtained with integration */
@@ -1299,8 +1643,20 @@ int gravity_models_print_stdout_smg(
 	      pba->parameters_2_smg[0],pba->parameters_2_smg[1],pba->parameters_2_smg[2],pba->parameters_2_smg[3],pba->parameters_2_smg[4],pba->parameters_2_smg[5],pba->parameters_2_smg[6],pba->parameters_2_smg[7]);
     break;
 
+    case external_alphas:
+      printf("Modified gravity: external_alphas from file: \n");
+      printf("%s\n",
+	      pba->smg_file_name);
+     break;
+
+    case stable_params:
+      printf("Modified gravity: stable_params from file: \n");
+      printf("%s\n",
+	      pba->smg_file_name);
+     break; 
+
     default:
-      printf("Modified gravity: output not implemented in gravity_models_print_stdout_smg() \n");
+      printf("Modified gravity: output not implemented in print_stdout_gravity_parameters_smg() \n");
   }
 
   if(pba->field_evolution_smg==_FALSE_) {
@@ -1329,7 +1685,7 @@ int gravity_models_print_stdout_smg(
       break;
 
       default:
-        printf("Parameterized model: expansion history output not implemented in gravity_models_print_stdout_smg() \n");
+        printf("Parameterized model: expansion history output not implemented in print_stdout_gravity_parameters_smg() \n");
 
     }
   }
@@ -1337,3 +1693,31 @@ int gravity_models_print_stdout_smg(
   return _SUCCESS_;
 
 }
+
+/**
+* Copy to the background table _smg quantities.
+*
+* @param pba                  Input: pointer to background structure
+* @param row                  Input: table row
+* @param column               Input: table column
+* @param value                Input: value to copy
+* @return the error status
+*/
+int copy_to_aux_array_smg(
+																 struct background *pba,
+                                 int row,
+                                 int column,
+                                 double value
+															   ) {
+
+	/* needed for growing table */
+	void * memcopy_result;
+
+	memcopy_result = memcpy(pba->stable_params_aux_smg + row*pba->num_stable_params_aux + column,
+	                        &value, 1*sizeof(double));
+	class_test(memcopy_result != pba->stable_params_aux_smg + row*pba->num_stable_params_aux + column,
+	           pba->error_message, "cannot copy data to pba->stable_params_aux_smg");
+
+  return _SUCCESS_;
+  
+  }

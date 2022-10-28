@@ -32,9 +32,14 @@ int background_define_indices_bg_smg(struct background *pba,
 int background_define_indices_bi_smg(struct background *pba,
 				                             int * index_bi);
 
-int background_solve_smg(struct background *pba,
+int background_define_indices_bibw_smg(struct background *pba,
+				                             int * index_bibw);
+
+int background_solve_smg(struct precision *ppr,
+                         struct background *pba,
                          double * pvecback,
-                         double * pvecback_integration);
+                         double * pvecback_integration,
+                         double * pvecback_bw_integration);
 
 int background_print_stdout_smg(struct background *pba,
 				                        double * pvecback,
@@ -44,7 +49,26 @@ int background_initial_conditions_smg(struct background *pba,
                                       double a,
                                       double * pvecback,
                                       double * pvecback_integration,
+                                      double * pvecback_bw_integration,
                                       double * ptr_rho_rad);
+
+int background_derivs_bw_smg(
+                        double loga,
+                        double * y,
+                        double * dy,
+                        void * parameters_and_workspace,
+                        ErrorMsg error_message
+                        );
+
+int background_sources_bw_smg(
+                       double loga,
+                       double * y,
+                       double * dy,
+                       int index_loga,
+                       void * parameters_and_workspace,
+                       ErrorMsg error_message
+                       );
+
 
 int background_store_columntitles_smg(struct background *pba,
 				                              char titles[_MAXTITLESTRINGLENGTH_]);

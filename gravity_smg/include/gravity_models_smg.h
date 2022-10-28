@@ -149,10 +149,16 @@ int gravity_models_initial_conditions_smg(struct background *pba,
 											    								double a,
 																			    double * pvecback,
         															    double * pvecback_integration,
+                                          double * pvecback_bw_integration,
 																			    double * ptr_rho_rad);
 
 int gravity_models_print_stdout_smg(struct background *pba);
 
+int copy_to_aux_array_smg(struct background *pba,
+                          int row,
+                          int column,
+                          double value
+													);
 
 #ifdef __cplusplus
 }
