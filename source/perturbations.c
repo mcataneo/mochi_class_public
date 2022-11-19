@@ -984,7 +984,7 @@ int perturbations_init(
 
       abort = _FALSE_;
 
-// MC check setting private(ppt->set_late_ic_smg) is enough for correct multithreading 
+// MC check setting private(ppt->set_late_ic_smg) is enough for correct multithreading
 #pragma omp parallel                                                    \
   shared(pppw,ppr,pba,pth,ppt,index_md,index_ic,abort,number_of_threads) \
   private(index_k,thread,tstart,tstop,tspent,ppt->set_late_ic_smg)                           \
@@ -2919,6 +2919,7 @@ int perturbations_workspace_init(
     }
     if(pba->has_smg == _TRUE_) {
       ppw->approx[ppw->index_ap_qs_smg]=(int)qs_smg_fd_0;
+      ppw->approx[ppw->index_ap_gr_smg]=(int)gr_smg_off;
     }
   }
 
@@ -3903,6 +3904,10 @@ int perturbations_find_approximation_switches(
               ppt->error_message,
               ppt->error_message
             );
+            if ((interval_approx[index_switch-1][ppw->index_ap_gr_smg]==(int)gr_smg_on) &&
+                (interval_approx[index_switch][ppw->index_ap_gr_smg]==(int)gr_smg_off)) {
+              fprintf(stdout,"Mode k=%e: will switch on smg equations (gr_smg) at tau=%e\n",k,interval_limit[index_switch]);
+            }
           }
         }
 
@@ -4615,6 +4620,14 @@ int perturbations_vector_init(
           ppt->error_message,
           ppt->error_message
         );
+        if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+          ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
+          ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
+        }
+        else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
+          ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];
+          ppv->y[ppv->index_pt_x_prime_smg] = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
+        }
       }
 
       if (ppt->gauge == synchronous)
@@ -6459,6 +6472,15 @@ int perturbations_approximations(
         ppt->error_message,
         ppt->error_message
       );
+      if (ppt->method_gr_smg == switch_on_gr_smg) {
+        double z = 1./ppw->pvecback[pba->index_bg_a]-1.;
+        if (z > ppr->z_gr_smg) {
+          ppw->approx[ppw->index_ap_gr_smg] = (int)gr_smg_on;
+        }
+        else {
+          ppw->approx[ppw->index_ap_gr_smg] = (int)gr_smg_off;
+        }
+      }
     }
   }
 

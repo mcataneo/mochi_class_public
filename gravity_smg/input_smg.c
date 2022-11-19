@@ -128,6 +128,24 @@ int input_read_parameters_smg(
     }
   }
 
+
+  /** Main flag for the gr_smg approximation scheme */
+
+  class_call(parser_read_string(pfc,"method_gr_smg",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+
+  if (flag1 == _TRUE_) {
+
+    if ((strstr(string1,"off") != NULL) || (strstr(string1,"no") != NULL)) {
+      ppt->method_gr_smg = switch_off_gr_smg;
+    }
+    if ((strstr(string1,"on") != NULL) || (strstr(string1,"yes") != NULL)) {
+      ppt->method_gr_smg = switch_on_gr_smg;
+    }
+
+  }
+
   class_call(parser_read_string(pfc, "use_pert_var_deltaphi_smg", &string1, &flag1, errmsg),
              errmsg,
              errmsg);
@@ -233,7 +251,7 @@ int input_read_parameters_smg(
     }
   }
 
-  // MC if gravity model is stable_params we always skip stability test and don't solve for Hubble 
+  // MC if gravity model is stable_params we always skip stability test and don't solve for Hubble
   if(pba->gravity_model_smg == stable_params){
     pba->skip_stability_tests_smg = _TRUE_;
     pba->hubble_evolution = _FALSE_;
@@ -383,6 +401,7 @@ int input_default_params_smg(
 
   ppt->method_qs_smg=fully_dynamic;
   ppt->pert_initial_conditions_smg = ext_field_attr; /* default IC for perturbations in the scalar */
+  ppt->method_gr_smg=switch_off_gr_smg;
 
   ppt->use_pert_var_deltaphi_smg=_FALSE_;
 

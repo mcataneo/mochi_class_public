@@ -595,6 +595,8 @@ class_precision_parameter(trigger_mass_qs_smg,double,1.e3) /**< if the mass is a
 class_precision_parameter(trigger_rad_qs_smg,double,1.e3) /**< if the radiation component is still important w.r.t.\ the scalar field the quasi-static approximation can not be used */
 class_precision_parameter(eps_s_qs_smg,double,0.01) /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
+class_precision_parameter(z_gr_smg,double,100.) /**< minimum redshift before which GR equations are considered (after that hi_class evolves the standard smg equations) */
+
 
 class_precision_parameter(min_a_pert_smg,double,1.) /**< minimum value of scale factor to start integration (important to test some ede models */
 class_precision_parameter(pert_ic_tolerance_smg,double,2.e-2) /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */

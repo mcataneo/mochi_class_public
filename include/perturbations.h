@@ -15,8 +15,9 @@
  * flags for various approximation schemes
  * (tca = tight-coupling approximation,
  *  rsa = radiation streaming approximation,
- *  ufa = massless neutrinos / ultra-relativistic relics fluid approximation)
- *  qs_smg = quasi-static scalar field approximation)
+ *  ufa = massless neutrinos / ultra-relativistic relics fluid approximation,
+ *  qs_smg = quasi-static scalar field approximation,
+ *  gr_smg = switch on modified gravity only after fixed redshift,
  *
  * CAUTION: must be listed below in chronological order, and cannot be
  * reversible. When integrating equations for a given mode, it is only
@@ -40,6 +41,10 @@ enum qs_smg_flags {qs_smg_fd_0, qs_smg_qs_1, qs_smg_fd_2, qs_smg_qs_3, qs_smg_fd
 
 #define _VALUES_QS_SMG_FLAGS_ {0, 1, 0, 1, 0, 1, 0} // values associated to the quasi-static approximation scheme. FD = 0, QS = 1.
 
+/* switch on smg after fixed redshift */
+enum gr_smg_flags {gr_smg_on, gr_smg_off};
+
+
 //@}
 
 /**
@@ -62,6 +67,11 @@ enum possible_methods_qs_smg {
   quasi_static, /**< forces the quasi-static evolution of the perturbations at all times */
   fully_dynamic_debug, /**< forces the fully-dynamic evolution but evaluates the approximation scheme */
   quasi_static_debug /**< forces the quasi-static evolution but evaluates the approximation scheme */
+};
+
+enum possible_methods_gr_smg {
+  switch_off_gr_smg, /**< switch off approximation scheme */
+  switch_on_gr_smg, /**< normal approximation scheme */
 };
 
 //@}
@@ -473,6 +483,14 @@ struct perturbations
 
   //@}
 
+  /** @name - different options for the gr_smg approximation scheme */
+
+  //@{
+
+  enum possible_methods_gr_smg method_gr_smg;
+
+  //@}
+
   //@{
 
   /** enumerator defining type of dynamical initial conditions */
@@ -687,6 +705,7 @@ struct perturbations_workspace
   int index_ap_ncdmfa; /**< index for ncdm fluid approximation */
   int index_ap_qs_smg; /**< index for smg quasi-static approximation */
   double * tau_scheme_qs_smg; /* array with the quasi-static approximation times */
+  int index_ap_gr_smg; /**< index for gr_smg approximation */
   int ap_size;      /**< number of relevant approximations for a given mode */
 
   int * approx;     /**< array of approximation flags holding at a given time: approx[index_ap] */

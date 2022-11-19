@@ -322,6 +322,7 @@ int perturbations_define_indices_ap_smg(
 			                                  ) {
 
   class_define_index(ppw->index_ap_qs_smg,_TRUE_,*index_ap,1); /* for QS approximation scheme */
+  class_define_index(ppw->index_ap_gr_smg,_TRUE_,*index_ap,1); /* for gr_smg approximation scheme */
 
   return _SUCCESS_;
 }
@@ -344,7 +345,7 @@ int perturbations_define_indices_pt_smg(
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   /* scalar field: integration indices are assigned only if fd (0) */
-  if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
+  if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
     class_define_index(ppv->index_pt_x_smg,_TRUE_,*index_pt,1); /* dynamical scalar field perturbation */
     class_define_index(ppv->index_pt_x_prime_smg,_TRUE_,*index_pt,1); /* dynamical scalar field velocity */
   }
@@ -586,48 +587,17 @@ int perturbations_einstein_scalar_smg(
   }
 
   /* Get scalar field perturbations */
-  if (pba->gravity_model_smg == stable_params){
-    if(a < pba->a_smg){
-      ppw->pvecmetric[ppw->index_mt_x_smg] = 0.;
-      ppw->pvecmetric[ppw->index_mt_x_prime_smg] = 0.;
-      ppt->set_late_ic_smg = _TRUE_; // enforce this in case integrator adjustes step size and goes back to a<a_smg  
-    } else if(a >= pba->a_smg && ppt->set_late_ic_smg == _TRUE_){
-      class_call(
-      get_x_x_prime_qs_smg(
-        ppr, pba, ppt, ppw, k,
-        & ppw->pvecmetric[ppw->index_mt_x_smg],
-        & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-      ),
-      ppt->error_message,
-      ppt->error_message);
-
-      ppt->set_late_ic_smg = _FALSE_;  
-    } else if(a >= pba->a_smg && ppt->set_late_ic_smg == _FALSE_){
-      if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
-      /* Get scalar field perturbations from QS expressions. This function
-      hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
-      both x and x' depend on h' (simpler non-divergent expressions), otherwise
-      they have been diagonalised (longer divergent expressions). */
-      class_call(
-        get_x_x_prime_qs_smg(
-          ppr, pba, ppt, ppw, k,
-          & ppw->pvecmetric[ppw->index_mt_x_smg],
-          & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-        ),
-        ppt->error_message,
-        ppt->error_message);
-      }
-      else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
-        /* Get scalar field perturbations from the integrator */
-        ppw->pvecmetric[ppw->index_mt_x_smg] = y[ppw->pv->index_pt_x_smg];
-        ppw->pvecmetric[ppw->index_mt_x_prime_smg] = y[ppw->pv->index_pt_x_prime_smg];
-      }
-      else {
-        printf("Scalar field equation: qs_smg approximation mode %i not recognized. should be quasi_static or fully_dynamic.\n",ppw->approx[ppw->index_ap_qs_smg]);
-        return _FAILURE_;
-      }
-    }
-  } else {
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on){
+    class_call(
+    get_x_x_prime_qs_smg(
+      ppr, pba, ppt, ppw, k,
+      & ppw->pvecmetric[ppw->index_mt_x_smg],
+      & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+    ),
+    ppt->error_message,
+    ppt->error_message);
+  }
+  else {
     if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
       /* Get scalar field perturbations from QS expressions. This function
       hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
@@ -641,6 +611,9 @@ int perturbations_einstein_scalar_smg(
         ),
         ppt->error_message,
         ppt->error_message);
+        /* TODO_GR_SMG: check if it better to track qs equations or set them to 0. */
+        // ppw->pvecmetric[ppw->index_mt_x_smg] = 0.;
+        // ppw->pvecmetric[ppw->index_mt_x_prime_smg] = 0.;
     }
     else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
       /* Get scalar field perturbations from the integrator */
@@ -660,13 +633,14 @@ int perturbations_einstein_scalar_smg(
     /* It is still possible to get h_prime through th 00 Einstein equation,
     but this generates a warning as it will be removed in future versions
     of hi_class. This is the right place, since h' depends on x and x'. */
-    if(pba->gravity_model_smg == stable_params && a < pba->a_smg){
+    if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
       ppw->pvecmetric[ppw->index_mt_h_prime] =
       + 2.*(
         + 3./2.*ppw->delta_rho*a/H
         + k2*ppw->pvecmetric[ppw->index_mt_eta]/a/H
       );
-    }else{
+    }
+    else{
       ppw->pvecmetric[ppw->index_mt_h_prime] =
       + 4.*(
         + 3./2.*ppw->delta_rho*a/H/M2
@@ -681,9 +655,10 @@ int perturbations_einstein_scalar_smg(
   /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
   if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
 
-    if(pba->gravity_model_smg == stable_params && a < pba->a_smg){
+    if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
       ppw->pvecmetric[ppw->index_mt_rsa_p_smg] = 0.;
-    } else {
+    }
+    else {
       /* correction to the evolution of ur and g species in radiation streaming approximation due to non-negligible pressure at late-times */
       ppw->pvecmetric[ppw->index_mt_rsa_p_smg] =
       (
@@ -717,10 +692,11 @@ int perturbations_einstein_scalar_smg(
 
 
   /* second equation involving total velocity */
-  if(pba->gravity_model_smg == stable_params && a < pba->a_smg){
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
     ppw->pvecmetric[ppw->index_mt_eta_prime] =
       + 3./2.*ppw->rho_plus_p_theta/k2*pow(a,2);
-  } else {
+  }
+  else {
     ppw->pvecmetric[ppw->index_mt_eta_prime] =
       + 3./2.*ppw->rho_plus_p_theta/k2/M2*pow(a,2)
       - res*c0*a*H*ppw->pvecmetric[ppw->index_mt_x_smg]
@@ -730,12 +706,13 @@ int perturbations_einstein_scalar_smg(
   /* Here we are storing deviations from the first (00) einstein equation.
   This is to check that h' and the other variables are being properly
   integrated and as a friction term for the third einstein equation (h'') */
-  if(pba->gravity_model_smg == stable_params && a < pba->a_smg){
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
     ppw->pvecmetric[ppw->index_mt_einstein00] =
       + 2.*k2*pow(a,-2)*ppw->pvecmetric[ppw->index_mt_eta]
       + 3.*ppw->delta_rho
       - H/a*ppw->pvecmetric[ppw->index_mt_h_prime];
-  } else {
+  }
+  else {
     ppw->pvecmetric[ppw->index_mt_einstein00] =
       + 2.*(1. + beh)*k2*pow(a,-2)*ppw->pvecmetric[ppw->index_mt_eta]
       + 3.*ppw->delta_rho/M2
@@ -745,9 +722,13 @@ int perturbations_einstein_scalar_smg(
   }
 
   /* third equation involving total pressure */
-  if(pba->gravity_model_smg == stable_params && a < pba->a_smg){
-    ppw->pvecmetric[ppw->index_mt_h_prime_prime] = 0.;
-  } else {
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
+    ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
+      - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
+      + 2. * k2 * y[ppw->pv->index_pt_eta]
+      - 9. * pow(a,2) * ppw->delta_p;
+  }
+  else {
     ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
     (
       - 9.*cK*ppw->delta_p*pow(a,2)/M2
@@ -768,9 +749,11 @@ int perturbations_einstein_scalar_smg(
   /* This corrects the third equation using the Einstein 00. It has to be
   read as a friction term that vanishes whenever the Hamiltonian constraint
   is satisfied. */
-  if (ppt->get_h_from_trace == _TRUE_) {
-    ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
-      a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
+    if (ppt->get_h_from_trace == _TRUE_) {
+      ppw->pvecmetric[ppw->index_mt_h_prime_prime] +=
+        a*a*ppr->einstein00_friction*ppw->pvecmetric[ppw->index_mt_einstein00];
+    }
   }
 
 
@@ -801,12 +784,13 @@ int perturbations_einstein_scalar_smg(
 
 
   /* fourth equation involving total shear */
-  if(pba->gravity_model_smg == stable_params && a < pba->a_smg){
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
     ppw->pvecmetric[ppw->index_mt_alpha_prime] =
       - 9./2.*ppw->rho_plus_p_shear/k2*pow(a,2)
       + ppw->pvecmetric[ppw->index_mt_eta]
       - a*H*2.*ppw->pvecmetric[ppw->index_mt_alpha];
-  } else {
+  }
+  else {
     ppw->pvecmetric[ppw->index_mt_alpha_prime] =
       - 9./2.*ppw->rho_plus_p_shear/k2/M2*pow(a,2)
       + (1. + ten)*ppw->pvecmetric[ppw->index_mt_eta]
@@ -816,12 +800,8 @@ int perturbations_einstein_scalar_smg(
   }
 
   /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
-  if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
-    if (pba->gravity_model_smg == stable_params && a < pba->a_smg){
-      ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] = 0.;  
-    }
-    else {
-      ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
+  if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+    ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
       (
         + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
         - c10*k2*ppw->pvecmetric[ppw->index_mt_eta]/res
@@ -837,11 +817,9 @@ int perturbations_einstein_scalar_smg(
         )*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
       )/cD;
 
-      class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
-          ppt->error_message, " Isnan x'' at a =%e !",a);
-    }//end of fully_dynamic equation
-  
-  }
+    class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
+        ppt->error_message, " Isnan x'' at a =%e !",a);
+  }//end of fully_dynamic equation
 
   // printf("tau=%e a=%.15e ddx_smg=%e term=%e \n",tau,a,ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg],
   // + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
@@ -919,7 +897,7 @@ int perturbations_derivs_smg(
       "asked for scalar field AND Newtonian gauge. Not yet implemented");
 
   //make sure that second order equations are being used
-  if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
+  if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
 
     /** ---> scalar field velocity */
     dy[pv->index_pt_x_smg] =  pvecmetric[ppw->index_mt_x_prime_smg];
@@ -2164,7 +2142,7 @@ int perturbations_adiabatic_ic_smg(
 
   /* TODO_EB: revisit initial conditions for beyond horndeski and oscillations */
 
-  if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) {
+  if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
 
     /* Initial conditions for the *dynamical* scalar field in the adiabatic mode
     * 1) gravitating_attr: Self-consistent Gravitating Attractor
@@ -2725,7 +2703,7 @@ int perturbations_isocurvature_cdm_ic_smg(
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
-  if((ppt->pert_initial_conditions_smg==ext_field_attr) && (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
+  if((ppt->pert_initial_conditions_smg==ext_field_attr) && ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off))) {
     /* TODO_EB: revisit isocurvature initial conditions for beyond horndeski and oscillations */
 
     double coeff_isocurv_smg;
@@ -2810,7 +2788,7 @@ int perturbations_isocurvature_b_ic_smg(
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
-  if((ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
+  if((ppt->pert_initial_conditions_smg==ext_field_attr) && ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off))) {
     /* TODO_EB: revisit isocurvature initial conditions for beyond horndeski and oscillations */
     double coeff_isocurv_smg;
 
@@ -2899,7 +2877,7 @@ int perturbations_isocurvature_urd_ic_smg(
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
-  if((ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
+  if((ppt->pert_initial_conditions_smg==ext_field_attr) && ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off))) {
 
     /* TODO_EB: revisit isocurvature initial conditions for beyond horndeski and oscillations */
     double coeff_isocurv_smg;
@@ -3005,7 +2983,7 @@ int perturbations_isocurvature_urv_ic_smg(
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
   //only set ICs for smg if have smg, we are in exernal field attractor and we are *not* quasi-static
-  if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr)&&(qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0)) {
+  if((pba->has_smg == _TRUE_)&&(ppt->pert_initial_conditions_smg==ext_field_attr) && ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == 0) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off))) {
     /* TODO_EB: revisit isocurvature initial conditions for beyond horndeski and oscillations */
 
     double coeff_isocurv_smg;
