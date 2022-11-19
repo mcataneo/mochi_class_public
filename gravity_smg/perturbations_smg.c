@@ -587,7 +587,17 @@ int perturbations_einstein_scalar_smg(
   }
 
   /* Get scalar field perturbations */
-  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on){
+  /*** TODO_GR_SMG: this is the scheme I would implement
+  ****    QS    GR    EQS
+  ****     T     T      T
+  ****     T     F      T
+  ****     F     T      T
+  ****     F     F      F
+  ****     N   T/F  Error
+  ****   T/F     N  Error
+  ****     N     N  Error
+  ***/
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
     class_call(
     get_x_x_prime_qs_smg(
       ppr, pba, ppt, ppw, k,
@@ -597,7 +607,7 @@ int perturbations_einstein_scalar_smg(
     ppt->error_message,
     ppt->error_message);
   }
-  else {
+  else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
     if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
       /* Get scalar field perturbations from QS expressions. This function
       hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
@@ -624,6 +634,10 @@ int perturbations_einstein_scalar_smg(
       printf("Scalar field equation: qs_smg approximation mode %i not recognized. should be quasi_static or fully_dynamic.\n",ppw->approx[ppw->index_ap_qs_smg]);
       return _FAILURE_;
     }
+  }
+  else {
+    printf("Scalar field equation: gr_smg approximation mode %i not recognized. should be gr_smg_on or gr_smg_off.\n",ppw->approx[ppw->index_ap_qs_smg]);
+    return _FAILURE_;
   }
 
   // printf("set_late_ic_smg=%d\n",ppt->set_late_ic_smg);
@@ -2623,7 +2637,7 @@ int perturbations_adiabatic_ic_smg(
                 "\n     Cannot set adiabatic initial conditions for smg pertubations: quasi-static configuration with large correction of gravity required superhorizon. Loss of connection to priordial power spectrum. \n");
 
     // If contribratio small enough, don't fail and start evolving perturbations.
-    // x_smg/x_smg' get set in perturbations_einstein_smg!
+    // x_smg/x_smg' get set in perturbations_einstein_scalar_smg!
 
     if (ppt->perturbations_verbose > 5) {
       printf("\nMode k=%e: Quasi-static ICs for smg: ", k);
