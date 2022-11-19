@@ -163,7 +163,7 @@ struct background
   double Omega_smg_debug; /**< debug value when no tuning is wanted */
   short attractor_ic_smg; /** < whether the scalar field has attractor initial conditions */
   short has_smg_file; /* MC flag checking if external input file with alpha_X(lna) is provided*/
-  FileName smg_file_name; /* MC path to external input file */ 
+  FileName smg_file_name; /* MC path to external input file */
 
   double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
   double phi_0_smg; /** < final value of phi  */
@@ -211,11 +211,11 @@ struct background
   int parameters_2_size_smg; /**< size of parameters_smg */
 
   int ext_alphas_size_smg; /* MC stores total number of rows in input file */
-  int ext_num_alphas; /* MC how many alpha parameters*/ 
+  int ext_num_alphas; /* MC how many alpha parameters*/
   double * ext_alphas_lna_smg; /* MC array of ln(a) values in input file */
   double * ext_alphas_smg; /* MC array of size ext_alphas_size_smg*num_ext_alphas_smg containing all alpha_X*/
   double * ext_ddalphas_smg; /* MC array of size ext_alphas_size_smg*num_ext_alphas_smg containing all alpha_X second derivatives for interpolation*/
-  
+
   int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
   int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
   double M_pl_today_smg;
@@ -453,9 +453,10 @@ struct background
 
   //@{
 
-  double a_smg; /* MC integrate scalar field equations from this scale factor. Transition between extrapolated to interpolated smg functions also performed around this time */
+  /* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
+  double a_file_gr_smg; /* MC integrate scalar field equations from this scale factor. Transition between extrapolated to interpolated smg functions also performed around this time */
   int stable_params_size_smg; /* MC stores total number of rows in input file */
-  int num_stable_params; /* MC how many input functions*/ 
+  int num_stable_params; /* MC how many input functions*/
   int num_stable_params_derived; /* MC how many derived functions*/
   int num_stable_params_aux; /* MC how many functions in auxiliary vector*/
   double * stable_params_lna_smg; /* MC array of ln(a) values in input file */
@@ -480,7 +481,7 @@ struct background
   int index_aux_ddMpl_smg; /* MC index used in auxiliary vector for d2Mpl/dlna2 */
   int index_derived_braiding_smg; /* MC index for derived scalar field braiding alpha_B (derived from ODE integration) */
   int index_derived_kineticity_smg; /* MC index for derived scalar field kineticity alpha_K (derived from ODE integration) */
-    
+
   //@}
 
   /** @name - background interpolation tables */

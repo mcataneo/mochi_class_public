@@ -123,7 +123,7 @@ int gravity_models_gravity_properties_smg(
         pba->has_smg_file = _TRUE_;
         class_read_string("smg_file_name",pba->smg_file_name);
     }else{
-        class_stop(errmsg,"external_alphas parameterization requested. Please specify full path to file containing alpha functions");   
+        class_stop(errmsg,"external_alphas parameterization requested. Please specify full path to file containing alpha functions");
     }
 
   /* for reading alpha_X functions */
@@ -203,7 +203,8 @@ int gravity_models_gravity_properties_smg(
 	pba->parameters_2_size_smg = 2;
   // read alpha_B(z=0) and scale factor to set initial conditions
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-  pba->a_smg = pba->parameters_2_smg[1];
+  /* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
+  pba->a_file_gr_smg = pba->parameters_2_smg[1];
 
   class_call(parser_read_string(pfc,
                                   "smg_file_name",
@@ -217,7 +218,7 @@ int gravity_models_gravity_properties_smg(
         pba->has_smg_file = _TRUE_;
         class_read_string("smg_file_name",pba->smg_file_name);
     }else{
-        class_stop(errmsg,"stable_params parameterization requested. Please specify full path to file containing M*^2, D_kin and cs^2 functions");   
+        class_stop(errmsg,"stable_params parameterization requested. Please specify full path to file containing M*^2, D_kin and cs^2 functions");
     }
 
   /* for reading Delta_M_pl^2, D_kin and cs^2 functions */
@@ -262,8 +263,8 @@ int gravity_models_gravity_properties_smg(
     class_define_index(pba->index_aux_Delta_Mpl_smg,_TRUE_,index_stable_params_aux,1);
     class_define_index(pba->index_aux_dMpl_smg,_TRUE_,index_stable_params_aux,1);
     class_define_index(pba->index_aux_ddMpl_smg,_TRUE_,index_stable_params_aux,1);
-    pba->num_stable_params_aux = index_stable_params_aux;    
-    
+    pba->num_stable_params_aux = index_stable_params_aux;
+
     /** - allocate various vectors */
     class_alloc(pba->stable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
     class_alloc(pba->ddstable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
@@ -310,7 +311,7 @@ int gravity_models_gravity_properties_smg(
       copy_to_aux_array_smg(pba,row,pba->index_aux_ddMpl_smg,pba->ddstable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
     }
     /* Differentiate splined M_pl^2 to obtain alpha_m over the range of lna used by the ODE for alpha_b. */
-    // First step gives dM_pl^2/dlna 
+    // First step gives dM_pl^2/dlna
     class_call(array_derive_spline_table_line_to_line(pba->stable_params_lna_smg,
                                                       pba->stable_params_size_smg,
                                                       pba->stable_params_aux_smg,
@@ -360,7 +361,7 @@ int gravity_models_gravity_properties_smg(
     // }
     // fclose(output_file);
 
-    // class_stop(errmsg,"Stop here, for now.");  
+    // class_stop(errmsg,"Stop here, for now.");
 
   }
 
@@ -1653,7 +1654,7 @@ int gravity_models_print_stdout_smg(
       printf("Modified gravity: stable_params from file: \n");
       printf("%s\n",
 	      pba->smg_file_name);
-     break; 
+     break;
 
     default:
       printf("Modified gravity: output not implemented in print_stdout_gravity_parameters_smg() \n");
@@ -1719,5 +1720,5 @@ int copy_to_aux_array_smg(
 	           pba->error_message, "cannot copy data to pba->stable_params_aux_smg");
 
   return _SUCCESS_;
-  
+
   }

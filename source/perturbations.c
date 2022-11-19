@@ -985,6 +985,7 @@ int perturbations_init(
       abort = _FALSE_;
 
 // MC check setting private(ppt->set_late_ic_smg) is enough for correct multithreading
+/* TODO_GR_SMG: I would like to remove set_late_ic_smg, but I don't understand this */
 #pragma omp parallel                                                    \
   shared(pppw,ppr,pba,pth,ppt,index_md,index_ic,abort,number_of_threads) \
   private(index_k,thread,tstart,tstop,tspent,ppt->set_late_ic_smg)                           \

@@ -559,11 +559,11 @@ int background_define_indices_bibw_smg(
 				 													   int * index_bibw
 			 													     ) {
 
-	
+
 	//index for \tilde{B} and d\tilde{B}/dlna used to compute alpha_B
 	class_define_index(pba->index_bibw_B_tilde_smg,_TRUE_,*index_bibw,1);
 	class_define_index(pba->index_bibw_dB_tilde_smg,_TRUE_,*index_bibw,1);
-	
+
   return _SUCCESS_;
 }
 
@@ -614,27 +614,28 @@ int background_solve_smg(
 	double * pvecback_2_smg;
 	/* Arrays and parameters used for extrapolation at early time */
 	double * short_params_1_smg;
-	double * ddshort_params_1_smg;		
+	double * ddshort_params_1_smg;
 	double * short_params_2_smg;
-	double * ddshort_params_2_smg;		
+	double * ddshort_params_2_smg;
 	int short_params_smg_size;
 	double * short_loga_table;
-	double loga_tr = log(pba->a_smg); // transition between exact solution and chosen extrapolation
+	/* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
+	double loga_tr = log(pba->a_file_gr_smg); // transition between exact solution and chosen extrapolation
 	double eps_loga = 0.1; // half-size interval around transition scale factor lna_tr
 
-	/* MC If gravity_model_smg==stable_params set here ICs at a=a_final for backward integration, compute alpha_M from M2 
-    and then perform integration from a_final to a_min. For the alpha_M=dln(M2)/dlna derivative look at the function 
-    array_derive_spline_table_line_to_line (derivative of single quantity and requires second order derivatives) 
-    in the module thermodynamics, array_derivate_spline (derivatives of multiple quantities) or array_derive_spline 
-    (derivative of single quantity and never called, very similar to array_derive_spline_table_line_to_line)in 
+	/* MC If gravity_model_smg==stable_params set here ICs at a=a_final for backward integration, compute alpha_M from M2
+    and then perform integration from a_final to a_min. For the alpha_M=dln(M2)/dlna derivative look at the function
+    array_derive_spline_table_line_to_line (derivative of single quantity and requires second order derivatives)
+    in the module thermodynamics, array_derivate_spline (derivatives of multiple quantities) or array_derive_spline
+    (derivative of single quantity and never called, very similar to array_derive_spline_table_line_to_line)in
     background_smg. Since we are only interested in differentiating ln(M2), probably array_derive_spline_table_line_to_line
     is the best option. See derivative of cb2 in thermodynamics.c (line 3243) to understand how to use it.
-    Need to define background_derivs_bw_smg which contains ODE to be solved backward in time; after that we must update 
-    values for all alpha parameters, even for a<0.01 using that alpha_i \propto Omega_smg(a) for a<<1. [Same must be done 
-    for M2, but need to find correct scaling evolution at high-z first. This can be done by integrating alpha_M over lna 
-    from a_ini to a_min using the function 'array_integrate_spline_table_line_to_line' in arrays.c. We have to make sure 
+    Need to define background_derivs_bw_smg which contains ODE to be solved backward in time; after that we must update
+    values for all alpha parameters, even for a<0.01 using that alpha_i \propto Omega_smg(a) for a<<1. [Same must be done
+    for M2, but need to find correct scaling evolution at high-z first. This can be done by integrating alpha_M over lna
+    from a_ini to a_min using the function 'array_integrate_spline_table_line_to_line' in arrays.c. We have to make sure
     that the integrated M2(a_min) matches the user-provided M2 at the same scale factor] --> actually this can't be done,
-    and probably the most sensible thing to do is to keep M2 = M2(a_min) for all a<a_min. Their derivatives and derived 
+    and probably the most sensible thing to do is to keep M2 = M2(a_min) for all a<a_min. Their derivatives and derived
     quantities (such as cs2, cs2N etc.) are computed below in background_solve_smg*/
 
     // When gravity model is "stable parametrization" perform backward integration and overwrite alpha's as well as M_pl
@@ -652,7 +653,7 @@ int background_solve_smg(
 		class_alloc(pba->loga_bw_table,pba->bt_bw_size*sizeof(double),pba->error_message);
 		// class_alloc(used_in_output, pba->bt_bw_size*sizeof(int), pba->error_message);
 		class_alloc(used_in_output, pba->bi_bw_B_size*sizeof(int), pba->error_message);
-		class_alloc(loga_fw_table,pba->bt_bw_size*sizeof(double),pba->error_message);	
+		class_alloc(loga_fw_table,pba->bt_bw_size*sizeof(double),pba->error_message);
 
 		/** - define values of loga at which results will be stored from loga=0 to loga=log(0.01)*/
 		for (index_loga=0; index_loga<pba->bt_bw_size; index_loga++) {
@@ -663,8 +664,8 @@ int background_solve_smg(
 		/** - define which parameters will be used in the output */
 		for (index_out=0; index_out<pba->bi_bw_B_size; index_out++) {
 			used_in_output[index_out] = 1;
-		} 
-		
+		}
+
 		// printf(" -> Initial (a=1) B_tilde = %e dB_tilde = %e \n",
 		// 		pvecback_bw_integration[pba->index_bibw_B_tilde_smg],pvecback_bw_integration[pba->index_bibw_dB_tilde_smg]);
 
@@ -678,7 +679,7 @@ int background_solve_smg(
 
 		// printf("dy[0] = %e dy[1] = %e\n",dy[0],dy[1]);
 
-		// class_stop(pba->error_message,"Stop here, for now.");  
+		// class_stop(pba->error_message,"Stop here, for now.");
 		/** -------------------------------------  Test section ------------------------------------------ */
 
 		/** - perform the backward integration for \tilde{B}*/
@@ -707,15 +708,15 @@ int background_solve_smg(
 		// 	fprintf(output_file,"%.15e %.15e\n",pba->loga_bw_table[pba->bt_bw_size-1-index_loga],pba->stable_params_derived_smg[index_loga*pba->num_stable_params_derived + pba->index_derived_braiding_smg]);
 		// }
 		// fclose(output_file);
-		// class_stop(pba->error_message,"Stop here, for now.");  
+		// class_stop(pba->error_message,"Stop here, for now.");
 
-		/* 
+		/*
 		now need to interpolate obtained alpha's and copy them to background table for a>=10^-2 and rescale existing alpha's for a<10^-2 so that
 		alpha functions are continous. However, Delta_M_pl (or M_pl) will remain constant for a<10^-2. We will have to interpolate here also D_kin and cs2
 		over global lna grid used for initial background calculations
 		*/
 
-		// Spline new alpha_B and alpha_K 
+		// Spline new alpha_B and alpha_K
 		class_call(array_spline_table_lines(loga_fw_table,
                                         	pba->bt_bw_size,
 											pba->stable_params_derived_smg,
@@ -755,7 +756,7 @@ int background_solve_smg(
 								pba->error_message),
 		pba->error_message,
 		pba->error_message);
-		// interpolate background table		
+		// interpolate background table
 		class_call(array_interpolate_spline(
                                         pba->loga_table,
                                         pba->bt_size,
@@ -782,8 +783,8 @@ int background_solve_smg(
 
 		// Update background table for a>=10^-2, and rescale/overwrite alpha's and M_pl for earlier times
 		// for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-			
-		// 	loga = pba->loga_table[index_loga]; 
+
+		// 	loga = pba->loga_table[index_loga];
 
 		// 	if(loga >= loga_tr){
 		// 		// interpolate Delta_M_pl^2, D_kin, cs2 and alpha_M
@@ -823,7 +824,7 @@ int background_solve_smg(
 
 		// 	}else{
 		// 		//rescale/fit to constant Horndeski parameters at early times
-		// 		// interpolate background table		
+		// 		// interpolate background table
 		// 		class_call(array_interpolate_spline(
 		// 										pba->loga_table,
 		// 										pba->bt_size,
@@ -856,11 +857,11 @@ int background_solve_smg(
 		// 		pba->background_table[index_loga*pba->bg_size + pba->index_bg_M2_smg] = 1. + pba->background_table[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg];
 
 		// 	}
-    
-		// Update background table for a>=10^-2, and rescale/overwrite alpha's and M_pl for earlier times. Implemented smoother interpolation between two regimes 
+
+		// Update background table for a>=10^-2, and rescale/overwrite alpha's and M_pl for earlier times. Implemented smoother interpolation between two regimes
 		short_params_smg_size = pba->bt_size;
 		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-			loga = pba->loga_table[index_loga]; 
+			loga = pba->loga_table[index_loga];
 			if(loga_tr - eps_loga < loga < loga_tr + eps_loga) short_params_smg_size -= 1;
 		}
 
@@ -876,9 +877,9 @@ int background_solve_smg(
 			loga = pba->loga_table[index_loga];
 
 			if(loga<=loga_tr - eps_loga || loga>=loga_tr + eps_loga) {
-				
+
 				short_loga_table[short_ix] = loga;
-				
+
 				if(loga >= loga_tr + eps_loga){
 					// interpolate Delta_M_pl^2, D_kin, cs2 and alpha_M
 					class_call(array_interpolate_spline(
@@ -919,7 +920,7 @@ int background_solve_smg(
 				}
 				else {
 					//extrapolate Horndeski parameters at early times
-					// interpolate background table		
+					// interpolate background table
 					class_call(array_interpolate_spline(
 													pba->loga_table,
 													pba->bt_size,
@@ -947,15 +948,15 @@ int background_solve_smg(
 					} else {
 						short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Dkin_smg] = Dkin_tr*pow(Omega_smg/Omega_smg_tr,1.);
 					}
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_cs2_smg] = cs2_tr; // 0.; 
-					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = alpha_B_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_B_tr*pow(a/a_tr,1.); // 0.; // alpha_B_tr; 
-					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = alpha_K_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_K_tr*pow(a/a_tr,1.); // 0.; // alpha_K_tr; 
+					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_cs2_smg] = cs2_tr; // 0.;
+					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = alpha_B_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_B_tr*pow(a/a_tr,1.); // 0.; // alpha_B_tr;
+					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = alpha_K_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_K_tr*pow(a/a_tr,1.); // 0.; // alpha_K_tr;
 
 				}
 
 				short_ix += 1;
 			}
-		
+
 		}
 
 		/** - spline stable input parameters for later interpolation */
@@ -978,12 +979,12 @@ int background_solve_smg(
 											pba->error_message),
 				pba->error_message,
 				pba->error_message);
-		
+
 
 		// Update background table
 		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-			
-			loga = pba->loga_table[index_loga]; 
+
+			loga = pba->loga_table[index_loga];
 			// interpolate Delta_M_pl^2 and alpha_M
 			class_call(array_interpolate_spline(
 									short_loga_table,
@@ -1021,7 +1022,7 @@ int background_solve_smg(
 
 		}
 
-		// Re-spline background table 
+		// Re-spline background table
 		class_call(array_spline_table_lines(
 									pba->loga_table,
 									pba->bt_size,
@@ -1077,7 +1078,7 @@ int background_solve_smg(
 		// 										pba->error_message),
 		// 		pba->error_message,
 		// 		pba->error_message);
-			
+
 		// 	rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
 		// 	Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
 
@@ -1089,7 +1090,7 @@ int background_solve_smg(
 
     } // End stable parametrization
 
-	
+
 
 	/* define local variables */
 	double a;
@@ -1154,7 +1155,7 @@ int background_solve_smg(
 		// 	pba->error_message,
 		// 	pba->error_message);
 		// } else if(pba->gravity_model_smg==stable_params && a<exp(loga_tr)){
-		// 	/* interpolate D_kin and cs2 at a=0.01. For extrapolation at early times either fix both D_kin and cs2 to their a=0.01 
+		// 	/* interpolate D_kin and cs2 at a=0.01. For extrapolation at early times either fix both D_kin and cs2 to their a=0.01
 		// 	values or use propto_omega parametrization for D_kin and fix cs2. MG effects should be small enough here to have negligible impact at low-z. */
 		// 	class_call(array_interpolate_spline(
 		// 							pba->stable_params_lna_smg,
@@ -1869,7 +1870,7 @@ int background_derivs_bw_smg(
 	double a, z, H, dH, rho_tot, P_tot;
 	double Delta_Mpl, alpha_M, D_kin, cs2;
 	int last_index; // necessary for calling array_interpolate(), but never used
-	int pvecback_size; 
+	int pvecback_size;
 	int pvec_stable_params_size; // size of output vector, controlled by input parameter return_format
 
 	pbpaw = parameters_and_workspace;
@@ -1895,7 +1896,7 @@ int background_derivs_bw_smg(
                                         pba->error_message),
                pba->error_message,
                pba->error_message);
-	
+
 	a = exp(loga);
 	// Assign pvecback_B elements based on interpolation background table above
 	/* dcdm */
@@ -1998,7 +1999,7 @@ int background_sources_bw_smg(
 	double * pvec_stable_params_smg;
 
 	pbpaw = parameters_and_workspace;
-	pba =  pbpaw->pba; 
+	pba =  pbpaw->pba;
 	pvec_stable_params_smg = pbpaw->pvec_stable_params_smg;
 
 	int last_index;
@@ -2008,7 +2009,7 @@ int background_sources_bw_smg(
 	double dBtilde = y[pba->index_bibw_dB_tilde_smg];
 
 	// !!! it's possible these arrays are being filled backward in time. If necessary change index_loga below to (pba->bt_bw_size-1) - index_loga to restore forward ordering
-	// !!! Although pba->bt_bw_size == pba->stable_params_size_smg, the arrays below are filled on a different loga grid, i.e. not the input stable_params_lna_smg table. 
+	// !!! Although pba->bt_bw_size == pba->stable_params_size_smg, the arrays below are filled on a different loga grid, i.e. not the input stable_params_lna_smg table.
 	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = 2. * (1. - dBtilde/Btilde);
 	double alpha_B = pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg];
 
