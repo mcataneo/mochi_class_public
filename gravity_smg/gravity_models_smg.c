@@ -339,7 +339,7 @@ int gravity_models_gravity_properties_smg(
 
        /*  temporary allocation, will be rewritten latter
         *  order is xi, phi, c2, c3, c4, c5  */
-       class_alloc(pba->parameters_smg, sizeof(double*)*7,pba->error_message);
+       class_alloc(pba->parameters_smg, sizeof(double*)*pba->parameters_size_smg,pba->error_message);
        double * input_params_gal; //dummy allocation vector
 
        double xi, c2, c3, c4, c5;
