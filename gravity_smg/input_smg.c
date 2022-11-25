@@ -91,8 +91,8 @@ int input_read_parameters_smg(
                               ) {
 
   int flag1, flag2, flag3;
-  double param1;
-  int param2;
+  double param1, param2;
+  int param3;
   int entries_read;
   int int1, n;
   char string1[_ARGUMENT_LENGTH_MAX_];
@@ -147,15 +147,15 @@ int input_read_parameters_smg(
    */
   int has_tuning_index_smg, has_dxdy_guess_smg;
 
-  class_call(parser_read_int(pfc,"tuning_index_smg",&param2,&flag2,errmsg),
+  class_call(parser_read_int(pfc,"tuning_index_smg",&param3,&flag3,errmsg),
              errmsg,
              errmsg);
-  if (flag2 == _TRUE_){
-    pba->tuning_index_smg = param2;
+  if (flag3 == _TRUE_){
+    pba->tuning_index_smg = param3;
   }
-  has_tuning_index_smg = flag2;
+  has_tuning_index_smg = flag3;
 
-  class_call(parser_read_int(pfc,"tuning_dxdy_guess_smg",&param2,&flag2,errmsg),
+  class_call(parser_read_double(pfc,"tuning_dxdy_guess_smg",&param2,&flag2,errmsg),
              errmsg,
              errmsg);
   if (flag2 == _TRUE_){
