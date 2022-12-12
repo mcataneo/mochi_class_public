@@ -563,17 +563,19 @@ int perturbations_einstein_scalar_smg(
   /* Define background coefficients. This function uses
   use_pert_var_deltaphi_smg to decide which coefficients to output.
   */
-  class_call(
-    get_gravity_coefficients_smg(
-      pba, ppt, ppw->pvecback,
-      & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
-      & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
-      & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
-      & c12, & c13, & c14, & c15, & c16,  & res_p, & cD_p, & cB_p,
-      & cH_p, & c9_p, & c10_p, & c12_p, & c13_p
-    ),
-    ppt->error_message,
-    ppt->error_message);
+  if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
+    class_call(
+      get_gravity_coefficients_smg(
+        pba, ppt, ppw->pvecback,
+        & delM2, & M2, & kin, & bra, & ten, & run, & beh, & res,
+        & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
+        & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
+        & c12, & c13, & c14, & c15, & c16,  & res_p, & cD_p, & cB_p,
+        & cH_p, & c9_p, & c10_p, & c12_p, & c13_p
+      ),
+      ppt->error_message,
+      ppt->error_message);
+  }
 
 
   /* Get eta from the integrator */
