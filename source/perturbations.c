@@ -4622,8 +4622,16 @@ int perturbations_vector_init(
           ppt->error_message
         );
         if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
-          ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
-          ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
+          // ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
+          // ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
+          class_call(
+          get_x_x_prime_qs_smg(
+            ppr, pba, ppt, ppw, k,
+            & ppv->y[ppv->index_pt_x_smg],
+            & ppv->y[ppv->index_pt_x_prime_smg]
+          ),
+          ppt->error_message,
+          ppt->error_message);
         }
         else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
           ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];

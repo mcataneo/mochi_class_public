@@ -598,14 +598,16 @@ int perturbations_einstein_scalar_smg(
   ****     N     N  Error
   ***/
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
-    class_call(
-    get_x_x_prime_qs_smg(
-      ppr, pba, ppt, ppw, k,
-      & ppw->pvecmetric[ppw->index_mt_x_smg],
-      & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-    ),
-    ppt->error_message,
-    ppt->error_message);
+    // class_call(
+    // get_x_x_prime_qs_smg(
+    //   ppr, pba, ppt, ppw, k,
+    //   & ppw->pvecmetric[ppw->index_mt_x_smg],
+    //   & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+    // ),
+    // ppt->error_message,
+    // ppt->error_message);
+    ppw->pvecmetric[ppw->index_mt_x_smg] = 0.;
+    ppw->pvecmetric[ppw->index_mt_x_prime_smg] = 0.;
   }
   else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
     if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
