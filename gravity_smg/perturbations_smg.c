@@ -688,10 +688,11 @@ int perturbations_einstein_scalar_smg(
         )*pow(a,-2)
       )/cD;
 
-      class_call(perturbations_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
-        ppt->error_message,
-        ppt->error_message);
     }
+
+    class_call(perturbations_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
+      ppt->error_message,
+      ppt->error_message);
   }
 
   if ((pba->has_idr==_TRUE_)&&(ppw->approx[ppw->index_ap_rsa_idr] == (int)rsa_idr_on)) {
