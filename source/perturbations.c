@@ -4625,11 +4625,11 @@ int perturbations_vector_init(
           // ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
           // ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
           class_call(
-          get_x_x_prime_qs_smg(
-            ppr, pba, ppt, ppw, k,
-            & ppv->y[ppv->index_pt_x_smg],
-            & ppv->y[ppv->index_pt_x_prime_smg]
-          ),
+            get_x_x_prime_qs_smg(
+              ppr, pba, ppt, ppw, k,
+              &ppv->y[ppv->index_pt_x_smg],
+              &ppv->y[ppv->index_pt_x_prime_smg]
+            ),
           ppt->error_message,
           ppt->error_message);
         }

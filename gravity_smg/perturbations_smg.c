@@ -600,6 +600,7 @@ int perturbations_einstein_scalar_smg(
   ****     N     N  Error
   ***/
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
+    /* TODO_GR_SMG: check if it better to track qs equations or set them to 0. */
     // class_call(
     // get_x_x_prime_qs_smg(
     //   ppr, pba, ppt, ppw, k,
@@ -620,14 +621,11 @@ int perturbations_einstein_scalar_smg(
       class_call(
         get_x_x_prime_qs_smg(
           ppr, pba, ppt, ppw, k,
-          & ppw->pvecmetric[ppw->index_mt_x_smg],
-          & ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+          &ppw->pvecmetric[ppw->index_mt_x_smg],
+          &ppw->pvecmetric[ppw->index_mt_x_prime_smg]
         ),
         ppt->error_message,
         ppt->error_message);
-        /* TODO_GR_SMG: check if it better to track qs equations or set them to 0. */
-        // ppw->pvecmetric[ppw->index_mt_x_smg] = 0.;
-        // ppw->pvecmetric[ppw->index_mt_x_prime_smg] = 0.;
     }
     else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
       /* Get scalar field perturbations from the integrator */
@@ -819,7 +817,7 @@ int perturbations_einstein_scalar_smg(
   }
 
   /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
-  if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) || (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+  if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
     ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
       (
         + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
@@ -839,21 +837,6 @@ int perturbations_einstein_scalar_smg(
     class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
         ppt->error_message, " Isnan x'' at a =%e !",a);
   }//end of fully_dynamic equation
-
-  // printf("tau=%e a=%.15e ddx_smg=%e term=%e \n",tau,a,ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg],
-  // + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
-        // - c10*k2*ppw->pvecmetric[ppw->index_mt_eta]/res // ~1e-14
-        // - 2./3.*cH*pow(k2,2)*ppw->pvecmetric[ppw->index_mt_alpha]/a/H/res // 0.
-        // + a*H/res*(
-        //   + 1./3.*cH*k2*pow(a*H,-2) - c9
-        // )*ppw->pvecmetric[ppw->index_mt_h_prime] // ~1e-14
-        // + (
-        //   + c13*k2 + c12*pow(a*H,2)
-        // )*ppw->pvecmetric[ppw->index_mt_x_smg]
-        // + H*a*(
-        //   - c3*k2*pow(a*H,-2) + c11
-        // )*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-      // );
 
   return _SUCCESS_;
 }
