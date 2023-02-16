@@ -184,6 +184,15 @@ int input_read_parameters_smg(
      class_call(gravity_models_gravity_properties_smg(pfc, pba, string1, has_tuning_index_smg, has_dxdy_guess_smg, errmsg),
                 errmsg,
                 errmsg);
+
+    /* For stable parametrization --> force GR approximation at early times and check that minimum scale factor 
+    in input file is small enough to get accurate numerical derivatives of smg parameters around transition*/
+    if(pba->gravity_model_smg == stable_params){      
+      ppt->method_gr_smg = switch_on_gr_smg;
+      class_test(pba->a_file_gr_smg > 1./(1 + 1.4*ppr->z_gr_smg),
+            errmsg,
+            "minimum scale factor for stable parametrization must be < %f", 1./(1 + 1.4*ppr->z_gr_smg));
+    }
   }
   // end of loop over models
 
@@ -251,7 +260,7 @@ int input_read_parameters_smg(
     }
   }
 
-  // MC if gravity model is stable_params we always skip stability test and don't solve for Hubble
+  // If gravity model is stable_params we always skip stability test and don't solve for Hubble
   if(pba->gravity_model_smg == stable_params){
     pba->skip_stability_tests_smg = _TRUE_;
     pba->hubble_evolution = _FALSE_;
@@ -266,9 +275,8 @@ int input_read_parameters_smg(
 	         errmsg,
 	         errmsg);
 
-  if(pba->gravity_model_smg==stable_params){
+  if(ppt->method_gr_smg == switch_on_gr_smg){
     ppt->pert_initial_conditions_smg = zero; // force x_smg=0 and x_prime_smg=0 at initial time
-    // ppt->set_late_ic_smg = _TRUE_; // flag controlling activation of smg at late times; probably don't need this here
   }
   else{
     if (strcmp(string1,"single_clock") == 0) {

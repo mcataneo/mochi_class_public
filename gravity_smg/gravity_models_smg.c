@@ -200,11 +200,9 @@ int gravity_models_gravity_properties_smg(
 	pba->field_evolution_smg = _FALSE_;
 	pba->M_pl_evolution_smg = _FALSE_;
 	flag2=_TRUE_;
-	pba->parameters_2_size_smg = 2;
-  // read alpha_B(z=0) and scale factor to set initial conditions
+	pba->parameters_2_size_smg = 1;
+  // read alpha_B(z=0) to set initial conditions
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-  /* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
-  pba->a_file_gr_smg = pba->parameters_2_smg[1];
 
   class_call(parser_read_string(pfc,
                                   "smg_file_name",
@@ -293,6 +291,15 @@ int gravity_models_gravity_properties_smg(
     }
     // fclose(output_file);
     fclose(input_file);
+
+    // Assign value to a_file_gr_smg
+    pba->a_file_gr_smg = exp(pba->stable_params_lna_smg[0]);
+    // Check that largest provided scale factor is >= 1.1 for stable numerical derivatives
+    // double a_max = 1.09;
+    double a_max = 1.;
+    class_test((exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]) < a_max),
+          errmsg,
+          "maximum scale factor in input file is %f. For stable parametrization it must be >= %f for accurate numerical derivatives of smg parameters at late times", exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]), a_max);
 
     /** - spline stable input parameters for later interpolation */
     class_call(array_spline_table_lines(pba->stable_params_lna_smg,
@@ -1263,17 +1270,8 @@ int gravity_models_get_alphas_par_smg(
       }
   }
   // else if(pba->gravity_model_smg == stable_params){
-  /* -- do nothing for this parametrization */
-  //       /* only reduced/scalar Horndeski models are considered and this values will be rescaled
-  //       for a<10^-2 after backward integration. Here we are simply extrapolating the alpha's to
-  //       early times with a propto_omega model. M_pl is integrated from alpha_M given the hard-coded
-  //       initial condition M_pl_ini = 1.*/
-  //       pvecback[pba->index_bg_kineticity_smg] = Omega_smg;
-  //       pvecback[pba->index_bg_braiding_smg] = Omega_smg;
-  //       pvecback[pba->index_bg_tensor_excess_smg] = 0.;
-  //       pvecback[pba->index_bg_mpl_running_smg] = Omega_smg;
-  //       pvecback[pba->index_bg_delta_M2_smg] = delta_M_pl; //M2-1
-  //       pvecback[pba->index_bg_M2_smg] = 1.+delta_M_pl;
+  /* -- do nothing for this parametrization. Only reduced/scalar Horndeski models are considered. 
+  M_pl is integrated from alpha_M given the hard-coded initial condition M_pl_ini = 1.*/
   // }
 
 
@@ -1518,7 +1516,7 @@ int gravity_models_initial_conditions_smg(
 
     case stable_params:
       /* sets IC at a_initial for integration of alpha_M. It's only needed to initially fill in array and it will be adjusted
-      after backward integration to be delta_M_pl(a) = delta_M_pl(a) for a<10^-2*/
+      after backward integration*/
 	    pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
       /* For each backward integrated variable fix the initial condition at a_final. */
       pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = 1.; // Arbitrary constant. We set it to 1

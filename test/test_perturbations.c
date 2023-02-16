@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     int index_md=pt.index_md_scalars;
 
     /* choose a type (temperature, polarization, grav. pot., ...) */
-    int index_type=pt.index_tp_t0;
+    int index_type=pt.index_tp_x_smg; //e.g. pt.index_tp_t0
 
     /* choose an initial condition (ad, bi, cdi, nid, niv, ...) */
     int index_ic=pt.index_ic_ad;

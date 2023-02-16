@@ -226,7 +226,7 @@ int background_gravity_functions_smg(
  	  );
   	}
 
-}
+	}
 	//end of parameterized mode
 
   // add a value to the kineticity to avoid problems with perturbations in certain models.
@@ -597,7 +597,9 @@ int background_solve_smg(
 	int (*generic_evolver)();
 	generic_evolver = evolver_ndf15;
 	/* initial and final time for integration */
-	double loga_final = log(9.9e-3); // deep in the matter-dominated era, all MG models considered are effectively GR there
+	// double loga_final = log(9.9e-3); // deep in the matter-dominated era, all MG models considered are effectively GR there
+	double eps_bw_integration = 0.05; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg. Check if this is still necessary
+	double loga_final = log((1. - eps_bw_integration)/(1+ppr->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.;
 	/* indices for the different arrays */
 	int index_loga, index_out;
@@ -608,20 +610,10 @@ int background_solve_smg(
 	/* re-ordered time array for alpha_B and alpha_K interpolations */
 	double * loga_fw_table;
 	double loga;
-	double rho_tot, Omega_smg;
+	// double loga_tr = log(1./(1+ppr->z_gr_smg));
+	double loga_tr = loga_final;
 	/* workspace for interpolation of derived parameters */
 	double * pvec_stable_params_derived_smg;
-	double * pvecback_2_smg;
-	/* Arrays and parameters used for extrapolation at early time */
-	double * short_params_1_smg;
-	double * ddshort_params_1_smg;
-	double * short_params_2_smg;
-	double * ddshort_params_2_smg;
-	int short_params_smg_size;
-	double * short_loga_table;
-	/* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
-	double loga_tr = log(pba->a_file_gr_smg); // transition between exact solution and chosen extrapolation
-	double eps_loga = 0.1; // half-size interval around transition scale factor lna_tr
 
 	/* MC If gravity_model_smg==stable_params set here ICs at a=a_final for backward integration, compute alpha_M from M2
     and then perform integration from a_final to a_min. For the alpha_M=dln(M2)/dlna derivative look at the function
@@ -655,7 +647,7 @@ int background_solve_smg(
 		class_alloc(used_in_output, pba->bi_bw_B_size*sizeof(int), pba->error_message);
 		class_alloc(loga_fw_table,pba->bt_bw_size*sizeof(double),pba->error_message);
 
-		/** - define values of loga at which results will be stored from loga=0 to loga=log(0.01)*/
+		/** - define values of loga at which results will be stored from loga_ini to loga_final*/
 		for (index_loga=0; index_loga<pba->bt_bw_size; index_loga++) {
 			pba->loga_bw_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_bw_size-1);
 			loga_fw_table[index_loga] = loga_final + index_loga*(loga_ini-loga_final)/(pba->bt_bw_size-1);
@@ -727,298 +719,62 @@ int background_solve_smg(
                pba->error_message,
                pba->error_message);
 
-		// Find values of alpha's and Omega_de at a=10^-2 which will be used below for rescaling at early times
-		// interpolate Delta_M_pl^2 and alpha_M
-		class_call(array_interpolate_spline(
-								pba->stable_params_lna_smg,
-								pba->stable_params_size_smg,
-								pba->stable_params_smg,
-								pba->ddstable_params_smg,
-								pba->num_stable_params,
-								loga_tr,
-								&last_index, // not used
-								pvec_stable_params_smg,
-								pba->num_stable_params,
-								pba->error_message),
-		pba->error_message,
-		pba->error_message);
-		// interpolate alpha_B and alpha_K
-		class_call(array_interpolate_spline(
-								loga_fw_table,
-								pba->bt_bw_size,
-								pba->stable_params_derived_smg,
-								pba->ddstable_params_derived_smg,
-								pba->num_stable_params_derived,
-								loga_tr,
-								&last_index, // not used
-								pvec_stable_params_derived_smg,
-								pba->num_stable_params_derived,
-								pba->error_message),
-		pba->error_message,
-		pba->error_message);
-		// interpolate background table
-		class_call(array_interpolate_spline(
-                                        pba->loga_table,
-                                        pba->bt_size,
-                                        pba->background_table,
-                                        pba->d2background_dloga2_table,
-                                        pba->bg_size,
-                                        loga_tr,
-                                        &last_index,
-                                        pvecback,
-                                        pba->bg_size,
-                                        pba->error_message),
-        pba->error_message,
-        pba->error_message);
-
-
-		rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
-		double Omega_smg_tr = pvecback[pba->index_bg_rho_smg]/rho_tot;
-		double alpha_B_tr = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
-		double alpha_K_tr = pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg];
-		double alpha_M_tr = pvec_stable_params_smg[pba->index_stable_Mpl_running_smg];
-		double Delta_Mpl_tr = pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg];
-		double Dkin_tr = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-		double cs2_tr = pvec_stable_params_smg[pba->index_stable_cs2_smg];
-
-		// Update background table for a>=10^-2, and rescale/overwrite alpha's and M_pl for earlier times
-		// for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-
-		// 	loga = pba->loga_table[index_loga];
-
-		// 	if(loga >= loga_tr){
-		// 		// interpolate Delta_M_pl^2, D_kin, cs2 and alpha_M
-		// 		class_call(array_interpolate_spline(
-        //                                 pba->stable_params_lna_smg,
-        //                                 pba->stable_params_size_smg,
-        //                                 pba->stable_params_smg,
-        //                                 pba->ddstable_params_smg,
-        //                                 pba->num_stable_params,
-        //                                 loga,
-        //                                 &last_index, // not used
-        //                                 pvec_stable_params_smg,
-        //                                 pba->num_stable_params,
-        //                                 pba->error_message),
-        //        	pba->error_message,
-        //        	pba->error_message);
-		// 		// interpolate alpha_B and alpha_K
-		// 		class_call(array_interpolate_spline(
-        //                                 loga_fw_table,
-        //                                 pba->bt_bw_size,
-        //                                 pba->stable_params_derived_smg,
-        //                                 pba->ddstable_params_derived_smg,
-        //                                 pba->num_stable_params_derived,
-        //                                 loga,
-        //                                 &last_index, // not used
-        //                                 pvec_stable_params_derived_smg,
-        //                                 pba->num_stable_params_derived,
-        //                                 pba->error_message),
-        //        	pba->error_message,
-        //        	pba->error_message);
-
-		// 		copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
-		// 		copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1. + pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
-		// 		copy_to_background_table_smg(pba, index_loga, pba->index_bg_mpl_running_smg, pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
-		// 		copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
-		// 		copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg]);
-
-		// 	}else{
-		// 		//rescale/fit to constant Horndeski parameters at early times
-		// 		// interpolate background table
-		// 		class_call(array_interpolate_spline(
-		// 										pba->loga_table,
-		// 										pba->bt_size,
-		// 										pba->background_table,
-		// 										pba->d2background_dloga2_table,
-		// 										pba->bg_size,
-		// 										loga,
-		// 										&last_index,
-		// 										pvecback,
-		// 										pba->bg_size,
-		// 										pba->error_message),
-		// 		pba->error_message,
-		// 		pba->error_message);
-
-		// 		rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
-		// 		Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
-
-		// 		pba->background_table[index_loga*pba->bg_size + pba->index_bg_mpl_running_smg] = alpha_M_tr/Omega_smg_tr*Omega_smg;
-		// 		pba->background_table[index_loga*pba->bg_size + pba->index_bg_braiding_smg] = alpha_B_tr/Omega_smg_tr*Omega_smg;
-		// 		pba->background_table[index_loga*pba->bg_size + pba->index_bg_kineticity_smg] = alpha_K_tr/Omega_smg_tr*Omega_smg;
-		// 		pba->background_table[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = Delta_Mpl_tr*Omega_smg/Omega_smg_tr; // inconsistent with alpha_M integration, but should be OK for late times anyway (check this!)
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_mpl_running_smg] = alpha_M_tr; // set to constant
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_braiding_smg] = alpha_B_tr; // set to constant
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_kineticity_smg] = alpha_K_tr; // set to constant
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = Delta_Mpl_tr; // inconsistent with alpha_M integration, but should be OK for late times anyway (check this!)
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_mpl_running_smg] = 0.; // set to zero
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_braiding_smg] = 0.; // set to zero
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_kineticity_smg] = 0.; // set to zero
-		// 		// pba->background_table[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = 0.; // set to zero
-		// 		pba->background_table[index_loga*pba->bg_size + pba->index_bg_M2_smg] = 1. + pba->background_table[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg];
-
-		// 	}
-
-		// Update background table for a>=10^-2, and rescale/overwrite alpha's and M_pl for earlier times. Implemented smoother interpolation between two regimes
-		short_params_smg_size = pba->bt_size;
-		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-			loga = pba->loga_table[index_loga];
-			if(loga_tr - eps_loga < loga < loga_tr + eps_loga) short_params_smg_size -= 1;
-		}
-
-		class_alloc(short_params_1_smg,short_params_smg_size*pba->num_stable_params*sizeof(double),pba->error_message);
-		class_alloc(ddshort_params_1_smg,short_params_smg_size*pba->num_stable_params*sizeof(double),pba->error_message);
-		class_alloc(short_params_2_smg,short_params_smg_size*pba->num_stable_params_derived*sizeof(double),pba->error_message);
-		class_alloc(ddshort_params_2_smg,short_params_smg_size*pba->num_stable_params_derived*sizeof(double),pba->error_message);
-		class_alloc(short_loga_table,short_params_smg_size*sizeof(double),pba->error_message);
-
-		int short_ix = 0;
-		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-
-			loga = pba->loga_table[index_loga];
-
-			if(loga<=loga_tr - eps_loga || loga>=loga_tr + eps_loga) {
-
-				short_loga_table[short_ix] = loga;
-
-				if(loga >= loga_tr + eps_loga){
-					// interpolate Delta_M_pl^2, D_kin, cs2 and alpha_M
-					class_call(array_interpolate_spline(
-											pba->stable_params_lna_smg,
-											pba->stable_params_size_smg,
-											pba->stable_params_smg,
-											pba->ddstable_params_smg,
-											pba->num_stable_params,
-											loga,
-											&last_index, // not used
-											pvec_stable_params_smg,
-											pba->num_stable_params,
-											pba->error_message),
-					pba->error_message,
-					pba->error_message);
-					// interpolate alpha_B and alpha_K
-					class_call(array_interpolate_spline(
-											loga_fw_table,
-											pba->bt_bw_size,
-											pba->stable_params_derived_smg,
-											pba->ddstable_params_derived_smg,
-											pba->num_stable_params_derived,
-											loga,
-											&last_index, // not used
-											pvec_stable_params_derived_smg,
-											pba->num_stable_params_derived,
-											pba->error_message),
-					pba->error_message,
-					pba->error_message);
-
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg] = pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg];
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = pvec_stable_params_smg[pba->index_stable_Mpl_running_smg];
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Dkin_smg] = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_cs2_smg] = pvec_stable_params_smg[pba->index_stable_cs2_smg];
-					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
-					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg];
-
-				}
-				else {
-					//extrapolate Horndeski parameters at early times
-					// interpolate background table
-					class_call(array_interpolate_spline(
-													pba->loga_table,
-													pba->bt_size,
-													pba->background_table,
-													pba->d2background_dloga2_table,
-													pba->bg_size,
-													loga,
-													&last_index,
-													pvecback,
-													pba->bg_size,
-													pba->error_message),
-					pba->error_message,
-					pba->error_message);
-
-					rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]+pvecback[pba->index_bg_rho_smg];
-					Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
-					double a = exp(loga);
-					double a_tr = exp(loga_tr);
-
-					// Make sure these extrapolations don't affect evolution of and ICs for perturbations
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg] = Delta_Mpl_tr*pow(Omega_smg/Omega_smg_tr,1.); // Delta_Mpl_tr*pow(a/a_tr,1.); // 0.; //Delta_Mpl_tr;
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = alpha_M_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_M_tr*pow(a/a_tr,1.); // 0.; // alpha_M_tr;
-					if(alpha_B_tr > abs(alpha_K_tr)) {
-						short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Dkin_smg] = Dkin_tr*pow(Omega_smg/Omega_smg_tr,2.); // Dkin_tr*pow(a/a_tr,1.); //Dkin_tr;
-					} else {
-						short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_Dkin_smg] = Dkin_tr*pow(Omega_smg/Omega_smg_tr,1.);
-					}
-					short_params_1_smg[short_ix*pba->num_stable_params + pba->index_stable_cs2_smg] = cs2_tr; // 0.;
-					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = alpha_B_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_B_tr*pow(a/a_tr,1.); // 0.; // alpha_B_tr;
-					short_params_2_smg[short_ix*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = alpha_K_tr*pow(Omega_smg/Omega_smg_tr,1.); // alpha_K_tr*pow(a/a_tr,1.); // 0.; // alpha_K_tr;
-
-				}
-
-				short_ix += 1;
-			}
-
-		}
-
-		/** - spline stable input parameters for later interpolation */
-		class_call(array_spline_table_lines(short_loga_table,
-											short_params_smg_size,
-											short_params_1_smg,
-											pba->num_stable_params,
-											ddshort_params_1_smg,
-											_SPLINE_EST_DERIV_,
-											pba->error_message),
-				pba->error_message,
-				pba->error_message);
-
-		class_call(array_spline_table_lines(short_loga_table,
-											short_params_smg_size,
-											short_params_2_smg,
-											pba->num_stable_params_derived,
-											ddshort_params_2_smg,
-											_SPLINE_EST_DERIV_,
-											pba->error_message),
-				pba->error_message,
-				pba->error_message);
-
-
 		// Update background table
 		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
 
 			loga = pba->loga_table[index_loga];
-			// interpolate Delta_M_pl^2 and alpha_M
-			class_call(array_interpolate_spline(
-									short_loga_table,
-									short_params_smg_size,
-									short_params_1_smg,
-									ddshort_params_1_smg,
-									pba->num_stable_params,
-									loga,
-									&last_index, // not used
-									pvec_stable_params_smg,
-									pba->num_stable_params,
-									pba->error_message),
-			pba->error_message,
-			pba->error_message);
-			// interpolate alpha_B and alpha_K
-			class_call(array_interpolate_spline(
-									short_loga_table,
-									short_params_smg_size,
-									short_params_2_smg,
-									ddshort_params_2_smg,
-									pba->num_stable_params_derived,
-									loga,
-									&last_index, // not used
-									pvec_stable_params_derived_smg,
-									pba->num_stable_params_derived,
-									pba->error_message),
-			pba->error_message,
-			pba->error_message);
 
-			copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
-			copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1. + pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
-			copy_to_background_table_smg(pba, index_loga, pba->index_bg_mpl_running_smg, pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
-			copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
-			copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg]);
+			// if(loga >= loga_tr + eps_loga){
+			if(loga >= loga_tr){
+				// interpolate Delta_M_pl^2, D_kin, cs2 and alpha_M
+				class_call(array_interpolate_spline(
+										pba->stable_params_lna_smg,
+										pba->stable_params_size_smg,
+										pba->stable_params_smg,
+										pba->ddstable_params_smg,
+										pba->num_stable_params,
+										loga,
+										&last_index, // not used
+										pvec_stable_params_smg,
+										pba->num_stable_params,
+										pba->error_message),
+				pba->error_message,
+				pba->error_message);
+				// interpolate alpha_B and alpha_K
+				class_call(array_interpolate_spline(
+										loga_fw_table,
+										pba->bt_bw_size,
+										pba->stable_params_derived_smg,
+										pba->ddstable_params_derived_smg,
+										pba->num_stable_params_derived,
+										loga,
+										&last_index, // not used
+										pvec_stable_params_derived_smg,
+										pba->num_stable_params_derived,
+										pba->error_message),
+				pba->error_message,
+				pba->error_message);
+
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1. + pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_mpl_running_smg, pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kinetic_D_smg, pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*pvec_stable_params_smg[pba->index_stable_Dkin_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);
+
+			}
+			else {
+				//Set Horndeski parameters to their GR-LCDM limit				
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_mpl_running_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kinetic_D_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2_smg, 1.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, 0.);
+			}
 
 		}
 
@@ -1103,7 +859,6 @@ int background_solve_smg(
 
 	double * pvecback_derivs;
 	class_alloc(pvecback_derivs,pba->bg_size*sizeof(double),pba->error_message);
-	class_alloc(pvecback_2_smg,pba->bg_size*sizeof(double),pba->error_message);
 
  	for (i=0; i < pba->bt_size; i++) {
 
@@ -1139,76 +894,13 @@ int background_solve_smg(
 			pba->error_message
 		);
 
-		// if(pba->gravity_model_smg==stable_params && a>=exp(loga_tr)){
-		// 	// interpolate D_kin and cs2
-		// 	class_call(array_interpolate_spline(
-		// 							pba->stable_params_lna_smg,
-		// 							pba->stable_params_size_smg,
-		// 							pba->stable_params_smg,
-		// 							pba->ddstable_params_smg,
-		// 							pba->num_stable_params,
-		// 							pba->loga_table[i],
-		// 							&last_index, // not used
-		// 							pvec_stable_params_smg,
-		// 							pba->num_stable_params,
-		// 							pba->error_message),
-		// 	pba->error_message,
-		// 	pba->error_message);
-		// } else if(pba->gravity_model_smg==stable_params && a<exp(loga_tr)){
-		// 	/* interpolate D_kin and cs2 at a=0.01. For extrapolation at early times either fix both D_kin and cs2 to their a=0.01
-		// 	values or use propto_omega parametrization for D_kin and fix cs2. MG effects should be small enough here to have negligible impact at low-z. */
-		// 	class_call(array_interpolate_spline(
-		// 							pba->stable_params_lna_smg,
-		// 							pba->stable_params_size_smg,
-		// 							pba->stable_params_smg,
-		// 							pba->ddstable_params_smg,
-		// 							pba->num_stable_params,
-		// 							loga_tr,
-		// 							&last_index, // not used
-		// 							pvec_stable_params_smg,
-		// 							pba->num_stable_params,
-		// 							pba->error_message),
-		// 	pba->error_message,
-		// 	pba->error_message);
-
-		// 	class_call(array_interpolate_spline(
-		// 									pba->loga_table,
-		// 									pba->bt_size,
-		// 									pba->background_table,
-		// 									pba->d2background_dloga2_table,
-		// 									pba->bg_size,
-		// 									loga_tr,
-		// 									&last_index,
-		// 									pvecback_2_smg,
-		// 									pba->bg_size,
-		// 									pba->error_message),
-		// 	pba->error_message,
-		// 	pba->error_message);
-
-		// }
-
-		if(pba->gravity_model_smg==stable_params){
-			// interpolate D_kin and cs2
-			class_call(array_interpolate_spline(
-									short_loga_table,
-									short_params_smg_size,
-									short_params_1_smg,
-									ddshort_params_1_smg,
-									pba->num_stable_params,
-									pba->loga_table[i],
-									&last_index, // not used
-									pvec_stable_params_smg,
-									pba->num_stable_params,
-									pba->error_message),
-			pba->error_message,
-			pba->error_message);
-		}
-
-		class_call(gravity_functions_As_from_alphas_smg(pba, pvecback, pvecback_derivs, pvec_stable_params_smg, pvecback_2_smg),
+		class_call(gravity_functions_As_from_alphas_smg(pba, pvecback, pvecback_derivs),
 							 pba->error_message,
 							 pba->error_message);
 
-		copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_smg, pvecback[pba->index_bg_kinetic_D_smg]);
+		if(pba->gravity_model_smg != stable_params){
+			copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_smg, pvecback[pba->index_bg_kinetic_D_smg]);
+		}
 		copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback[pba->index_bg_A0_smg]);
 		copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback[pba->index_bg_A1_smg]);
 		copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback[pba->index_bg_A2_smg]);
@@ -1263,9 +955,11 @@ int background_solve_smg(
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback[pba->index_bg_lambda_8_smg]);
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback[pba->index_bg_lambda_9_smg]);
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback[pba->index_bg_lambda_10_smg]);
-	  copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback[pba->index_bg_lambda_11_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_smg, pvecback[pba->index_bg_cs2num_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_cs2_smg, pvecback[pba->index_bg_cs2_smg]);
+	  	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback[pba->index_bg_lambda_11_smg]);
+		if(pba->gravity_model_smg != stable_params){
+			copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_smg, pvecback[pba->index_bg_cs2num_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_cs2_smg, pvecback[pba->index_bg_cs2_smg]);
+		}
 		copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback[pba->index_bg_G_eff_smg]);
 		copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback[pba->index_bg_slip_eff_smg]);
 
@@ -1417,10 +1111,6 @@ int background_solve_smg(
 	if(pba->gravity_model_smg == stable_params){
 		free(pvec_stable_params_smg);
 		free(pvec_stable_params_derived_smg);
-		free(short_params_1_smg);
-		free(short_params_2_smg);
-		free(ddshort_params_1_smg);
-		free(ddshort_params_2_smg);
 	}
 
 	return _SUCCESS_;

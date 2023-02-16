@@ -476,9 +476,7 @@ int gravity_functions_building_blocks_from_Gs_smg(
 int gravity_functions_As_from_alphas_smg(
                                          struct background *pba,
                                          double * pvecback,
-                                         double * pvecback_derivs,
-                                         double * pvec_stable_params_smg,
-                                         double * pvecback_2_smg
+                                         double * pvecback_derivs
                                          ) {
 
   // basic background quantities
@@ -512,36 +510,7 @@ int gravity_functions_As_from_alphas_smg(
   double p_smg_p = factor*pvecback_derivs[pba->index_bg_p_smg];
 
   // kinetic term D
-  // if(pba->gravity_model_smg == stable_params){
-  //   /* Use input stable function for a>=a_tr and fix it to D_kin(a=a_tr) for a<a_tr. MG effects should
-  //   have negligible impact at early times anyway. */  
-  //   pvecback[pba->index_bg_kinetic_D_smg] = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-  // }// end stable_params
-  // else{
-  //   pvecback[pba->index_bg_kinetic_D_smg] = kin + 3./2.*pow(bra,2);
-  // }
-
-  // kinetic term D
-  if(pba->gravity_model_smg == stable_params){
-    /* Use input stable function for a>=a_tr and use propto_omega for a<a_tr. MG effects should
-    have negligible impact at early times anyway. Hopefully this extrapolation works for perturabtions as well */  
-    // if(a>=1e-2){
-    //   pvecback[pba->index_bg_kinetic_D_smg] = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-    // }
-    // else{
-    //   double rho_w_smg_tr = pvecback_2_smg[pba->index_bg_rho_tot_wo_smg] + pvecback_2_smg[pba->index_bg_rho_smg];
-		// 	double Omega_smg_tr = pvecback_2_smg[pba->index_bg_rho_smg]/rho_w_smg_tr;
-
-    //   double rho_w_smg = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
-		// 	double Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_w_smg;
-
-    //   // pvecback[pba->index_bg_kinetic_D_smg] = pow(Omega_smg/Omega_smg_tr,2) * pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-    //   pvecback[pba->index_bg_kinetic_D_smg] = pvec_stable_params_smg[pba->index_stable_Dkin_smg]; // set to constant
-    //   // pvecback[pba->index_bg_kinetic_D_smg] = 1e-120; // set to very small value
-    // }
-    pvecback[pba->index_bg_kinetic_D_smg] = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-  }// end stable_params
-  else{
+  if(pba->gravity_model_smg != stable_params){
     pvecback[pba->index_bg_kinetic_D_smg] = kin + 3./2.*pow(bra,2);
   }
   // A0
@@ -716,34 +685,9 @@ int gravity_functions_As_from_alphas_smg(
 
   // TODO_EB: rewrite cs2, Geff and slip for beyond Horndeski (calculate them in the hi_class.nb Mathematica notebook)
   // TODO_EB: check if there is a better alternative to regularizing these quantities
-
-  // if(pba->gravity_model_smg==stable_params){
-  //   /* Use input stable function for a>=a_tr and fix it to cs2(a=a_tr) for a<a_tr. MG effects should
-  //   have negligible impact at early times anyway. */
-  //   pvecback[pba->index_bg_cs2_smg] = pvec_stable_params_smg[pba->index_stable_cs2_smg];
-  //   pvecback[pba->index_bg_cs2num_smg] = pvecback[pba->index_bg_cs2_smg]*pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-  // }// end stable_params
   
-  if(pba->gravity_model_smg==stable_params){
-    /* Use input stable function for a>=a_tr and fix it to cs2(a=a_tr) for a<a_tr. For numerator use D_kin extrapolation at early times. 
-    MG effects should have negligible impact at early times anyway and hopefully works for perturbations. */
-    pvecback[pba->index_bg_cs2_smg] = pvec_stable_params_smg[pba->index_stable_cs2_smg];
-    pvecback[pba->index_bg_cs2num_smg] = pvecback[pba->index_bg_cs2_smg]*pvecback[pba->index_bg_kinetic_D_smg];
-  }// end stable_params
-
-  // if(pba->gravity_model_smg==stable_params){
-  //   if(a>=1e-2){
-  //     pvecback[pba->index_bg_cs2_smg] = pvec_stable_params_smg[pba->index_stable_cs2_smg];
-  //     pvecback[pba->index_bg_cs2num_smg] = pvecback[pba->index_bg_cs2_smg]*pvecback[pba->index_bg_kinetic_D_smg];
-  //   } 
-  //   else{
-  //     pvecback[pba->index_bg_cs2num_smg] = 0.;
-  //     pvecback[pba->index_bg_cs2_smg] = 0.;
-  //   }
-  // }// end stable_params
-  else{
-    
-    pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
+  if(pba->gravity_model_smg != stable_params){
+       pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
 
     if (pvecback[pba->index_bg_cs2num_smg] == pvecback[pba->index_bg_kinetic_D_smg]) {
 		pvecback[pba->index_bg_cs2_smg] = 1.;

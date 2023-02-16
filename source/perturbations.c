@@ -984,11 +984,10 @@ int perturbations_init(
 
       abort = _FALSE_;
 
-// MC check setting private(ppt->set_late_ic_smg) is enough for correct multithreading
-/* TODO_GR_SMG: I would like to remove set_late_ic_smg, but I don't understand this */
+
 #pragma omp parallel                                                    \
   shared(pppw,ppr,pba,pth,ppt,index_md,index_ic,abort,number_of_threads) \
-  private(index_k,thread,tstart,tstop,tspent,ppt->set_late_ic_smg)                           \
+  private(index_k,thread,tstart,tstop,tspent)                           \
   num_threads(number_of_threads)
 
       {
@@ -999,9 +998,6 @@ int perturbations_init(
 #endif
 
 #pragma omp for schedule (dynamic)
-
-        // flag controlling activation of smg at late times (a>=a_smg) if gravity_model_smg == stable_params
-        if(pba->gravity_model_smg == stable_params) ppt->set_late_ic_smg == _TRUE_;
 
         /* integrating backwards is slightly more optimal for parallel runs */
         //for (index_k = 0; index_k < ppt->k_size; index_k++) {
@@ -3351,6 +3347,10 @@ int perturbations_solve(
                ppt->error_message,
                ppt->error_message);
 
+    // if(k>0.0029999 && k<0.0030001){
+    //   printf("perturbations_solve: k=%e tau=%e rho_plus_p_theta=%e\n",k,interval_limit[index_interval],ppw->rho_plus_p_theta);
+    // }
+
     /** - --> (d) integrate the perturbations over the current interval. */
 
     if(ppr->evolver == rk){
@@ -4622,8 +4622,10 @@ int perturbations_vector_init(
           ppt->error_message
         );
         if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+          /** - Zero ICs at z_gr_smg. ICs are set to zero here because we enforce x_smg = x_prime_smg = 0 for z>z_gr_smg */
           // ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
           // ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
+          /** -  QS ICs at z_gr_smg */
           class_call(
             get_x_x_prime_qs_smg(
               ppr, pba, ppt, ppw, k,
@@ -4632,16 +4634,84 @@ int perturbations_vector_init(
             ),
           ppt->error_message,
           ppt->error_message);
+          // TODO_MC: find better place for these four lines below 
+          // ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
+          // ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur];
+          // ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
+          // ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur];
         }
         else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
           ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];
           ppv->y[ppv->index_pt_x_prime_smg] = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
         }
+
+        /* photons */
+
+        if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) { /* if radiation streaming approximation is off */
+
+          /* temperature */
+          ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
+          ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
+
+          if (ppw->approx[ppw->index_ap_tca] == (int)tca_off) {
+
+            ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
+            ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
+
+            /* polarization */
+            ppv->y[ppv->index_pt_pol0_g] = ppw->pv->y[ppw->pv->index_pt_pol0_g]; 
+            ppv->y[ppv->index_pt_pol1_g] = ppw->pv->y[ppw->pv->index_pt_pol1_g]; 
+            ppv->y[ppv->index_pt_pol2_g] = ppw->pv->y[ppw->pv->index_pt_pol2_g]; 
+            ppv->y[ppv->index_pt_pol3_g] = ppw->pv->y[ppw->pv->index_pt_pol3_g]; 
+
+          }
+        }
+
+        /* perturbed recombination: the indices are defined once tca is off. */
+
+        if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
+          ppv->y[ppv->index_pt_perturbed_recombination_delta_temp] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_temp];
+          ppv->y[ppv->index_pt_perturbed_recombination_delta_chi] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_chi]; 
+        }
+
+        /* ultra relativistic neutrinos */
+
+        if (pba->has_ur && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off)) {
+
+          ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur]; 
+          ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur]; 
+          ppv->y[ppv->index_pt_shear_ur] = ppw->pv->y[ppw->pv->index_pt_shear_ur]; 
+
+          if (ppw->approx[ppw->index_ap_ufa] == (int)ufa_off) {
+            ppv->y[ppv->index_pt_l3_ur] = ppw->pv->y[ppw->pv->index_pt_l3_ur]; 
+          }
+        }
+
+        /* interacting dark radiation */
+
+        if (pba->has_idr == _TRUE_){
+          if(ppw->approx[ppw->index_ap_rsa_idr]==(int)rsa_idr_off) {
+            ppv->y[ppv->index_pt_delta_idr] = ppw->pv->y[ppw->pv->index_pt_delta_idr];
+            ppv->y[ppv->index_pt_theta_idr] = ppw->pv->y[ppw->pv->index_pt_theta_idr];
+            if (ppt->idr_nature == idr_free_streaming){
+              if ((pba->has_idm_dr == _FALSE_)||((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_off))){
+                ppv->y[ppv->index_pt_shear_idr] = ppw->pv->y[ppw->pv->index_pt_shear_idr];
+                ppv->y[ppv->index_pt_l3_idr] = ppw->pv->y[ppw->pv->index_pt_l3_idr];
+              }
+            }
+          }
+        }
+
       }
 
       if (ppt->gauge == synchronous)
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
+
+      // if (k>0.00299999 && k<0.0030001){
+      //   double a = ppw->pvecback[pba->index_bg_a];
+      //   printf("perturbations_vector_init 1: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);   
+      // }
 
       if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) { // not only _smg
         ppv->y[ppv->index_pt_h_prime_from_trace] =
@@ -5278,6 +5348,12 @@ int perturbations_vector_init(
           }
         }
       }
+
+      //  if (k>0.00299999 && k<0.0030001){
+      //   double a = ppw->pvecback[pba->index_bg_a];
+      //   printf("perturbations_vector_init 2: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);   
+      // }
+
     }
 
     /** - --> (b) for the vector mode */
@@ -5443,6 +5519,11 @@ int perturbations_vector_init(
     ppw->pv = ppv;
 
   }
+
+  //  if (k>0.00299999 && k<0.0030001){
+  //       double a = ppw->pvecback[pba->index_bg_a];
+  //       printf("perturbations_vector_init 3: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);   
+  //     }
 
   return _SUCCESS_;
 }
@@ -5928,7 +6009,9 @@ int perturbations_initial_conditions(struct precision * ppr,
           + ppw->pvecback[pba->index_bg_rho_b]*ppw->pv->y[ppw->pv->index_pt_delta_b]
           + ppw->pvecback[pba->index_bg_rho_cdm]*ppw->pv->y[ppw->pv->index_pt_delta_cdm];
         if(pba->has_smg == _TRUE_) {
-          perturbations_get_h_prime_ic_from_00_smg(pba, ppw, k, eta, delta_rho_tot);
+          if(ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off){
+            perturbations_get_h_prime_ic_from_00_smg(pba, ppw, k, eta, delta_rho_tot);
+          }
         }
         else {
           ppw->pv->y[ppw->pv->index_pt_h_prime_from_trace] = (2.*pow(k, 2)*eta + 3.*a*a*delta_rho_tot)/a/ppw->pvecback[pba->index_bg_H];
@@ -6765,10 +6848,18 @@ int perturbations_einstein(
   a_prime_over_a = ppw->pvecback[pba->index_bg_H]*a;
   s2_squared = 1.-3.*pba->K/k2;
 
+  // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.01000001)){
+  //   printf("perturbations_einstein 1: k=%e a=%.32e delta_rho=%e\n",k,a,ppw->delta_rho);
+  // }
+
   /** - sum up perturbations from all species */
   class_call(perturbations_total_stress_energy(ppr,pba,pth,ppt,index_md,k,y,ppw),
              ppt->error_message,
              ppt->error_message);
+
+  // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.01000001)){
+  //   printf("perturbations_einstein 2: k=%e a=%.32e delta_rho=%e\n",k,a,ppw->delta_rho);
+  // }
 
   /** - for scalar modes: */
 
@@ -6822,7 +6913,6 @@ int perturbations_einstein(
       if(pba->has_smg == _TRUE_) {
 
         perturbations_einstein_scalar_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
-        // printf("set_late_ic_smg=%d\n",ppt->set_late_ic_smg);
         // printf("tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
         // printf("%.15e %15e\n",a,ppw->pvecback[pba->index_bg_M2_smg]*ppw->pvecback[pba->index_bg_mpl_running_smg]*ppw->pvecback[pba->index_bg_H]*ppw->pvecmetric[ppw->index_mt_x_smg]);
 
@@ -7527,6 +7617,10 @@ int perturbations_total_stress_energy(
       ppw->theta_m = rho_plus_p_theta_m/rho_plus_p_m;
 
     /* could include Lambda contribution to rho_tot (not done to match CMBFAST/CAMB definition) */
+
+  // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.0100001)){
+  //     printf("perturbations_total_stress_tensor: k=%e a=%.32e delta_rho=%e\n",k,a,ppw->delta_rho);
+  // }
 
   }
 
@@ -9490,6 +9584,10 @@ int perturbations_derivs(double tau,
         ppt->error_message
       );
     }
+
+    // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.0100001)){
+    //   printf("perturbations_derivs: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);
+    // }
 
     /** - ---> interacting dark radiation */
     if (pba->has_idr == _TRUE_){

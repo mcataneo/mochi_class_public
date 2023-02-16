@@ -581,6 +581,10 @@ int perturbations_einstein_scalar_smg(
   /* Get eta from the integrator */
   ppw->pvecmetric[ppw->index_mt_eta] = y[ppw->pv->index_pt_eta];
 
+  // if((k>0.0029999 && k<0.0030001) && (a>0.009 && a<0.011)){
+  //   printf("perturbations_einstein_scalar_smg: k=%e tau=%e a=%.32e eta=%e rho_plus_p_theta=%e\n",k,tau,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->rho_plus_p_theta);
+  // }
+
   /* Get h' from the integrator. This is the right place because in QS
   the scalar field depends on h' (only if h' comes from the integrator,
   otherwise it has been diagonalised) */
@@ -600,7 +604,7 @@ int perturbations_einstein_scalar_smg(
   ****     N     N  Error
   ***/
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
-    /* TODO_GR_SMG: check if it better to track qs equations or set them to 0. */
+    /* Either track qs equations or set them to 0. */
     // class_call(
     // get_x_x_prime_qs_smg(
     //   ppr, pba, ppt, ppw, k,
@@ -641,9 +645,6 @@ int perturbations_einstein_scalar_smg(
     printf("Scalar field equation: gr_smg approximation mode %i not recognized. should be gr_smg_on or gr_smg_off.\n",ppw->approx[ppw->index_ap_qs_smg]);
     return _FAILURE_;
   }
-
-  // printf("set_late_ic_smg=%d\n",ppt->set_late_ic_smg);
-  // printf("tau=%e a=%.15e x_smg=%e dx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg]);
 
   if (ppt->get_h_from_trace == _FALSE_) {
     /* It is still possible to get h_prime through th 00 Einstein equation,
@@ -720,6 +721,10 @@ int perturbations_einstein_scalar_smg(
       - 1./2.*res*cB*ppw->pvecmetric[ppw->index_mt_x_prime_smg];
   }
 
+  // if ((sqrt(k2)>0.00299999 && sqrt(k2)<0.00300009) && (a>0.009 && a<0.011)){
+  //   printf("k=%e tau=%e a=%.32e (rho+P)*theta=%e\n",sqrt(k2),tau,a,ppw->rho_plus_p_theta);
+  // }
+
   /* Here we are storing deviations from the first (00) einstein equation.
   This is to check that h' and the other variables are being properly
   integrated and as a friction term for the third einstein equation (h'') */
@@ -740,9 +745,13 @@ int perturbations_einstein_scalar_smg(
 
   /* third equation involving total pressure */
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
+    // ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
+    //   - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
+    //   + 2. * k2 * y[ppw->pv->index_pt_eta]
+    //   - 9. * pow(a,2) * ppw->delta_p;
     ppw->pvecmetric[ppw->index_mt_h_prime_prime] =
       - 2. * a_prime_over_a * ppw->pvecmetric[ppw->index_mt_h_prime]
-      + 2. * k2 * y[ppw->pv->index_pt_eta]
+      + 2. * k2 * ppw->pvecmetric[ppw->index_mt_eta]
       - 9. * pow(a,2) * ppw->delta_p;
   }
   else {
@@ -837,6 +846,8 @@ int perturbations_einstein_scalar_smg(
     class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
         ppt->error_message, " Isnan x'' at a =%e !",a);
   }//end of fully_dynamic equation
+
+  // printf("tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
 
   return _SUCCESS_;
 }

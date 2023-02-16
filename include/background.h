@@ -454,7 +454,7 @@ struct background
   //@{
 
   /* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
-  double a_file_gr_smg; /* MC integrate scalar field equations from this scale factor. Transition between extrapolated to interpolated smg functions also performed around this time */
+  double a_file_gr_smg; /* MC minimum scale factor in input file */
   int stable_params_size_smg; /* MC stores total number of rows in input file */
   int num_stable_params; /* MC how many input functions*/
   int num_stable_params_derived; /* MC how many derived functions*/

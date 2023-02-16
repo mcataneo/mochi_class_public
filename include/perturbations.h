@@ -479,7 +479,6 @@ struct perturbations
 
   enum possible_methods_qs_smg method_qs_smg;
   short initial_approx_qs_smg; /**< flag regulating the initial state of qs_smg */
-  short set_late_ic_smg; /**< MC flag controlling activation of smg for gravity_model_smg == stable_params */
 
   //@}
 

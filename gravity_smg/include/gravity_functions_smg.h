@@ -32,9 +32,7 @@ int gravity_functions_building_blocks_from_Gs_smg(struct background *pba,
 
 int gravity_functions_As_from_alphas_smg(struct background *pba,
                                          double * pvecback,
-                                         double * pvecback_derivs,
-                                         double * pvec_stable_params_smg,
-                                         double * pvecback_2_smg);
+                                         double * pvecback_derivs);
 
 int gravity_functions_Bs_from_Gs_smg(struct background *pba,
                                      double a,
