@@ -1452,7 +1452,7 @@ int get_x_x_prime_qs_smg(
         + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
       )*k2*pow(a*H,-2)
       + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
-    )*ppw->pvecmetric[ppw->index_mt_x_smg];
+    )*(*x_qs_smg);
 
   /* Denominator of the scalar field derivative in QS with h' */
   x_prime_qs_smg_den =
@@ -1543,7 +1543,7 @@ int get_x_x_prime_qs_smg(
           )
           - 9.*cD*((2. - bra)*c0*cH - 2.*c15*c9)*(p_tot + p_smg)*pow(H,-2)
         )*res*k2/a/H
-      )*ppw->pvecmetric[ppw->index_mt_x_smg];
+      )*(*x_qs_smg);
 
   /* Denominator of the scalar field derivative in QS without h' */
   x_prime_qs_smg_den =
