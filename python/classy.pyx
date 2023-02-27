@@ -1979,7 +1979,18 @@ cdef class Class:
         ----------
         z : float
                 Desired redshift
+
+        there is an additional check that output contains `mTk,vTk`,
+        because otherwise a segfault will occur
+
         """
+
+        if (self.pt.has_density_transfers == _FALSE_):
+            raise CosmoSevereError("No density transfer functions computed. You must add mTk to the list of outputs.")
+
+        if (self.pt.has_velocity_transfers == _FALSE_):
+            raise CosmoSevereError("No velocity transfer functions computed. You must add vTk to the list of outputs.")
+
         # Get background and transfer
         back = self.get_background()
         trans = self.get_transfer(z=z)
@@ -2037,7 +2048,7 @@ cdef class Class:
 
         k_range, G_eff = self.G_eff_at_z_smg(z)
         G_eff = interpolate.interp1d(k_range, G_eff)(k)
-        return G_eff
+        return float(G_eff)
 
     def slip_eff_at_z_smg(self, z):
         """
@@ -2056,7 +2067,15 @@ cdef class Class:
         ----------
         z : float
                 Desired redshift
+
+        there is an additional check that output contains `mTk`,
+        because otherwise a segfault will occur
+
         """
+
+        if (self.pt.has_density_transfers == _FALSE_):
+            raise CosmoSevereError("No density transfer functions computed. You must add mTk to the list of outputs.")
+
         # Get transfer
         trans = self.get_transfer(z=z)
         k_range = trans['k (h/Mpc)']*self.h()
@@ -2090,7 +2109,7 @@ cdef class Class:
 
         k_range, slip = self.slip_eff_at_z_smg(z)
         slip = interpolate.interp1d(k_range, slip)(k)
-        return slip
+        return float(slip)
 
     def G_matter_at_z_smg(self, z):
         """
@@ -2138,7 +2157,7 @@ cdef class Class:
 
             k_range, G_matter = self.G_matter_at_z_smg(z)
             G_matter = interpolate.interp1d(k_range, G_matter)(k)
-            return G_matter
+            return float(G_matter)
 
     def G_light_at_z_smg(self, z):
         """
@@ -2186,7 +2205,7 @@ cdef class Class:
 
             k_range, G_light = self.G_light_at_z_smg(z)
             G_light = interpolate.interp1d(k_range, G_light)(k)
-            return G_light
+            return float(G_light)
 
     def get_qs_functions_at_k_and_z_qs_smg(self, k, z):
         """
@@ -2225,6 +2244,116 @@ cdef class Class:
             raise CosmoSevereError(self.pt.error_message)
 
         return mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
+
+    def scale_dependent_growth_factor(self, z):
+        """
+        scale_dependent_growth_factor(z)
+
+        Return arrays of k [1/Mpc] and growth factor D
+        at a given redshift z from the transfer module
+        directly.
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+
+        there is an additional check that output contains `mTk`,
+        because otherwise a segfault will occur
+
+        """
+        if (self.pt.has_density_transfers == _FALSE_):
+            raise CosmoSevereError("No density transfer functions computed. You must add mTk to the list of outputs.")
+
+        # Get transfer
+        trans = self.get_transfer(z=z)
+        trans_0 = self.get_transfer(z=0.)
+        k_range = trans['k (h/Mpc)']*self.h()
+        # Get metric potentials
+        d_m = trans['d_m']
+        d_m_0 = trans_0['d_m']
+
+        D = d_m/d_m_0
+
+        return k_range, D
+
+    def scale_dependent_growth_factor_at_k_and_z(self, k, z):
+        """
+        scale_dependent_growth_factor_at_k_and_z(k, z)
+
+        Return the growth factor D at a given k and z
+        from the transfer module directly.
+
+        Parameters
+        ----------
+        k : float
+                Desired scale (1/Mpc)
+        z : float
+                Desired redshift
+        """
+
+        k_range, D = self.scale_dependent_growth_factor(z)
+        D = interpolate.interp1d(k_range, D)(k)
+        return float(D)
+
+    def scale_dependent_growth_factor_f(self, z, z_step=0.1):
+        """
+        scale_dependent_growth_factor_f(z)
+
+        Return arrays of k [1/Mpc] and growth rate
+        f(z)=d ln D / d ln a at a given redshift z
+        from the transfer module directly.
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        z_step : float
+                Default step used for the numerical two-sided derivative. For z < z_step the step is reduced progressively down to z_step/10 while sticking to a double-sided derivative. For z< z_step/10 a single-sided derivative is used instead.
+        """
+
+        k_range, D = self.scale_dependent_growth_factor(z)
+        # if possible, use two-sided derivative with default value of z_step
+        if z >= z_step:
+            _, D_p1 = self.scale_dependent_growth_factor(z+z_step)
+            _, D_m1 = self.scale_dependent_growth_factor(z-z_step)
+            dDdz = (D_p1-D_m1)/(2.*z_step)
+        else:
+            # if z is between z_step/10 and z_step, reduce z_step to z, and then stick to two-sided derivative
+            if (z > z_step/10.):
+                z_step = z
+                _, D_p1 = self.scale_dependent_growth_factor(z+z_step)
+                _, D_m1 = self.scale_dependent_growth_factor(z-z_step)
+                dDdz = (D_p1-D_m1)/(2.*z_step)
+            # if z is between 0 and z_step/10, use single-sided derivative with z_step/10
+            else:
+                z_step /=10
+                _, D_p1 = self.scale_dependent_growth_factor(z+z_step)
+                dDdz = (D_p1-D)/z_step
+        f = -(1+z)*dDdz/D
+
+        return k_range, f
+
+    def scale_dependent_growth_factor_f_at_k_and_z(self, k, z, z_step=0.1):
+        """
+        scale_dependent_growth_factor_at_k_and_z(k, z)
+
+        Return the growth factor f at a given k and z
+        from the transfer module directly.
+
+        Parameters
+        ----------
+        k : float
+                Desired scale (1/Mpc)
+        z : float
+                Desired redshift
+        z_step : float
+                Default step used for the numerical two-sided derivative. For z < z_step the step is reduced progressively down to z_step/10 while sticking to a double-sided derivative. For z< z_step/10 a single-sided derivative is used instead.
+        """
+
+        k_range, f = self.scale_dependent_growth_factor_f(z, z_step=z_step)
+        f = interpolate.interp1d(k_range, f)(k)
+        return float(f)
 
     def ionization_fraction(self, z):
         """
@@ -3116,7 +3245,7 @@ make        nonlinear_scale_cb(z, z_size)
         """
         sources = {}
 
-        cdef: 
+        cdef:
             int index_k, index_tau, i_index_type;
             int index_type;
             int index_md = self.pt.index_md_scalars;
@@ -3273,7 +3402,7 @@ make        nonlinear_scale_cb(z, z_size)
 
         for index_type, name in zip(indices, names):
             tmparray = np.empty((k_size,tau_size))
-            for index_k in range(k_size):                 
+            for index_k in range(k_size):
                 for index_tau in range(tau_size):
                     tmparray[index_k][index_tau] = sources_ptr[index_md][index_ic*tp_size+index_type][index_tau*k_size + index_k];
 
