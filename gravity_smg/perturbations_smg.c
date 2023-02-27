@@ -581,8 +581,8 @@ int perturbations_einstein_scalar_smg(
   /* Get eta from the integrator */
   ppw->pvecmetric[ppw->index_mt_eta] = y[ppw->pv->index_pt_eta];
 
-  // if((k>0.0029999 && k<0.0030001) && (a>0.009 && a<0.011)){
-  //   printf("perturbations_einstein_scalar_smg: k=%e tau=%e a=%.32e eta=%e rho_plus_p_theta=%e\n",k,tau,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->rho_plus_p_theta);
+  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //       printf("perturbations_einstein_scalar_smg 1: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg]);   
   // }
 
   /* Get h' from the integrator. This is the right place because in QS
@@ -618,6 +618,8 @@ int perturbations_einstein_scalar_smg(
   }
   else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
     if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
+    // TODO_MC: included check for RSA. Compute QS expressions here only if RSA is off
+      // if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) {
       /* Get scalar field perturbations from QS expressions. This function
       hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
       both x and x' depend on h' (simpler non-divergent expressions), otherwise
@@ -630,6 +632,11 @@ int perturbations_einstein_scalar_smg(
         ),
         ppt->error_message,
         ppt->error_message);
+
+        // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+        //   printf("perturbations_einstein_scalar_smg 2: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg]);   
+        // }
+      // }
     }
     else if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) {
       /* Get scalar field perturbations from the integrator */
@@ -847,7 +854,13 @@ int perturbations_einstein_scalar_smg(
         ppt->error_message, " Isnan x'' at a =%e !",a);
   }//end of fully_dynamic equation
 
-  // printf("tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
+  // if ((k>0.69999 && k<0.700001)){
+  //   printf("perturbations_einstein_scalar_smg 3: tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
+  //   printf("perturbations_einstein_scalar_smg 3: tau=%e a=%.15e eta=%e eta_prime=%e alpha=%e alpha_prime=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_eta_prime],ppw->pvecmetric[ppw->index_mt_alpha],ppw->pvecmetric[ppw->index_mt_alpha_prime]);
+  //   printf("perturbations_einstein_scalar_smg 3: tau=%e a=%.15e h_prime=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_h_prime]);
+  // }
+
+  // printf("perturbations_einstein_scalar_smg 3: tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
 
   return _SUCCESS_;
 }
@@ -963,42 +976,43 @@ int perturbations_get_approximation_qs_smg(
 
   class_alloc(ppw->tau_scheme_qs_smg,sizeof(qs_array_smg)/sizeof(int)*sizeof(double),ppt->error_message);
 
-
-  /* Loop to anticipate the initial integration time if the qs_smg
+  if (ppt->method_qs_smg == automatic) {
+    if (ppt->method_gr_smg == switch_off_gr_smg) { 
+    /* Loop to anticipate the initial integration time if the qs_smg
      state is different from ppt->initial_approx_qs_smg. This uses
      a bisection method between tau_lower and tau_upper.
-  */
-  if (ppt->method_qs_smg == automatic) {
+    */
 
-    /* Get tau_lower */
-    class_call(background_tau_of_z(pba,
-                                   1./ppr->a_ini_test_qs_smg-1.,
-                                   &tau_lower),
-               pba->error_message,
-               ppt->error_message);
+      /* Get tau_lower */
+      class_call(background_tau_of_z(pba,
+                                    1./ppr->a_ini_test_qs_smg-1.,
+                                    &tau_lower),
+                pba->error_message,
+                ppt->error_message);
 
-    /* Main loop for antcipating the integration time */
-    while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
-      perturbations_qs_functions_at_tau_and_k_qs_smg(
-                                              ppr,
-                                              pba,
-                                              ppt,
-                                              k,
-                                              tau_upper,
-                                              &mass2_qs,
-                                              &mass2_qs_p,
-                                              &rad2_qs,
-                                              &friction_qs,
-                                              &slope_qs,
-                                              &approx);
-      if (approx == ppt->initial_approx_qs_smg) {
-        is_early_enough = _TRUE_;
+      /* Main loop for antcipating the integration time */
+      while (((tau_upper - tau_lower)/tau_lower > ppr->tol_tau_approx) && is_early_enough == _FALSE_) {
+        perturbations_qs_functions_at_tau_and_k_qs_smg(
+                                                ppr,
+                                                pba,
+                                                ppt,
+                                                k,
+                                                tau_upper,
+                                                &mass2_qs,
+                                                &mass2_qs_p,
+                                                &rad2_qs,
+                                                &friction_qs,
+                                                &slope_qs,
+                                                &approx);
+        if (approx == ppt->initial_approx_qs_smg) {
+          is_early_enough = _TRUE_;
+        }
+        else {
+          tau_upper = 0.5*(tau_lower + tau_upper);
+        }
       }
-      else {
-        tau_upper = 0.5*(tau_lower + tau_upper);
-      }
+      *tau_ini = tau_upper;
     }
-    *tau_ini = tau_upper;
   }
 
 
@@ -1050,7 +1064,6 @@ int perturbations_get_approximation_qs_smg(
             approx_sample,
             &size_sample
             );
-
 
     double * tau_array;
     double * slope_array;
@@ -1143,6 +1156,9 @@ int perturbations_get_approximation_qs_smg(
     //   // DEBUG: Initial and final times
     //   printf("6 - Interval tau       = {%.1e, %.1e}\n", *tau_ini, tau_end);
     //   printf("7 - k mode             = {%.1e}\n", k);
+
+    printf("perturbations_get_approximation_qs_smg: tau_0=%e tau_1=%e tau_2=%e tau_3=%e tau_4=%e tau_5=%e tau_6=%e\n",
+          ppw->tau_scheme_qs_smg[0],ppw->tau_scheme_qs_smg[1],ppw->tau_scheme_qs_smg[2],ppw->tau_scheme_qs_smg[3],ppw->tau_scheme_qs_smg[4],ppw->tau_scheme_qs_smg[5],ppw->tau_scheme_qs_smg[6]);
 
   }
 
@@ -1330,6 +1346,8 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(
   //Approximation
   if ((mass2_qs > pow(ppr->trigger_mass_qs_smg,2)) && (rad2_qs > pow(ppr->trigger_rad_qs_smg,2))) {
     proposal = _TRUE_;
+    // if(k>0.69999 && k<0.70001)
+    //   printf("perturbations_qs_functions_at_tau_and_k_qs_smg: k=%e tau=%e mass2_qs=%e rad2_qs=%e proposal=%d\n",k,tau,mass2_qs,rad2_qs,proposal);
   }
   else {
     proposal = _FALSE_;
@@ -1464,6 +1482,19 @@ int get_x_x_prime_qs_smg(
           ppt->error_message,
           ppt->error_message);
 
+  // if ((k>0.69999 && k<0.700001) && (a>0.0099999 && a<0.01000001)){
+  //       printf("get_x_x_prime_qs_smg 0: k=%e a=%.32e delM2=%e cK=%e cB=%e run=%e res=%e cD=%e\n",k,a,delM2,cK,cB,run,res,cD);
+  //       printf("get_x_x_prime_qs_smg 0: k=%e a=%.32e c0=%e c1=%e c2=%e c3=%e c4=%e c5=%e\n",k,a,c0,c1,c2,c3,c4,c5);
+  //       printf("get_x_x_prime_qs_smg 0: k=%e a=%.32e c6=%e c7=%e c8=%e c9=%e c10=%e c11=%e\n",k,a,c6,c7,c8,c9,c10,c11);
+  //       printf("get_x_x_prime_qs_smg 0: k=%e a=%.32e c12=%e c13=%e c14=%e c15=%e c16=%e res_p=%e\n",k,a,c12,c13,c14,c15,c16,res_p);
+  //       printf("get_x_x_prime_qs_smg 0: k=%e a=%.32e cD_p=%e cB_p=%e c9_p=%e c10_p=%e c12_p=%e c13_p=%e\n",k,a,cD_p,cB_p,c9_p,c10_p,c12_p,c13_p);
+  // }
+
+  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //   printf("get_x_x_prime_qs_smg 1: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
+  //   printf("get_x_x_prime_qs_smg 1: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e p_tot=%e p_smg=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r,p_tot,p_smg);
+  //   printf("get_x_x_prime_qs_smg 1: k=%e a=%.32e rho_plus_p_theta_r=%e rho_r=%e h_prime=%e\n",k,a,ppw->rho_plus_p_theta_r,rho_r,ppw->pvecmetric[ppw->index_mt_h_prime]);
+  // }
   /* This is the expression for the scalar field in the quasi static approximation */
   if (ppt->get_h_from_trace == _TRUE_) {
     /* Scalar field in QS with h' */
@@ -1534,7 +1565,7 @@ int get_x_x_prime_qs_smg(
         + 3.*c0*cD*cH*(1. + 2./3.*run - (p_tot + p_smg)*pow(H,-2))
       )*k2*pow(a*H,-2)
       + 1./3.*cH*(6.*c0*c3 - c7 + 2.*c8*cD)*pow(k2,2)*pow(a*H,-4)
-    )*ppw->pvecmetric[ppw->index_mt_x_smg];
+    )*(*x_qs_smg);
 
   /* Denominator of the scalar field derivative in QS with h' */
   x_prime_qs_smg_den =
@@ -1625,7 +1656,7 @@ int get_x_x_prime_qs_smg(
           )
           - 9.*cD*((2. - bra)*c0*cH - 2.*c15*c9)*(p_tot + p_smg)*pow(H,-2)
         )*res*k2/a/H
-      )*ppw->pvecmetric[ppw->index_mt_x_smg];
+      )*(*x_qs_smg);
 
   /* Denominator of the scalar field derivative in QS without h' */
   x_prime_qs_smg_den =
@@ -1649,6 +1680,10 @@ int get_x_x_prime_qs_smg(
   }
 
   *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
+
+  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //   printf("get_x_x_prime_qs_smg 2: k=%e a=%.32e x_prime_qs_smg_num=%e x_prime_qs_smg_den=%e\n",k,a,x_prime_qs_smg_num,x_prime_qs_smg_den);
+  // }
 
   return _SUCCESS_;
 }

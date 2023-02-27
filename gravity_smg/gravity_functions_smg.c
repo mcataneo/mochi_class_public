@@ -494,12 +494,12 @@ int gravity_functions_As_from_alphas_smg(
   double M2 = pvecback[pba->index_bg_M2_smg];
   double DelM2 = pvecback[pba->index_bg_delta_M2_smg];
   double kin = pvecback[pba->index_bg_kineticity_smg];
-  double bra = pvecback[pba->index_bg_braiding_smg];
+  double bra = pvecback[pba->index_bg_braiding_smg];  
   double run = pvecback[pba->index_bg_mpl_running_smg];
   double ten = pvecback[pba->index_bg_tensor_excess_smg];
   double beh = pvecback[pba->index_bg_beyond_horndeski_smg];
   double dM2 = pvecback[pba->index_bg_delta_M2_smg];
-
+  
   // need to update the time derivatives of the interesting functions
   double kin_p = factor*pvecback_derivs[pba->index_bg_kineticity_smg];
   double bra_p = factor*pvecback_derivs[pba->index_bg_braiding_smg];

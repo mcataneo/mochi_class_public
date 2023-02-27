@@ -3025,6 +3025,7 @@ int perturbations_solve(
 
   /* conformal time */
   double tau,tau_lower,tau_upper,tau_mid;
+  double tau_gr_smg;
 
   /* multipole */
   int l;
@@ -3215,16 +3216,36 @@ int perturbations_solve(
   tau = tau_mid;
 
   if (pba->has_smg == _TRUE_) {
-    class_call(perturbations_get_approximation_qs_smg(ppr,
-                                                      pba,
-                                                      ppt,
-                                                      ppw,
-                                                      k,
-                                                      &tau,
-                                                      ppt->tau_sampling[tau_actual_size-1]),
-      ppt->error_message,
-      ppt->error_message
-    );
+    if (ppt->method_gr_smg == switch_on_gr_smg) {
+      class_call(background_tau_of_z(pba,
+                                 ppr->z_gr_smg,
+                                 &tau_gr_smg),
+             pba->error_message,
+             ppt->error_message);
+      /** --> Find QSA intervals only for tau > tau_gr_smg. Before that we'll impose fully dynamical evolution */
+      class_call(perturbations_get_approximation_qs_smg(ppr,
+                                                        pba,
+                                                        ppt,
+                                                        ppw,
+                                                        k,
+                                                        &tau_gr_smg,
+                                                        ppt->tau_sampling[tau_actual_size-1]),
+        ppt->error_message,
+        ppt->error_message
+      );
+    }
+    else{
+      class_call(perturbations_get_approximation_qs_smg(ppr,
+                                                        pba,
+                                                        ppt,
+                                                        ppw,
+                                                        k,
+                                                        &tau,
+                                                        ppt->tau_sampling[tau_actual_size-1]),
+        ppt->error_message,
+        ppt->error_message
+      );
+    }
   }
 
   /** - find the number of intervals over which approximation scheme is constant */
@@ -3347,9 +3368,6 @@ int perturbations_solve(
                ppt->error_message,
                ppt->error_message);
 
-    // if(k>0.0029999 && k<0.0030001){
-    //   printf("perturbations_solve: k=%e tau=%e rho_plus_p_theta=%e\n",k,interval_limit[index_interval],ppw->rho_plus_p_theta);
-    // }
 
     /** - --> (d) integrate the perturbations over the current interval. */
 
@@ -4621,7 +4639,8 @@ int perturbations_vector_init(
           ppt->error_message,
           ppt->error_message
         );
-        if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+        if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) && ppw->approx[ppw->index_ap_qs_smg] == 0) {
+        // if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
           /** - Zero ICs at z_gr_smg. ICs are set to zero here because we enforce x_smg = x_prime_smg = 0 for z>z_gr_smg */
           // ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
           // ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
@@ -4634,13 +4653,14 @@ int perturbations_vector_init(
             ),
           ppt->error_message,
           ppt->error_message);
-          // TODO_MC: find better place for these four lines below 
-          // ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
-          // ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur];
-          // ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
-          // ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur];
+
+          // double a = ppw->pvecback[pba->index_bg_a];
+          // printf("perturbations_vector_init has_smg: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
+          // printf("perturbations_vector_init has_smg: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
+          // printf("perturbations_vector_init has_smg: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
+
         }
-        else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
+        else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off && ppw->approx[ppw->index_ap_qs_smg] == 0) {
           ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];
           ppv->y[ppv->index_pt_x_prime_smg] = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
         }
@@ -4708,9 +4728,9 @@ int perturbations_vector_init(
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
 
-      // if (k>0.00299999 && k<0.0030001){
+      // if (k>0.69999 && k<0.700001){
       //   double a = ppw->pvecback[pba->index_bg_a];
-      //   printf("perturbations_vector_init 1: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);   
+      //   printf("perturbations_vector_init 1: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppv->y[ppv->index_pt_x_smg],ppv->y[ppv->index_pt_x_prime_smg]);   
       // }
 
       if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) { // not only _smg
@@ -5349,9 +5369,9 @@ int perturbations_vector_init(
         }
       }
 
-      //  if (k>0.00299999 && k<0.0030001){
+      // if (k>0.69999 && k<0.700001){
       //   double a = ppw->pvecback[pba->index_bg_a];
-      //   printf("perturbations_vector_init 2: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);   
+      //   printf("perturbations_vector_init 2: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppv->y[ppv->index_pt_x_smg],ppv->y[ppv->index_pt_x_prime_smg]);   
       // }
 
     }
@@ -5520,9 +5540,9 @@ int perturbations_vector_init(
 
   }
 
-  //  if (k>0.00299999 && k<0.0030001){
+  // if (k>0.69999 && k<0.700001){
   //       double a = ppw->pvecback[pba->index_bg_a];
-  //       printf("perturbations_vector_init 3: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);   
+  //       printf("perturbations_vector_init 3: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppv->y[ppv->index_pt_x_smg],ppv->y[ppv->index_pt_x_prime_smg]);   
   //     }
 
   return _SUCCESS_;
@@ -6559,20 +6579,34 @@ int perturbations_approximations(
     }
 
     if (pba->has_smg == _TRUE_) {
-      class_call(
-        perturbations_switch_approximation_qs_smg(ppt, ppw, tau),
-        ppt->error_message,
-        ppt->error_message
-      );
       if (ppt->method_gr_smg == switch_on_gr_smg) {
         double z = 1./ppw->pvecback[pba->index_bg_a]-1.;
         if (z > ppr->z_gr_smg) {
           ppw->approx[ppw->index_ap_gr_smg] = (int)gr_smg_on;
+          // TODO_MC: impose FD evolution for smg so that zero ICs and GR evolution are enforced before z_gr_smg. 
+          //          This is done to avoid NAN QS ICs for smg and ensure the code doesn't crash
+          ppw->approx[ppw->index_ap_qs_smg] = 0;
         }
         else {
           ppw->approx[ppw->index_ap_gr_smg] = (int)gr_smg_off;
+          // TODO_MC: apply QS flags whenever necessary for z <= z_gr_smg
+          class_call(
+            perturbations_switch_approximation_qs_smg(ppt, ppw, tau),
+            ppt->error_message,
+            ppt->error_message
+          );  
         }
       }
+      else {
+        class_call(
+          perturbations_switch_approximation_qs_smg(ppt, ppw, tau),
+          ppt->error_message,
+          ppt->error_message
+        );
+      }
+
+      // printf("perturbations_approximations: a = %.15e QS_FLAG = %d\n",ppw->pvecback[pba->index_bg_a],ppw->approx[ppw->index_ap_qs_smg]);
+
     }
   }
 
@@ -6848,17 +6882,43 @@ int perturbations_einstein(
   a_prime_over_a = ppw->pvecback[pba->index_bg_H]*a;
   s2_squared = 1.-3.*pba->K/k2;
 
-  // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.01000001)){
-  //   printf("perturbations_einstein 1: k=%e a=%.32e delta_rho=%e\n",k,a,ppw->delta_rho);
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+
+  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //       printf("perturbations_einstein 1: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
+  //       printf("perturbations_einstein 1: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
+  //       printf("perturbations_einstein 1: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
   // }
+
+  // TODO_MC: compute x_smg and x_prime_smg here when RSA is on, so that correct values for stress-energy tensor perturabtions are used
+  // if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_ && ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
+  //     /* Get scalar field perturbations from QS expressions. This function
+  //     hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
+  //     both x and x' depend on h' (simpler non-divergent expressions), otherwise
+  //     they have been diagonalised (longer divergent expressions). */
+  //     class_call(
+  //       get_x_x_prime_qs_smg(
+  //         ppr, pba, ppt, ppw, k,
+  //         &ppw->pvecmetric[ppw->index_mt_x_smg],
+  //         &ppw->pvecmetric[ppw->index_mt_x_prime_smg]
+  //       ),
+  //       ppt->error_message,
+  //       ppt->error_message);
+
+  //       // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //       //   printf("perturbations_einstein 2: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg]);   
+  //       // }
+  //   }
 
   /** - sum up perturbations from all species */
   class_call(perturbations_total_stress_energy(ppr,pba,pth,ppt,index_md,k,y,ppw),
              ppt->error_message,
              ppt->error_message);
 
-  // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.01000001)){
-  //   printf("perturbations_einstein 2: k=%e a=%.32e delta_rho=%e\n",k,a,ppw->delta_rho);
+  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //       printf("perturbations_einstein 3: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
+  //       printf("perturbations_einstein 3: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
+  //       printf("perturbations_einstein 3: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
   // }
 
   /** - for scalar modes: */
@@ -7618,8 +7678,10 @@ int perturbations_total_stress_energy(
 
     /* could include Lambda contribution to rho_tot (not done to match CMBFAST/CAMB definition) */
 
-  // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.0100001)){
-  //     printf("perturbations_total_stress_tensor: k=%e a=%.32e delta_rho=%e\n",k,a,ppw->delta_rho);
+  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+  //     printf("perturbations_total_stress_energy: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
+  //     printf("perturbations_total_stress_energy: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
+  //     printf("perturbations_total_stress_energy: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
   // }
 
   }
@@ -10641,12 +10703,20 @@ int perturbations_rsa_delta_and_theta(
   ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
   ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
   ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
+  // TODO_MC: separate radiation contribution which could be used to get QS x_smg and x_prime_smg
+  ppw->delta_rho_r += ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
+  ppw->rho_plus_p_theta_r += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
 
   if (pba->has_ur == _TRUE_) {
     ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
     ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
     ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
+    // TODO_MC: separate radiation contribution which could be used to get QS x_smg and x_prime_smg
+    ppw->delta_rho_r += ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
+    ppw->rho_plus_p_theta_r += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
   }
+
+  
 
   return _SUCCESS_;
 

@@ -682,7 +682,7 @@ int background_solve_smg(
 									used_in_output,
 									pba->bi_bw_B_size,
 									&bpaw,
-									ppr->tol_background_integration,
+									ppr->tol_background_bw_integration,
 									ppr->smallest_allowed_variation,
 									background_timescale, //'evaluate_timescale', required by evolver_rk but not by ndf15
 									ppr->background_integration_stepsize,
@@ -760,9 +760,11 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_mpl_running_smg, pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kinetic_D_smg, pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]);
-				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*pvec_stable_params_smg[pba->index_stable_Dkin_smg]);
-				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*(pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg));
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);
+				// TODO_MC: testing importance of numerical accuracy of integrated alpha_B for f(R) gravity
+				// copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, -pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
 
 			}
 			else {

@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
   int index_tau;
   FILE * output_file;
-	// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass_v2.dat","w");
+	output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass_v2.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_hiclass.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_full_grid_hiclass.dat","w");
 
