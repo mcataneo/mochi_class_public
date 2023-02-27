@@ -761,10 +761,10 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kinetic_D_smg, pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*(pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg));
-				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);				
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
 				// TODO_MC: testing importance of numerical accuracy of integrated alpha_B for f(R) gravity
-				// copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
-				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, -pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
+				// copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, -pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
 
 			}
 			else {
