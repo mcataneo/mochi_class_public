@@ -2245,13 +2245,12 @@ cdef class Class:
 
         return mass2_qs, mass2_qs_p, rad2_qs, friction_qs, slope_qs
 
-    def scale_dependent_growth_factor(self, z):
+    def scale_dependent_growth_factor_at_z(self, z):
         """
-        scale_dependent_growth_factor(z)
+        scale_dependent_growth_factor_at_z(z)
 
         Return arrays of k [1/Mpc] and growth factor D
-        at a given redshift z from the transfer module
-        directly.
+        at a given redshift z from the transfer module.
 
         Parameters
         ----------
@@ -2282,7 +2281,7 @@ cdef class Class:
         scale_dependent_growth_factor_at_k_and_z(k, z)
 
         Return the growth factor D at a given k and z
-        from the transfer module directly.
+        from the power spectrum module.
 
         Parameters
         ----------
@@ -2292,17 +2291,16 @@ cdef class Class:
                 Desired redshift
         """
 
-        k_range, D = self.scale_dependent_growth_factor(z)
-        D = interpolate.interp1d(k_range, D)(k)
-        return float(D)
+        D = np.sqrt(self.pk_lin(k, z)/self.pk_lin(k, 0.))
+        return D
 
-    def scale_dependent_growth_factor_f(self, z, z_step=0.1):
+    def scale_dependent_growth_factor_f_at_z(self, z, z_step=0.1):
         """
-        scale_dependent_growth_factor_f(z)
+        scale_dependent_growth_factor_f_at_z(z)
 
         Return arrays of k [1/Mpc] and growth rate
         f(z)=d ln D / d ln a at a given redshift z
-        from the transfer module directly.
+        from the transfer module.
 
         Parameters
         ----------
@@ -2312,23 +2310,23 @@ cdef class Class:
                 Default step used for the numerical two-sided derivative. For z < z_step the step is reduced progressively down to z_step/10 while sticking to a double-sided derivative. For z< z_step/10 a single-sided derivative is used instead.
         """
 
-        k_range, D = self.scale_dependent_growth_factor(z)
+        k_range, D = self.scale_dependent_growth_factor_at_z(z)
         # if possible, use two-sided derivative with default value of z_step
         if z >= z_step:
-            _, D_p1 = self.scale_dependent_growth_factor(z+z_step)
-            _, D_m1 = self.scale_dependent_growth_factor(z-z_step)
+            _, D_p1 = self.scale_dependent_growth_factor_at_z(z+z_step)
+            _, D_m1 = self.scale_dependent_growth_factor_at_z(z-z_step)
             dDdz = (D_p1-D_m1)/(2.*z_step)
         else:
             # if z is between z_step/10 and z_step, reduce z_step to z, and then stick to two-sided derivative
             if (z > z_step/10.):
                 z_step = z
-                _, D_p1 = self.scale_dependent_growth_factor(z+z_step)
-                _, D_m1 = self.scale_dependent_growth_factor(z-z_step)
+                _, D_p1 = self.scale_dependent_growth_factor_at_z(z+z_step)
+                _, D_m1 = self.scale_dependent_growth_factor_at_z(z-z_step)
                 dDdz = (D_p1-D_m1)/(2.*z_step)
             # if z is between 0 and z_step/10, use single-sided derivative with z_step/10
             else:
                 z_step /=10
-                _, D_p1 = self.scale_dependent_growth_factor(z+z_step)
+                _, D_p1 = self.scale_dependent_growth_factor_at_z(z+z_step)
                 dDdz = (D_p1-D)/z_step
         f = -(1+z)*dDdz/D
 
@@ -2336,10 +2334,10 @@ cdef class Class:
 
     def scale_dependent_growth_factor_f_at_k_and_z(self, k, z, z_step=0.1):
         """
-        scale_dependent_growth_factor_at_k_and_z(k, z)
+        scale_dependent_growth_factor_f_at_k_and_z(k, z)
 
         Return the growth factor f at a given k and z
-        from the transfer module directly.
+        from the power spectrum module.
 
         Parameters
         ----------
@@ -2351,9 +2349,27 @@ cdef class Class:
                 Default step used for the numerical two-sided derivative. For z < z_step the step is reduced progressively down to z_step/10 while sticking to a double-sided derivative. For z< z_step/10 a single-sided derivative is used instead.
         """
 
-        k_range, f = self.scale_dependent_growth_factor_f(z, z_step=z_step)
-        f = interpolate.interp1d(k_range, f)(k)
-        return float(f)
+        D_0 = self.scale_dependent_growth_factor_at_k_and_z(k, z)
+        # if possible, use two-sided derivative with default value of z_step
+        if z >= z_step:
+            D_p1 = self.scale_dependent_growth_factor_at_k_and_z(k, z+z_step)
+            D_m1 = self.scale_dependent_growth_factor_at_k_and_z(k, z-z_step)
+            dDdz = (D_p1-D_m1)/(2.*z_step)
+        else:
+            # if z is between z_step/10 and z_step, reduce z_step to z, and then stick to two-sided derivative
+            if (z > z_step/10.):
+                z_step = z
+                D_p1 = self.scale_dependent_growth_factor_at_k_and_z(k, z+z_step)
+                D_m1 = self.scale_dependent_growth_factor_at_k_and_z(k, z-z_step)
+                dDdz = (D_p1-D_m1)/(2.*z_step)
+            # if z is between 0 and z_step/10, use single-sided derivative with z_step/10
+            else:
+                z_step /=10
+                D_p1 = self.scale_dependent_growth_factor_at_k_and_z(k, z+z_step)
+                dDdz = (D_p1-D_0)/z_step
+        f = -(1+z)*dDdz/D_0
+
+        return f
 
     def ionization_fraction(self, z):
         """
