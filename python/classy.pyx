@@ -2331,7 +2331,7 @@ cdef class Class:
                 dDdz = (D_p1-D)/z_step
         else:
             # if z is between z_step/10 and z_step, reduce z_step to z, and then stick to two-sided derivative
-            if (z_max >= z+z_step):
+            if (z_max >= z+z_step/10):
                 z_step = z_max-z
                 _, D_p1 = self.scale_dependent_growth_factor_at_z(z+z_step)
                 _, D_m1 = self.scale_dependent_growth_factor_at_z(z-z_step)
@@ -2383,7 +2383,7 @@ cdef class Class:
                 dDdz = (D_p1-D_0)/z_step
         else:
             # if z is between z_step/10 and z_step, reduce z_step to z, and then stick to two-sided derivative
-            if (z_max >= z+z_step):
+            if (z_max >= z+z_step/10):
                 z_step = z_max-z
                 D_p1 = self.scale_dependent_growth_factor_at_k_and_z(k, z+z_step)
                 D_m1 = self.scale_dependent_growth_factor_at_k_and_z(k, z-z_step)
@@ -2391,8 +2391,8 @@ cdef class Class:
             # if z is between 0 and z_step/10, use single-sided derivative with z_step/10
             else:
                 z_step /=10
-                D_p1 = self.scale_dependent_growth_factor_at_k_and_z(k, z+z_step)
-                dDdz = (D_p1-D_0)/z_step
+                D_m1 = self.scale_dependent_growth_factor_at_k_and_z(k, z-z_step)
+                dDdz = (D-D_m1)/z_step
         f = -(1+z)*dDdz/D_0
 
         return f
