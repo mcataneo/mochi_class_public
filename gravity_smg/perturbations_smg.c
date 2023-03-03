@@ -44,7 +44,9 @@ int get_gravity_coefficients_smg(
                                  double * c9, double * c10, double * c11, double * c12,
                                  double * c13, double * c14, double * c15, double * c16,
                                  double * res_p, double * cD_p, double * cB_p, double * cH_p,
-                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p
+                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p,
+                                 double * cs2num, double * lambda2, double * lambda7, double * lambda8,
+                                 double * cs2num_p, double * lambda2_p, double * lambda8_p
                                  ){
 
   double a = pvecback[pba->index_bg_a];
@@ -122,6 +124,13 @@ int get_gravity_coefficients_smg(
     *c10_p = pvecback[pba->index_bg_A10_prime_smg];
     *c12_p = pvecback[pba->index_bg_A12_prime_smg];
     *c13_p = pvecback[pba->index_bg_A13_prime_smg];
+    *cs2num = pvecback[pba->index_bg_cs2num_smg];
+    *lambda2 = pvecback[pba->index_bg_lambda_2_smg];
+    *lambda7 = pvecback[pba->index_bg_lambda_7_smg];
+    *lambda8 = pvecback[pba->index_bg_lambda_8_smg];
+    *cs2num_p = pvecback[pba->index_bg_cs2num_smg];
+    *lambda2_p = pvecback[pba->index_bg_lambda_2_prime_smg];
+    *lambda8_p = pvecback[pba->index_bg_lambda_8_prime_smg];
   }
   else {
     printf("It was not possible to determine if oscillations of the background scalar field should be allowed or not.\n");
@@ -557,6 +566,8 @@ int perturbations_einstein_scalar_smg(
   double c9, c10, c11, c12, c13, c14, c15, c16;
   double c9_p, c10_p, c12_p, c13_p;
   double res_p, cD_p, cB_p, cH_p;
+  double cs2num, lambda2, lambda7, lambda8;
+  double cs2num_p, lambda2_p, lambda8_p;
 
   H = ppw->pvecback[pba->index_bg_H];
 
@@ -571,7 +582,9 @@ int perturbations_einstein_scalar_smg(
         & cD, & cK, & cB, & cH, & c0, & c1, & c2, & c3,
         & c4, & c5, & c6, & c7, & c8, & c9, & c10, & c11,
         & c12, & c13, & c14, & c15, & c16,  & res_p, & cD_p, & cB_p,
-        & cH_p, & c9_p, & c10_p, & c12_p, & c13_p
+        & cH_p, & c9_p, & c10_p, & c12_p, & c13_p,
+        & cs2num, & lambda2, & lambda7, & lambda8,
+        & cs2num_p, & lambda2_p, & lambda8_p
       ),
       ppt->error_message,
       ppt->error_message);
@@ -834,7 +847,8 @@ int perturbations_einstein_scalar_smg(
 
   /* scalar field equation. This is the right place to evaluate it, since when rsa is on the radiation density gets updated */
   if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
-    ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
+    if (ppt->method_gr_smg == switch_off_gr_smg) {
+      ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
       (
         + 9./2.*cB*ppw->delta_p*pow(a,2)/M2/res
         - c10*k2*ppw->pvecmetric[ppw->index_mt_eta]/res
@@ -848,8 +862,19 @@ int perturbations_einstein_scalar_smg(
         + H*a*(
           - c3*k2*pow(a*H,-2) + c11
         )*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-      )/cD;
-
+      )/cD;  
+    } 
+    else {
+      ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] =
+      (
+        + 2.*cs2num*k2*ppw->pvecmetric[ppw->index_mt_eta]/(a*H)
+        + 3*a*lambda2*ppw->delta_rho/(H*M2)
+        - 9./2.*a*cB*(2. - cB)*ppw->delta_p/(H*M2)
+        - 2.*pow(a*H,2)*(cs2num*k2*pow(a*H,-2) - 4.*lambda8)*ppw->pvecmetric[ppw->index_mt_x_smg]
+        - 8.*a*H*lambda7*ppw->pvecmetric[ppw->index_mt_x_prime_smg]  
+      )/(cD*(2. - cB));
+    }
+    
     class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
         ppt->error_message, " Isnan x'' at a =%e !",a);
   }//end of fully_dynamic equation
@@ -1157,8 +1182,6 @@ int perturbations_get_approximation_qs_smg(
     //   printf("6 - Interval tau       = {%.1e, %.1e}\n", *tau_ini, tau_end);
     //   printf("7 - k mode             = {%.1e}\n", k);
 
-    printf("perturbations_get_approximation_qs_smg: tau_0=%e tau_1=%e tau_2=%e tau_3=%e tau_4=%e tau_5=%e tau_6=%e\n",
-          ppw->tau_scheme_qs_smg[0],ppw->tau_scheme_qs_smg[1],ppw->tau_scheme_qs_smg[2],ppw->tau_scheme_qs_smg[3],ppw->tau_scheme_qs_smg[4],ppw->tau_scheme_qs_smg[5],ppw->tau_scheme_qs_smg[6]);
 
   }
 
@@ -1291,6 +1314,9 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(
   double c9, c10, c11, c12, c13, c14, c15, c16;
   double c9_p, c10_p, c12_p, c13_p;
   double res_p, cD_p, cB_p, cH_p;
+  double cs2num, lambda2, lambda7, lambda8;
+  double cs2num_p, lambda2_p, lambda8_p;
+  double t1, f1, t1_p, f1_p;
   double x_prime_qs_smg_num, x_prime_qs_smg_den;
   double a, H, rho_tot, p_tot, rho_smg, p_smg, rho_r;
   double k2 = k*k;
@@ -1310,23 +1336,48 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(
                   &cD, &cK, &cB, &cH, &c0, &c1, &c2, &c3,
                   &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11,
                   &c12, &c13, &c14, &c15, &c16, &res_p, &cD_p, &cB_p,
-                  &cH_p, &c9_p, &c10_p, &c12_p, &c13_p
+                  &cH_p, &c9_p, &c10_p, &c12_p, &c13_p,
+                  &cs2num, &lambda2, &lambda7, &lambda8,
+                  &cs2num_p, &lambda2_p, &lambda8_p
                   ),
           ppt->error_message,
           ppt->error_message);
 
 
-  mass2_qs = -(c12 + c13*k2*pow(a*H,-2))/cD;
-
-  mass2_qs_p =
+  if (ppt->method_gr_smg == switch_off_gr_smg) {
+    mass2_qs = -(c12 + c13*k2*pow(a*H,-2))/cD;
+  }
+  else {
+    mass2_qs = 2.*(cs2num*pow(k/(a*H),2) - 4.*lambda8)/(2. - cB)/cD;
+  }
+ 
+  if (ppt->method_gr_smg == switch_off_gr_smg) {
+    mass2_qs_p =
     -(
       +c12_p - c12*cD_p/cD
       + (c13_p - c13*cD_p/cD + (rho_tot + rho_smg + 3.*p_tot + 3.*p_smg)*c13*a/H)*pow(a*H,-2)*k2
     )/cD;
+  }
+  else {
+    // t1 = cs2num*k2*pow(a*H,-2) - 4.*lambda8;
+    // t1_p = k2*pow(a*H,-2)*(cs2num_p + a/H*(pow(H,2) - 3*(p_tot + p_smg))*cs2num) - 4.*lambda8_p;
+    // f1 = cD*(2. - cB);
+    // f1_p = cD_p*(2. - cB) - cD*cB_p;
+
+    // mass2_qs_p = 2.*(t1_p - t1*f1_p/f1)/f1;
+
+    mass2_qs_p = 2.*(4.*(cD_p/cD - cB_p/(2. - cB))*lambda8 - 4.*lambda8_p + (cs2num_p - (cD_p/cD - cB_p/(2. - cB))*cs2num 
+                  + (rho_tot + rho_smg + 3.*(p_tot + p_smg))*cs2num*a/H)*pow(k/(a*H),2))/(2. - cB)/cD;
+  }
 
   rad2_qs = 3.*mass2_qs*pow(H,4)*pow(rho_r,-2)*pow(a*H,2)/k2;
 
-  friction_qs = -(c11 - c3*k2*pow(a*H,-2))/cD;
+  if (ppt->method_gr_smg == switch_off_gr_smg) {
+    friction_qs = -(c11 - c3*k2*pow(a*H,-2))/cD;
+  }
+  else {
+    friction_qs = 8.*pow(2.-cB,-1)*pow(cD,-1)*lambda7;
+  }
 
   slope_qs = -1./4.*(1. - 2.*friction_qs + 3.*(p_tot + p_smg)/(rho_tot + rho_smg) - mass2_qs_p/mass2_qs/a/H);
 
@@ -1455,18 +1506,23 @@ int get_x_x_prime_qs_smg(
                          ){
 
   double k2 = k*k;
-  double rho_r, p_tot, p_smg;
+  double rho_r, rho_tot, p_tot, p_smg, rho_smg;
   double a, H, delM2, M2, kin, bra, ten, run, beh;
   double res, cD, cK, cB, cH;
   double c0, c1, c2, c3, c4, c5, c6, c7, c8;
   double c9, c10, c11, c12, c13, c14, c15, c16;
   double c9_p, c10_p, c12_p, c13_p;
   double res_p, cD_p, cB_p, cH_p;
+  double cs2num, lambda2, lambda7, lambda8;
+  double cs2num_p, lambda2_p, lambda8_p;
+  double g1, g2, g3;
   double x_prime_qs_smg_num, x_prime_qs_smg_den;
 
   a = ppw->pvecback[pba->index_bg_a];
   H = ppw->pvecback[pba->index_bg_H];
   rho_r = ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_ur];
+  rho_tot = ppw->pvecback[pba->index_bg_rho_tot_wo_smg];
+  rho_smg = ppw->pvecback[pba->index_bg_rho_smg];
   p_tot = ppw->pvecback[pba->index_bg_p_tot_wo_smg];
   p_smg = ppw->pvecback[pba->index_bg_p_smg];
 
@@ -1477,7 +1533,9 @@ int get_x_x_prime_qs_smg(
                   &cD, &cK, &cB, &cH, &c0, &c1, &c2, &c3,
                   &c4, &c5, &c6, &c7, &c8, &c9, &c10, &c11,
                   &c12, &c13, &c14, &c15, &c16, &res_p, &cD_p, &cB_p,
-                  &cH_p, &c9_p, &c10_p, &c12_p, &c13_p
+                  &cH_p, &c9_p, &c10_p, &c12_p, &c13_p,
+                  &cs2num, &lambda2, &lambda7, &lambda8,
+                  &cs2num_p, &lambda2_p, &lambda8_p
                   ),
           ppt->error_message,
           ppt->error_message);
@@ -1508,7 +1566,8 @@ int get_x_x_prime_qs_smg(
   }
   else {
     /* Scalar field in QS without h' */
-    *x_qs_smg =
+    if (ppt->method_gr_smg == switch_off_gr_smg) {
+      *x_qs_smg =
       1./res*(
         +k2*(
           +4.*(1. + beh)*cH*k2
@@ -1524,6 +1583,17 @@ int get_x_x_prime_qs_smg(
         - k2*pow(a*H,2)*(3.*c13*(2. - bra) + 12.*c15*c9 - 4.*c16*cH)
         - 3.*pow(a*H,4)*(c12*(2. - bra) + 4.*c16*c9)
       );
+    }
+    else {
+      /* Only for Horndeski smg */
+      *x_qs_smg =
+      (
+        + 2.*cs2num*k2*ppw->pvecmetric[ppw->index_mt_eta]/(a*H)
+        + 3.*a*lambda2*ppw->delta_rho/(H*M2)
+        - 9./2.*a*cB*(2. - cB)*ppw->delta_p/(H*M2)
+      )/(2.*pow(a*H,2)*(cs2num*k2*pow(a*H,-2) - 4.*lambda8));
+    }
+    
   }
 
   /* scalar field derivative equation
@@ -1581,109 +1651,202 @@ int get_x_x_prime_qs_smg(
       )/6.*pow(a*H,-2)
       - cH*pow(k2,2)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)/3.*pow(a*H,-4)
     );
+
+    *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
   }
   else {
-    /* Numerator of the scalar field derivative in QS without h' */
-    x_prime_qs_smg_num =
-      - 18.*(2. - bra)*cD*cH*pow(H,-3)*k2*ppw->rho_plus_p_shear/a/M2
-      + (2. - bra)*(
-        +6.*cH*cK*pow(H,-3)*k2/a
-        + 9.*(
-          + cD*(cB*res_p - cB_p*res)
-          + ((2. + run)*cB*cD - 2.*c9*cK)*H*res*a
-        )*pow(H,-2)/res
-      )*ppw->delta_rho_r/M2
-      + 9.*(2. - bra)*(
-        + 2.*c3*cH*pow(H,-4)*pow(a,-2)*k2
+    if (ppt->method_gr_smg == switch_off_gr_smg) {
+      /* Numerator of the scalar field derivative in QS without h' */
+      x_prime_qs_smg_num =
+        - 18.*(2. - bra)*cD*cH*pow(H,-3)*k2*ppw->rho_plus_p_shear/a/M2
+        + (2. - bra)*(
+          +6.*cH*cK*pow(H,-3)*k2/a
+          + 9.*(
+            + cD*(cB*res_p - cB_p*res)
+            + ((2. + run)*cB*cD - 2.*c9*cK)*H*res*a
+          )*pow(H,-2)/res
+        )*ppw->delta_rho_r/M2
+        + 9.*(2. - bra)*(
+          + 2.*c3*cH*pow(H,-4)*pow(a,-2)*k2
+          - (
+            + 2.*cD*H*(cH*res_p - cH_p*res)/a/res
+            + (6.*c3*c9 - c10*cD - cB*cD + 3.*cD*cH + 2.*run*cD*cH)*pow(H,2)
+            - 3.*cD*cH*(p_tot + p_smg)
+          )*pow(H,-4)
+        )/M2*ppw->rho_plus_p_theta_r
         - (
-          + 2.*cD*H*(cH*res_p - cH_p*res)/a/res
-          + (6.*c3*c9 - c10*cD - cB*cD + 3.*cD*cH + 2.*run*cD*cH)*pow(H,2)
-          - 3.*cD*cH*(p_tot + p_smg)
-        )*pow(H,-4)
-      )/M2*ppw->rho_plus_p_theta_r
-      - (
-        + 12.*(c2 + 2.*cD + run*cD)*cH*pow(H,-3)*k2/a
-        + 18.*(
-          + 2.*cD*H*(c9*res_p/res - c9_p)
-          - 2.*cB*cD*rho_r*a/M2
-          + c9*(cD - 2.*c2)*pow(H,2)*a
-          + 3.*c9*cD*(p_tot + p_smg)*a
-        )*pow(H,-3)
-      )/M2*ppw->delta_rho
-      + (
-        + 4.*cH*(
-          + (2. - bra)*(cD + ten*cD - c1)
-          - 2.*(c2 + 2.*cD + run*cD)*(1. + beh)
-        )*pow(k2,2)*pow(a*H,-3)
-        - 6.*(
-          + (2. - bra)*(cD*(c10*res_p/res - c10_p)/a/H - 2.*c1*c9)
-          + 2.*(1. + beh)*(
-            + 2.*cD*(c9*res_p/res - c9_p)/a/H
-            + c9*(cD - 2.*c2)
-            - 2.*cB*cD*rho_r*pow(H,-2)/M2
-            + 3.*c9*cD*(p_tot + p_smg)*pow(H,-2)
-          )
-        )*k2/a/H
-      )*ppw->pvecmetric[ppw->index_mt_eta]
-      + (
+          + 12.*(c2 + 2.*cD + run*cD)*cH*pow(H,-3)*k2/a
+          + 18.*(
+            + 2.*cD*H*(c9*res_p/res - c9_p)
+            - 2.*cB*cD*rho_r*a/M2
+            + c9*(cD - 2.*c2)*pow(H,2)*a
+            + 3.*c9*cD*(p_tot + p_smg)*a
+          )*pow(H,-3)
+        )/M2*ppw->delta_rho
         + (
-          - (2. - bra)*(6.*c0*c3 - c7 + 2.*c8*cD)
-          + 4.*c15*(c2 + 2.*cD + run*cD)
-        )*2.*cH*pow(k2,2)*res*pow(a*H,-3)
-        + 6.*(
-          + cD*H*(
-            + 4.*c16*c9*res_p/res
-            - c12_p*(2. - bra)
-            - 4.*c16*c9_p
-          )/a
-          - 4.*c16*cB*cD*rho_r/M2
-          - 4.*c16*c2*c9*pow(H,2)
-          - c6*c9*(2. - bra)*pow(H,2)
-          + cD*((2. - bra)*c12 + 2.*c16*c9)*(pow(H,2) + 3.*(p_tot + p_smg))
-        )*res*a/H
-        + 2.*(
-          + 12.*cD*c15*(c9*res_p/res - c9_p)/H/a
-          - 12.*c15*cB*cD*rho_r/M2*pow(H,-2)
+          + 4.*cH*(
+            + (2. - bra)*(cD + ten*cD - c1)
+            - 2.*(c2 + 2.*cD + run*cD)*(1. + beh)
+          )*pow(k2,2)*pow(a*H,-3)
+          - 6.*(
+            + (2. - bra)*(cD*(c10*res_p/res - c10_p)/a/H - 2.*c1*c9)
+            + 2.*(1. + beh)*(
+              + 2.*cD*(c9*res_p/res - c9_p)/a/H
+              + c9*(cD - 2.*c2)
+              - 2.*cB*cD*rho_r*pow(H,-2)/M2
+              + 3.*c9*cD*(p_tot + p_smg)*pow(H,-2)
+            )
+          )*k2/a/H
+        )*ppw->pvecmetric[ppw->index_mt_eta]
+        + (
+          + (
+            - (2. - bra)*(6.*c0*c3 - c7 + 2.*c8*cD)
+            + 4.*c15*(c2 + 2.*cD + run*cD)
+          )*2.*cH*pow(k2,2)*res*pow(a*H,-3)
+          + 6.*(
+            + cD*H*(
+              + 4.*c16*c9*res_p/res
+              - c12_p*(2. - bra)
+              - 4.*c16*c9_p
+            )/a
+            - 4.*c16*cB*cD*rho_r/M2
+            - 4.*c16*c2*c9*pow(H,2)
+            - c6*c9*(2. - bra)*pow(H,2)
+            + cD*((2. - bra)*c12 + 2.*c16*c9)*(pow(H,2) + 3.*(p_tot + p_smg))
+          )*res*a/H
           + 2.*(
-            + 3.*c15*c9*(cD - 2.*c2)
-            + 2.*cH*c16*(c2 + 2.*cD + run*cD)
-          )
+            + 12.*cD*c15*(c9*res_p/res - c9_p)/H/a
+            - 12.*c15*cB*cD*rho_r/M2*pow(H,-2)
+            + 2.*(
+              + 3.*c15*c9*(cD - 2.*c2)
+              + 2.*cH*c16*(c2 + 2.*cD + run*cD)
+            )
+            + (2. - bra)*(
+              - 3.*cD*(2.*c0*cH_p - 2.*c0*cH*res_p/res + c13_p)/a/H
+              + 18.*c0*c3*c9 - 3.*c7*c9
+              - 3.*c0*c10*cD + c6*cH
+              + 6.*(3./2. + run)*c0*cD*cH
+            )
+            - 9.*cD*((2. - bra)*c0*cH - 2.*c15*c9)*(p_tot + p_smg)*pow(H,-2)
+          )*res*k2/a/H
+        )*(*x_qs_smg);
+
+      /* Denominator of the scalar field derivative in QS without h' */
+      x_prime_qs_smg_den =
+        - 2.*cH*res*(2. - bra)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)*pow(a*H,-4)*pow(k2,2)
+        + a*(
+          - 6.*cB*cD*(2. - bra)*(cH*res_p - cH_p*res)*H
           + (2. - bra)*(
-            - 3.*cD*(2.*c0*cH_p - 2.*c0*cH*res_p/res + c13_p)/a/H
-            + 18.*c0*c3*c9 - 3.*c7*c9
-            - 3.*c0*c10*cD + c6*cH
-            + 6.*(3./2. + run)*c0*cD*cH
-          )
-          - 9.*cD*((2. - bra)*c0*cH - 2.*c15*c9)*(p_tot + p_smg)*pow(H,-2)
-        )*res*k2/a/H
-      )*(*x_qs_smg);
+            + 12.*c5*c9 - 18.*c3*c9*cB
+            + 6.*c13*cD + 3.*c10*cB*cD - 2.*c4*cH
+            - 3.*(3. + 2.*run)*cB*cD*cH
+            + 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
+          )*res*a*pow(H,2)
+          - 8.*(c2 + 2.*cD + run*cD)*c14*cH*pow(H,2)*res*a
+        )*k2*pow(a*H,-4)
+        + 6.*(
+          - 4.*c14*cD*H*(c9*res_p - c9_p*res)
+          + 4.*c14*(cB*cD*rho_r/M2 + c2*c9*pow(H,2))*res*a
+          + (2. - bra)*(c4*c9 + c12*cD)*pow(H,2)*res*a
+          - 2.*c14*c9*cD*(pow(H,2) + 3.*(p_tot + p_smg))*res*a
+        )*pow(H,-2)/a;
 
-  /* Denominator of the scalar field derivative in QS without h' */
-  x_prime_qs_smg_den =
-    - 2.*cH*res*(2. - bra)*(2.*c5 - 3.*c3*cB + 2.*cD*cH)*pow(a*H,-4)*pow(k2,2)
-    + a*(
-      - 6.*cB*cD*(2. - bra)*(cH*res_p - cH_p*res)*H
-      + (2. - bra)*(
-        + 12.*c5*c9 - 18.*c3*c9*cB
-        + 6.*c13*cD + 3.*c10*cB*cD - 2.*c4*cH
-        - 3.*(3. + 2.*run)*cB*cD*cH
-        + 9.*cB*cD*cH*(p_tot + p_smg)*pow(H,-2)
-      )*res*a*pow(H,2)
-      - 8.*(c2 + 2.*cD + run*cD)*c14*cH*pow(H,2)*res*a
-    )*k2*pow(a*H,-4)
-    + 6.*(
-      - 4.*c14*cD*H*(c9*res_p - c9_p*res)
-      + 4.*c14*(cB*cD*rho_r/M2 + c2*c9*pow(H,2))*res*a
-      + (2. - bra)*(c4*c9 + c12*cD)*pow(H,2)*res*a
-      - 2.*c14*c9*cD*(pow(H,2) + 3.*(p_tot + p_smg))*res*a
-    )*pow(H,-2)/a;
+      *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
+    }
+    else {
+      // Copied from public hi_class v2.0 -- Only for Horndeski smg
+      g1 = cs2num*pow(k/(a*H),2) -4.*lambda8;
+
+      g2 = (2. - cB)*(g1 + (3.*cB + kin)*cB*rho_r*pow(H,-2)*pow(M2,-1) - cB*cs2num*pow(k/(a*H),2)/2.)/2. - 3./4.*(3.*cB + kin)*(rho_tot + p_tot)*pow(H,-2)*lambda2*pow(M2,-1);
+
+      g3 = - (2.*(2. - cB)*cB*rho_r - 3.*(rho_tot + p_tot)*lambda2)*(18. - 18.*(rho_tot + p_tot)*pow(H,-2)*pow(M2,-1) - 15.*cB - 2.*kin + 9.*(2. - cB)*(p_tot + p_smg)*pow(H,-2) 
+          - 2.*cB*pow(k/(a*H),2))*pow(H,-2)*pow(M2,-1) + 2.*(2. - cB)*cs2num*(5. - cB - 3.*(rho_tot + p_tot)*pow(M2,-1)*pow(H,-2) + 9.*(p_tot + p_smg)*pow(H,-2))*pow(k/(a*H),2) + 4.*(2.
+          - cB)*(pow(k/(a*H),2)*cs2num_p - 4.*lambda8_p)/(a*H);
+
+      *x_prime_qs_smg = 
+        + 3./2./g2*(pow(2.-cB,2)*cB*pow(H,-2)*ppw->delta_rho_r/M2
+        + (2.-cB)*(cs2num-lambda2)*pow(H,-3)*ppw->rho_plus_p_theta/2./a/M2
+        + 3./2.*(2.-cB)*pow(H,-2)*((2.-cB)*(-7.+2.*run)*cB/4.+cB*g3/g1/8.
+        - lambda2-9./4.*(2.-cB)*cB*pow(H,-2)*(p_tot+p_smg)-(1.-cB)*cB_p/a/H)*ppw->delta_p/M2
+        + ((2.-cB)*cB*rho_r*pow(H,-2)*pow(M2,-1)-g3/g1*lambda2/8.-(6.*rho_tot/M2*pow(H,-2)-2.
+        + cB+4.*run-2.*cB*run)*lambda2/4.-3./4.*(2./M2-6.+3.*cB)*pow(H,-2)*lambda2*p_tot
+        + 9./4.*(2.-cB)*pow(H,-2)*lambda2*p_smg+(2.-cB)*lambda2_p/a/H/2.)*pow(H,-2)*ppw->delta_rho/M2
+        + (3./2.*(2.-cB)*cs2num*(p_tot+p_smg)*pow(H,-2)- lambda2*(rho_tot+p_tot)/M2*pow(H,-2)
+        + (2.-cB)*cs2num_p/a/H/3.+ (2.-cB)*cs2num/2.- cs2num*g3/g1/12.
+        + 2./3.*(2.-cB)*cB*rho_r/M2*pow(H,-2))*pow(k/a/H,2)*ppw->pvecmetric[ppw->index_mt_eta]
+        + pow(2.-cB,2)*cB*pow(H,-3)*ppw->rho_plus_p_theta_r/a/M2/4.);
+
+      /* Numerator of the scalar field derivative in QS without h' */
+      // x_prime_qs_smg_num = (9*(-2 + cB)*cB_p*ppw->delta_p*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8))/(4.*a*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + (9*cB*cB_p*ppw->delta_p*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8))/(4.*a*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + (3*ppw->delta_rho_r*(2 - cB)*cB*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8))/(pow(H,4)*pow((k2*cs2num)/(a*pow(H,2))
+      //     - 4*a*lambda8,2)*M2) + (9*(-2 + cB)*cB*ppw->delta_p*(k2*cs2num - 
+      //     4*pow(a,2)*pow(H,2)*lambda8))/(4.*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + (3*ppw->delta_rho*lambda2*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8))/(2.*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + (3*ppw->delta_rho*lambda2_p*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8))/(2.*a*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) - (3*(2 - cB)*cB*ppw->delta_rho*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*rho_r)/((-2 + cB)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*pow(M2,2)) + (9*ppw->delta_rho*lambda2*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*(p_tot + rho_tot))/(2.*(-2 +cB)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*pow(M2,2)) - (9*ppw->delta_rho*lambda2*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*(p_tot + rho_tot))/(2.*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2*rho_tot) + (27*(-2 + cB)*cB*ppw->delta_p*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*(p_smg + p_tot + rho_smg + rho_tot))/(8.*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + (9*ppw->delta_rho*lambda2*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*(p_smg + p_tot + rho_smg + rho_tot))/(4.*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) - (9*(-2 + cB)*cB*ppw->delta_p*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*run)/(4.*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) 
+      //     - (3*ppw->delta_rho*lambda2*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*run)/(2.*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + ((2 - cB)*cB*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*rho_r*(2*k2*cB*M2 
+      //     + 2*pow(a,2)*(3*cB + cK)*pow(H,2)*M2 + 18*pow(a,2)*(p_tot + rho_tot) + 9*pow(a,2)*(-2 + cB)*M2*(p_smg + p_tot 
+      //     + rho_smg + rho_tot))*(*x_qs_smg))/(2.*a*(-2 + cB)*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*pow(M2,2)) 
+      //     - (3*lambda2*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*(p_tot + rho_tot)*(2*k2*cB*M2 + 2*pow(a,2)*(3*cB + cK)*pow(H,2)*M2 
+      //     + 18*pow(a,2)*(p_tot + rho_tot) + 9*pow(a,2)*(-2 + cB)*M2*(p_smg + p_tot + rho_smg + rho_tot))*(*x_qs_smg))
+      //     /(4.*a*(-2 + cB)*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*pow(M2,2)) - (k2*(2 - cB)*cs2num*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*(cB*pow(H,2)*M2 + 3*(p_tot + rho_tot 
+      //     - M2*(p_smg + p_tot + rho_smg + rho_tot)))*(*x_qs_smg))/(2.*a*(-2 + cB)*pow(H,5)*pow((k2*cs2num)
+      //     /(a*pow(H,2)) - 4*a*lambda8,2)*M2) + (k2*cs2num_p*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*ppw->pvecmetric[ppw->index_mt_eta])
+      //     /(pow(a,3)*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)) 
+      //     - (2*k2*(2 - cB)*cB*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*rho_r*ppw->pvecmetric[ppw->index_mt_eta])
+      //     /(pow(a,2)*(-2 + cB)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) 
+      //     + (3*k2*lambda2*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*(p_tot + rho_tot)*ppw->pvecmetric[ppw->index_mt_eta])
+      //     /(pow(a,2)*(-2 + cB)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) 
+      //     - (k2*cs2num*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*(3*p_smg + p_tot + 3*rho_smg 
+      //     + rho_tot)*ppw->pvecmetric[ppw->index_mt_eta])/(2.*pow(a,2)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)) - ((2 - cB)*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*(p_tot 
+      //     + 3*(p_smg + rho_smg) + rho_tot)*(-9*pow(a,2)*(-2 + cB)*cB*ppw->delta_p 
+      //     - 6*pow(a,2)*ppw->delta_rho*lambda2 - 4*k2*cs2num*M2*ppw->pvecmetric[ppw->index_mt_eta]))
+      //     /(4.*pow(a,2)*(-2 + cB)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) 
+      //     - ((2 - cB)*(k2*cs2num_p*H - a*(4*a*pow(H,3)*lambda8_p 
+      //     + k2*cs2num*(3*p_smg + p_tot + 3*rho_smg + rho_tot)))*(-9*pow(a,2)*(-2 + cB)*cB*ppw->delta_p 
+      //     - 6*pow(a,2)*ppw->delta_rho*lambda2 - 4*k2*cs2num*M2*ppw->pvecmetric[ppw->index_mt_eta]))
+      //     /(4.*pow(a,3)*(-2 + cB)*pow(H,6)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) 
+      //     - (3*(2 - cB)*cs2num*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*ppw->rho_plus_p_theta)
+      //     /(2.*a*(-2 + cB)*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) - (3*lambda2*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*ppw->rho_plus_p_theta)/(2.*a*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) 
+      //     - 4*a*lambda8,2)*M2) + (3*(2 - cB)*cB*(k2*cs2num 
+      //     - 4*pow(a,2)*pow(H,2)*lambda8)*ppw->rho_plus_p_theta_r)
+      //     /(4.*a*pow(H,5)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2);
+          
+
+      // /* Denominator of the scalar field derivative in QS without h' */
+      // x_prime_qs_smg_den = 
+      //     1 + (k2*(2 - cB)*cB*cs2num*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8))/(2.*pow(a,2)*(-2 + cB)*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)) 
+      //     - ((2 - cB)*cB*(3*cB + cK)*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*rho_r)/((-2 + cB)*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2) + (3*(3*cB +
+      //     cK)*lambda2*(k2*cs2num - 4*pow(a,2)*pow(H,2)*lambda8)*(p_tot + rho_tot))/(2.*(-2 + cB)*pow(H,4)*pow((k2*cs2num)/(a*pow(H,2)) - 4*a*lambda8,2)*M2);
+
+      // *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
+    }
+    // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
+    //   printf("get_x_x_prime_qs_smg 2: k=%e a=%.32e x_prime_qs_smg_num=%e x_prime_qs_smg_den=%e\n",k,a,x_prime_qs_smg_num,x_prime_qs_smg_den);
+    // }
   }
-
-  *x_prime_qs_smg = x_prime_qs_smg_num/x_prime_qs_smg_den;
-
-  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
-  //   printf("get_x_x_prime_qs_smg 2: k=%e a=%.32e x_prime_qs_smg_num=%e x_prime_qs_smg_den=%e\n",k,a,x_prime_qs_smg_num,x_prime_qs_smg_den);
-  // }
 
   return _SUCCESS_;
 }

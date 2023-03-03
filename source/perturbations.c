@@ -3025,7 +3025,8 @@ int perturbations_solve(
 
   /* conformal time */
   double tau,tau_lower,tau_upper,tau_mid;
-  double tau_gr_smg;
+  double tau_gr_smg, tau_qs_gr_smg;
+  double dtau_start_qs = 1.e1; // TODO_MC: after testing move this to inifile as precision parameter
 
   /* multipole */
   int l;
@@ -3222,17 +3223,24 @@ int perturbations_solve(
                                  &tau_gr_smg),
              pba->error_message,
              ppt->error_message);
+      /** --> Delay time to start QSA tests*/
+      tau_qs_gr_smg = tau_gr_smg + dtau_start_qs;
       /** --> Find QSA intervals only for tau > tau_gr_smg. Before that we'll impose fully dynamical evolution */
       class_call(perturbations_get_approximation_qs_smg(ppr,
                                                         pba,
                                                         ppt,
                                                         ppw,
                                                         k,
-                                                        &tau_gr_smg,
+                                                        &tau_qs_gr_smg,
                                                         ppt->tau_sampling[tau_actual_size-1]),
         ppt->error_message,
         ppt->error_message
       );
+      /** --> Regardless of the calculated approximation switches above, force first switch to FD*/
+      ppw->tau_scheme_qs_smg[0] = tau_gr_smg;
+
+      printf("perturbations_solve: tau_0=%e tau_1=%e tau_2=%e tau_3=%e tau_4=%e tau_5=%e tau_6=%e\n",
+          ppw->tau_scheme_qs_smg[0],ppw->tau_scheme_qs_smg[1],ppw->tau_scheme_qs_smg[2],ppw->tau_scheme_qs_smg[3],ppw->tau_scheme_qs_smg[4],ppw->tau_scheme_qs_smg[5],ppw->tau_scheme_qs_smg[6]);
     }
     else{
       class_call(perturbations_get_approximation_qs_smg(ppr,
@@ -3868,12 +3876,14 @@ int perturbations_find_approximation_switches(
         if (interval_approx[index_switch][index_ap] != interval_approx[index_switch-1][index_ap])
           num_switching_at_given_time++;
       }
-      class_test(num_switching_at_given_time != 1,
+      if (ppt->method_gr_smg == switch_off_gr_smg) {
+        class_test(num_switching_at_given_time != 1,
                  ppt->error_message,
                  "for k=%e, at tau=%g, you switch %d approximations at the same time, this cannot be handled. Usually happens in two cases: triggers for different approximations coincide, or one approx is reversible\n",
                  k,
                  interval_limit[index_switch],
                  num_switching_at_given_time);
+      }
 
       if (ppt->perturbations_verbose>2) {
 

@@ -23,7 +23,9 @@ int get_gravity_coefficients_smg(struct background * pba,
                                  double * c9, double * c10, double * c11, double * c12,
                                  double * c13, double * c14, double * c15, double * c16,
                                  double * res_p, double *  cD_p, double *  cB_p, double *  cH_p,
-                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p);
+                                 double * c9_p, double * c10_p, double * c12_p, double * c13_p,
+                                 double * cs2num, double * lambda2, double * lambda7, double * lambda8,
+                                 double * cs2num_p, double * lambda2_p, double * lambda8_p);
 
 int perturbations_tests_smg(struct precision * ppr,
                             struct background * pba,
