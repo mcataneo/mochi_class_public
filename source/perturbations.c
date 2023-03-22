@@ -4683,7 +4683,7 @@ int perturbations_vector_init(
           ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
           ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
 
-          if (ppw->approx[ppw->index_ap_tca] == (int)tca_off) {
+          if ((pa_old[ppw->index_ap_tca] == (int)tca_off) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
             ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
             ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
