@@ -20,3 +20,5 @@ RealSpaceInterface/cache/
 doc/manual/html
 doc/manual/latex
 *.gch
+python/dist/
+python/classy.egg-info/

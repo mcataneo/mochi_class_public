@@ -1,7 +1,7 @@
 README
 autosetup.py
 setup.py
-/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/python/../python/classy.pyx
+/home/ebellini/Codes/hi_class_pub_devel/python/../python/classy.pyx
 classy.egg-info/PKG-INFO
 classy.egg-info/SOURCES.txt
 classy.egg-info/dependency_links.txt
