@@ -595,6 +595,7 @@ int gravity_models_get_Gs_smg(
     pgf->G2 = X - V0*pow(pba->H0/pba->h,2.)*pow(phi,N); // V written as in arXiv:1406.2301 in CLASS units
     pgf->G2_X = 1.;
     pgf->G2_phi = -N*V0*pow(pba->H0/pba->h,2.)*pow(phi,N-1.);
+    pgf->G2_phiphi = -N*(N-1)*V0*pow(pba->H0/pba->h,2.)*pow(phi,N-2.);
   }
 
   else if (pba->gravity_model_smg == quintessence_tracker) {
