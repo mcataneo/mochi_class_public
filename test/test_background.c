@@ -36,7 +36,8 @@ int main(int argc, char **argv) {
 
   int index_tau;
   FILE * output_file;
-	output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass_v2.dat","w");
+  output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/output/designer_fR_small_fr_stable_params_full_grid.dat","w");
+	// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass_v2.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_hiclass.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_full_grid_hiclass.dat","w");
 
@@ -58,8 +59,8 @@ int main(int argc, char **argv) {
       // ba.background_table[index_tau*ba.bg_size+ba.index_bg_mpl_running_smg],
       // ba.background_table[index_tau*ba.bg_size+ba.index_bg_tensor_excess_smg]);
 
-		fprintf(output_file,"%.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e\n",
-		log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+		fprintf(output_file,"%.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e\n",
+		log(ba.background_table[index_tau*ba.bg_size + ba.index_bg_a]),
 		ba.background_table[index_tau*ba.bg_size + ba.index_bg_mpl_running_smg],
 		ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_smg],
 		ba.background_table[index_tau*ba.bg_size + ba.index_bg_kineticity_smg],
@@ -69,7 +70,8 @@ int main(int argc, char **argv) {
     ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_mpl_running_prime_smg],
 		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_prime_smg],
 		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_kineticity_prime_smg],
-		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_prime_smg]);
+		ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]*ba.background_table[index_tau*ba.bg_size+ba.index_bg_H]*ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_prime_smg],
+    ba.background_table[index_tau*ba.bg_size + ba.index_bg_cs2num_prime_smg]);
 
     // fprintf(output_file,"%.15e %.15e %.15e %.15e\n",
 		// log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),

@@ -640,6 +640,9 @@ struct perturbations_workspace
   double delta_rho;		    /**< total density perturbation (gives delta Too) */
   double rho_plus_p_theta;	/**< total (rho+p)*theta perturbation (gives delta Toi) */
   double rho_plus_p_shear;	/**< total (rho+p)*shear (gives delta Tij) */
+  double rho_plus_p_shear_prime; /**< total (rho+p)*shear' */
+  double rho_plus_p_shear_eos_factor; /**< total (rho+p)*shear*(3w+2) (used in smg QSA when switch_gr_on) */
+  double rho_shear_w_prime; /**< total rho*shear*w' (used in smg QSA when switch_gr_on) */
   double delta_p;		    /**< total pressure perturbation (gives Tii) */
   double delta_rho_r;		    /**< radiation density perturbation */
   double rho_plus_p_theta_r; /**< radiation (rho+p)*theta perturbation */

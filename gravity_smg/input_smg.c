@@ -144,6 +144,10 @@ int input_read_parameters_smg(
       ppt->method_gr_smg = switch_on_gr_smg;
     }
 
+    class_test((ppt->method_gr_smg == switch_on_gr_smg && ppt->method_qs_smg != automatic && ppt->method_qs_smg != fully_dynamic),
+              errmsg,
+              "For GR approximation at early times only methods 'automatic' and 'fully_dynamic' can be used.")
+
   }
 
   class_call(parser_read_string(pfc, "use_pert_var_deltaphi_smg", &string1, &flag1, errmsg),
@@ -185,13 +189,18 @@ int input_read_parameters_smg(
                 errmsg,
                 errmsg);
 
-    /* For stable parametrization --> force GR approximation at early times and check that minimum scale factor 
-    in input file is small enough to get accurate numerical derivatives of smg parameters around transition*/
+    /* For stable parametrization --> force GR/LCDM approximation at early times and check that minimum scale factor 
+    in input file is small enough to get accurate numerical derivatives of smg parameters around transition. Also,
+    check that transition happens deep in the MDE, such that MG/DE doesn't affect recombination or any early-time
+    physics.*/
     if(pba->gravity_model_smg == stable_params){      
       ppt->method_gr_smg = switch_on_gr_smg;
       class_test(pba->a_file_gr_smg > 1./(1 + 1.4*ppr->z_gr_smg),
             errmsg,
             "minimum scale factor for stable parametrization must be < %f", 1./(1 + 1.4*ppr->z_gr_smg));
+      class_test(ppr->z_gr_smg > 50.,
+            errmsg,
+            "Stable parametrization works only for late-time MG/DE. Transition redshift z_gr_smg must be deep in the matter-dominated era, e.g. set z_gr_smg = 49.");
     }
   }
   // end of loop over models

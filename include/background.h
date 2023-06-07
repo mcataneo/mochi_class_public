@@ -210,11 +210,12 @@ struct background
   double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
   int parameters_2_size_smg; /**< size of parameters_smg */
 
-  int ext_alphas_size_smg; /* MC stores total number of rows in input file */
-  int ext_num_alphas; /* MC how many alpha parameters*/
-  double * ext_alphas_lna_smg; /* MC array of ln(a) values in input file */
-  double * ext_alphas_smg; /* MC array of size ext_alphas_size_smg*num_ext_alphas_smg containing all alpha_X*/
-  double * ext_ddalphas_smg; /* MC array of size ext_alphas_size_smg*num_ext_alphas_smg containing all alpha_X second derivatives for interpolation*/
+  /* TODO_MC --> found external alphas parametrization to be numerically unstable. Moved to stable parametrization */
+  int ext_alphas_size_smg; /* stores total number of rows in input file */
+  int ext_num_alphas; /* how many alpha parameters*/
+  double * ext_alphas_lna_smg; /* array of ln(a) values in input file */
+  double * ext_alphas_smg; /* array of size ext_alphas_size_smg*num_ext_alphas_smg containing all alpha_X*/
+  double * ext_ddalphas_smg; /* array of size ext_alphas_size_smg*num_ext_alphas_smg containing all alpha_X second derivatives for interpolation*/
 
   int M_pl_tuning_smg; /**< whether we want secondary tuning for M_pl(today) */
   int tuning_index_2_smg;     /**< index in scf_parameters used for tuning (the Planck mass) */
@@ -306,7 +307,7 @@ struct background
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/
   int index_bg_beyond_horndeski_prime_smg;/**<derivative of beyond horndeski alpha_H*/
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
-
+  /* TODO_MC --> found external alphas parametrization to be unstable. Moved to stable parametrization */
   int index_bg_ext_kineticity_smg; /* MC scalar field kineticity alpha_k for external input file */
   int index_bg_ext_braiding_smg;/* MC scalar field braiding alpha_b for external input file */
   int index_bg_ext_mpl_running_smg;/* MC  scalar field relative Planck mass running alpha_m for external input file */
@@ -410,6 +411,8 @@ struct background
   int index_bg_H_prime_prime; /**< second derivative of the hubble parameter (necessary for BS perturbations equation for h'') */
   int index_bg_p_tot_wo_prime_smg; /**< derivative of the total pressure minus scalar field */
   int index_bg_p_prime_smg; /**< derivative of the pressure of the scalar field */
+  int index_bg_p_tot_wo_prime_prime_smg; /**< second derivative of the total pressure minus scalar field (necessary for QSA in stable parametrization) */
+  int index_bg_p_prime_prime_smg; /**< second derivative of the pressure of the scalar field (necessary for QSA in stable parametrization) */
   int index_bg_w_smg; /**< equation of state of the scalar field */
 
   int index_bg_G_eff_smg; /**< G effective in the infinite k limit */
@@ -453,18 +456,17 @@ struct background
 
   //@{
 
-  /* TODO_GR_SMG: I am keeping this different from z_gr_smg (this should just be the minimum a of the input file) */
-  double a_file_gr_smg; /* MC minimum scale factor in input file */
-  int stable_params_size_smg; /* MC stores total number of rows in input file */
-  int num_stable_params; /* MC how many input functions*/
-  int num_stable_params_derived; /* MC how many derived functions*/
-  int num_stable_params_aux; /* MC how many functions in auxiliary vector*/
-  double * stable_params_lna_smg; /* MC array of ln(a) values in input file */
-  double * stable_params_smg; /* MC array of size stable_params_size_smg*num_stable_params containing the input Delta_Mpl, D_kin, cs2 and the derived alpha_M*/
-  double * ddstable_params_smg; /* MC array of size stable_params_size_smg*num_stable_params containing all input functions, derivatives and derived quantities*/
-  double * stable_params_derived_smg; /* MC array of size stable_params_size_smg*2 containing the computed alpha_B and alpha_K*/
-  double * ddstable_params_derived_smg; /* MC array of size stable_params_size_smg*2 containing second derivatives of computed alpha_B and alpha_K*/
-  double * stable_params_aux_smg; // MC temporary vector of size stable_params_size_smg*3 to store Delta_Mpl, dMpl and ddMpl used in array_derive_spline_table_line_to_line
+  double a_file_gr_smg; /* minimum scale factor in input file */
+  int stable_params_size_smg; /* stores total number of rows in input file */
+  int num_stable_params; /* how many input functions*/
+  int num_stable_params_derived; /* how many derived functions*/
+  int num_stable_params_aux; /* how many functions in auxiliary vector*/
+  double * stable_params_lna_smg; /* array of ln(a) values in input file */
+  double * stable_params_smg; /* array of size stable_params_size_smg*num_stable_params containing the input Delta_Mpl, D_kin, cs2 and the derived alpha_M*/
+  double * ddstable_params_smg; /* array of size stable_params_size_smg*num_stable_params containing all input functions, derivatives and derived quantities*/
+  double * stable_params_derived_smg; /* array of size stable_params_size_smg*2 containing the computed alpha_B and alpha_K*/
+  double * ddstable_params_derived_smg; /* array of size stable_params_size_smg*2 containing second derivatives of computed alpha_B and alpha_K*/
+  double * stable_params_aux_smg; // temporary vector of size stable_params_size_smg*3 to store Delta_Mpl, dMpl and ddMpl used in array_derive_spline_table_line_to_line
 
   //@}
 
@@ -472,15 +474,15 @@ struct background
 
   //@{
 
-  int index_stable_Delta_Mpl_smg; /* MC scalar field Planck mass Delta(M_pl^2) = M_pl^2 - 1 for stable parameterization */
-  int index_stable_Dkin_smg;/* MC scalar field D_kin = alpha_K + 3/2*alpha_B^2 for stable parameterization */
-  int index_stable_cs2_smg;/* MC scalar field speed of sound c_s^2 for stable parameterization */
-  int index_stable_Mpl_running_smg; /* MC scalar field Planck mass running for stable parameterization (derived from M_pl^2) */
-  int index_aux_Delta_Mpl_smg; /* MC Planck mass Delta(M_pl^2) index for auxiliary vector*/
-  int index_aux_dMpl_smg; /* MC index used in auxiliary vector for dMpl/dlna */
-  int index_aux_ddMpl_smg; /* MC index used in auxiliary vector for d2Mpl/dlna2 */
-  int index_derived_braiding_smg; /* MC index for derived scalar field braiding alpha_B (derived from ODE integration) */
-  int index_derived_kineticity_smg; /* MC index for derived scalar field kineticity alpha_K (derived from ODE integration) */
+  int index_stable_Delta_Mpl_smg; /* scalar field Planck mass Delta(M_pl^2) = M_pl^2 - 1 for stable parameterization */
+  int index_stable_Dkin_smg;/* scalar field D_kin = alpha_K + 3/2*alpha_B^2 for stable parameterization */
+  int index_stable_cs2_smg;/* scalar field speed of sound c_s^2 for stable parameterization */
+  int index_stable_Mpl_running_smg; /* scalar field Planck mass running for stable parameterization (derived from M_pl^2) */
+  int index_aux_Delta_Mpl_smg; /* Planck mass Delta(M_pl^2) index for auxiliary vector*/
+  int index_aux_dMpl_smg; /* index used in auxiliary vector for dMpl/dlna */
+  int index_aux_ddMpl_smg; /* index used in auxiliary vector for d2Mpl/dlna2 */
+  int index_derived_braiding_smg; /* index for derived scalar field braiding alpha_B (derived from ODE integration) */
+  int index_derived_kineticity_smg; /* index for derived scalar field kineticity alpha_K (derived from ODE integration) */
 
   //@}
 
@@ -496,12 +498,12 @@ struct background
 
   //@}
 
-  /** @name - background backward integration times */
+  /** @name - background backward integration table */
 
   //@{
 
-  int bt_bw_size;               /** MC < number of lines (i.e. time-steps) used for backward integration */
-  double * loga_bw_table;       /** MC < vector loga_bw_table[index_loga] with values of log(a). Note that loga_bw_table[0] correspond to a=1 and loga_bw_table[bt_bw_size-1] to the smallest scale factor provided by the user*/
+  int bt_bw_size;               /**< number of lines (i.e. time-steps) used for backward integration */
+  double * loga_bw_table;       /**< vector loga_bw_table[index_loga] with values of log(a). Note that loga_bw_table[0] correspond to a=1 and loga_bw_table[bt_bw_size-1] to the smallest scale factor provided by the user*/
 
   //@}
 
@@ -540,10 +542,9 @@ struct background
   int index_bi_phi_prime_smg;   /**< scalar field derivative wrt conformal time*/
   int index_bi_delta_M_pl_smg; //*> integrate the Planck mass (only in certain parameterizations **/
   int index_bi_rho_smg; //*> integrate the smg energy density (only in certain parameterizations) **/
-  /* MC backward integrated quantities (bibw). ICs set at a=1, not at a=a_ini*/
-  int index_bibw_B_tilde_smg; // MC auxiliary \tilde{B} variable for alpha_B
-  int index_bibw_dB_tilde_smg; // MC \tilde{B} first derivative wrt lna
-  /******************************************************************************/
+  /* backward integrated quantities (bibw). ICs set at a=1, not at a=a_ini */
+  int index_bibw_B_tilde_smg; // auxiliary \tilde{B} variable for alpha_B
+  int index_bibw_dB_tilde_smg; // \tilde{B} first derivative wrt lna
 
   int index_bi_time;    /**< {C} proper (cosmological) time in Mpc */
   int index_bi_rs;      /**< {C} sound horizon */

@@ -3026,7 +3026,6 @@ int perturbations_solve(
   /* conformal time */
   double tau,tau_lower,tau_upper,tau_mid;
   double tau_gr_smg, tau_qs_gr_smg;
-  double dtau_start_qs = 1.e1; // TODO_MC: after testing move this to inifile as precision parameter
 
   /* multipole */
   int l;
@@ -3224,7 +3223,7 @@ int perturbations_solve(
              pba->error_message,
              ppt->error_message);
       /** --> Delay time to start QSA tests*/
-      tau_qs_gr_smg = tau_gr_smg + dtau_start_qs;
+      tau_qs_gr_smg = tau_gr_smg + ppr->dtau_start_qs;
       /** --> Find QSA intervals only for tau > tau_gr_smg. Before that we'll impose fully dynamical evolution */
       class_call(perturbations_get_approximation_qs_smg(ppr,
                                                         pba,
@@ -3239,8 +3238,8 @@ int perturbations_solve(
       /** --> Regardless of the calculated approximation switches above, force first switch to FD*/
       ppw->tau_scheme_qs_smg[0] = tau_gr_smg;
 
-      printf("perturbations_solve: tau_0=%e tau_1=%e tau_2=%e tau_3=%e tau_4=%e tau_5=%e tau_6=%e\n",
-          ppw->tau_scheme_qs_smg[0],ppw->tau_scheme_qs_smg[1],ppw->tau_scheme_qs_smg[2],ppw->tau_scheme_qs_smg[3],ppw->tau_scheme_qs_smg[4],ppw->tau_scheme_qs_smg[5],ppw->tau_scheme_qs_smg[6]);
+      // printf("perturbations_solve: tau_0=%e tau_1=%e tau_2=%e tau_3=%e tau_4=%e tau_5=%e tau_6=%e\n",
+      //     ppw->tau_scheme_qs_smg[0],ppw->tau_scheme_qs_smg[1],ppw->tau_scheme_qs_smg[2],ppw->tau_scheme_qs_smg[3],ppw->tau_scheme_qs_smg[4],ppw->tau_scheme_qs_smg[5],ppw->tau_scheme_qs_smg[6]);
     }
     else{
       class_call(perturbations_get_approximation_qs_smg(ppr,
@@ -4649,32 +4648,27 @@ int perturbations_vector_init(
           ppt->error_message,
           ppt->error_message
         );
-        if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) && ppw->approx[ppw->index_ap_qs_smg] == 0) {
-        // if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
-          /** - Zero ICs at z_gr_smg. ICs are set to zero here because we enforce x_smg = x_prime_smg = 0 for z>z_gr_smg */
-          // ppv->y[ppv->index_pt_x_smg] = ppw->pvecmetric[ppw->index_mt_x_smg];
-          // ppv->y[ppv->index_pt_x_prime_smg] = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
-          /** -  QS ICs at z_gr_smg */
-          class_call(
-            get_x_x_prime_qs_smg(
-              ppr, pba, ppt, ppw, k,
-              &ppv->y[ppv->index_pt_x_smg],
-              &ppv->y[ppv->index_pt_x_prime_smg]
-            ),
-          ppt->error_message,
-          ppt->error_message);
+        /* When QSA off */
+        if (ppw->approx[ppw->index_ap_qs_smg] == 0) {
+          /* Switching off GR approximation */
+          if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+            /** -  QS ICs at z_gr_smg */
+            class_call(
+              get_x_x_prime_qs_smg(
+                ppr, pba, ppt, ppw, k,
+                &ppv->y[ppv->index_pt_x_smg],
+                &ppv->y[ppv->index_pt_x_prime_smg]
+              ),
+            ppt->error_message,
+            ppt->error_message);
 
-          // double a = ppw->pvecback[pba->index_bg_a];
-          // printf("perturbations_vector_init has_smg: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
-          // printf("perturbations_vector_init has_smg: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
-          // printf("perturbations_vector_init has_smg: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
-
+          }
+          else {
+            ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];
+            ppv->y[ppv->index_pt_x_prime_smg] = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
+          }
         }
-        else if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off && ppw->approx[ppw->index_ap_qs_smg] == 0) {
-          ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];
-          ppv->y[ppv->index_pt_x_prime_smg] = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
-        }
-
+          
         /* photons */
 
         if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) { /* if radiation streaming approximation is off */
@@ -4683,10 +4677,18 @@ int perturbations_vector_init(
           ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
           ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
 
+          /* Differently from all other approximation schemes, we start with TCA on. Therefore the integration variables must first be allocated and initialised. 
+          Enter here only if TCA has been switched off for at least two time steps. If TCA has just been switched off, ICs will be set below */
           if ((pa_old[ppw->index_ap_tca] == (int)tca_off) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
             ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
             ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
+
+            for (l = 4; l <= ppw->pv->l_max_g; l++) {
+
+              ppv->y[ppv->index_pt_delta_g+l] =
+                ppw->pv->y[ppw->pv->index_pt_delta_g+l];
+            }
 
             /* polarization */
             ppv->y[ppv->index_pt_pol0_g] = ppw->pv->y[ppw->pv->index_pt_pol0_g]; 
@@ -4694,7 +4696,14 @@ int perturbations_vector_init(
             ppv->y[ppv->index_pt_pol2_g] = ppw->pv->y[ppw->pv->index_pt_pol2_g]; 
             ppv->y[ppv->index_pt_pol3_g] = ppw->pv->y[ppw->pv->index_pt_pol3_g]; 
 
+            for (l = 4; l <= ppw->pv->l_max_pol_g; l++) {
+
+              ppv->y[ppv->index_pt_pol0_g+l] =
+                ppw->pv->y[ppw->pv->index_pt_pol0_g+l];
+            }
+
           }
+        
         }
 
         /* perturbed recombination: the indices are defined once tca is off. */
@@ -4732,16 +4741,26 @@ int perturbations_vector_init(
           }
         }
 
+        /* non-cold dark matter, e.g. massive neutrinos, sterile neutrinos, warm dark matter etc. */
+        if (pba->has_ncdm == _TRUE_) {
+            index_pt = 0;
+            for(n_ncdm = 0; n_ncdm < ppv->N_ncdm; n_ncdm++){
+              for(index_q=0; index_q < ppv->q_size_ncdm[n_ncdm]; index_q++){
+                for(l=0; l<=ppv->l_max_ncdm[n_ncdm]; l++){
+                  /* This is correct even when ncdmfa == off, since ppv->l_max_ncdm and
+                    ppv->q_size_ncdm is updated.*/
+                  ppv->y[ppv->index_pt_psi0_ncdm1+index_pt] =
+                    ppw->pv->y[ppw->pv->index_pt_psi0_ncdm1+index_pt];
+                  index_pt++;
+                }
+              }
+            }
+          }
       }
 
       if (ppt->gauge == synchronous)
         ppv->y[ppv->index_pt_eta] =
           ppw->pv->y[ppw->pv->index_pt_eta];
-
-      // if (k>0.69999 && k<0.700001){
-      //   double a = ppw->pvecback[pba->index_bg_a];
-      //   printf("perturbations_vector_init 1: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppv->y[ppv->index_pt_x_smg],ppv->y[ppv->index_pt_x_prime_smg]);   
-      // }
 
       if ((ppt->gauge == synchronous) && (ppt->get_h_from_trace == _TRUE_)) { // not only _smg
         ppv->y[ppv->index_pt_h_prime_from_trace] =
@@ -5378,12 +5397,6 @@ int perturbations_vector_init(
           }
         }
       }
-
-      // if (k>0.69999 && k<0.700001){
-      //   double a = ppw->pvecback[pba->index_bg_a];
-      //   printf("perturbations_vector_init 2: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppv->y[ppv->index_pt_x_smg],ppv->y[ppv->index_pt_x_prime_smg]);   
-      // }
-
     }
 
     /** - --> (b) for the vector mode */
@@ -6894,42 +6907,10 @@ int perturbations_einstein(
 
   int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
-  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
-  //       printf("perturbations_einstein 1: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
-  //       printf("perturbations_einstein 1: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
-  //       printf("perturbations_einstein 1: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
-  // }
-
-  // TODO_MC: compute x_smg and x_prime_smg here when RSA is on, so that correct values for stress-energy tensor perturabtions are used
-  // if (qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_ && ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
-  //     /* Get scalar field perturbations from QS expressions. This function
-  //     hides a bit of complexity. If (ppt->get_h_from_trace == _TRUE_),
-  //     both x and x' depend on h' (simpler non-divergent expressions), otherwise
-  //     they have been diagonalised (longer divergent expressions). */
-  //     class_call(
-  //       get_x_x_prime_qs_smg(
-  //         ppr, pba, ppt, ppw, k,
-  //         &ppw->pvecmetric[ppw->index_mt_x_smg],
-  //         &ppw->pvecmetric[ppw->index_mt_x_prime_smg]
-  //       ),
-  //       ppt->error_message,
-  //       ppt->error_message);
-
-  //       // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
-  //       //   printf("perturbations_einstein 2: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg]);   
-  //       // }
-  //   }
-
   /** - sum up perturbations from all species */
   class_call(perturbations_total_stress_energy(ppr,pba,pth,ppt,index_md,k,y,ppw),
              ppt->error_message,
              ppt->error_message);
-
-  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
-  //       printf("perturbations_einstein 3: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
-  //       printf("perturbations_einstein 3: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
-  //       printf("perturbations_einstein 3: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
-  // }
 
   /** - for scalar modes: */
 
@@ -6983,8 +6964,6 @@ int perturbations_einstein(
       if(pba->has_smg == _TRUE_) {
 
         perturbations_einstein_scalar_smg(ppr, pba, pth, ppt, ppw, k, tau, y);
-        // printf("tau=%e a=%.15e x_smg=%e dx_smg=%e ddx_smg=%e\n",tau,a,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]);
-        // printf("%.15e %15e\n",a,ppw->pvecback[pba->index_bg_M2_smg]*ppw->pvecback[pba->index_bg_mpl_running_smg]*ppw->pvecback[pba->index_bg_H]*ppw->pvecmetric[ppw->index_mt_x_smg]);
 
       }
       else { // Standard equations
@@ -7167,7 +7146,7 @@ int perturbations_total_stress_energy(
 
   /** - define local variables */
 
-  double a,a2,a_prime_over_a,k2;
+  double a,a2,a_prime_over_a,k2,tau;
   double rho_m=0.;
   double delta_rho_m=0.;
   double rho_plus_p_m=0.;
@@ -7175,20 +7154,27 @@ int perturbations_total_stress_energy(
   double delta_g=0.;
   double theta_g=0.;
   double shear_g=0.;
+  double shear_g_prime=0.;
+  double P0;
+  double tau_c_inv=0.;
   double delta_ur=0.;
   double theta_ur=0.;
   double shear_ur=0.;
+  double shear_ur_prime=0.;
   double delta_idr=0.;
   double theta_idr=0.;
   double shear_idr=0.;
   double rho_delta_ncdm=0.;
   double rho_plus_p_theta_ncdm=0.;
   double rho_plus_p_shear_ncdm=0.;
+  double rho_plus_p_shear_prime_ncdm=0.;
+  double shear_ncdm_prime=0.;
+  double psi2_prime_ncdm=0.;
   double delta_p_ncdm=0.;
   double factor;
   double rho_plus_p_ncdm;
   int index_q,n_ncdm,idx;
-  double epsilon,q,q2,cg2_ncdm,w_ncdm,rho_ncdm_bg,p_ncdm_bg,pseudo_p_ncdm;
+  double epsilon,q,q2,dlnf0_dlnq,qk_div_epsilon,cg2_ncdm,w_ncdm,rho_ncdm_bg,p_ncdm_bg,pseudo_p_ncdm,cvis2_ncdm;
   double w_fld,dw_over_da_fld,integral_fld;
   double gwncdm;
   double rho_relativistic;
@@ -7205,12 +7191,24 @@ int perturbations_total_stress_energy(
   double Gamma_fld, S, S_prime, theta_t, theta_t_prime, rho_plus_p_theta_fld_prime;
   double delta_p_b_over_rho_b;
 
+  /** For QSA when smg and stable_params are on*/
+  int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
+  ppw->rho_shear_w_prime = 0.;
+  double rho_Delta; // gauge-invariant density fluctuations
+  double mu_smg, gamma_smg;
+
   /** - wavenumber and scale factor related quantities */
 
   a = ppw->pvecback[pba->index_bg_a];
   a2 = a * a;
   a_prime_over_a = ppw->pvecback[pba->index_bg_H]*a;
   k2 = k*k;
+
+  class_call(background_tau_of_z(pba,
+                                 1./a-1.,
+                                 &tau),
+             pba->error_message,
+             ppt->error_message);
 
   /** - for scalar modes */
 
@@ -7234,10 +7232,16 @@ int perturbations_total_stress_energy(
       else {
 
         /** - ----> (a.1.2.) radiation streaming approximation */
-
-        delta_g = 0.; /* actual free streaming approximation imposed after evaluation of einstein equations */
-        theta_g = 0.; /* actual free streaming approximation imposed after evaluation of einstein equations */
+        if(pba->has_smg == _TRUE_ && pba->gravity_model_smg == stable_params && qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_){
+          /* MGCAMB implementation taken from old CAMB, doesn't depend on metric perturbations */
+          delta_g = 2/k2*a2*(ppw->pvecback[pba->index_bg_rho_cdm]*y[ppw->pv->index_pt_delta_cdm] + ppw->pvecback[pba->index_bg_rho_b]*y[ppw->pv->index_pt_delta_b]); 
+          theta_g = k2/2*delta_g/(a*sqrt(ppw->pvecback[pba->index_bg_rho_cdm] + ppw->pvecback[pba->index_bg_rho_b])); 
+        } else {
+          delta_g = 0.; /* actual free streaming approximation imposed after evaluation of einstein equations */
+          theta_g = 0.; /* actual free streaming approximation imposed after evaluation of einstein equations */
+        }
         shear_g = 0.; /* shear always neglected in radiation streaming approximation */
+
       }
     }
     else {
@@ -7278,8 +7282,14 @@ int perturbations_total_stress_energy(
 
       else {
 
-        delta_ur = 0.; /* actual free streaming approximation imposed after evaluation of 1st einstein equation */
-        theta_ur = 0.; /* actual free streaming approximation imposed after evaluation of 1st einstein equation */
+        if(pba->has_smg == _TRUE_ && pba->gravity_model_smg == stable_params && qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_){
+          /* MGCAMB implementation taken from old CAMB, doesn't depend on metric perturbations */
+          delta_ur = delta_g;
+          theta_ur = theta_g;
+        } else {
+          delta_ur = 0.; /* actual free streaming approximation imposed after evaluation of 1st einstein equation */
+          theta_ur = 0.; /* actual free streaming approximation imposed after evaluation of 1st einstein equation */
+        }
         shear_ur = 0.; /* shear always neglected in free streaming approximation */
 
       }
@@ -7315,6 +7325,7 @@ int perturbations_total_stress_energy(
         }
       }
       else{
+        // TODO_MC: change to same RSA used for photons and massless neutrinos?
         delta_idr = 0.;
         theta_idr = 0.;
         shear_idr = 0.;
@@ -7329,6 +7340,7 @@ int perturbations_total_stress_energy(
     ppw->rho_plus_p_theta = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*theta_g
       + ppw->pvecback[pba->index_bg_rho_b]*y[ppw->pv->index_pt_theta_b]; // contribution to total perturbed stress-energy
     ppw->rho_plus_p_shear = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g; // contribution to total perturbed stress-energy
+    ppw->rho_plus_p_shear_eos_factor = 4.*ppw->pvecback[pba->index_bg_rho_g]*shear_g; // constribution to (rho+p)*sigma*(3w+2) used in MGCAMB eta'
     ppw->delta_p = 1./3.*ppw->pvecback[pba->index_bg_rho_g]*delta_g
       + ppw->pvecback[pba->index_bg_rho_b]*delta_p_b_over_rho_b; // contribution to total perturbed stress-energy
     ppw->rho_plus_p_tot = 4./3. * ppw->pvecback[pba->index_bg_rho_g] + ppw->pvecback[pba->index_bg_rho_b];
@@ -7404,6 +7416,7 @@ int perturbations_total_stress_energy(
          f = rho_dr*a^4/rho_crit_today. In CLASS density units
          rho_crit_today = H0^2.
       */
+     // TODO_MC: add contributions to smg QSA quantities
       rho_dr_over_f = pow(pba->H0/a2,2);
       ppw->delta_rho += rho_dr_over_f*y[ppw->pv->index_pt_F0_dr];
       ppw->rho_plus_p_theta += 4./3.*3./4*k*rho_dr_over_f*y[ppw->pv->index_pt_F0_dr+1];
@@ -7419,6 +7432,7 @@ int perturbations_total_stress_energy(
       ppw->delta_rho = ppw->delta_rho + ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
       ppw->rho_plus_p_theta = ppw->rho_plus_p_theta + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*theta_ur;
       ppw->rho_plus_p_shear = ppw->rho_plus_p_shear + 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*shear_ur;
+      ppw->rho_plus_p_shear_eos_factor += 4.*ppw->pvecback[pba->index_bg_rho_ur]*shear_ur; // constribution to (rho+p)*sigma*(3w+2) used in MGCAMB eta'
       ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*delta_ur;
 
       ppw->rho_plus_p_tot += 4./3. * ppw->pvecback[pba->index_bg_rho_ur];
@@ -7427,6 +7441,7 @@ int perturbations_total_stress_energy(
     }
 
     /* interacting dark radiation */
+    // TODO_MC: add contributions to smg QSA quantities
     if (pba->has_idr == _TRUE_) {
       ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_idr]*delta_idr;
       ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*theta_idr;
@@ -7467,6 +7482,8 @@ int perturbations_total_stress_energy(
           ppw->delta_rho += rho_ncdm_bg*y[idx];
           ppw->rho_plus_p_theta += rho_plus_p_ncdm*y[idx+1];
           ppw->rho_plus_p_shear += rho_plus_p_ncdm*y[idx+2];
+          ppw->rho_plus_p_shear_eos_factor += rho_plus_p_ncdm*y[idx+2]*(3.*w_ncdm + 2.); // constribution to (rho+p)*sigma*(3w+2) used in MGCAMB eta'
+          ppw->rho_shear_w_prime += rho_plus_p_ncdm*y[idx+2]*3.*a_prime_over_a*(w_ncdm - cg2_ncdm); // ncdm contributions to rho*shear*w' used in MGCAMB eta'
           ppw->delta_p += cg2_ncdm*rho_ncdm_bg*y[idx];
 
           ppw->rho_plus_p_tot += rho_plus_p_ncdm;
@@ -7477,6 +7494,13 @@ int perturbations_total_stress_energy(
       else{
         // We must integrate to find perturbations:
         for(n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++){
+          rho_ncdm_bg = ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm];
+          p_ncdm_bg = ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm];
+          pseudo_p_ncdm = ppw->pvecback[pba->index_bg_pseudo_p_ncdm1+n_ncdm];
+
+          w_ncdm = p_ncdm_bg/rho_ncdm_bg;
+          cg2_ncdm = w_ncdm*(1.0-1.0/(3.0+3.0*w_ncdm)*(3.0*w_ncdm-2.0+pseudo_p_ncdm/p_ncdm_bg));
+          
           rho_delta_ncdm = 0.0;
           rho_plus_p_theta_ncdm = 0.0;
           rho_plus_p_shear_ncdm = 0.0;
@@ -7514,6 +7538,8 @@ int perturbations_total_stress_energy(
           ppw->delta_rho += rho_delta_ncdm;
           ppw->rho_plus_p_theta += rho_plus_p_theta_ncdm;
           ppw->rho_plus_p_shear += rho_plus_p_shear_ncdm;
+          ppw->rho_plus_p_shear_eos_factor += rho_plus_p_shear_ncdm*(3.*w_ncdm + 2.); // constribution to (rho+p)*sigma*(3w+2) used in MGCAMB eta'
+          ppw->rho_shear_w_prime += rho_plus_p_shear_ncdm*3.*a_prime_over_a*(w_ncdm - cg2_ncdm); // ncdm contributions to rho*shear*w' used in MGCAMB eta'
           ppw->delta_p += delta_p_ncdm;
 
           ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm]+ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm];
@@ -7688,11 +7714,141 @@ int perturbations_total_stress_energy(
 
     /* could include Lambda contribution to rho_tot (not done to match CMBFAST/CAMB definition) */
 
-  // if ((k>0.69999 && k<0.700001) && (a>0.009 && a<0.01000001)){
-  //     printf("perturbations_total_stress_energy: k=%e a=%.32e eta=%e alpha=%e delta_rho=%e delta_p=%e\n",k,a,ppw->pvecmetric[ppw->index_mt_eta],ppw->pvecmetric[ppw->index_mt_alpha],ppw->delta_rho,ppw->delta_p);
-  //     printf("perturbations_total_stress_energy: k=%e a=%.32e rho_plus_p_shear=%e delta_rho_r=%e\n",k,a,ppw->rho_plus_p_shear,ppw->delta_rho_r);
-  //     printf("perturbations_total_stress_energy: k=%e a=%.32e rho_plus_p_theta_r=%e\n",k,a,ppw->rho_plus_p_theta_r);
-  // }
+    /* Compute time dervative of shear (shear') for use in MGCAMB QSA with stable parametrization */
+    if(pba->has_smg == _TRUE_ && pba->gravity_model_smg == stable_params && qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_){
+      
+      class_call(
+        get_qsa_mu_gamma_smg(
+                pba,
+                ppt,
+                ppw,
+                k,
+                &mu_smg, 
+                &gamma_smg
+                ), 
+        pba->error_message, ppt->error_message);
+
+      /* get metric_shear (alpha) -- adapted to CLASS convention 3*rho_class = 8*pi*G*rho_physical*/
+      rho_Delta = (ppw->delta_rho+3*a_prime_over_a/k2*ppw->rho_plus_p_theta);  
+      alpha = (y[ppw->pv->index_pt_eta] + 3.*mu_smg*a2/(2.*k2)*(gamma_smg*rho_Delta + 3.*(gamma_smg - 1.)*ppw->rho_plus_p_shear))/a_prime_over_a; // Eq. 22 in 1901.05956
+
+      /* get total (rho+p)*shear' used for MGCAMB-like QSA */
+      /* photon contribution -- only when TCA and RSA both off. When TCA->on MG/DE is deactivated, i.e. our cosmology is always GR/LCDM and don't need shear' */
+      if (ppw->approx[ppw->index_ap_tca] == (int)tca_off) {
+
+        if(ppw->approx[ppw->index_ap_rsa] == (int)rsa_off){
+
+          P0 = (y[ppw->pv->index_pt_pol0_g] + y[ppw->pv->index_pt_pol2_g] + 2.*shear_g)/8.;
+          tau_c_inv = ppw->pvecthermo[pth->index_th_dkappa];
+          shear_g_prime = 0.5*(8./15.*(theta_g + k2*alpha) - 3./5.*k*y[ppw->pv->index_pt_l3_g] - tau_c_inv*(2.*shear_g - 4./5.*P0)); // Eq. 63 in Ma & Bertschinger
+
+        } 
+        else {
+
+          shear_g_prime = 0.;
+
+        }
+        
+      } 
+
+      ppw->rho_plus_p_shear_prime = 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g_prime;
+
+      /* ultra-relativistic neutrinos/relic contributions */ 
+      if (pba->has_ur == _TRUE_) {
+
+        if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) {
+
+          if(ppw->approx[ppw->index_ap_ufa] == (int)ufa_off) {
+
+            shear_ur_prime = 0.5*(8./15.*(theta_ur + k2*alpha) - 3./5.*k*y[ppw->pv->index_pt_shear_ur + 1] // Eq. 49 in Ma & Bertschinger
+                              - (1 - ppt->three_cvis2_ur)*(8./15.*(theta_ur + k2*alpha))); // non-standard term, non-zero if cvis2_ur not 1/3
+
+          }
+          else {
+
+            /* a la Ma & Bertschinger */
+            shear_ur_prime = -3./tau * shear_ur + 2./3.*(theta_ur + k2*alpha);
+
+          }
+
+        } 
+        else {
+
+          shear_ur_prime = 0.;
+
+        }
+        
+      }
+
+      ppw->rho_plus_p_shear_prime += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*shear_ur_prime;
+
+      /* non-cold dark matter contributions */ 
+      if (pba->has_ncdm == _TRUE_) {
+        idx = ppw->pv->index_pt_psi0_ncdm1;
+        if(ppw->approx[ppw->index_ap_ncdmfa] == (int)ncdmfa_on){
+    
+          for(n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++){
+            rho_ncdm_bg = ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm];
+            p_ncdm_bg = ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm];
+            pseudo_p_ncdm = ppw->pvecback[pba->index_bg_pseudo_p_ncdm1+n_ncdm];
+
+            rho_plus_p_ncdm = rho_ncdm_bg + p_ncdm_bg;
+            w_ncdm = p_ncdm_bg/rho_ncdm_bg;
+            cg2_ncdm = w_ncdm*(1.0-1.0/(3.0+3.0*w_ncdm)*(3.0*w_ncdm-2.0+pseudo_p_ncdm/p_ncdm_bg));
+            cvis2_ncdm = 3.*w_ncdm*cg2_ncdm; // a la Ma & Bertschinger
+            if ((ppt->has_source_delta_ncdm == _TRUE_) || (ppt->has_source_theta_ncdm == _TRUE_) || (ppt->has_source_delta_m == _TRUE_)) {
+              shear_ncdm_prime = -3.*(1/tau + a_prime_over_a*(2./3. - cg2_ncdm - pseudo_p_ncdm/p_ncdm_bg/3.))*ppw->shear_ncdm[n_ncdm]
+                                  + 8./3.*cvis2_ncdm/(1. + w_ncdm)*(ppw->theta_ncdm[n_ncdm] + k2*alpha); // Eq. 3.15a in 1104.2935
+            }
+
+            ppw->rho_plus_p_shear_prime += rho_plus_p_ncdm*shear_ncdm_prime;
+          }
+        }
+        else {
+          // We must integrate to find perturbations:
+          for(n_ncdm=0; n_ncdm < pba->N_ncdm; n_ncdm++){
+
+            rho_ncdm_bg = ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm];
+            p_ncdm_bg = ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm];
+            pseudo_p_ncdm = ppw->pvecback[pba->index_bg_pseudo_p_ncdm1+n_ncdm];
+
+            rho_plus_p_ncdm = rho_ncdm_bg + p_ncdm_bg;
+            w_ncdm = p_ncdm_bg/rho_ncdm_bg;
+            cg2_ncdm = w_ncdm*(1.0-1.0/(3.0+3.0*w_ncdm)*(3.0*w_ncdm-2.0+pseudo_p_ncdm/p_ncdm_bg));
+
+            factor = pba->factor_ncdm[n_ncdm]/pow(a,4);
+
+            for (index_q=0; index_q < ppw->pv->q_size_ncdm[n_ncdm]; index_q ++) {
+ 
+              q = pba->q_ncdm[n_ncdm][index_q];
+              q2 = q*q;
+              epsilon = sqrt(q2+pba->M_ncdm[n_ncdm]*pba->M_ncdm[n_ncdm]*a2);
+              qk_div_epsilon = k*q/epsilon;
+
+              dlnf0_dlnq = pba->dlnf0_dlnq_ncdm[n_ncdm][index_q];              
+              psi2_prime_ncdm = qk_div_epsilon/5.*(2.*y[idx+1] - 3.*y[idx+3]) - k2*alpha*2./15.*dlnf0_dlnq; // Eq. 56 Ma & Bertschinger
+              rho_plus_p_shear_prime_ncdm += q2*q2/epsilon*pba->w_ncdm[n_ncdm][index_q]*psi2_prime_ncdm; // first calculate contribution from Psi_2'
+              rho_plus_p_shear_prime_ncdm -= q2*q2/pow(epsilon,3.)*pba->M_ncdm[n_ncdm]*pba->M_ncdm[n_ncdm]*a2*a_prime_over_a
+                                            * pba->w_ncdm[n_ncdm][index_q]*y[idx+2]; // subtract term proportional to Psi_2
+
+
+              //Jump to next momentum bin:
+              idx+=(ppw->pv->l_max_ncdm[n_ncdm]+1);
+            }
+
+            rho_plus_p_shear_prime_ncdm *= 2.0/3.0*factor;
+            rho_plus_p_shear_prime_ncdm += a_prime_over_a*(3.*cg2_ncdm - 1.)*(rho_ncdm_bg + p_ncdm_bg)*ppw->shear_ncdm[n_ncdm]; // finally add contribution from shear
+
+            ppw->rho_plus_p_shear_prime += rho_plus_p_shear_prime_ncdm;
+            
+          }
+        }
+      
+      /* If other species contribute to shear' add them below */
+      
+      }
+
+    }
 
   }
 
@@ -10646,9 +10802,9 @@ int perturbations_rsa_delta_and_theta(
     else {
 
       if (pba->has_smg == _TRUE_) {
-        ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                                   -k2*y[ppw->pv->index_pt_eta]
-                                  +9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
+          ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                                    -k2*y[ppw->pv->index_pt_eta]
+                                    +9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
       }
       else {
         ppw->rsa_delta_g = 4./k2*(a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
@@ -10664,16 +10820,16 @@ int perturbations_rsa_delta_and_theta(
         -4./k2*ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_b]+0.5*ppw->pvecmetric[ppw->index_mt_h_prime]);
 
         if (pba->has_smg == _TRUE_) {
-          ppw->rsa_theta_g +=
-            3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
-                 (y[ppw->pv->index_pt_theta_b]
-                  +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
-                 +ppw->pvecthermo[pth->index_th_dkappa]*
-                 (-a_prime_over_a*y[ppw->pv->index_pt_theta_b]
-                  + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
-                  -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
-                  +k2*y[ppw->pv->index_pt_eta]
-                  -9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]));
+            ppw->rsa_theta_g +=
+              3./k2*(ppw->pvecthermo[pth->index_th_ddkappa]*
+                  (y[ppw->pv->index_pt_theta_b]
+                    +0.5*ppw->pvecmetric[ppw->index_mt_h_prime])
+                  +ppw->pvecthermo[pth->index_th_dkappa]*
+                  (-a_prime_over_a*y[ppw->pv->index_pt_theta_b]
+                    + ppw->pvecthermo[pth->index_th_cb2]*k2*y[ppw->pv->index_pt_delta_b]
+                    -a_prime_over_a*ppw->pvecmetric[ppw->index_mt_h_prime]
+                    +k2*y[ppw->pv->index_pt_eta]
+                    -9./2.*a2*ppw->pvecmetric[ppw->index_mt_rsa_p_smg]));
         }
         else {
           ppw->rsa_theta_g +=
@@ -10708,12 +10864,9 @@ int perturbations_rsa_delta_and_theta(
     }
   }
 
-  /* update total delta and theta given rsa approximation results */
-
   ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
   ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
   ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
-  // TODO_MC: separate radiation contribution which could be used to get QS x_smg and x_prime_smg
   ppw->delta_rho_r += ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_delta_g;
   ppw->rho_plus_p_theta_r += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*ppw->rsa_theta_g;
 
@@ -10721,7 +10874,6 @@ int perturbations_rsa_delta_and_theta(
     ppw->delta_rho += ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
     ppw->delta_p += 1./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
     ppw->rho_plus_p_theta += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
-    // TODO_MC: separate radiation contribution which could be used to get QS x_smg and x_prime_smg
     ppw->delta_rho_r += ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_delta_ur;
     ppw->rho_plus_p_theta_r += 4./3.*ppw->pvecback[pba->index_bg_rho_ur]*ppw->rsa_theta_ur;
   }

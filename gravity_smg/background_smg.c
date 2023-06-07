@@ -242,7 +242,9 @@ int background_gravity_functions_smg(
   pvecback[pba->index_bg_beyond_horndeski_prime_smg] = 0.;
   pvecback[pba->index_bg_H_prime_prime] = 0.;
   pvecback[pba->index_bg_p_tot_wo_prime_smg] = 0.;
+  pvecback[pba->index_bg_p_tot_wo_prime_prime_smg] = 0.;
   pvecback[pba->index_bg_p_prime_smg] = 0.;
+  pvecback[pba->index_bg_p_prime_prime_smg] = 0.;
   pvecback[pba->index_bg_cs2_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_smg] = 0.;
   pvecback[pba->index_bg_kinetic_D_prime_smg] = 0.;
@@ -514,6 +516,8 @@ int background_define_indices_bg_smg(
 	class_define_index(pba->index_bg_H_prime_prime,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_p_tot_wo_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_p_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_p_tot_wo_prime_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_p_prime_prime_smg,_TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_G_eff_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_slip_eff_smg,_TRUE_,*index_bg,1);
@@ -596,11 +600,10 @@ int background_solve_smg(
   	extern int evolver_ndf15();
 	int (*generic_evolver)();
 	generic_evolver = evolver_ndf15;
-	/* initial and final time for integration */
-	// double loga_final = log(9.9e-3); // deep in the matter-dominated era, all MG models considered are effectively GR there
-	double eps_bw_integration = 0.05; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg. Check if this is still necessary
+	/* initial and final time for backward integration in stable_params */
+	double eps_bw_integration = 0.05; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg.
 	double loga_final = log((1. - eps_bw_integration)/(1+ppr->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
-	double loga_ini = 0.;
+	double loga_ini = 0.; // time used for initial conditions in backward integration
 	/* indices for the different arrays */
 	int index_loga, index_out;
 	/* necessary for calling array_interpolate(), but never used */
@@ -610,27 +613,10 @@ int background_solve_smg(
 	/* re-ordered time array for alpha_B and alpha_K interpolations */
 	double * loga_fw_table;
 	double loga;
-	// double loga_tr = log(1./(1+ppr->z_gr_smg));
-	double loga_tr = loga_final;
 	/* workspace for interpolation of derived parameters */
 	double * pvec_stable_params_derived_smg;
 
-	/* MC If gravity_model_smg==stable_params set here ICs at a=a_final for backward integration, compute alpha_M from M2
-    and then perform integration from a_final to a_min. For the alpha_M=dln(M2)/dlna derivative look at the function
-    array_derive_spline_table_line_to_line (derivative of single quantity and requires second order derivatives)
-    in the module thermodynamics, array_derivate_spline (derivatives of multiple quantities) or array_derive_spline
-    (derivative of single quantity and never called, very similar to array_derive_spline_table_line_to_line)in
-    background_smg. Since we are only interested in differentiating ln(M2), probably array_derive_spline_table_line_to_line
-    is the best option. See derivative of cb2 in thermodynamics.c (line 3243) to understand how to use it.
-    Need to define background_derivs_bw_smg which contains ODE to be solved backward in time; after that we must update
-    values for all alpha parameters, even for a<0.01 using that alpha_i \propto Omega_smg(a) for a<<1. [Same must be done
-    for M2, but need to find correct scaling evolution at high-z first. This can be done by integrating alpha_M over lna
-    from a_ini to a_min using the function 'array_integrate_spline_table_line_to_line' in arrays.c. We have to make sure
-    that the integrated M2(a_min) matches the user-provided M2 at the same scale factor] --> actually this can't be done,
-    and probably the most sensible thing to do is to keep M2 = M2(a_min) for all a<a_min. Their derivatives and derived
-    quantities (such as cs2, cs2N etc.) are computed below in background_solve_smg*/
-
-    // When gravity model is "stable parametrization" perform backward integration and overwrite alpha's as well as M_pl
+    /* When gravity model is "stable parametrization" perform backward integration and overwrite alpha's as well as M_pl */ 
     if(pba->gravity_model_smg == stable_params){
 
 		/** - setup background workspace */
@@ -694,20 +680,6 @@ int background_solve_smg(
 					pba->error_message,
 					pba->error_message);
 
-		// FILE * output_file;
-		// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_braiding_hiclass.dat","w");
-		// for (index_loga=0; index_loga<pba->bt_bw_size; index_loga++) {
-		// 	fprintf(output_file,"%.15e %.15e\n",pba->loga_bw_table[pba->bt_bw_size-1-index_loga],pba->stable_params_derived_smg[index_loga*pba->num_stable_params_derived + pba->index_derived_braiding_smg]);
-		// }
-		// fclose(output_file);
-		// class_stop(pba->error_message,"Stop here, for now.");
-
-		/*
-		now need to interpolate obtained alpha's and copy them to background table for a>=10^-2 and rescale existing alpha's for a<10^-2 so that
-		alpha functions are continous. However, Delta_M_pl (or M_pl) will remain constant for a<10^-2. We will have to interpolate here also D_kin and cs2
-		over global lna grid used for initial background calculations
-		*/
-
 		// Spline new alpha_B and alpha_K
 		class_call(array_spline_table_lines(loga_fw_table,
                                         	pba->bt_bw_size,
@@ -724,8 +696,7 @@ int background_solve_smg(
 
 			loga = pba->loga_table[index_loga];
 
-			// if(loga >= loga_tr + eps_loga){
-			if(loga >= loga_tr){
+			if(loga >= loga_final){
 				// interpolate Delta_M_pl^2, D_kin, cs2 and alpha_M
 				class_call(array_interpolate_spline(
 										pba->stable_params_lna_smg,
@@ -763,12 +734,9 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*(pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg));
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);				
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
-				// TODO_MC: testing importance of numerical accuracy of integrated alpha_B for f(R) gravity
-				// copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, -pvec_stable_params_smg[pba->index_stable_Mpl_running_smg]);
-
 			}
 			else {
-				//Set Horndeski parameters to their GR-LCDM limit				
+				//Set Horndeski parameters to their GR-LCDM limit. Not used anyway				
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, 0.);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1.);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_mpl_running_smg, 0.);
@@ -1096,6 +1064,13 @@ int background_solve_smg(
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_11_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_prime_smg, d_over_dtau);
 
+		//p_tot_wo_smg''
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_tot_wo_prime_smg];
+		copy_to_background_table_smg(pba, i, pba->index_bg_p_tot_wo_prime_prime_smg, d_over_dtau);
+
+		//p_smg''
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_prime_smg];
+		copy_to_background_table_smg(pba, i, pba->index_bg_p_prime_prime_smg, d_over_dtau);
 
 	  // check if any of the values becomes nan
 	  int j = 0;
@@ -1246,7 +1221,9 @@ int background_store_columntitles_smg(
 																		  ) {
 
 	class_store_columntitle(titles,"(.)rho_smg",_TRUE_);
-  class_store_columntitle(titles,"(.)p_smg",_TRUE_);
+  	class_store_columntitle(titles,"(.)p_smg",_TRUE_);
+	class_store_columntitle(titles,"(.)p_smg_prime",_TRUE_);
+	class_store_columntitle(titles,"(.)p_smg_prime_prime",_TRUE_);
 
 	if (pba->output_background_smg >= 1){
     class_store_columntitle(titles,"M*^2_smg",_TRUE_);
@@ -1284,6 +1261,7 @@ int background_store_columntitles_smg(
   if (pba->output_background_smg >= 3){
     class_store_columntitle(titles,"kineticity_prime_smg",_TRUE_);
     class_store_columntitle(titles,"braiding_prime_smg",_TRUE_);
+	class_store_columntitle(titles,"Mpl_running_prime_smg",_TRUE_);
     class_store_columntitle(titles,"kineticity_over_phiphi_smg",pba->field_evolution_smg);
     class_store_columntitle(titles,"braiding_over_phi_smg",pba->field_evolution_smg);
     class_store_columntitle(titles,"beyond_horndeski_over_phi_smg",pba->field_evolution_smg);
@@ -1377,7 +1355,9 @@ int background_output_data_smg(
 	int storeidx = *ptr_storeidx;
 
 	class_store_double(dataptr,pvecback[pba->index_bg_rho_smg],_TRUE_,storeidx);
-  class_store_double(dataptr,pvecback[pba->index_bg_p_smg],_TRUE_,storeidx);
+  	class_store_double(dataptr,pvecback[pba->index_bg_p_smg],_TRUE_,storeidx);
+	class_store_double(dataptr,pvecback[pba->index_bg_p_prime_smg],_TRUE_,storeidx);
+	class_store_double(dataptr,pvecback[pba->index_bg_p_prime_prime_smg],_TRUE_,storeidx);
 
 	if (pba->output_background_smg >= 1){
 		class_store_double(dataptr,pvecback[pba->index_bg_M2_smg],_TRUE_,storeidx);
@@ -1414,6 +1394,7 @@ int background_output_data_smg(
 	if (pba->output_background_smg >= 3){
 		class_store_double(dataptr,pvecback[pba->index_bg_kineticity_prime_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_braiding_prime_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_mpl_running_prime_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_kineticity_over_phiphi_smg],pba->field_evolution_smg,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_braiding_over_phi_smg],pba->field_evolution_smg,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_beyond_horndeski_over_phi_smg],pba->field_evolution_smg,storeidx);

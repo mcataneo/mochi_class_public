@@ -17,12 +17,12 @@ int get_gravity_coefficients_smg(struct background * pba,
                                  double * pvecback,
                                  double * delM2, double * M2, double * kin, double * bra,
                                  double * ten, double * run, double * beh, double * res,
-                                 double * cD, double * cK, double * cB, double * cH, double * c0,
+                                 double * cD, double * cK, double * cB, double * cM, double * cH, double * c0,
                                  double * c1, double * c2, double * c3, double * c4,
                                  double * c5, double * c6, double * c7, double * c8,
                                  double * c9, double * c10, double * c11, double * c12,
                                  double * c13, double * c14, double * c15, double * c16,
-                                 double * res_p, double *  cD_p, double *  cB_p, double *  cH_p,
+                                 double * res_p, double *  cD_p, double *  cB_p, double * cM_p, double *  cH_p,
                                  double * c9_p, double * c10_p, double * c12_p, double * c13_p,
                                  double * cs2num, double * lambda2, double * lambda7, double * lambda8,
                                  double * cs2num_p, double * lambda2_p, double * lambda8_p);
@@ -125,6 +125,34 @@ int get_x_x_prime_qs_smg(struct precision * ppr,
                          double k,
                          double * x_qs_smg,
                          double * x_prime_qs_smg);
+
+int get_qsa_mu_gamma_smg(
+    struct background * pba,
+    struct perturbations * ppt,
+    struct perturbations_workspace * ppw,
+    double k,
+    double * mu_smg, 
+    double * gamma_smg);
+
+int get_qsa_mu_prime_gamma_prime_smg(
+    struct background * pba,
+    struct perturbations * ppt,
+    struct perturbations_workspace * ppw,
+    double k,
+    double * mu_prime_smg, 
+    double * gamma_prime_smg);
+
+//for debugging
+// int get_qsa_mu_prime_gamma_prime_smg(
+//     struct background * pba,
+//     struct perturbations * ppt,
+//     struct perturbations_workspace * ppw,
+//     double k,
+//     double * mu_p_prime,
+//     double * mu_inf_prime,
+//     double * mu_Z_inf_prime,
+//     double * mu_prime_smg, 
+//     double * gamma_prime_smg);
 
 int sample_approximation_qs_smg(struct precision * ppr,
                                 struct background * pba,
