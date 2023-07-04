@@ -2105,9 +2105,10 @@ int background_solve(
              pba->error_message);
 
   if (pba->has_smg == _TRUE_) {
-   class_call(background_solve_smg(pba, pvecback, pvecback_integration),
+   class_call_except(background_solve_smg(pba, pvecback, pvecback_integration),
               pba->error_message,
-              pba->error_message);
+              pba->error_message,
+              free(used_in_output););
   }
 
   /** - compute remaining "related parameters" */
