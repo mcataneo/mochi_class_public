@@ -1050,10 +1050,8 @@ int perturbations_init(
         {
           perturbations_workspace_free(ppt,index_md,pppw[thread_num]);
         }
-        background_free(pba);
-        thermodynamics_free(pth);
-        perturbations_free(ppt);
         free(pppw);
+        perturbations_free(ppt);
         return _FAILURE_;
       }
 
