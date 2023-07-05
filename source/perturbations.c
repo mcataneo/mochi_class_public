@@ -910,7 +910,6 @@ int perturbations_init(
   /** - define the common time sampling for all sources using
       perturbations_timesampling_for_sources() */
 
-  // TODO_EB: in hi_class we were calling class_test_except with perturbations_free_nosources(ppt). Really necessary?
   class_call(perturbations_timesampling_for_sources(ppr,
                                                     pba,
                                                     pth,
@@ -1045,7 +1044,18 @@ int perturbations_init(
 
       } /* end of parallel region */
 
-      if (abort == _TRUE_) return _FAILURE_;
+      if (abort == _TRUE_) {
+        int thread_num;
+        for (thread_num = 0; thread_num < number_of_threads; thread_num++)
+        {
+          perturbations_workspace_free(ppt,index_md,pppw[thread_num]);
+        }
+        background_free(pba);
+        thermodynamics_free(pth);
+        perturbations_free(ppt);
+        free(pppw);
+        return _FAILURE_;
+      }
 
     } /* end of loop over initial conditions */
 
@@ -3339,21 +3349,23 @@ int perturbations_solve(
         redistribute correctly the perturbations from the previous to
         the new vector of perturbations. */
 
-    // TODO_EB: in hi_class w ewere calling class_test_except with   for (index_interval=0; index_interval<interval_number; index_interval++)
-                 // free(interval_approx[index_interval]);
-               // free(interval_approx);free(interval_limit);perturbations_vector_free(ppw->pv). Really necessary?
-    class_call(perturbations_vector_init(ppr,
-                                         pba,
-                                         pth,
-                                         ppt,
-                                         index_md,
-                                         index_ic,
-                                         k,
-                                         interval_limit[index_interval],
-                                         ppw,
-                                         previous_approx),
-               ppt->error_message,
-               ppt->error_message);
+    class_call_except(perturbations_vector_init(ppr,
+                                                pba,
+                                                pth,
+                                                ppt,
+                                                index_md,
+                                                index_ic,
+                                                k,
+                                                interval_limit[index_interval],
+                                                ppw,
+                                                previous_approx),
+                      ppt->error_message,
+                      ppt->error_message,
+                      for (index_interval=0; index_interval<interval_number; index_interval++)
+                        free(interval_approx[index_interval]);
+                      free(interval_approx);
+                      free(interval_limit);
+               );
 
     /** - --> (d) integrate the perturbations over the current interval. */
 
@@ -3364,29 +3376,30 @@ int perturbations_solve(
       generic_evolver = evolver_ndf15;
     }
 
-    // TODO_EB: in hi_class w ewere calling class_test_except with
-    // for (index_interval=0; index_interval<interval_number; index_interval++)
-    //    free(interval_approx[index_interval]);
-    // free(interval_approx);free(interval_limit);perturbations_vector_free(ppw->pv)
-    // Really necessary?
-    class_call(generic_evolver(perturbations_derivs,
-                               interval_limit[index_interval],
-                               interval_limit[index_interval+1],
-                               ppw->pv->y,
-                               ppw->pv->used_in_sources,
-                               ppw->pv->pt_size,
-                               &ppaw,
-                               ppr->tol_perturbations_integration,
-                               ppr->smallest_allowed_variation,
-                               perturbations_timescale,
-                               ppr->perturbations_integration_stepsize,
-                               ppt->tau_sampling,
-                               tau_actual_size,
-                               perturbations_sources,
-                               perhaps_print_variables,
-                               ppt->error_message),
-               ppt->error_message,
-               ppt->error_message);
+    class_call_except(generic_evolver(perturbations_derivs,
+                                      interval_limit[index_interval],
+                                      interval_limit[index_interval+1],
+                                      ppw->pv->y,
+                                      ppw->pv->used_in_sources,
+                                      ppw->pv->pt_size,
+                                      &ppaw,
+                                      ppr->tol_perturbations_integration,
+                                      ppr->smallest_allowed_variation,
+                                      perturbations_timescale,
+                                      ppr->perturbations_integration_stepsize,
+                                      ppt->tau_sampling,
+                                      tau_actual_size,
+                                      perturbations_sources,
+                                      perhaps_print_variables,
+                                      ppt->error_message),
+                      ppt->error_message,
+                      ppt->error_message,
+                      perturbations_vector_free(ppw->pv);
+                      for (index_interval=0; index_interval<interval_number; index_interval++)
+                        free(interval_approx[index_interval]);
+                      free(interval_approx);
+                      free(interval_limit);
+               );
 
   }
 
