@@ -151,7 +151,6 @@ int perturbations_tests_smg(
   double k_min = ppt->k[ppt->index_md_scalars][0];
   double k_max = ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1];
   double a_ini = ppr->a_ini_test_qs_smg;
-  double * pvecback;
   int first_index_back;
   double tau;
   short approx_k_min, approx_k_max;
@@ -262,8 +261,6 @@ int perturbations_tests_smg(
                  ppt->error_message);
     }
   }
-
-  free(pvecback);
 
   return _SUCCESS_;
 }
