@@ -1957,6 +1957,8 @@ int background_solve(
   double * pvecback_integration;
   /* vector of quantities to be integrated backward */
   double * pvecback_bw_integration;
+  /* scalar rho_smg to be integrated backward (before any other A, B or C quantity is computed) */
+  double * pback_rho_smg_bw_integration;
   /* vector of all background quantities */
   double * pvecback;
   /* comoving radius coordinate in Mpc (equal to conformal distance in flat case) */
@@ -1988,8 +1990,31 @@ int background_solve(
 
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
+  // TODO_MC: probably better to allocate memory only if has_smg true and, nested, if background expansion wext
   /** - allocate vector of quantities to be integrated backward */
   class_alloc(pvecback_bw_integration,pba->bi_bw_B_size*sizeof(double),pba->error_message);
+  /** - allocate scalar rho_smg to be integrated backward */
+  class_alloc(pback_rho_smg_bw_integration,1*sizeof(double),pba->error_message);
+
+  /* TODO_MC: put here integrator for rho_smg with arbitrary EOS, this way we are still consistent with shooting. This
+     computation must happen before calling background_initial_conditions because it uses rho_tot at a_ini to evaluate
+     the initial Hubble parameter and derived quantities.
+     Later, in background_initial_conditions_smg and background_solve_smg store this in background table and spline 
+     over lna_table for later interpolation in background_derivs. */
+
+  if (pba->has_smg == _TRUE_) {
+    if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+      /** - set initial conditions at a/a0=1 for rho_smg */
+      class_call(background_ic_rho_smg(pba,pback_rho_smg_bw_integration),
+                 pba->error_message,
+                 pba->error_message);
+      /** - perform the integration */
+      class_call(background_solve_rho_smg(ppr,pba,pback_rho_smg_bw_integration),
+                 pba->error_message,
+                 pba->error_message);
+      free(pback_rho_smg_bw_integration);      
+    }
+  }
 
   /** - impose initial conditions with background_initial_conditions() */
   class_call(background_initial_conditions(ppr,pba,pvecback,pvecback_integration,pvecback_bw_integration,&(loga_ini)),
@@ -2010,6 +2035,17 @@ int background_solve(
 
   class_alloc(pba->background_table,pba->bt_size * pba->bg_size * sizeof(double),pba->error_message);
   class_alloc(pba->d2background_dloga2_table,pba->bt_size * pba->bg_size * sizeof(double),pba->error_message);
+
+  /** - When using wext background parametrisation together with stable parametrisation we must update
+	 values of relevant functions around GR->MG transition redshift. Else, beacuse of discontinuities, derivatives
+	 around z_gr_smg will be too large, and the ODE solver for perturbations will hit the smallest possible time step
+	 and halt before reaching the solution.  
+	 */
+	if(pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext){
+		/** - allocate background tables */
+		class_alloc(pba->background_table_late,pba->bt_size * pba->bg_size * sizeof(double),pba->error_message);
+  	class_alloc(pba->d2background_dloga2_table_late,pba->bt_size * pba->bg_size * sizeof(double),pba->error_message);
+	}
 
   class_alloc(used_in_output, pba->bt_size*sizeof(int), pba->error_message);
 
@@ -2122,11 +2158,25 @@ int background_solve(
              pba->error_message);
 
   if (pba->has_smg == _TRUE_) {
+
+    if(pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext){
+      class_call(array_spline_table_lines(pba->loga_table,
+                                      pba->bt_size,
+                                      pba->background_table_late,
+                                      pba->bg_size,
+                                      pba->d2background_dloga2_table_late,
+                                      _SPLINE_EST_DERIV_,
+                                      pba->error_message),
+             pba->error_message,
+             pba->error_message);
+    }
+    
     class_call(background_solve_smg(ppr, pba, pvecback, pvecback_integration, pvecback_bw_integration),
               pba->error_message,
               pba->error_message);
+    
   }
-
+  
   /** - compute remaining "related parameters" */
 
   /**  - so-called "effective neutrino number", computed at earliest
@@ -2216,6 +2266,7 @@ int background_solve(
  * @param pba                  Input: pointer to background structure
  * @param pvecback             Input: vector of background quantities used as workspace
  * @param pvecback_integration Output: vector of background quantities to be integrated, returned with proper initial values
+ * @param pvecback_bw_integration Output: vector of background quantities to be backward integrated, returned with proper initial values at a=1
  * @param loga_ini             Output: value of loga (in fact with our conventions log(a/a_0)) at initial time
  * @return the error status
  */
@@ -2397,6 +2448,33 @@ int background_initial_conditions(
   class_call(background_functions(pba, a, pvecback_integration, long_info, pvecback),
              pba->error_message,
              pba->error_message);
+
+  if (pba->has_smg == _TRUE_) {
+    if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+      double H_old = pvecback[pba->index_bg_H]; // store H value w/o smg contribution
+      double rho_crit_old = pvecback[pba->index_bg_rho_crit];
+      double rho_tot_old = pvecback[pba->index_bg_rho_tot];
+      double Omega_m_old = pvecback[pba->index_bg_Omega_m];
+      double Omega_r_old = pvecback[pba->index_bg_Omega_r];
+      double Omega_de_old = pvecback[pba->index_bg_Omega_de];
+      class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
+                 pba->error_message,
+                 pba->error_message
+      );
+      // Update quantities depending on rho_smg and p_smg
+      pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg] - pba->K/a/a);
+      pvecback[pba->index_bg_H_prime] = -1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
+                                                + pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a;
+      pvecback[pba->index_bg_rho_tot] = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
+      pvecback[pba->index_bg_p_tot] = pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg];
+      pvecback[pba->index_bg_w_smg] = pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg]; // probably never used anywhere in the code when gravity_model == stable_params
+      // pvecback[pba->index_bg_p_tot_prime] *= pvecback[pba->index_bg_H]/H_old; // correction for smg contribution. Never used anywhere in hiclass, because here only matter contributions without smg are considered in dp_dlna.
+      pvecback[pba->index_bg_rho_crit] = pvecback[pba->index_bg_rho_tot]-pba->K/a/a;
+      pvecback[pba->index_bg_Omega_m] = Omega_m_old*rho_crit_old/pvecback[pba->index_bg_rho_crit];
+      pvecback[pba->index_bg_Omega_r] = Omega_r_old*rho_crit_old/pvecback[pba->index_bg_rho_crit];
+      pvecback[pba->index_bg_Omega_de] = Omega_de_old*rho_tot_old/pvecback[pba->index_bg_rho_tot];
+    }
+  }
 
   /* Final step is to set the initial Hubble rate, if it is to be evolved with the H' equation (not only _smg!!) */
   if (pba->hubble_evolution == _TRUE_){
@@ -2744,6 +2822,24 @@ int background_derivs(
              pba->error_message,
              error_message);
 
+  if (pba->has_smg == _TRUE_) {
+    if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+      // double H_old = pvecback[pba->index_bg_H]; // store H value w/o smg contribution
+      class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
+                 pba->error_message,
+                 pba->error_message
+      );
+      // Update quantities depending on rho_smg and p_smg
+      pvecback[pba->index_bg_H] = sqrt(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg] - pba->K/a/a);
+      pvecback[pba->index_bg_H_prime] = -1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
+                                                + pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a;
+      pvecback[pba->index_bg_rho_tot] = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
+      pvecback[pba->index_bg_p_tot] = pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg];
+      pvecback[pba->index_bg_w_smg] = pvecback[pba->index_bg_p_smg]/pvecback[pba->index_bg_rho_smg]; // probably never used anywhere in the code when gravity_model == stable_params
+      // pvecback[pba->index_bg_p_tot_prime] *= pvecback[pba->index_bg_H]/H_old; // correction for smg contribution. Never used anywhere in hiclass, because here only matter contributions without smg are considered in dp_dlna. Recomputed numerically later on.
+    }
+  }
+
   /** - Short hand notation for Hubble */
   H = pvecback[pba->index_bg_H];
 
@@ -2847,12 +2943,17 @@ int background_sources(
   struct background * pba;
   double a;
   double * bg_table_row;
+  double * bg_table_early_row; // used for wext expansion parametrisation
+  double * bg_table_late_row; // used for wext expansion parametrisation
 
   pbpaw = parameters_and_workspace;
   pba =  pbpaw->pba;
 
   /** - localize the row inside background_table where the current values must be stored */
   bg_table_row = pba->background_table + index_loga*pba->bg_size;
+  if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+    bg_table_late_row = pba->background_table_late + index_loga*pba->bg_size;
+  }
 
   /** - scale factor a (in fact, given our normalisation conventions, this stands for a/a_0) */
   a = exp(loga);
@@ -2869,6 +2970,48 @@ int background_sources(
   class_call(background_functions(pba, a, y, long_info, bg_table_row),
              pba->error_message,
              pba->error_message);
+
+  if (pba->has_smg == _TRUE_) {
+    if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+      double H_old = bg_table_row[pba->index_bg_H]; // store H value w/o smg contribution
+      double rho_crit_old = bg_table_row[pba->index_bg_rho_crit];
+      double rho_tot_old = bg_table_row[pba->index_bg_rho_tot];
+      double Omega_m_old = bg_table_row[pba->index_bg_Omega_m];
+      double Omega_r_old = bg_table_row[pba->index_bg_Omega_r];
+      double Omega_de_old = bg_table_row[pba->index_bg_Omega_de];
+      double f_old = bg_table_row[pba->index_bg_f];
+      // Update quantities in background_table depending on rho_smg and p_smg
+      class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), bg_table_row),
+                 pba->error_message,
+                 pba->error_message
+      );
+      bg_table_row[pba->index_bg_H] = sqrt(bg_table_row[pba->index_bg_rho_tot_wo_smg] + bg_table_row[pba->index_bg_rho_smg] - pba->K/a/a);
+      bg_table_row[pba->index_bg_H_prime] = -1.5*a*(bg_table_row[pba->index_bg_rho_tot_wo_smg] + bg_table_row[pba->index_bg_rho_smg]
+                                                + bg_table_row[pba->index_bg_p_tot_wo_smg] + bg_table_row[pba->index_bg_p_smg]) + pba->K/a;
+      bg_table_row[pba->index_bg_rho_tot] = bg_table_row[pba->index_bg_rho_tot_wo_smg] + bg_table_row[pba->index_bg_rho_smg];
+      bg_table_row[pba->index_bg_p_tot] = bg_table_row[pba->index_bg_p_tot_wo_smg] + bg_table_row[pba->index_bg_p_smg];
+      bg_table_row[pba->index_bg_w_smg] = bg_table_row[pba->index_bg_p_smg]/bg_table_row[pba->index_bg_rho_smg]; // probably never used anywhere in the code when gravity_model == stable_params
+      // bg_table_row[pba->index_bg_p_tot_prime] *= bg_table_row[pba->index_bg_H]/H_old; // correction for smg contribution. Never used anywhere in hiclass, because here only matter contributions without smg are considered in dp_dlna.
+      bg_table_row[pba->index_bg_rho_crit] = bg_table_row[pba->index_bg_rho_tot]-pba->K/a/a;
+      bg_table_row[pba->index_bg_Omega_m] = Omega_m_old*rho_crit_old/bg_table_row[pba->index_bg_rho_crit];
+      bg_table_row[pba->index_bg_Omega_r] = Omega_r_old*rho_crit_old/bg_table_row[pba->index_bg_rho_crit];
+      bg_table_row[pba->index_bg_Omega_de] = Omega_de_old*rho_tot_old/bg_table_row[pba->index_bg_rho_tot];
+      bg_table_row[pba->index_bg_f] = f_old*H_old/bg_table_row[pba->index_bg_H];
+      // Update relevant quantities in background_table_late depending on rho_smg and p_smg. For late vector transition happens earlier.
+      class_call(interpolate_rho_smg_p_smg(pba, log(a), log(0.9/(1.+pba->z_gr_smg)), bg_table_late_row),
+                 pba->error_message,
+                 pba->error_message
+      );
+      bg_table_late_row[pba->index_bg_a] = a;
+      bg_table_late_row[pba->index_bg_H] = sqrt(bg_table_row[pba->index_bg_rho_tot_wo_smg] + bg_table_late_row[pba->index_bg_rho_smg] - pba->K/a/a);
+      bg_table_late_row[pba->index_bg_H_prime] = -1.5*a*(bg_table_row[pba->index_bg_rho_tot_wo_smg] + bg_table_late_row[pba->index_bg_rho_smg]
+                                                + bg_table_row[pba->index_bg_p_tot_wo_smg] + bg_table_late_row[pba->index_bg_p_smg]) + pba->K/a;
+      bg_table_late_row[pba->index_bg_rho_tot_wo_smg] = bg_table_row[pba->index_bg_rho_tot_wo_smg];
+      bg_table_late_row[pba->index_bg_p_tot_wo_smg] = bg_table_row[pba->index_bg_p_tot_wo_smg];
+      bg_table_late_row[pba->index_bg_rho_tot] = bg_table_row[pba->index_bg_rho_tot_wo_smg] + bg_table_late_row[pba->index_bg_rho_smg];
+      bg_table_late_row[pba->index_bg_p_tot] = bg_table_row[pba->index_bg_p_tot_wo_smg] + bg_table_late_row[pba->index_bg_p_smg];
+    }
+  }
 
   return _SUCCESS_;
 

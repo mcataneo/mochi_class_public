@@ -195,12 +195,12 @@ int input_read_parameters_smg(
     physics.*/
     if(pba->gravity_model_smg == stable_params){      
       ppt->method_gr_smg = switch_on_gr_smg;
-      class_test(pba->a_file_gr_smg > 1./(1 + 1.4*ppr->z_gr_smg),
+      class_test(pba->a_file_gr_smg > 1./(1 + 1.4*pba->z_gr_smg),
             errmsg,
-            "minimum scale factor for stable parametrization must be < %f", 1./(1 + 1.4*ppr->z_gr_smg));
-      class_test(ppr->z_gr_smg > 50.,
+            "minimum scale factor for stable parametrization must be < %f", 1./(1 + 1.4*pba->z_gr_smg));
+      class_test(pba->z_gr_smg > 100.,
             errmsg,
-            "Stable parametrization works only for late-time MG/DE. Transition redshift z_gr_smg must be deep in the matter-dominated era, e.g. set z_gr_smg = 49.");
+            "Stable parametrization works only for late-time MG/DE. For numerical stability and efficiency transition redshift z_gr_smg must be < 100, e.g. set z_gr_smg = 99.");
     }
   }
   // end of loop over models

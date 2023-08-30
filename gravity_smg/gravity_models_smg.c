@@ -31,6 +31,7 @@ int gravity_models_gravity_properties_smg(
   char string2[_ARGUMENT_LENGTH_MAX_];
   char string3[_ARGUMENT_LENGTH_MAX_];
   /** Loop over the different models
+  * flag1 checks whether external input file has been provided
   * flag2 keeps track of whether model has been identified
   */
 
@@ -203,6 +204,8 @@ int gravity_models_gravity_properties_smg(
 	pba->parameters_2_size_smg = 1;
   // read alpha_B(z=0) to set initial conditions
 	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+  // read z_gr_smg
+  class_read_double("z_gr_smg",pba->z_gr_smg);
 
   class_call(parser_read_string(pfc,
                                   "smg_file_name",
@@ -784,7 +787,9 @@ int gravity_models_expansion_properties_smg(
                                             ) {
 
   /* Define local variables */
+  int flag1 = _FALSE_;
   int flag2 = _FALSE_;
+  char string2[_ARGUMENT_LENGTH_MAX_];
   int n;
 
   //possible expansion histories. Can make tests, etc...
@@ -825,9 +830,113 @@ int gravity_models_expansion_properties_smg(
     // 	}
   }
 
+  if (strcmp(string1,"wext") == 0) {
+    // wext only works with stable parametrisation
+    class_test(pba->gravity_model_smg != stable_params,
+               pba->error_message,
+               "wext background parametrisation only works for Horndeski gravity and gravity_model = stable_params")
+
+    pba->expansion_model_smg = wext;
+    flag2=_TRUE_;
+    pba->parameters_size_smg = 1;
+    pba->rho_evolution_smg=_FALSE_; // set here to FALSE because rho_smg will be integrated backward in time and before integration of other background quantities
+    class_read_list_of_doubles_or_default("expansion_smg",pba->parameters_smg,0.0,pba->parameters_size_smg);
+
+    class_call(parser_read_string(pfc,
+                                  "expansion_file_name",
+                                  &string2,
+                                  &flag1,
+                                  errmsg),
+               errmsg,
+               errmsg);
+
+    if (flag1 == _TRUE_) {
+        pba->has_expansion_file = _TRUE_;
+        class_read_string("expansion_file_name",pba->expansion_file_name);
+    }else{
+        class_stop(errmsg,"wext expansion model requested. Please specify full path to file containing w function");
+    }
+
+    /* for reading w from file */
+    FILE * input_file;
+    int row,status;
+    double tmp1,tmp2; // as many as the number of columns in input file
+
+    pba->stable_wext_size_smg = 0;
+
+    if (pba->has_expansion_file == _TRUE_) {
+
+      input_file = fopen(pba->expansion_file_name,"r");
+      class_test(input_file == NULL,
+                errmsg,
+                "Could not open file %s",pba->expansion_file_name);
+
+      /* Find size of table */
+      for (row=0,status=2; status==2; row++){
+        status = fscanf(input_file,"%lf %lf",&tmp1,&tmp2);
+      }
+      rewind(input_file);
+      pba->stable_wext_size_smg = row-1;
+
+      /** - allocate various vectors */
+      class_alloc(pba->stable_wext_lna_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
+      class_alloc(pba->stable_wext_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
+      class_alloc(pba->ddstable_wext_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
+      class_alloc(pba->stable_rho_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
+      class_alloc(pba->ddstable_rho_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+
+      /* - fill a table of ln(a) and stable parameters*/
+      // FILE * output_file;
+      // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_Delta_Mpl_hiclass.dat","w");
+      for (row=0; row<pba->stable_wext_size_smg; row++){
+        status = fscanf(input_file,"%lf %lf",
+                        &pba->stable_wext_lna_smg[row],
+                        &pba->stable_wext_smg[row]);
+
+        // printf("%d: (lna, w) = (%.15e,%.15e)\n",row,
+        //         pba->stable_wext_lna_smg[row],
+        //         pba->stable_wext_smg[row]);
+        // fprintf(output_file,"%.15e \t %.15e\n",pba->stable_params_lna_smg[row],pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
+      }
+      // fclose(output_file);
+      fclose(input_file);      
+
+      // class_stop(pba->error_message,"Have read external w. Stop for now.\n");
+
+      // Assign value to a_file_lcdm_smg
+      pba->a_file_lcdm_smg = exp(pba->stable_wext_lna_smg[0]);
+      // Check that largest provided scale factor is >= 1.1 for stable numerical derivatives
+      // double a_max = 1.09;
+      double a_max = 1.;
+      class_test((exp(pba->stable_wext_lna_smg[pba->stable_wext_size_smg-1]) < a_max),
+            errmsg,
+            "maximum scale factor in input file is %f. For stable parametrization it must be >= %f for accurate numerical derivatives of smg parameters at late times", exp(pba->stable_wext_lna_smg[pba->stable_wext_size_smg-1]), a_max);
+
+        /** - spline stable input parameters for later interpolation */
+      class_call(array_spline_table_lines(pba->stable_wext_lna_smg,
+                                          pba->stable_wext_size_smg,
+                                          pba->stable_wext_smg,
+                                          1,
+                                          pba->ddstable_wext_smg,
+                                          _SPLINE_EST_DERIV_,
+                                          pba->error_message),
+                pba->error_message,
+                pba->error_message);
+
+      // for (row=0; row<pba->stable_wext_size_smg; row++){
+
+      //   printf("%d: (lna, ddw) = (%.15e,%.15e)\n",row,
+      //           pba->stable_wext_lna_smg[row],
+      //           pba->ddstable_wext_smg[row]);
+      // }
+
+    }
+
+  } // MC end of wext
+
   class_test(flag2==_FALSE_,
              errmsg,
-             "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede ...");
+             "could not identify expansion_model value, check that it is either lcdm, wowa, wowa_w, wede, wext ...");
 
   return _SUCCESS_;
 }
@@ -1004,7 +1113,7 @@ int gravity_models_get_back_par_smg(
   double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
 
   if (pba->expansion_model_smg == lcdm){
-
+    
     double Omega_const_smg = pba->parameters_smg[0];
 
     pvecback[pba->index_bg_rho_smg] = Omega_const_smg*pow(pba->H0,2);
@@ -1072,6 +1181,12 @@ int gravity_models_get_back_par_smg(
 //       if (a>0.9)
 // 	printf("a = %e, w = %f, Om_de = %e, rho_de/rho_t = %e \n",a,w,Om,
 // 	       pvecback[pba->index_bg_rho_smg]/(pvecback[pba->index_bg_rho_smg]+rho_tot));
+  }
+
+  else if (pba->expansion_model_smg == wext) {
+    // Set here to zero and update their values later on depending on GR->MG transition redshift
+    pvecback[pba->index_bg_rho_smg] = 0.;
+    pvecback[pba->index_bg_p_smg] = 0.;
   }
 
   return _SUCCESS_;
@@ -1682,6 +1797,10 @@ int gravity_models_print_stdout_smg(
         printf("Parameterized model with variable EoS + Early DE \n");
         printf("-> Omega_smg = %f, w = %f, Omega_e = %f \n",pba->parameters_smg[0],pba->parameters_smg[1],pba->parameters_smg[2]);
       break;
+
+      case wext:
+        printf("Parameterized model with external smg equation of state from file: \n");
+        printf("%s\n",pba->expansion_file_name);
 
       default:
         printf("Parameterized model: expansion history output not implemented in print_stdout_gravity_parameters_smg() \n");

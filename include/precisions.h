@@ -594,9 +594,13 @@ class_precision_parameter(trigger_rad_qs_smg,double,1.e3) /**< if the radiation 
 class_precision_parameter(eps_s_qs_smg,double,0.01) /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
 /* Only for stable params */
-class_precision_parameter(z_gr_smg,double,49.) /**< minimum redshift before which GR equations are considered (after that hi_class evolves the standard smg equations) */
+// TODO_MC: move z_gr_smg to background structure, pba->z_gr_smg
+// class_precision_parameter(z_gr_smg,double,49.) /**< minimum redshift before which GR equations are considered (after that hi_class evolves the standard smg equations) */ 
+class_precision_parameter(eps_bw_integration_rho_smg,double,0.1) /**< small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg as well as at final time of backward integration for alpha_B. */
+class_precision_parameter(eps_bw_integration_braid,double,0.1) /**< small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg */
 class_precision_parameter(tol_background_bw_integration,double,1.e-13) /**< Tolerance of the backward background integration for braiding, giving the allowed relative integration error */
-class_precision_parameter(dtau_start_qs,double,1.) /**< enforce conformal time delay to switch from FD to QS such that scalar field ICs can be properly set up with stable_params */
+// class_precision_parameter(dtau_start_qs,double,1.) /**< enforce conformal time delay to switch from FD to QS such that scalar field ICs can be properly set up with stable_params */
+class_precision_parameter(dtau_start_qs,double,0.01) /**< enforce conformal time delay to switch from FD to QS such that scalar field ICs can be properly set up with stable_params */
 
 class_precision_parameter(min_a_pert_smg,double,1.) /**< minimum value of scale factor to start integration (important to test some ede models */
 class_precision_parameter(pert_ic_tolerance_smg,double,2.e-2) /**< tolerance to deviations from n=2 for IC h~tau^n. Negative values override test */

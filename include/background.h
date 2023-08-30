@@ -34,7 +34,7 @@ enum gravity_model {propto_omega, propto_scale,
 
 /** parameterized expansion, only for non-self consistent Horndeski theories (_smg) */
 
-enum expansion_model {lcdm, wowa, wowa_w, wede};
+enum expansion_model {lcdm, wowa, wowa_w, wede, wext};
 
 /** list of possible parametrizations of the varying fundamental constants */
 
@@ -164,6 +164,8 @@ struct background
   short attractor_ic_smg; /** < whether the scalar field has attractor initial conditions */
   short has_smg_file; /* MC flag checking if external input file with alpha_X(lna) is provided*/
   FileName smg_file_name; /* MC path to external input file */
+  short has_expansion_file; /* MC flag checking if external input file with w(lna) is provided*/
+  FileName expansion_file_name; /* MC path to external input file */
 
   double xi_0_smg; /** < final value of xi = phi' H/(aH_0^2)  */
   double phi_0_smg; /** < final value of phi  */
@@ -210,7 +212,8 @@ struct background
   double * parameters_2_smg;  /**< list of auxiliary parameters describing the modified gravity model */
   int parameters_2_size_smg; /**< size of parameters_smg */
 
-  /* TODO_MC --> found external alphas parametrization to be numerically unstable. Moved to stable parametrization */
+
+  /* -- MC: found external alphas parametrization to be numerically unstable. Moved to stable parametrization */
   int ext_alphas_size_smg; /* stores total number of rows in input file */
   int ext_num_alphas; /* how many alpha parameters*/
   double * ext_alphas_lna_smg; /* array of ln(a) values in input file */
@@ -307,7 +310,7 @@ struct background
   int index_bg_tensor_excess_prime_smg;/**< derivative of tensor excess wrt tau (BS eq A.10)*/
   int index_bg_beyond_horndeski_prime_smg;/**<derivative of beyond horndeski alpha_H*/
   int index_bg_cs2_smg; /**< speed of sound for scalar perturbations */
-  /* TODO_MC --> found external alphas parametrization to be unstable. Moved to stable parametrization */
+  /* -- MC: found external alphas parametrization to be unstable. Moved to stable parametrization */
   int index_bg_ext_kineticity_smg; /* MC scalar field kineticity alpha_k for external input file */
   int index_bg_ext_braiding_smg;/* MC scalar field braiding alpha_b for external input file */
   int index_bg_ext_mpl_running_smg;/* MC  scalar field relative Planck mass running alpha_m for external input file */
@@ -456,6 +459,9 @@ struct background
 
   //@{
 
+  double z_gr_smg; /**< transition redshift for GR -> MG when method_gr_smg is activated at early times */
+
+  // perturbations
   double a_file_gr_smg; /* minimum scale factor in input file */
   int stable_params_size_smg; /* stores total number of rows in input file */
   int num_stable_params; /* how many input functions*/
@@ -468,12 +474,24 @@ struct background
   double * ddstable_params_derived_smg; /* array of size stable_params_size_smg*2 containing second derivatives of computed alpha_B and alpha_K*/
   double * stable_params_aux_smg; // temporary vector of size stable_params_size_smg*3 to store Delta_Mpl, dMpl and ddMpl used in array_derive_spline_table_line_to_line
 
+  // background expansion
+  double a_file_lcdm_smg; /* minimum scale factor in input file */
+  int stable_wext_size_smg; /* stores total number of rows in input file */
+  double * stable_wext_lna_smg; /* array of ln(a) values in input file */
+  double * stable_wext_smg; /* array of size wext_size_smg containing the input w */
+  double * ddstable_wext_smg; /* array of size stable_params_size_smg containing second derivatives of input w */
+  double * stable_rho_smg; /* array of size stable_params_size_smg containing the integrated rho_smg */
+  double * ddstable_rho_smg; /* array of size stable_params_size_smg containing second derivatives of integrated rho_smg */
+  double rho_smg_final; /* value of rho_smg at final time of integration, loga_final */
+  double loga_final_rho_smg; /* used to store loga_final  */
+
   //@}
 
   /** @name - separate set of indices for vector stable_params_smg used for backward integration when stable parametrization is chosen */
 
   //@{
 
+  // perturbations
   int index_stable_Delta_Mpl_smg; /* scalar field Planck mass Delta(M_pl^2) = M_pl^2 - 1 for stable parameterization */
   int index_stable_Dkin_smg;/* scalar field D_kin = alpha_K + 3/2*alpha_B^2 for stable parameterization */
   int index_stable_cs2_smg;/* scalar field speed of sound c_s^2 for stable parameterization */
@@ -482,7 +500,11 @@ struct background
   int index_aux_dMpl_smg; /* index used in auxiliary vector for dMpl/dlna */
   int index_aux_ddMpl_smg; /* index used in auxiliary vector for d2Mpl/dlna2 */
   int index_derived_braiding_smg; /* index for derived scalar field braiding alpha_B (derived from ODE integration) */
-  int index_derived_kineticity_smg; /* index for derived scalar field kineticity alpha_K (derived from ODE integration) */
+  int index_derived_kineticity_smg; /* index for derived scalar field kineticity alpha_K (derived from backward ODE integration) */
+
+  // background expansion
+  // int index_stable_w_smg; /* scalar field equation of state for stable parameterization */
+  // int index_derived_rho_smg; /* index for derived scalar field background density (derived from backward ODE integration) */
 
   //@}
 
@@ -495,15 +517,19 @@ struct background
   double * tau_table;        /**< vector tau_table[index_loga] with values of conformal time \f$ \tau \f$ (in fact \f$ a_0 c tau \f$, see normalisation conventions explained at beginning of background.c) */
   double * z_table;          /**< vector z_table[index_loga] with values of \f$ z \f$ (redshift) */
   double * background_table; /**< table background_table[index_tau*pba->bg_size+pba->index_bg] with all other quantities (array of size bg_size*bt_size) **/
+  double * background_table_late; /**< late-time background table when smg stable and wext parametrisations are both ON. It's used to store functions and derivatives for z<=z_gr_smg **/
 
   //@}
 
-  /** @name - background backward integration table */
+  /** @name - background backward integration tables and forward time vector for integrated rho_smg (use if expansion_model_smg == wext) */
 
   //@{
 
-  int bt_bw_size;               /**< number of lines (i.e. time-steps) used for backward integration */
-  double * loga_bw_table;       /**< vector loga_bw_table[index_loga] with values of log(a). Note that loga_bw_table[0] correspond to a=1 and loga_bw_table[bt_bw_size-1] to the smallest scale factor provided by the user*/
+  int bt_bw_size;               /**< size of vector (i.e. time-steps) used to store result of backward integration for alpha_B */
+  double * loga_bw_table;       /**< vector loga_bw_table[index_loga] with values of log(a). Note that loga_bw_table[0] correspond to a=1 and loga_bw_table[bt_bw_size-1] to the smallest scale factor provided by the user */
+  int bt_bw_rho_smg_size;               /**< size of vector (i.e. time-steps) used to store result of backward integration for rho_smg */
+  double * loga_fw_table_rho_smg;       /**< vector loga_fw_table_rho_smg[index_loga] with values of log(a) */
+  double loga_final_bw_integration;
 
   //@}
 
@@ -514,6 +540,7 @@ struct background
   double * d2tau_dz2_table; /**< vector d2tau_dz2_table[index_loga] with values of \f$ d^2 \tau / dz^2 \f$ (conformal time) */
   double * d2z_dtau2_table; /**< vector d2z_dtau2_table[index_loga] with values of \f$ d^2 z / d\tau^2 \f$ (conformal time) */
   double * d2background_dloga2_table; /**< table d2background_dtau2_table[index_loga*pba->bg_size+pba->index_bg] with values of \f$ d^2 b_i / d\log(a)^2 \f$ */
+  double * d2background_dloga2_table_late; /**< table of second derivatives for background_table_late */
 
   //@}
 
@@ -632,6 +659,7 @@ struct background_parameters_and_workspace {
 
   /* workspaces used only for hi_class stable parametrization */
   double * pvec_stable_params_smg;
+  // double * pvec_stable_wext_smg;
   double * pvecback_B;
 
 };

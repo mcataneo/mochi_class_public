@@ -699,6 +699,13 @@ int transfer_perturbation_copy_sources_and_nl_corrections(
         else {
           sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp] =
             ppt->sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp];
+
+          // DONE_MC: !!!checked that ppt->sources are properly pointed by the newly allocated pointer sources!!!
+          // index_tau=1;
+          // for (index_k=0; index_k<ppt->k_size[index_md]; index_k++) {
+          //   printf("transfer_perturbation_copy_sources_and_nl_corrections: index_tau=%d \t index_k=%d \t sources=%e\n",index_tau,index_k,sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp][index_tau * ppt->k_size[index_md] + index_k]);
+          // }
+          
         }
       }
     }
@@ -738,7 +745,7 @@ int transfer_perturbation_source_spline(
                                                sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp],
                                                ppt->tau_size,
                                                sources_spline[index_md][index_ic * ppt->tp_size[index_md] + index_tp],
-                                               _SPLINE_EST_DERIV_,
+                                              _SPLINE_EST_DERIV_,
                                                ptr->error_message),
                    ptr->error_message,
                    ptr->error_message);
@@ -746,6 +753,15 @@ int transfer_perturbation_source_spline(
       }
     }
   }
+
+        // index_md = 0;
+        // index_ic = 0;
+        // index_tp = 1;
+        // int index_tau = 677;
+        // // int index_k = 408;
+        // for (int index_k=0; index_k<ppt->k_size[index_md]; index_k++) {
+        //   printf("transfer_perturbation_source_spline: index_tau=%d \t index_k=%d \t sources=%e \t sources_spline=%e\n",index_tau,index_k,sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp][index_tau * ppt->k_size[index_md] + index_k],sources_spline[index_md][index_ic * ppt->tp_size[index_md] + index_tp][index_tau * ppt->k_size[index_md] + index_k]);
+        // }
 
   return _SUCCESS_;
 
@@ -1788,6 +1804,12 @@ int transfer_compute_for_each_q(
                        ptr->error_message);
           }
 
+          // for(int index_tau=0; index_tau < ptw->tau_size; index_tau++){
+          //   if(index_md==0 && index_tt==1 && index_ic==0 && index_q==ppt->k_size_cl[index_md]-1){
+          //     printf("transfer_compute_for_each_q: index_q=%d \t index_tau=%d \t interpolated_sources=%e\n",index_q,index_tau,interpolated_sources[index_tau]);
+          //   }
+          // }
+
           previous_type = tp_of_tt[index_md][index_tt];
 
           /* the code makes a distinction between "perturbation
@@ -2050,6 +2072,12 @@ int transfer_interpolate_sources(
       + b * pert_source[index_tau*ppt->k_size[index_md]+index_k+1]
       + ((a*a*a-a) * pert_source_spline[index_tau*ppt->k_size[index_md]+index_k]
          +(b*b*b-b) * pert_source_spline[index_tau*ppt->k_size[index_md]+index_k+1])*h*h/6.0;
+
+    // if(index_md==0 && index_type==1 && index_ic==0 && index_tau==677 && index_q==565){
+    //   printf("transfer_interpolate_sources: index_q=%d \t index_tau=%d \t interpolated_sources=%e\n",index_q,index_tau,interpolated_sources[index_tau]);
+    //   printf("transfer_interpolate_sources: index_q=%d \t index_tau=%d \t pert_source[index_tau*ppt->k_size[index_md]+index_k]=%e \t pert_source[index_tau*ppt->k_size[index_md]+index_k+1]=%e\n",index_q,index_tau,pert_source[index_tau*ppt->k_size[index_md]+index_k],pert_source[index_tau*ppt->k_size[index_md]+index_k+1]);
+    //   printf("transfer_interpolate_sources: index_q=%d \t index_tau=%d \t pert_source_spline[index_tau*ppt->k_size[index_md]+index_k]=%e \t pert_source_spline[index_tau*ppt->k_size[index_md]+index_k+1]=%e\n",index_q,index_tau,pert_source_spline[index_tau*ppt->k_size[index_md]+index_k],pert_source_spline[index_tau*ppt->k_size[index_md]+index_k+1]);
+    // }
 
   }
 
@@ -3088,6 +3116,10 @@ int transfer_compute_for_each_l(
                            * ptr->l_size[index_md] + index_l)
                           * ptr->q_size + index_q]
     = transfer_function;
+
+  // if (index_md==0 && index_ic==0 && index_tt==1 && l==10.) {
+  //   printf("transfer_compute_for_each_l: l=%e \t q=%e \t transfer_function=%e\n",l,q,transfer_function);
+  // }
 
   return _SUCCESS_;
 

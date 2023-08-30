@@ -33,7 +33,7 @@ AR        = ar rv
 PYTHON ?= python3
 
 # your optimization flag
-OPTFLAG = -O3
+OPTFLAG = -O4
 #OPTFLAG = -Ofast -ffast-math #-march=native
 #OPTFLAG = -fast
 
@@ -43,7 +43,7 @@ OMPFLAG   = -fopenmp
 #OMPFLAG   = -openmp
 
 # all other compilation flags
-CCFLAG = -g -fPIC
+CCFLAG = -g -fPIC #-Wall
 LDFLAG = -g -fPIC
 
 # leave blank to compile without HyRec, or put path to HyRec directory

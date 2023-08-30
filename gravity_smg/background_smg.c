@@ -601,8 +601,9 @@ int background_solve_smg(
 	int (*generic_evolver)();
 	generic_evolver = evolver_ndf15;
 	/* initial and final time for backward integration in stable_params */
-	double eps_bw_integration = 0.05; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg.
-	double loga_final = log((1. - eps_bw_integration)/(1+ppr->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
+	//TODO_MC: move eps_bw_integration to precision structure
+	// double eps_bw_integration = 0.05; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg.
+	double loga_final = log((1. - ppr->eps_bw_integration_braid)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.; // time used for initial conditions in backward integration
 	/* indices for the different arrays */
 	int index_loga, index_out;
@@ -629,15 +630,13 @@ int background_solve_smg(
 		/* allocate time and output flag arrays */
 		pba->bt_bw_size = pba->stable_params_size_smg;
 		class_alloc(pba->loga_bw_table,pba->bt_bw_size*sizeof(double),pba->error_message);
-		// class_alloc(used_in_output, pba->bt_bw_size*sizeof(int), pba->error_message);
-		class_alloc(used_in_output, pba->bi_bw_B_size*sizeof(int), pba->error_message);
+		class_alloc(used_in_output, pba->bt_bw_size*sizeof(int), pba->error_message);
 		class_alloc(loga_fw_table,pba->bt_bw_size*sizeof(double),pba->error_message);
 
 		/** - define values of loga at which results will be stored from loga_ini to loga_final*/
 		for (index_loga=0; index_loga<pba->bt_bw_size; index_loga++) {
 			pba->loga_bw_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_bw_size-1);
 			loga_fw_table[index_loga] = loga_final + index_loga*(loga_ini-loga_final)/(pba->bt_bw_size-1);
-			// used_in_output[index_loga] = 1;
 		}
 		/** - define which parameters will be used in the output */
 		for (index_out=0; index_out<pba->bi_bw_B_size; index_out++) {
@@ -734,6 +733,20 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*(pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg));
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);				
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
+
+				if(pba->expansion_model_smg == wext) {
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg];
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_M2_smg] = 1. + pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg];
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_mpl_running_smg] = pvec_stable_params_smg[pba->index_stable_Mpl_running_smg];
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_kinetic_D_smg] = pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_cs2_smg] = pvec_stable_params_smg[pba->index_stable_cs2_smg];
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_cs2num_smg] = pvec_stable_params_smg[pba->index_stable_cs2_smg]*(pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg);
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_kineticity_smg] = pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_braiding_smg] = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
+					/* stable_params only works for scalar Horndeski */
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_tensor_excess_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_beyond_horndeski_smg] = 0.;
+				}
 			}
 			else {
 				//Set Horndeski parameters to their GR-LCDM limit. Not used anyway				
@@ -744,6 +757,18 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2_smg, 1.);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, 0.);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, 0.);
+
+				if(pba->expansion_model_smg == wext) {
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_M2_smg] = 1.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_mpl_running_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_kinetic_D_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_cs2_smg] = 1.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_kineticity_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_braiding_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_tensor_excess_smg] = 0.;
+					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_beyond_horndeski_smg] = 0.;
+				}
 			}
 
 		}
@@ -759,6 +784,18 @@ int background_solve_smg(
 									pba->error_message),
 			pba->error_message,
 			pba->error_message);
+
+		if(pba->expansion_model_smg == wext){
+			class_call(array_spline_table_lines(pba->loga_table,
+											pba->bt_size,
+											pba->background_table_late,
+											pba->bg_size,
+											pba->d2background_dloga2_table_late,
+											_SPLINE_EST_DERIV_,
+											pba->error_message),
+					pba->error_message,
+					pba->error_message);
+		}
 
 		// FILE * output_file;
 		// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/background_term_in_ODE_hiclass.dat","w");
@@ -826,186 +863,331 @@ int background_solve_smg(
 	 * Fill the derivatives of the Bellini-Sawicki functions in pvecback
 	 * This is done just by overwriting the pvecback entries corresponding to the relevant indice
 	 */
-
 	double * pvecback_derivs;
+	// double * pvecback_late;
 	class_alloc(pvecback_derivs,pba->bg_size*sizeof(double),pba->error_message);
-
+	// class_alloc(pvecback_late,pba->bg_size*sizeof(double),pba->error_message);
+	
  	for (i=0; i < pba->bt_size; i++) {
 
-		// write the derivatives in the structure
-		class_call(array_derivate_spline(pba->loga_table, // x_array
-				     pba->bt_size, // int n_lines
-				     pba->background_table, // array
-				     pba->d2background_dloga2_table, // double * array_splined
-				     pba->bg_size, // n_columns
-				     pba->loga_table[i], // double x -> tau
-				     &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
-				     pvecback_derivs, // double * result
-				     pba->bg_size, //result_size, from 1 to n_columns
-				     pba->error_message),
-		pba->error_message,
-		pba->error_message);
-
-		//Need to update pvecback
-		class_call(background_at_tau(pba,
-				 pba->tau_table[i],
-				 long_info,
-				 inter_normal,
-				 &last_index, //should be no problem to use the same one as for the derivatives
-				 pvecback),
-		pba->error_message,
-		pba->error_message);
-
-		a = pvecback[pba->index_bg_a];
-
-		/* - indices for scalar field (modified gravity) */
-		class_call(derivatives_alphas_smg(pba, pvecback, pvecback_derivs, i),
+		if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+			// write the derivatives in the structure
+			class_call(array_derivate_spline(pba->loga_table, // x_array
+						pba->bt_size, // int n_lines
+						pba->background_table_late, // array
+						pba->d2background_dloga2_table_late, // double * array_splined
+						pba->bg_size, // n_columns
+						pba->loga_table[i], // double x -> tau
+						&last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
+						pvecback_derivs, // double * result
+						pba->bg_size, //result_size, from 1 to n_columns
+						pba->error_message),
 			pba->error_message,
-			pba->error_message
-		);
+			pba->error_message);	
 
-		class_call(gravity_functions_As_from_alphas_smg(pba, pvecback, pvecback_derivs),
-							 pba->error_message,
-							 pba->error_message);
+			/* - indices for scalar field (modified gravity) */
+			// pvecback_late = pba->background_table_late + i*pba->bg_size;
+			// a = pvecback_late[pba->index_bg_a];
+			a = pba->background_table_late[i*pba->bg_size + pba->index_bg_a];
 
-		if(pba->gravity_model_smg != stable_params){
-			copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_smg, pvecback[pba->index_bg_kinetic_D_smg]);
+			// class_call(derivatives_alphas_smg(pba, pvecback_late, pvecback_derivs, i),
+			// 	pba->error_message,
+			// 	pba->error_message
+			// );
+			class_call(derivatives_alphas_smg(pba, pba->background_table_late + i*pba->bg_size, pvecback_derivs, i),
+				pba->error_message,
+				pba->error_message
+			);
+
+			// class_call(gravity_functions_As_from_alphas_smg(pba, pvecback_late, pvecback_derivs),
+			// 					pba->error_message,
+			// 					pba->error_message);
+			class_call(gravity_functions_As_from_alphas_smg(pba, pba->background_table_late + i*pba->bg_size, pvecback_derivs),
+								pba->error_message,
+								pba->error_message);
+
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback_late[pba->index_bg_A0_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback_late[pba->index_bg_A1_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback_late[pba->index_bg_A2_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pvecback_late[pba->index_bg_A3_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pvecback_late[pba->index_bg_A4_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pvecback_late[pba->index_bg_A5_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pvecback_late[pba->index_bg_A6_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pvecback_late[pba->index_bg_A7_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pvecback_late[pba->index_bg_A8_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pvecback_late[pba->index_bg_A9_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pvecback_late[pba->index_bg_A10_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pvecback_late[pba->index_bg_A11_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pvecback_late[pba->index_bg_A12_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pvecback_late[pba->index_bg_A13_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pvecback_late[pba->index_bg_A14_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pvecback_late[pba->index_bg_A15_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pvecback_late[pba->index_bg_A16_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pvecback_late[pba->index_bg_lambda_1_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pvecback_late[pba->index_bg_lambda_2_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pvecback_late[pba->index_bg_lambda_3_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pvecback_late[pba->index_bg_lambda_4_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pvecback_late[pba->index_bg_lambda_5_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pvecback_late[pba->index_bg_lambda_6_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pvecback_late[pba->index_bg_lambda_7_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback_late[pba->index_bg_lambda_8_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback_late[pba->index_bg_lambda_9_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback_late[pba->index_bg_lambda_10_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback_late[pba->index_bg_lambda_11_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback_late[pba->index_bg_G_eff_smg]);
+			// copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback_late[pba->index_bg_slip_eff_smg]);
+
+			// printf("background_solve_smg: a=%e \t -bra/2=%e \t beh=%e \t A15=%e\n",a,-pba->background_table_late[i*pba->bg_size + pba->index_bg_braiding_smg]/2.,pba->background_table_late[pba->index_bg_beyond_horndeski_smg],pba->background_table_late[i*pba->bg_size + pba->index_bg_A15_smg]);
+
+			copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A0_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A1_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A2_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A3_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A4_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A5_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A6_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A7_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A8_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A9_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A10_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A11_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A12_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A13_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A14_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A15_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A16_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_1_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_2_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_3_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_4_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_5_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_6_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_7_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_8_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_9_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_10_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_lambda_11_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_G_eff_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_slip_eff_smg]);
+
+			/* Here we update the minimum values of the stability quantities
+			* even though not required for stable parametrisation 
+			*/
+			if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
+				if (pba->background_table[pba->index_bg_kinetic_D_smg + i*pba->bg_size] < pba->min_D_smg){
+					pba->min_D_smg = pba->background_table[pba->index_bg_kinetic_D_smg + i*pba->bg_size];
+					pba->a_min_D_smg = a;
+				}
+				if (pba->background_table[pba->index_bg_cs2_smg + i*pba->bg_size] <= pba->min_cs2_smg){
+					pba->min_cs2_smg = pba->background_table[pba->index_bg_cs2_smg + i*pba->bg_size];
+					pba->a_min_cs2_smg = a;
+				}
+				if (pba->background_table[pba->index_bg_M2_smg + i*pba->bg_size] < pba->min_M2_smg){
+					pba->min_M2_smg = pba->background_table[pba->index_bg_M2_smg + i*pba->bg_size];
+					pba->a_min_M2_smg = a;
+				}
+				if (pba->background_table[pba->index_bg_tensor_excess_smg + i*pba->bg_size] + 1. < pba->min_ct2_smg){
+					pba->min_ct2_smg = 1. + pba->background_table[pba->index_bg_tensor_excess_smg + i*pba->bg_size];
+					pba->a_min_ct2_smg = a;
+				}
+				if (pba->background_table[pba->index_bg_braiding_smg + i*pba->bg_size] < pba->min_bra_smg){
+					pba->min_bra_smg = pba->background_table[pba->index_bg_braiding_smg + i*pba->bg_size];
+				}
+				if (pba->background_table[pba->index_bg_braiding_smg + i*pba->bg_size] > pba->max_bra_smg){
+					pba->max_bra_smg = pba->background_table[pba->index_bg_braiding_smg + i*pba->bg_size];
+				}
+			}
+
 		}
-		copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback[pba->index_bg_A0_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback[pba->index_bg_A1_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback[pba->index_bg_A2_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pvecback[pba->index_bg_A3_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pvecback[pba->index_bg_A4_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pvecback[pba->index_bg_A5_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pvecback[pba->index_bg_A6_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pvecback[pba->index_bg_A7_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pvecback[pba->index_bg_A8_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pvecback[pba->index_bg_A9_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pvecback[pba->index_bg_A10_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pvecback[pba->index_bg_A11_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pvecback[pba->index_bg_A12_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pvecback[pba->index_bg_A13_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pvecback[pba->index_bg_A14_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pvecback[pba->index_bg_A15_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pvecback[pba->index_bg_A16_smg]);
+		else {
+			// write the derivatives in the structure
+			class_call(array_derivate_spline(pba->loga_table, // x_array
+						pba->bt_size, // int n_lines
+						pba->background_table, // array
+						pba->d2background_dloga2_table, // double * array_splined
+						pba->bg_size, // n_columns
+						pba->loga_table[i], // double x -> tau
+						&last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
+						pvecback_derivs, // double * result
+						pba->bg_size, //result_size, from 1 to n_columns
+						pba->error_message),
+			pba->error_message,
+			pba->error_message);
 
-		if (pba->field_evolution_smg == _TRUE_) {
+			//Need to update pvecback
+			class_call(background_at_tau(pba,
+					pba->tau_table[i],
+					long_info,
+					inter_normal,
+					&last_index, //should be no problem to use the same one as for the derivatives
+					pvecback),
+			pba->error_message,
+			pba->error_message);
 
-			class_call(gravity_functions_Cs_from_Bs_smg(pba, pvecback, pvecback_derivs),
-								 pba->error_message,
-								 pba->error_message);
+			a = pvecback[pba->index_bg_a];
 
-			copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_smg, pvecback[pba->index_bg_kinetic_D_over_phiphi_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C0_smg, pvecback[pba->index_bg_C0_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C1_smg, pvecback[pba->index_bg_C1_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C2_smg, pvecback[pba->index_bg_C2_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C3_smg, pvecback[pba->index_bg_C3_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C4_smg, pvecback[pba->index_bg_C4_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C5_smg, pvecback[pba->index_bg_C5_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C6_smg, pvecback[pba->index_bg_C6_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C7_smg, pvecback[pba->index_bg_C7_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C8_smg, pvecback[pba->index_bg_C8_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C9_smg, pvecback[pba->index_bg_C9_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C10_smg, pvecback[pba->index_bg_C10_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C11_smg, pvecback[pba->index_bg_C11_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C12_smg, pvecback[pba->index_bg_C12_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C13_smg, pvecback[pba->index_bg_C13_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C14_smg, pvecback[pba->index_bg_C14_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C15_smg, pvecback[pba->index_bg_C15_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_C16_smg, pvecback[pba->index_bg_C16_smg]);
+			/* - indices for scalar field (modified gravity) */
+			class_call(derivatives_alphas_smg(pba, pvecback, pvecback_derivs, i),
+				pba->error_message,
+				pba->error_message
+			);
+
+			class_call(gravity_functions_As_from_alphas_smg(pba, pvecback, pvecback_derivs),
+								pba->error_message,
+								pba->error_message);
+
+			if(pba->gravity_model_smg != stable_params){
+				copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_smg, pvecback[pba->index_bg_kinetic_D_smg]);
+			}
+			copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback[pba->index_bg_A0_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback[pba->index_bg_A1_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback[pba->index_bg_A2_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pvecback[pba->index_bg_A3_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pvecback[pba->index_bg_A4_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pvecback[pba->index_bg_A5_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pvecback[pba->index_bg_A6_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pvecback[pba->index_bg_A7_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pvecback[pba->index_bg_A8_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pvecback[pba->index_bg_A9_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pvecback[pba->index_bg_A10_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pvecback[pba->index_bg_A11_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pvecback[pba->index_bg_A12_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pvecback[pba->index_bg_A13_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pvecback[pba->index_bg_A14_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pvecback[pba->index_bg_A15_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pvecback[pba->index_bg_A16_smg]);
+
+			if (pba->field_evolution_smg == _TRUE_) {
+
+				class_call(gravity_functions_Cs_from_Bs_smg(pba, pvecback, pvecback_derivs),
+									pba->error_message,
+									pba->error_message);
+
+				copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_smg, pvecback[pba->index_bg_kinetic_D_over_phiphi_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C0_smg, pvecback[pba->index_bg_C0_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C1_smg, pvecback[pba->index_bg_C1_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C2_smg, pvecback[pba->index_bg_C2_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C3_smg, pvecback[pba->index_bg_C3_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C4_smg, pvecback[pba->index_bg_C4_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C5_smg, pvecback[pba->index_bg_C5_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C6_smg, pvecback[pba->index_bg_C6_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C7_smg, pvecback[pba->index_bg_C7_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C8_smg, pvecback[pba->index_bg_C8_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C9_smg, pvecback[pba->index_bg_C9_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C10_smg, pvecback[pba->index_bg_C10_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C11_smg, pvecback[pba->index_bg_C11_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C12_smg, pvecback[pba->index_bg_C12_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C13_smg, pvecback[pba->index_bg_C13_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C14_smg, pvecback[pba->index_bg_C14_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C15_smg, pvecback[pba->index_bg_C15_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_C16_smg, pvecback[pba->index_bg_C16_smg]);
+			}
+
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pvecback[pba->index_bg_lambda_1_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pvecback[pba->index_bg_lambda_2_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pvecback[pba->index_bg_lambda_3_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pvecback[pba->index_bg_lambda_4_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pvecback[pba->index_bg_lambda_5_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pvecback[pba->index_bg_lambda_6_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pvecback[pba->index_bg_lambda_7_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback[pba->index_bg_lambda_8_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback[pba->index_bg_lambda_9_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback[pba->index_bg_lambda_10_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback[pba->index_bg_lambda_11_smg]);
+			if(pba->gravity_model_smg != stable_params){
+				copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_smg, pvecback[pba->index_bg_cs2num_smg]);
+				copy_to_background_table_smg(pba, i, pba->index_bg_cs2_smg, pvecback[pba->index_bg_cs2_smg]);
+			}
+			copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback[pba->index_bg_G_eff_smg]);
+			copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback[pba->index_bg_slip_eff_smg]);
+
+			/* Here we update the minimum values of the stability quantities
+			* test will be performed based on the lowest values
+			*/
+			if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
+				if (pvecback[pba->index_bg_kinetic_D_smg] < pba->min_D_smg){
+					pba->min_D_smg = pvecback[pba->index_bg_kinetic_D_smg];
+					pba->a_min_D_smg = a;
+				}
+				if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
+					pba->min_cs2_smg = pvecback[pba->index_bg_cs2_smg];
+					pba->a_min_cs2_smg = a;
+				}
+				if (pvecback[pba->index_bg_M2_smg] < pba->min_M2_smg){
+					pba->min_M2_smg = pvecback[pba->index_bg_M2_smg];
+					pba->a_min_M2_smg = a;
+				}
+				if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
+					pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
+					pba->a_min_ct2_smg = a;
+				}
+				if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
+					pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
+				}
+				if (pvecback[pba->index_bg_braiding_smg] > pba->max_bra_smg){
+					pba->max_bra_smg = pvecback[pba->index_bg_braiding_smg];
+				}
+			}
+
 		}
-
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pvecback[pba->index_bg_lambda_1_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pvecback[pba->index_bg_lambda_2_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pvecback[pba->index_bg_lambda_3_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pvecback[pba->index_bg_lambda_4_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pvecback[pba->index_bg_lambda_5_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pvecback[pba->index_bg_lambda_6_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pvecback[pba->index_bg_lambda_7_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback[pba->index_bg_lambda_8_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback[pba->index_bg_lambda_9_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback[pba->index_bg_lambda_10_smg]);
-	  	copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback[pba->index_bg_lambda_11_smg]);
-		if(pba->gravity_model_smg != stable_params){
-			copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_smg, pvecback[pba->index_bg_cs2num_smg]);
-			copy_to_background_table_smg(pba, i, pba->index_bg_cs2_smg, pvecback[pba->index_bg_cs2_smg]);
-		}
-		copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback[pba->index_bg_G_eff_smg]);
-		copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback[pba->index_bg_slip_eff_smg]);
-
-		/* Here we update the minimum values of the stability quantities
-		* test will be performed based on the lowest values
-		*/
-		if (a > pba->a_min_stability_test_smg && pba->parameters_tuned_smg == _TRUE_){
-			if (pvecback[pba->index_bg_kinetic_D_smg] < pba->min_D_smg){
-				pba->min_D_smg = pvecback[pba->index_bg_kinetic_D_smg];
-				pba->a_min_D_smg = a;
-			}
-			if (pvecback[pba->index_bg_cs2_smg] <= pba->min_cs2_smg){
-				pba->min_cs2_smg = pvecback[pba->index_bg_cs2_smg];
-				pba->a_min_cs2_smg = a;
-			}
-			if (pvecback[pba->index_bg_M2_smg] < pba->min_M2_smg){
-				pba->min_M2_smg = pvecback[pba->index_bg_M2_smg];
-				pba->a_min_M2_smg = a;
-			}
-			if (pvecback[pba->index_bg_tensor_excess_smg] + 1. < pba->min_ct2_smg){
-				pba->min_ct2_smg = 1. + pvecback[pba->index_bg_tensor_excess_smg];
-				pba->a_min_ct2_smg = a;
-			}
-			if (pvecback[pba->index_bg_braiding_smg] < pba->min_bra_smg){
-				pba->min_bra_smg = pvecback[pba->index_bg_braiding_smg];
-			}
-			if (pvecback[pba->index_bg_braiding_smg] > pba->max_bra_smg){
-				pba->max_bra_smg = pvecback[pba->index_bg_braiding_smg];
-			}
-		}
-
 	}
-
-	class_call(
-	  stability_tests_smg(pba, pvecback, pvecback_integration),
-	  pba->error_message,
-	  pba->error_message
-	);
+	
+	if (pba->gravity_model_smg != stable_params) {
+		class_call(
+		stability_tests_smg(pba, pvecback, pvecback_integration),
+		pba->error_message,
+		pba->error_message
+		);
+	}
 
 	 /* Yet another (third!) loop to make sure the background table makes sense
 	 */
+	double factor;
 	for (i=0; i < pba->bt_size; i++) {
-
 		//Need to update pvecback
 		class_call(background_at_tau(pba,
-				 pba->tau_table[i],
-				 long_info,
-				 inter_normal,
-				 &last_index, //should be no problem to use the same one as for the derivatives
-				 pvecback),
+					pba->tau_table[i],
+					long_info,
+					inter_normal,
+					&last_index, //should be no problem to use the same one as for the derivatives
+					pvecback),
+			pba->error_message,
+			pba->error_message);
+
+		if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
+			// For wext expansion we want to make sure we calculate the appropriate scale factor a*H 
+			// when extending smg to slightly earlier times than z_gr_smg. By having the pvecback_late pointer
+			// to background_table_late we can retrieve the values for a and H stored by background_sources
+			// pvecback_late = pba->background_table_late + i*pba->bg_size;
+			// factor = pvecback_late[pba->index_bg_a]*pvecback_late[pba->index_bg_H];
+			factor = pba->background_table_late[i*pba->bg_size + pba->index_bg_a]*pba->background_table_late[i*pba->bg_size + pba->index_bg_H];
+		}
+		else {
+			// TODO_EB: note that the derivative is now calculated w.r.t. loga, while our _prime are w.r.t. tau
+			factor = pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H];
+		}
+
+		double d_over_dtau;
+
+		//write the derivatives in the structure
+		class_call(array_derivate_spline(pba->loga_table, // x_array
+					pba->bt_size, // int n_lines
+					pba->background_table, // array
+					pba->d2background_dloga2_table, // double * array_splined
+					pba->bg_size, // n_columns
+					pba->loga_table[i], // double x -> tau
+					&last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
+					pvecback_derivs, // double * result
+					pba->bg_size, //result_size, from 1 to n_columns
+					pba->error_message),
 		pba->error_message,
 		pba->error_message);
 
-		// TODO_EB: note that the derivative is now calculated w.r.t. loga, while our _prime are w.r.t. tau
-		double factor = pvecback[pba->index_bg_a]*pvecback[pba->index_bg_H];
-		double d_over_dtau;
-
-    //write the derivatives in the structure
-    class_call(array_derivate_spline(pba->loga_table, // x_array
-			       pba->bt_size, // int n_lines
-			       pba->background_table, // array
-			       pba->d2background_dloga2_table, // double * array_splined
-			       pba->bg_size, // n_columns
-			       pba->loga_table[i], // double x -> tau
-			       &last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
-			       pvecback_derivs, // double * result
-			       pba->bg_size, //result_size, from 1 to n_columns
-			       pba->error_message),
-	  pba->error_message,
-	  pba->error_message);
-
-    //cs2num'
+		//cs2num'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_cs2num_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_cs2num_prime_smg, d_over_dtau);
 
-    //D'
+		//D'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_kinetic_D_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_prime_smg, d_over_dtau);
 
@@ -1015,44 +1197,44 @@ int background_solve_smg(
 			copy_to_background_table_smg(pba, i, pba->index_bg_kinetic_D_over_phiphi_prime_smg, d_over_dtau);
 		}
 
-    //A9'
+		//A9'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A9_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_A9_prime_smg, d_over_dtau);
 
-    //A10'
+		//A10'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A10_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_A10_prime_smg, d_over_dtau);
 
-    //A12'
-	  d_over_dtau = factor*pvecback_derivs[pba->index_bg_A12_smg];
+		//A12'
+		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A12_smg];
 
-    //A13'
+		//A13'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_A13_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_A13_prime_smg, d_over_dtau);
 
 		if (pba->field_evolution_smg == _TRUE_) {
-	    //C9'
+		//C9'
 			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C9_smg];
 			copy_to_background_table_smg(pba, i, pba->index_bg_C9_prime_smg, d_over_dtau);
 
-	    //C10'
+		//C10'
 			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C10_smg];
 			copy_to_background_table_smg(pba, i, pba->index_bg_C10_prime_smg, d_over_dtau);
 
-	    //C12'
+		//C12'
 			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C12_smg];
 			copy_to_background_table_smg(pba, i, pba->index_bg_C12_prime_smg, d_over_dtau);
 
-	    //C13'
+		//C13'
 			d_over_dtau = factor*pvecback_derivs[pba->index_bg_C13_smg];
 			copy_to_background_table_smg(pba, i, pba->index_bg_C13_prime_smg, d_over_dtau);
 		}
 
-    //lambda_2'
+		//lambda_2'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_2_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_prime_smg, d_over_dtau);
 
-    //lambda_8'
+		//lambda_8'
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_lambda_8_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_prime_smg, d_over_dtau);
 
@@ -1072,28 +1254,231 @@ int background_solve_smg(
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_prime_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_p_prime_prime_smg, d_over_dtau);
 
-	  // check if any of the values becomes nan
-	  int j = 0;
-	  while (j < pba->bg_size){
-	  	class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
-	             pba->error_message,
-	             free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
-	             "pvecback[%i] = %e at a = %e in background!",j,pvecback[j],pvecback[pba->index_bg_a]);
-	 		j++;
+		int j = 0;
+		while (j < pba->bg_size){
+			class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
+					pba->error_message,
+					free(pvecback_derivs);free(pvecback);free(pvecback_integration);background_free(pba),
+					"pvecback[%i] = %e at a = %e in background!",j,pvecback[j],pvecback[pba->index_bg_a]);
+				j++;
 		}
 
 	}
-
+	
 	free(pvecback_derivs);  //free the structure
 	if(pba->gravity_model_smg == stable_params){
 		free(pvec_stable_params_smg);
 		free(pvec_stable_params_derived_smg);
+		free(pba->stable_params_lna_smg);
+		free(pba->stable_params_smg);
+		free(pba->ddstable_params_smg);
+		free(pba->stable_params_derived_smg);
+		free(pba->ddstable_params_derived_smg);
+		free(pba->stable_params_aux_smg);
+		if(pba->expansion_model_smg == wext){
+			free(pba->background_table_late);
+			free(pba->d2background_dloga2_table_late);
+		// 	free(pba->stable_wext_lna_smg);
+		// 	free(pba->stable_wext_smg);
+		// 	free(pba->ddstable_wext_smg);
+		// 	free(pba->stable_rho_smg);
+		// 	free(pba->ddstable_rho_smg);
+		}
 	}
 
 	return _SUCCESS_;
 
 }
 
+/**
+* In background_solve_rho_smg, after quantities {B} and {C} have been
+* inegrated, this routine computes derived quantities, such as
+* numerical derivatives of the alphas and functions that depend
+* on combinations of alphas and derivatives. This is also the
+* place where stability tests are done (in stability_tests_smg).
+*
+* @param pba                  Input: pointer to background structure
+* @param pvecback             Output: vector of background quantities (assumed to be already allocated)
+* @param pvecback_integration Output: vector of background quantities to be integrated, returned with proper initial values
+* @param pvecback_bw_integration Output: vector of background quantities to be backward integrated, returned with proper initial values
+* @return the error status
+*/
+int background_solve_rho_smg(
+						 struct precision *ppr,
+						 struct background *pba,
+						 double * pback_rho_smg_bw_integration
+											   ) {
+
+	/* parameters and workspace for the background_derivs function */
+  	struct background_parameters_and_workspace bpaw;
+	/* evolvers */
+	extern int evolver_rk();
+  	extern int evolver_ndf15();
+	int (*generic_evolver)();
+	generic_evolver = evolver_ndf15;
+	/* initial and final time for backward integration in stable_params */
+	// double eps_bw_integration = 0.1; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg.
+	double loga_final = log((1. - ppr->eps_bw_integration_rho_smg)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
+	double loga_ini = 0.; // time used for initial conditions in backward integration
+	/* indices for the different arrays */
+	int index_loga, index_out;
+	/* necessary for calling array_interpolate(), but never used */
+	int last_index;
+	/* what times are used in the output? */
+	int * used_in_output;
+	
+	pba->loga_final_bw_integration = loga_final;
+	class_test(pba->a_file_lcdm_smg > exp(loga_final),
+				pba->error_message,
+				"minimum scale factor in input file for w is %f. For wext parametrization it must be < %f for accurate numerical derivatives of smg parameters at late times", pba->a_file_lcdm_smg, exp(loga_final));
+
+	/** - setup background workspace */
+	bpaw.pba = pba;
+	/* allocate time and output flag arrays */
+	pba->bt_bw_rho_smg_size = pba->stable_wext_size_smg;
+	class_alloc(pba->loga_bw_table,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
+	class_alloc(pba->loga_fw_table_rho_smg,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
+	// class_alloc(used_in_output, sizeof(int), pba->error_message);
+	class_alloc(used_in_output, pba->bt_bw_rho_smg_size*sizeof(int), pba->error_message);
+
+	/** - define values of loga at which results will be stored from loga_ini to loga_final*/
+	for (index_loga=0; index_loga<pba->bt_bw_rho_smg_size; index_loga++) {
+		pba->loga_bw_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_bw_rho_smg_size-1);
+		pba->loga_fw_table_rho_smg[index_loga] = loga_final + index_loga*(loga_ini-loga_final)/(pba->bt_bw_rho_smg_size-1);
+		used_in_output[index_loga] = 1;
+	}
+	/** - define which parameters will be used in the output */
+	// used_in_output[0] = 1;
+
+	/* - store final integration time */
+	pba->loga_final_rho_smg = loga_final;
+	/** - perform the backward integration for rho_smg*/
+	class_call(generic_evolver(background_derivs_bw_rho_smg,
+								loga_ini,
+								loga_final,
+								pback_rho_smg_bw_integration,
+								used_in_output,
+								1,
+								&bpaw,
+								ppr->tol_background_bw_integration,
+								ppr->smallest_allowed_variation,
+								background_timescale, //'evaluate_timescale', required by evolver_rk but not by ndf15
+								ppr->background_integration_stepsize,
+								pba->loga_bw_table,
+								pba->bt_bw_rho_smg_size,
+								background_sources_bw_rho_smg,
+								NULL, //'print_variables' in evolver_rk could be set, but, not required
+								pba->error_message),
+				pba->error_message,
+				pba->error_message);
+	// Spline integrated rho_smg
+	class_call(array_spline_table_lines(pba->loga_fw_table_rho_smg,
+										pba->bt_bw_rho_smg_size,
+										pba->stable_rho_smg,
+										1,
+										pba->ddstable_rho_smg,
+										_SPLINE_EST_DERIV_,
+										pba->error_message),
+			pba->error_message,
+			pba->error_message);
+
+	// interpolate integrated rho_smg at loga_final and store value
+	class_call(array_interpolate_spline(
+										pba->loga_fw_table_rho_smg,
+										pba->bt_bw_rho_smg_size,
+										pba->stable_rho_smg,
+										pba->ddstable_rho_smg,
+										1,
+										loga_final,
+										&last_index, // not used
+										&pba->rho_smg_final,
+										1,
+										pba->error_message),
+				pba->error_message,
+				pba->error_message);    		
+
+	free(pba->loga_bw_table);
+	free(used_in_output);
+
+	return _SUCCESS_;
+
+}
+
+/**
+* Interpolation function for the integrated rho_smg.
+*
+* @param pba                  Input: pointer to background structure
+* @param loga				  Input: scale factor ln(a)
+* @param loga_transition	  Input: for loga < loga_transition rho_smg behaves like a cosmological constant
+* @param pvecback             Output: vector of background quantities (assumed to be already allocated)
+* @return the error status
+*/
+int interpolate_rho_smg_p_smg(struct background *pba,
+						double loga,
+                        double loga_transition,
+                        double * pvecback
+                        ){
+
+double w = 0.;
+int last_index; // necessary for calling array_interpolate(), but never used 
+
+// TODO_MC: test if loga_transition is larger than loga_final_rho_smg
+if (loga >= loga_transition) {
+	// interpolate integrated rho_smg
+	class_call(array_interpolate_spline(
+										pba->loga_fw_table_rho_smg,
+										pba->bt_bw_rho_smg_size,
+										pba->stable_rho_smg,
+										pba->ddstable_rho_smg,
+										1,
+										loga,
+										&last_index, // not used
+										&pvecback[pba->index_bg_rho_smg],
+										1,
+										pba->error_message),
+				pba->error_message,
+				pba->error_message);    
+	// interpolate w
+	class_call(array_interpolate_spline(
+										pba->stable_wext_lna_smg,
+										pba->stable_wext_size_smg,
+										pba->stable_wext_smg,
+										pba->ddstable_wext_smg,
+										1,
+										loga,
+										&last_index,
+										&w,
+										1,
+										pba->error_message),
+			pba->error_message,
+			pba->error_message);
+
+	pvecback[pba->index_bg_p_smg] = w*pvecback[pba->index_bg_rho_smg];
+
+} 
+else if (loga < loga_transition) {
+
+	// interpolate integrated rho_smg at transition time
+	class_call(array_interpolate_spline(
+										pba->loga_fw_table_rho_smg,
+										pba->bt_bw_rho_smg_size,
+										pba->stable_rho_smg,
+										pba->ddstable_rho_smg,
+										1,
+										loga_transition,
+										&last_index, // not used
+										&pvecback[pba->index_bg_rho_smg],
+										1,
+										pba->error_message),
+				pba->error_message,
+				pba->error_message); 
+
+	pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg]; // cosmological constant
+}
+
+return _SUCCESS_;
+
+}
 
 /**
 * Send _smg information to the standard output.
@@ -1114,7 +1499,8 @@ int background_print_stdout_smg(
 		printf(", Omega_Lambda = %f", pba->Omega0_lambda);
 	printf("\n");
 	if (pba->background_verbose > 3) {
-		printf("Minimal stability values: cs2 = %g, ct2 = %g, D = %g, M2 = %g \n",pba->min_cs2_smg,pba->min_ct2_smg,pba->min_D_smg,pba->min_M2_smg);
+		if (pba->gravity_model_smg != stable_params)
+			printf("Minimal stability values: cs2 = %g, ct2 = %g, D = %g, M2 = %g \n",pba->min_cs2_smg,pba->min_ct2_smg,pba->min_D_smg,pba->min_M2_smg);
 	}
 
 	if (pba->field_evolution_smg == _TRUE_){
@@ -1136,6 +1522,7 @@ int background_print_stdout_smg(
 * @param pvecback             Output: vector of background quantities (assumed to be already allocated)
 * @param pvecback_integration Output: vector of background quantities to be integrated, returned with proper initial values
 * @param pvecback_bw_integration Output: vector of background quantities to be backward integrated, returned with proper initial values
+* @param pback_rho_smg_bw_integration Output: scalar quantity rho_smg to be backward integrated, returned with proper initial values
 * @param ptr_rho_rad          Input: pointer to the density of radiation
 * @return the error status
 */
@@ -1181,7 +1568,7 @@ int background_initial_conditions_smg(
 	  if (pba->background_verbose>3)
 	    printf(" -> Initial conditions: delta_M_pl = %e \n",pvecback_integration[pba->index_bi_delta_M_pl_smg]);
 
-	if(pba->gravity_model_smg == stable_params)
+	if(pba->gravity_model_smg == stable_params) 
 		if(pba->background_verbose>3)
 			printf(" -> Initial (a=1) B_tilde = %e dB_tilde = %.10e \n",
 				pvecback_bw_integration[pba->index_bibw_B_tilde_smg],pvecback_bw_integration[pba->index_bibw_dB_tilde_smg]);
@@ -1190,23 +1577,26 @@ int background_initial_conditions_smg(
 }
 
 /**
-* For each backward integrated variable fix the initial condition.
+* For each integrated variable fix the initial condition.
 *
 * @param pba                  Input: pointer to background structure
-* @param pvecback_bw_integration Output: vector of background quantities to be backward integrated, returned with proper initial values
+* @param pback_rho_smg_bw_integration Output: scalar quantity rho_smg to be backward integrated, returned with proper initial values
 * @return the error status
 */
-// int background_initial_conditions_bw_smg(
-//         															struct background *pba,
-//         															double * pvecback_bw_integration
-// 														  			  ) {
+int background_ic_rho_smg(
+        								struct background *pba,
+										double * pback_rho_smg_bw_integration
+									) {
+
+	double Omega_const_smg = pba->parameters_smg[0];
+    pback_rho_smg_bw_integration[0] = Omega_const_smg * pow(pba->H0,2);	
+
+	if(pba->background_verbose>3)
+		printf(" -> Initial (a=1) rho_smg = %e \n",pback_rho_smg_bw_integration[0]);
 
 
-// 	pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = 1.; // Arbitrary constant. We set it to 1
-// 	pvecback_bw_integration[pba->index_bibw_dB_tilde_smg] = 1. - 0.5 * pba->parameters_2_smg[0]; // 1 - alpha_B0/2
-
-// 	return _SUCCESS_;
-// }
+	return _SUCCESS_;
+}
 
 /**
  * Subroutine for formatting background _smg output
@@ -1553,7 +1943,6 @@ int background_derivs_bw_smg(
 	pvecback_size = pba->bg_size;
 	pvec_stable_params_smg = pbpaw->pvec_stable_params_smg;
 	pvec_stable_params_size = pba->num_stable_params;
-	// class_alloc(pvecback,pba->pvecback_size*sizeof(double),error_message);
 
 	// Interpolate all relevant background quantities required by ODE below
 	class_call(array_interpolate_spline(
@@ -1580,19 +1969,6 @@ int background_derivs_bw_smg(
 	if (pba->has_dr == _TRUE_) {
 		pvecback_B[pba->index_bi_rho_dr] = pvecback[pba->index_bg_rho_dr];
 	}
-	/* scf */
-	if (pba->has_scf == _TRUE_) {
-		pvecback_B[pba->index_bi_phi_scf] = pvecback[pba->index_bg_phi_scf];
-		pvecback_B[pba->index_bi_phi_prime_scf] = pvecback[pba->index_bg_phi_prime_scf];
-  	}
-	/* fluid with w(a) and constant cs2 */
-	if (pba->has_fld == _TRUE_) {
-		pvecback_B[pba->index_bi_rho_fld] = pvecback[pba->index_bg_rho_fld];
-	}
-	/* just for completeness, because hubble evolution is not performed anyway for stable_params */
-	if (pba->hubble_evolution == _TRUE_) {
-      pvecback_B[pba->index_bi_logH] = log(pvecback[pba->index_bg_H]);
-	}
 
 	// z = 1/a - 1.;
 	// class_call(background_at_z(pba,z,normal_info,inter_normal,&last_index,pvecback),
@@ -1604,8 +1980,21 @@ int background_derivs_bw_smg(
              pba->error_message,
              error_message);
 
-	H = pvecback[pba->index_bg_H];
-	dH = pvecback[pba->index_bg_H_prime]/a/H; // dH/dloga = 1/aH * dH/dtau
+	if (pba->expansion_model_smg == wext) {
+		class_call(interpolate_rho_smg_p_smg(pba, log(a), pba->loga_final_bw_integration, pvecback),
+                 pba->error_message,
+                 pba->error_message
+      	);
+		// Update quantities depending on rho_smg and p_smg
+		H = sqrt(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg] - pba->K/a/a);
+		dH = (-1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
+													+ pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a)/a/H; // dH/dloga = 1/aH * dH/dtau
+	}
+	else {
+		H = pvecback[pba->index_bg_H];
+		dH = pvecback[pba->index_bg_H_prime]/a/H; // dH/dloga = 1/aH * dH/dtau
+	}
+	
 	rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]; // all matter exluding scalar field
 	P_tot = pvecback[pba->index_bg_p_tot_wo_smg]; // all matter excluding scalar field
 
@@ -1638,8 +2027,58 @@ int background_derivs_bw_smg(
 }
 
 /**
+ * Derivative of rho_smg
+ *
+ * @param pba                  Input: pointer to background structure
+ * @param loga                    Input: scale factor
+ * @param y                    Input: current vector of integrated quantities (with index_bi)
+ * @param dy                   Output: current derivative of y w.r.t log(a)
+ * @param parameters_and_workspace Input: pointer to fixed parameters (e.g. indices)
+ * @param error_message            Output: error message
+ */
+int background_derivs_bw_rho_smg(
+                        double loga,
+                        double * y, /* vector with argument y[index_bi_bw] (must be already allocated with size pba->bi_bw_B_size) */
+                        double * dy, /* vector with argument dy[index_bi_bw]
+                                     (must be already allocated with
+                                     size pba->bi_bw_B_size) */
+                        void * parameters_and_workspace,
+                        ErrorMsg error_message
+                        ){
+
+	// fill in workspace and interpolate all relavant quantities. Also find rho_tot and P_tot including all spieces except dark energy component
+	/** - define local variables */
+	struct background_parameters_and_workspace * pbpaw;
+	struct background * pba;
+	double w;
+	int last_index; // necessary for calling array_interpolate(), but never used
+	
+	pbpaw = parameters_and_workspace;
+  	pba =  pbpaw->pba;
+	// interpolate w
+	class_call(array_interpolate_spline(
+                                        pba->stable_wext_lna_smg,
+                                        pba->stable_wext_size_smg,
+                                        pba->stable_wext_smg,
+                                        pba->ddstable_wext_smg,
+                                        1,
+                                        loga,
+                                        &last_index,
+                                        &w,
+                                        1,
+                                        error_message),
+               error_message,
+               error_message);
+	/* Derivative here are w.r.t. loga */
+	dy[0] = -3. * y[0] * (1. + w);
+
+	return _SUCCESS_;
+
+}
+
+/**
  * At some step during the backward integraton of the background equations,
- * this function extracts the qantities that we want to keep memory
+ * this function extracts the quantities that we want to keep memory
  * of, and stores them in a row of the stable_params_smg table.
  *
  * This is one of the few functions in the code which is passed to the generic_integrator() routine.
@@ -1704,6 +2143,47 @@ int background_sources_bw_smg(
 
 	// !!! it's possible these arrays are being filled backward in time. If necessary change index_loga below to (pba->bt_bw_size-1) - index_loga to restore forward ordering
 	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = D_kin - 1.5 * alpha_B*alpha_B;
+
+	return _SUCCESS_;
+
+}
+
+/**
+ * At some step during the backward integration of the background equation for rho_smg,
+ * this function evaluates rho_smg at some specific times, and stores these vaules in stable_rho_smg.
+ *
+ * This is one of the few functions in the code which is passed to the generic_integrator() routine.
+ * Since generic_integrator() should work with functions passed from various modules, the format of the arguments
+ * is a bit special:
+ * - fixed parameters and workspaces are passed through a generic pointer.
+ *   generic_integrator() doesn't know the content of this pointer.
+ * - the error management is a bit special: errors are not written as usual to pba->error_message, but to a generic
+ *   error_message passed in the list of arguments.
+ *
+ * @param loga                     Input: current value of log(a)
+ * @param y                        Input: current vector of backward integrated quantities (with index_bibw)
+ * @param dy                       Input: current derivative of y w.r.t log(a)
+ * @param index_loga               Input: index of the log(a) value within loga_bw_table
+ * @param parameters_and_workspace Input/output: fixed parameters (e.g. indices), workspace, background structure used to derive relevant quantities
+ * @param error_message            Output: error message
+ */
+
+int background_sources_bw_rho_smg(
+                       double loga,
+                       double * y,
+                       double * dy,
+                       int index_loga,
+                       void * parameters_and_workspace,
+                       ErrorMsg error_message
+                       ) {
+
+	struct background_parameters_and_workspace * pbpaw;
+	struct background * pba;
+
+	pbpaw = parameters_and_workspace;
+	pba =  pbpaw->pba;
+
+	pba->stable_rho_smg[(pba->bt_bw_rho_smg_size-1) - index_loga] = y[0];
 
 	return _SUCCESS_;
 

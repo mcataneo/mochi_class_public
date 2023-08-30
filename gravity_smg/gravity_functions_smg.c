@@ -482,7 +482,7 @@ int gravity_functions_As_from_alphas_smg(
   // basic background quantities
   double a = pvecback[pba->index_bg_a];
   double H = pvecback[pba->index_bg_H];
-  double H_p = pvecback[pba->index_bg_H_prime];
+  // double H_p = pvecback[pba->index_bg_H_prime];
   double p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
   double rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
   double p_smg = pvecback[pba->index_bg_p_smg];
@@ -703,16 +703,22 @@ int gravity_functions_As_from_alphas_smg(
 	  }
   }
 	
+  // printf("gravity_functions: a=%e \t bra=%e\n",a,bra,pvecback[pba->index_bg_G_eff_smg]);
 
 	double beta_1 = (run + (-1.)*ten)*2. + (1. + ten)*bra;
 	double beta_2 = 2.*beta_1 + (2. + (-2.)*M2 + bra*M2)*(rho_tot + p_tot)*(-3.)*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)*pow(H,-2) + 2.*pow(H,-1)*bra_p*pow(a,-1);
 
-	if (bra*beta_1 == 0.) {
-		pvecback[pba->index_bg_G_eff_smg] = 1./M2;
-	}
-	else {
-		pvecback[pba->index_bg_G_eff_smg] = (1. - bra*beta_1*pow(bra*beta_1 - beta_2,-1))/M2;
-	}
+  if (pba->gravity_model_smg == stable_params) {
+    pvecback[pba->index_bg_G_eff_smg] = 1.; // not used anywhere in the code and numerically can be problematic
+  }
+  else { 
+    if (bra*beta_1 == 0.) {
+      pvecback[pba->index_bg_G_eff_smg] = 1./M2;
+    }
+    else {
+      pvecback[pba->index_bg_G_eff_smg] = (1. - bra*beta_1*pow(bra*beta_1 - beta_2,-1))/M2;
+    }
+  }
 
   if (2.*(run - ten)*beta_1 + ten*beta_2 == 0.) {
 		pvecback[pba->index_bg_slip_eff_smg] = 1.;
