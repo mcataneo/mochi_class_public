@@ -34,7 +34,7 @@ enum gravity_model {propto_omega, propto_scale,
 
 /** parameterized expansion, only for non-self consistent Horndeski theories (_smg) */
 
-enum expansion_model {lcdm, wowa, wowa_w, wede, wext};
+enum expansion_model {lcdm, wowa, wowa_w, wede, wext, rho_de};
 
 /** list of possible parametrizations of the varying fundamental constants */
 
