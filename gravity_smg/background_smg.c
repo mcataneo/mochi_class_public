@@ -1420,10 +1420,12 @@ int interpolate_rho_smg_p_smg(struct background *pba,
                         ){
 
 double w = 0.;
+double drho_de = 0.;
 int last_index; // necessary for calling array_interpolate(), but never used 
 
 // TODO_MC: test if loga_transition is larger than loga_final_rho_smg
-if (loga >= loga_transition) {
+if(pba->expansion_model_smg == wext) {
+	if (loga >= loga_transition) {
 	// interpolate integrated rho_smg
 	class_call(array_interpolate_spline(
 										pba->loga_fw_table_rho_smg,
@@ -1455,25 +1457,79 @@ if (loga >= loga_transition) {
 
 	pvecback[pba->index_bg_p_smg] = w*pvecback[pba->index_bg_rho_smg];
 
-} 
-else if (loga < loga_transition) {
+	} 
+	else if (loga < loga_transition) {
 
-	// interpolate integrated rho_smg at transition time
-	class_call(array_interpolate_spline(
-										pba->loga_fw_table_rho_smg,
-										pba->bt_bw_rho_smg_size,
-										pba->stable_rho_smg,
-										pba->ddstable_rho_smg,
-										1,
-										loga_transition,
-										&last_index, // not used
-										&pvecback[pba->index_bg_rho_smg],
-										1,
-										pba->error_message),
-				pba->error_message,
-				pba->error_message); 
+		// interpolate integrated rho_smg at transition time
+		class_call(array_interpolate_spline(
+											pba->loga_fw_table_rho_smg,
+											pba->bt_bw_rho_smg_size,
+											pba->stable_rho_smg,
+											pba->ddstable_rho_smg,
+											1,
+											loga_transition,
+											&last_index, // not used
+											&pvecback[pba->index_bg_rho_smg],
+											1,
+											pba->error_message),
+					pba->error_message,
+					pba->error_message); 
 
-	pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg]; // cosmological constant
+		pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg]; // cosmological constant
+	}
+}
+else if (pba->expansion_model_smg == rho_de) {
+	if (loga >= loga_transition) {
+		// interpolate integrated rho_smg
+		class_call(array_interpolate_spline(
+											pba->stable_wext_lna_smg,
+											pba->stable_wext_size_smg,
+											pba->stable_rho_smg,
+											pba->ddstable_rho_smg,
+											1,
+											loga,
+											&last_index, // not used
+											&pvecback[pba->index_bg_rho_smg],
+											1,
+											pba->error_message),
+					pba->error_message,
+					pba->error_message);    
+		// differentiate rho_de
+		class_call(array_derivate_spline(pba->stable_wext_lna_smg, // x_array
+						pba->stable_wext_size_smg, // int n_lines
+						pba->stable_rho_smg, // array
+						pba->ddstable_rho_smg, // double * array_splined
+						1, // n_columns
+						loga, // double x -> loga
+						&last_index, // int* last_index // this is something for the interpolation to talk to each other when using a loop
+						&drho_de, // double * result
+						1, //result_size, from 1 to n_columns
+						pba->error_message),
+			pba->error_message,
+			pba->error_message);
+		// derive p_smg from continuity equation
+		pvecback[pba->index_bg_p_smg] = -(pvecback[pba->index_bg_rho_smg] + drho_de/3.);
+
+	} 
+	else if (loga < loga_transition) {
+
+		// interpolate rho_smg at transition time
+		class_call(array_interpolate_spline(
+											pba->stable_wext_lna_smg,
+											pba->stable_wext_size_smg,
+											pba->stable_rho_smg,
+											pba->ddstable_rho_smg,
+											1,
+											loga_transition,
+											&last_index, // not used
+											&pvecback[pba->index_bg_rho_smg],
+											1,
+											pba->error_message),
+					pba->error_message,
+					pba->error_message); 
+
+		pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg]; // cosmological constant
+	}
 }
 
 return _SUCCESS_;
@@ -2051,7 +2107,7 @@ int background_derivs_bw_smg(
              pba->error_message,
              error_message);
 
-	if (pba->expansion_model_smg == wext) {
+	if (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) {
 		class_call(interpolate_rho_smg_p_smg(pba, log(a), pba->loga_final_bw_integration, pvecback),
                  pba->error_message,
                  pba->error_message
@@ -2060,16 +2116,6 @@ int background_derivs_bw_smg(
 		H = sqrt(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg] - pba->K/a/a);
 		dH = (-1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
 													+ pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a)/a/H; // dH/dloga = 1/aH * dH/dtau
-	}
-	else if (pba->expansion_model_smg == rho_de) {
-		class_call(interpolate_rho_smg(pba, log(a), pba->loga_final_bw_integration, pvecback),
-                 pba->error_message,
-                 pba->error_message
-      	);
-		// Update H
-		H = sqrt(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg] - pba->K/a/a);
-		// Compute dH/dlna
-		dH /= a*H; 
 	}
 	else {
 		H = pvecback[pba->index_bg_H];
