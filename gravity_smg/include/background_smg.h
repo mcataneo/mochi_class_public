@@ -51,12 +51,6 @@ int interpolate_rho_smg_p_smg(struct background *pba,
                         double * pvecback
                         );
 
-int interpolate_rho_smg(struct background *pba,
-                        double loga,
-                        double loga_transition,
-                        double * pvecback
-                        );
-
 int background_print_stdout_smg(struct background *pba,
 				                        double * pvecback,
                                 double * pvecback_integration);

@@ -633,9 +633,6 @@ int perturbations_einstein_scalar_smg(
   // double mu_inf_prime, mu_p_prime, mu_Z_inf_prime; // for debugging only
   double rho_Delta=0., alpha=0.;
 
-  // if (1/a-1 > 48. && 1/a-1 < 50.)
-  //   printf("perturbations_einstein_scalar_smg 1: delta_rho=%e \t delta_p=%e \n",ppw->delta_rho,ppw->delta_p);
-
   H = ppw->pvecback[pba->index_bg_H];
   Hconf_prime = a2*pow(H,2.) + a*ppw->pvecback[pba->index_bg_H_prime]; // conformal Hubble time derivative
 
@@ -656,14 +653,6 @@ int perturbations_einstein_scalar_smg(
       ),
       ppt->error_message,
       ppt->error_message);
-
-    // if (1/a-1 > 48. && 1/a-1 < 50.)
-    //   printf("perturbations_einstein_scalar_smg: a=%.15e \t delM2=%e \t kin=%e \t bra=%e \t run = %e \t cD=%e \t c0=%e \
-    //           \t c1=%e \t c2=%e \t c3=%e \t c4=%e \t c5=%e \t c6=%e \t \n c7=%e \t c8=%e \t c9=%e \t c10=%e \t c11=%e \t \
-    //           c12=%e \t c13=%e \t c14=%e \t c15=%e \t c16=%e \t cD_p=%e \t cB_p=%e \t cM_p=%e \t c9_p=%e \t \n c10_p=%e \
-    //           \t c12_p=%e \t c13_p=%e \t cs2num=%e \t lambda2=%e \t lambda7=%e \t lambda8=%e \t cs2num_p=%e \t lambda2_p=%e \t \
-    //           lambda8_p=%e \n",a,delM2,kin,bra,run,cD,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,cD_p,cB_p,cM_p, \
-    //           c9_p,c10_p,c12_p,c13_p,cs2num,lambda2,lambda7,lambda8,cs2num_p,lambda2_p,lambda8_p);
   }
 
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off && pba->gravity_model_smg == stable_params && qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {
@@ -710,9 +699,6 @@ int perturbations_einstein_scalar_smg(
       ppw->pvecmetric[ppw->index_mt_alpha] = alpha;
   }
 
-  // if (1/a-1 > 48. && 1/a-1 < 50.)
-  //   printf("perturbations_einstein_scalar_smg 2: delta_rho=%e \t delta_p=%e \n",ppw->delta_rho,ppw->delta_p);
-
   /* Get eta from the integrator */
   ppw->pvecmetric[ppw->index_mt_eta] = y[ppw->pv->index_pt_eta];
 
@@ -724,16 +710,6 @@ int perturbations_einstein_scalar_smg(
   }
 
   /* Get scalar field perturbations */
-  /*** TODO_GR_SMG: this is the scheme I would implement
-  ****    QS    GR    EQS
-  ****     T     T      T
-  ****     T     F      T
-  ****     F     T      T
-  ****     F     F      F
-  ****     N   T/F  Error
-  ****   T/F     N  Error
-  ****     N     N  Error
-  ***/
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
     /* Set V_x and V_x' to 0 when GR approximation ON */
     ppw->pvecmetric[ppw->index_mt_x_smg] = 0.;
@@ -793,18 +769,6 @@ int perturbations_einstein_scalar_smg(
     }
   }
 
-  // if (k>8.213307 && tau < 1.345221e+03){
-  //     printf("perturbations_einstein_scalar_smg: tau=%e \t a=%e \t rho_smg=%e \t p_smg=%e \n",tau,a,ppw->pvecback[pba->index_bg_rho_smg],ppw->pvecback[pba->index_bg_p_smg]);
-  // }
-
-  // if (tau > 1.345220e+03 && tau < 3.226903e+03){
-  // if (tau > 1.345220e+03 && tau < 1.35e+03){
-    // printf("perturbations_einstein_scalar_smg: tau=%e \t term1=%e \t term2=%e \t term3=%e \t term4=%e \t h_prime=%e \n",
-    //         tau,3./2.*ppw->delta_rho*a/H,(1. + beh)*k2*ppw->pvecmetric[ppw->index_mt_eta]/a/H,- c14*res*ppw->pvecmetric[ppw->index_mt_x_prime_smg],- res/a/H*(c15*k2 + c16*pow(a*H,2))*ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_h_prime]);
-    // printf("perturbations_einstein_scalar_smg: tau=%e \t cB=%e \t bra=%e \t beh=%e \t c15=%e \t h_prime=%e \n",
-                // tau,cB,bra,beh,c15,ppw->pvecmetric[ppw->index_mt_h_prime]);
-  // }
-
   /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
   if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
 
@@ -847,16 +811,10 @@ int perturbations_einstein_scalar_smg(
               ppt->error_message,
               ppt->error_message);
         
-        // if (1/a-1 > 48. && 1/a-1 < 50.)
-          // printf("perturbations_einstein_scalar_smg 3: a=%e \t delta_rho=%e \t delta_p=%e \t rsa_p_smg=%e \n",a,ppw->delta_rho,ppw->delta_p,ppw->pvecmetric[ppw->index_mt_rsa_p_smg]);
       } 
       else {
         // For QSA smg approximation and stable_params neglect rsa_p_smg contribution
         ppw->pvecmetric[ppw->index_mt_rsa_p_smg] = 0.;
-
-        // class_call(perturbations_rsa_delta_and_theta(ppr,pba,pth,ppt,k,y,a_prime_over_a,ppw->pvecthermo,ppw,ppt->error_message),
-        //       ppt->error_message,
-        //       ppt->error_message);
       }
     }
   }
@@ -898,10 +856,6 @@ int perturbations_einstein_scalar_smg(
     }
   }
   
-  // if (tau > 1990. && tau < 1991.) {
-  //   printf("perturbations_einstein_scalar_smg: tau=%e \t term1=%e \t term2=%e \t term3=%e \t eta_prime=%e \n",tau,+ 3./2.*ppw->rho_plus_p_theta/k2/M2*pow(a,2),- res*c0*a*H*ppw->pvecmetric[ppw->index_mt_x_smg],  - 1./2.*res*cB*ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_eta_prime]);
-  // }
-
   if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off) {
     if (pba->gravity_model_smg == stable_params && qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _TRUE_) {  
       ppw->pvecmetric[ppw->index_mt_h_prime] = 2.*k2*alpha - 6.*ppw->pvecmetric[ppw->index_mt_eta_prime];
@@ -1048,18 +1002,6 @@ int perturbations_einstein_scalar_smg(
     class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
         ppt->error_message, " Isnan x'' at a =%e !",a);
   }//end of fully_dynamic equation
-
-  // if (tau > 1.345e3 && tau < 1.345221e3 && k==ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1]) {
-  //   printf("perturbations_einstein_scalar_smg 1: k=%e tau=%e x_smg=%e x_prime_smg=%e \t x_prime_prime_smg=%e \t gr_smg=%d\n",k,tau,ppw->pvecmetric[ppw->index_mt_x_smg],ppw->pvecmetric[ppw->index_mt_x_prime_smg],ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg],ppw->approx[ppw->index_ap_gr_smg]);   
-  // }
-
-  // if (tau > 1.345e3 && tau < 1.345221e3 && k==ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1]) {
-  //   printf("perturbations_einstein_scalar_smg: tau=%e \t term1=%e \t term2=%e \t term3=%e \t term4=%e \t term5=%e \t denom=%e \n", \
-  //         tau,2.*cs2num*k2*ppw->pvecmetric[ppw->index_mt_eta]/(a*H),3*a*lambda2*ppw->delta_rho/(H*M2),- 9./2.*a*cB*(2. - cB)*ppw->delta_p/(H*M2),\
-  //         - 2.*pow(a*H,2)*(cs2num*k2*pow(a*H,-2) - 4.*lambda8)*ppw->pvecmetric[ppw->index_mt_x_smg],- 8.*a*H*lambda7*ppw->pvecmetric[ppw->index_mt_x_prime_smg], \
-  //         (cD*(2. - cB)));
-  //   printf("perturbations_einstein_scalar_smg: delta_rho=%.15e \t delta_p=%e \n",ppw->delta_rho,ppw->delta_p);
-  // }
 
   return _SUCCESS_;
 }
@@ -1538,7 +1480,6 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(
   }
   else {
     mass2_qs = 2.*(cs2num*pow(k/(a*H),2) - 4.*lambda8)/(2. - cB)/cD;
-    // printf("perturbations_qs_functions_at_tau_and_k_qs_smg: a=%e \t cs2num*pow(k/(a*H),2)=%e \t lambda8=%e \t mass2_qs=%e \n",a,cs2num*pow(k/(a*H),2),lambda8,mass2_qs);
   }
  
   if (pba->gravity_model_smg != stable_params) {

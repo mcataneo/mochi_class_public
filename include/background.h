@@ -517,7 +517,7 @@ struct background
   double * tau_table;        /**< vector tau_table[index_loga] with values of conformal time \f$ \tau \f$ (in fact \f$ a_0 c tau \f$, see normalisation conventions explained at beginning of background.c) */
   double * z_table;          /**< vector z_table[index_loga] with values of \f$ z \f$ (redshift) */
   double * background_table; /**< table background_table[index_tau*pba->bg_size+pba->index_bg] with all other quantities (array of size bg_size*bt_size) **/
-  double * background_table_late; /**< late-time background table when smg stable and wext parametrisations are both ON. It's used to store functions and derivatives for z<=z_gr_smg **/
+  double * background_table_late; /**< late-time background table when smg stable and wext (or rho_de) parametrisations are both ON. It's used to store functions and derivatives for loga>=loga_final_bw_integration **/
 
   //@}
 
@@ -659,7 +659,6 @@ struct background_parameters_and_workspace {
 
   /* workspaces used only for hi_class stable parametrization */
   double * pvec_stable_params_smg;
-  // double * pvec_stable_wext_smg;
   double * pvecback_B;
 
 };

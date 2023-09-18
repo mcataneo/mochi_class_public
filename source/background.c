@@ -1992,13 +1992,12 @@ int background_solve(
 
   /** - allocate vector of quantities to be integrated */
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
-  // TODO_MC: probably better to allocate memory only if has_smg true and, nested, if background expansion wext
   /** - allocate vector of quantities to be integrated backward */
   class_alloc(pvecback_bw_integration,pba->bi_bw_B_size*sizeof(double),pba->error_message);
   /** - allocate scalar rho_smg to be integrated backward */
   class_alloc(pback_rho_smg_bw_integration,1*sizeof(double),pba->error_message);
 
-  /* TODO_MC: put here integrator for rho_smg with arbitrary EOS, this way we are still consistent with shooting. This
+  /* Integrator for rho_smg with arbitrary EOS, this way we are still consistent with shooting. This
      computation must happen before calling background_initial_conditions because it uses rho_tot at a_ini to evaluate
      the initial Hubble parameter and derived quantities.
      Later, in background_initial_conditions_smg and background_solve_smg store this in background table and spline 
@@ -2050,10 +2049,10 @@ int background_solve(
   class_alloc(pba->background_table,pba->bt_size * pba->bg_size * sizeof(double),pba->error_message);
   class_alloc(pba->d2background_dloga2_table,pba->bt_size * pba->bg_size * sizeof(double),pba->error_message);
 
-  /** - When using wext background parametrisation together with stable parametrisation we must update
+  /** - When using wext or rho_de background parametrisation together with stable parametrisation we must update
 	 values of relevant functions around GR->MG transition redshift. Else, beacuse of discontinuities, derivatives
 	 around z_gr_smg will be too large, and the ODE solver for perturbations will hit the smallest possible time step
-	 and halt before reaching the solution.  
+	 and halt before reaching the solution. background_table_late is an auxiliary table that does exactly that.
 	 */
 	if(pba->gravity_model_smg == stable_params && (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de)){
 		/** - allocate background tables for earlier GR->MG transition */

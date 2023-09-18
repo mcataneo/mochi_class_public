@@ -601,8 +601,6 @@ int background_solve_smg(
 	int (*generic_evolver)();
 	generic_evolver = evolver_ndf15;
 	/* initial and final time for backward integration in stable_params */
-	//TODO_MC: move eps_bw_integration to precision structure
-	// double eps_bw_integration = 0.05; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg.
 	double loga_final = log((1. - ppr->eps_bw_integration_braid)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.; // time used for initial conditions in backward integration
 	/* indices for the different arrays */
@@ -642,22 +640,6 @@ int background_solve_smg(
 		for (index_out=0; index_out<pba->bi_bw_B_size; index_out++) {
 			used_in_output[index_out] = 1;
 		}
-
-		// printf(" -> Initial (a=1) B_tilde = %e dB_tilde = %e \n",
-		// 		pvecback_bw_integration[pba->index_bibw_B_tilde_smg],pvecback_bw_integration[pba->index_bibw_dB_tilde_smg]);
-
-		/** -- Test section: this is sorted only if we can call background_derivs_bw_smg with no seg_fault*/
-		// double * dy;
-		// class_alloc(dy,pba->bi_bw_B_size*sizeof(double),pba->error_message);
-
-		// class_call(background_derivs_bw_smg(pba->loga_bw_table[0],pvecback_bw_integration,dy,&bpaw,pba->error_message),
-		// 	pba->error_message,
-		// 	pba->error_message);
-
-		// printf("dy[0] = %e dy[1] = %e\n",dy[0],dy[1]);
-
-		// class_stop(pba->error_message,"Stop here, for now.");
-		/** -------------------------------------  Test section ------------------------------------------ */
 
 		/** - perform the backward integration for \tilde{B}*/
 		class_call(generic_evolver(background_derivs_bw_smg,
@@ -797,60 +779,6 @@ int background_solve_smg(
 					pba->error_message);
 		}
 
-		// FILE * output_file;
-		// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/background_term_in_ODE_hiclass.dat","w");
-		// for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-
-		// 	class_call(array_interpolate_spline(
-		// 										pba->loga_table,
-		// 										pba->bt_size,
-		// 										pba->background_table,
-		// 										pba->d2background_dloga2_table,
-		// 										pba->bg_size,
-		// 										pba->loga_table[index_loga],
-		// 										&last_index,
-		// 										pvecback,
-		// 										pba->bg_size,
-		// 										pba->error_message),
-		// 		pba->error_message,
-		// 		pba->error_message);
-
-		// 	rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
-		// 	double P_tot = pvecback[pba->index_bg_p_tot_wo_smg];
-		// 	double H = pvecback[pba->index_bg_H];
-
-		// 	fprintf(output_file,"%.15e %.15e\n",
-		// 	pba->loga_table[index_loga],
-		// 	(rho_tot+P_tot)/(H*H));
-		// }
-		// fclose(output_file);
-		// class_stop(pba->error_message,"Stop here, for now.");
-
-		// for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-
-		// 	class_call(array_interpolate_spline(
-		// 										pba->loga_table,
-		// 										pba->bt_size,
-		// 										pba->background_table,
-		// 										pba->d2background_dloga2_table,
-		// 										pba->bg_size,
-		// 										pba->loga_table[index_loga],
-		// 										&last_index,
-		// 										pvecback,
-		// 										pba->bg_size,
-		// 										pba->error_message),
-		// 		pba->error_message,
-		// 		pba->error_message);
-
-		// 	rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
-		// 	Omega_smg = pvecback[pba->index_bg_rho_smg]/rho_tot;
-
-		// 	printf("Omega_smg = %e\n",Omega_smg);
-
-		// }
-
-		// class_stop(pba->error_message,"Stop here, for now.");
-
     } // End stable parametrization
 
 
@@ -864,9 +792,7 @@ int background_solve_smg(
 	 * This is done just by overwriting the pvecback entries corresponding to the relevant indice
 	 */
 	double * pvecback_derivs;
-	// double * pvecback_late;
 	class_alloc(pvecback_derivs,pba->bg_size*sizeof(double),pba->error_message);
-	// class_alloc(pvecback_late,pba->bg_size*sizeof(double),pba->error_message);
 	
  	for (i=0; i < pba->bt_size; i++) {
 
@@ -886,58 +812,16 @@ int background_solve_smg(
 			pba->error_message);	
 
 			/* - indices for scalar field (modified gravity) */
-			// pvecback_late = pba->background_table_late + i*pba->bg_size;
-			// a = pvecback_late[pba->index_bg_a];
 			a = pba->background_table_late[i*pba->bg_size + pba->index_bg_a];
 
-			// class_call(derivatives_alphas_smg(pba, pvecback_late, pvecback_derivs, i),
-			// 	pba->error_message,
-			// 	pba->error_message
-			// );
 			class_call(derivatives_alphas_smg(pba, pba->background_table_late + i*pba->bg_size, pvecback_derivs, i),
 				pba->error_message,
 				pba->error_message
 			);
 
-			// class_call(gravity_functions_As_from_alphas_smg(pba, pvecback_late, pvecback_derivs),
-			// 					pba->error_message,
-			// 					pba->error_message);
 			class_call(gravity_functions_As_from_alphas_smg(pba, pba->background_table_late + i*pba->bg_size, pvecback_derivs),
 								pba->error_message,
 								pba->error_message);
-
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pvecback_late[pba->index_bg_A0_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pvecback_late[pba->index_bg_A1_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A2_smg, pvecback_late[pba->index_bg_A2_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A3_smg, pvecback_late[pba->index_bg_A3_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A4_smg, pvecback_late[pba->index_bg_A4_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A5_smg, pvecback_late[pba->index_bg_A5_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A6_smg, pvecback_late[pba->index_bg_A6_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A7_smg, pvecback_late[pba->index_bg_A7_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A8_smg, pvecback_late[pba->index_bg_A8_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A9_smg, pvecback_late[pba->index_bg_A9_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A10_smg, pvecback_late[pba->index_bg_A10_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A11_smg, pvecback_late[pba->index_bg_A11_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A12_smg, pvecback_late[pba->index_bg_A12_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A13_smg, pvecback_late[pba->index_bg_A13_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A14_smg, pvecback_late[pba->index_bg_A14_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A15_smg, pvecback_late[pba->index_bg_A15_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_A16_smg, pvecback_late[pba->index_bg_A16_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_1_smg, pvecback_late[pba->index_bg_lambda_1_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_2_smg, pvecback_late[pba->index_bg_lambda_2_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_3_smg, pvecback_late[pba->index_bg_lambda_3_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_4_smg, pvecback_late[pba->index_bg_lambda_4_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_5_smg, pvecback_late[pba->index_bg_lambda_5_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_6_smg, pvecback_late[pba->index_bg_lambda_6_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_7_smg, pvecback_late[pba->index_bg_lambda_7_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_8_smg, pvecback_late[pba->index_bg_lambda_8_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_9_smg, pvecback_late[pba->index_bg_lambda_9_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_10_smg, pvecback_late[pba->index_bg_lambda_10_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_lambda_11_smg, pvecback_late[pba->index_bg_lambda_11_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_G_eff_smg, pvecback_late[pba->index_bg_G_eff_smg]);
-			// copy_to_background_table_smg(pba, i, pba->index_bg_slip_eff_smg, pvecback_late[pba->index_bg_slip_eff_smg]);
-
-			// printf("background_solve_smg: a=%e \t -bra/2=%e \t beh=%e \t A15=%e\n",a,-pba->background_table_late[i*pba->bg_size + pba->index_bg_braiding_smg]/2.,pba->background_table_late[pba->index_bg_beyond_horndeski_smg],pba->background_table_late[i*pba->bg_size + pba->index_bg_A15_smg]);
 
 			copy_to_background_table_smg(pba, i, pba->index_bg_A0_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A0_smg]);
 			copy_to_background_table_smg(pba, i, pba->index_bg_A1_smg, pba->background_table_late[i*pba->bg_size + pba->index_bg_A1_smg]);
@@ -1155,11 +1039,8 @@ int background_solve_smg(
 			pba->error_message);
 
 		if (pba->gravity_model_smg == stable_params && (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de)) {
-			// For wext expansion we want to make sure we calculate the appropriate scale factor a*H 
-			// when extending smg to slightly earlier times than z_gr_smg. By having the pvecback_late pointer
-			// to background_table_late we can retrieve the values for a and H stored by background_sources
-			// pvecback_late = pba->background_table_late + i*pba->bg_size;
-			// factor = pvecback_late[pba->index_bg_a]*pvecback_late[pba->index_bg_H];
+			// For wext or rho_de expansion we want to make sure we calculate the appropriate scale factor a*H 
+			// when extending smg to slightly earlier times than z_gr_smg.
 			factor = pba->background_table_late[i*pba->bg_size + pba->index_bg_a]*pba->background_table_late[i*pba->bg_size + pba->index_bg_H];
 		}
 		else {
@@ -1338,7 +1219,6 @@ int background_solve_rho_smg(
 	pba->bt_bw_rho_smg_size = pba->stable_wext_size_smg;
 	class_alloc(pba->loga_bw_table,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
 	class_alloc(pba->loga_fw_table_rho_smg,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
-	// class_alloc(used_in_output, sizeof(int), pba->error_message);
 	class_alloc(used_in_output, pba->bt_bw_rho_smg_size*sizeof(int), pba->error_message);
 
 	/** - define values of loga at which results will be stored from loga_ini to loga_final*/
@@ -1347,8 +1227,6 @@ int background_solve_rho_smg(
 		pba->loga_fw_table_rho_smg[index_loga] = loga_final + index_loga*(loga_ini-loga_final)/(pba->bt_bw_rho_smg_size-1);
 		used_in_output[index_loga] = 1;
 	}
-	/** - define which parameters will be used in the output */
-	// used_in_output[0] = 1;
 
 	/* - store final integration time */
 	pba->loga_final_rho_smg = loga_final;
@@ -1530,63 +1408,6 @@ else if (pba->expansion_model_smg == rho_de) {
 
 		pvecback[pba->index_bg_p_smg] = -pvecback[pba->index_bg_rho_smg]; // cosmological constant
 	}
-}
-
-return _SUCCESS_;
-
-}
-
-/**
-* Interpolation function for rho_smg in rho_de expansion parametrization.
-*
-* @param pba                  Input: pointer to background structure
-* @param loga				  Input: scale factor ln(a)
-* @param loga_transition	  Input: for loga < loga_transition rho_smg behaves like a cosmological constant
-* @param pvecback             Output: vector of background quantities (assumed to be already allocated)
-* @return the error status
-*/
-int interpolate_rho_smg(struct background *pba,
-						double loga,
-                        double loga_transition,
-                        double * pvecback
-                        ){
-
-int last_index; // necessary for calling array_interpolate(), but never used 
-
-// TODO_MC: test if loga_transition is larger than loga_final_rho_smg
-if (loga >= loga_transition) {
-	// interpolate rho_smg
-	class_call(array_interpolate_spline(
-										pba->stable_wext_lna_smg,
-										pba->stable_wext_size_smg,
-										pba->stable_rho_smg,
-										pba->ddstable_rho_smg,
-										1,
-										loga,
-										&last_index, // not used
-										&pvecback[pba->index_bg_rho_smg],
-										1,
-										pba->error_message),
-				pba->error_message,
-				pba->error_message);
-
-} 
-else if (loga < loga_transition) {
-
-	// interpolate rho_smg at transition time
-	class_call(array_interpolate_spline(
-										pba->stable_wext_lna_smg,
-										pba->stable_wext_size_smg,
-										pba->stable_rho_smg,
-										pba->ddstable_rho_smg,
-										1,
-										loga_transition,
-										&last_index, // not used
-										&pvecback[pba->index_bg_rho_smg],
-										1,
-										pba->error_message),
-				pba->error_message,
-				pba->error_message); 
 }
 
 return _SUCCESS_;
@@ -2247,8 +2068,6 @@ int background_sources_bw_smg(
 	double Btilde = y[pba->index_bibw_B_tilde_smg];
 	double dBtilde = y[pba->index_bibw_dB_tilde_smg];
 
-	// !!! it's possible these arrays are being filled backward in time. If necessary change index_loga below to (pba->bt_bw_size-1) - index_loga to restore forward ordering
-	// !!! Although pba->bt_bw_size == pba->stable_params_size_smg, the arrays below are filled on a different loga grid, i.e. not the input stable_params_lna_smg table.
 	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = 2. * (1. - dBtilde/Btilde);
 	double alpha_B = pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg];
 
@@ -2267,8 +2086,6 @@ int background_sources_bw_smg(
                error_message);
 
 	D_kin = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-
-	// !!! it's possible these arrays are being filled backward in time. If necessary change index_loga below to (pba->bt_bw_size-1) - index_loga to restore forward ordering
 	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = D_kin - 1.5 * alpha_B*alpha_B;
 
 	return _SUCCESS_;

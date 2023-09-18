@@ -3456,12 +3456,6 @@ int perturbations_solve(
     }
   }
 
-  // index_tp = 1;
-  // index_tau = 677;
-  // if (index_md==0 && index_ic==0){
-  //   printf("perturbations_solve: index_tau=%d \t index_k=%d \t sources=%e\n",index_tau,index_k,ppt->sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp][index_tau * ppt->k_size[index_md] + index_k]);
-  // }
-
   /** - free quantities allocated at the beginning of the routine */
 
   class_call(perturbations_vector_free(ppw->pv),
@@ -3903,19 +3897,6 @@ int perturbations_find_approximation_switches(
                    0.5*(interval_limit[index_switch]+interval_limit[index_switch+1])
                    );
       }
-
-      /** - Update gr->smg transition redshift to new (slightly different) mean value computed above to avoid discontinuity in p_smg */
-      // if (pba->has_smg == _TRUE_) {
-      //   if ((interval_approx[index_switch-1][ppw->index_ap_gr_smg]==(int)gr_smg_on) &&
-      //           (interval_approx[index_switch][ppw->index_ap_gr_smg]==(int)gr_smg_off)){
-      //     if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
-      //       /** - Method below is inaccurate for this purpose. Just used for testing */
-      //       class_call(background_z_of_tau(pba,interval_limit[index_switch],&pba->z_gr_smg),
-      //        pba->error_message,
-      //        ppt->error_message);
-      //     }
-      //   }
-      // }
 
       /* check here that more than one approximation is not switched on at a given time */
       num_switching_at_given_time=0;
@@ -4803,32 +4784,6 @@ int perturbations_vector_init(
           }
 
         }
-
-        /* When QSA off */
-        // if (ppw->approx[ppw->index_ap_qs_smg] == _FALSE_) {
-        //   /* Switching off GR approximation */
-        //   if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
-
-        //     if (ppt->perturbations_verbose>2)
-        //       fprintf(stdout,"Mode k=%e: switch off gr approximation at tau=%e\n",k,tau);
-
-        //     /** -  QS ICs at z_gr_smg */
-        //     class_call(
-        //       get_x_x_prime_qs_smg(
-        //         ppr, pba, ppt, ppw, k,
-        //         &ppv->y[ppv->index_pt_x_smg],
-        //         &ppv->y[ppv->index_pt_x_prime_smg]
-        //       ),
-        //     ppt->error_message,
-        //     ppt->error_message);
-
-        //   }
-        //   // TODO_MC: probably this else is not needed, as this case is already handled in perturbations_vector_init_qs_smg
-        //   else {
-        //     ppv->y[ppv->index_pt_x_smg] = ppw->pv->y[ppw->pv->index_pt_x_smg];
-        //     ppv->y[ppv->index_pt_x_prime_smg] = ppw->pv->y[ppw->pv->index_pt_x_prime_smg];
-        //   }
-        // }
 
         //   /* Switching off GR approximation */
           if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
@@ -5745,11 +5700,6 @@ int perturbations_vector_init(
     ppw->pv = ppv;
 
   }
-
-  // if (k>0.69999 && k<0.700001){
-  //       double a = ppw->pvecback[pba->index_bg_a];
-  //       printf("perturbations_vector_init 3: k=%e tau=%e a=%.32e x_smg=%e x_prime_smg=%e\n",k,tau,a,ppv->y[ppv->index_pt_x_smg],ppv->y[ppv->index_pt_x_prime_smg]);   
-  //     }
 
   return _SUCCESS_;
 }
@@ -6801,7 +6751,6 @@ int perturbations_approximations(
             ppt->error_message
           );  
         }
-        // if(z > 48. && z < 50.) printf("perturbations_find_approximation_switches: a=%.16e \t tau=%.16e \t ppw->approx[ppw->index_ap_gr_smg]=%d\n",ppw->pvecback[pba->index_bg_a],tau,ppw->approx[ppw->index_ap_gr_smg]);
       }
       else {
         class_call(
@@ -6810,9 +6759,6 @@ int perturbations_approximations(
           ppt->error_message
         );
       }
-
-      // printf("perturbations_approximations: a = %.15e QS_FLAG = %d\n",ppw->pvecback[pba->index_bg_a],ppw->approx[ppw->index_ap_qs_smg]);
-
     }
   }
 
@@ -7090,16 +7036,10 @@ int perturbations_einstein(
 
   // int qs_array_smg[] = _VALUES_QS_SMG_FLAGS_;
 
-  // if (1/a-1 > 48. && 1/a-1 < 50.)
-  //   printf("perturbations_einstein 1: delta_rho=%e \t delta_p=%e \n",ppw->delta_rho,ppw->delta_p);
-
   /** - sum up perturbations from all species */
   class_call(perturbations_total_stress_energy(ppr,pba,pth,ppt,index_md,k,y,ppw),
              ppt->error_message,
              ppt->error_message);
-
-  // if (1/a-1 > 48. && 1/a-1 < 50.)
-  //   printf("perturbations_einstein 2: delta_rho=%e \t delta_p=%e \n",ppw->delta_rho,ppw->delta_p);
 
   /** - for scalar modes: */
 
@@ -7716,10 +7656,6 @@ int perturbations_total_stress_energy(
             rho_plus_p_shear_ncdm += q2*q2/epsilon*pba->w_ncdm[n_ncdm][index_q]*y[idx+2];
             delta_p_ncdm += q2*q2/epsilon*pba->w_ncdm[n_ncdm][index_q]*y[idx];
 
-            // if (tau > 1.3452208e+03 && tau < 1.345221e3 && k==ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1]) {
-            //   printf("perturbations_total_stress_energy: tau=%.15e \t q=%e \t epsilon=%e \t w_ncdm=%e \t y[idx]=%e \t delta_p(ncdm)=%e \n",tau,q,epsilon,pba->w_ncdm[n_ncdm][index_q],y[idx],delta_p_ncdm);
-            // }          
-
             //Jump to next momentum bin:
             idx+=(ppw->pv->l_max_ncdm[n_ncdm]+1);
           }
@@ -7746,9 +7682,6 @@ int perturbations_total_stress_energy(
 
           ppw->rho_plus_p_tot += ppw->pvecback[pba->index_bg_rho_ncdm1+n_ncdm]+ppw->pvecback[pba->index_bg_p_ncdm1+n_ncdm];
 
-          // if (tau > 1.345e3 && tau < 1.345221e3 && k==ppt->k[ppt->index_md_scalars][ppt->k_size[ppt->index_md_scalars]-1]) {
-          //   printf("perturbations_sources: tau=%e \t delta_p(ncdm)=%e \n", tau,delta_p_ncdm,);
-          // }          
         }
       }
       if (ppt->has_source_delta_m == _TRUE_) {
@@ -8408,24 +8341,6 @@ int perturbations_sources(
           ppt->switch_pol * pvecthermo[pth->index_th_g] * P;
       }
 
-      // if (index_md==0 && index_ic==0 && index_tau==677){
-      //   if(ppw->approx[ppw->index_ap_tca]==tca_off && ppw->approx[ppw->index_ap_rsa]==rsa_off){
-        // printf("perturbations_sources: index_tau=%d \t index_k=%d \t eta_prime=%e\n",index_tau,index_k,pvecmetric[ppw->index_mt_eta_prime]);
-        // printf("perturbations_sources: index_tau=%d \t index_k=%d \t rho_plus_p_shear_prime=%e\n",index_tau,index_k,ppw->rho_plus_p_shear_prime);
-        // printf("perturbations_sources: index_tau=%d \t index_k=%d \t l3_ur=%e\n",index_tau,index_k,y[ppw->pv->index_pt_shear_ur + 1]);
-        // printf("perturbations_sources: index_tau=%d \t index_k=%d \t shear_g=%e\n",index_tau,index_k,y[ppw->pv->index_pt_shear_g]);
-        // printf("perturbations_sources: index_tau=%d \t tau=%e \t index_k=%d \t k=%e \t l3_g=%e\n",index_tau,tau,index_k,k,y[ppw->pv->index_pt_l3_g]);
-      //   printf("perturbations_sources: index_tau=%d \t index_k=%d \t tca=%d \t rsa=%d\n",index_tau,index_k,ppw->approx[ppw->index_ap_tca],ppw->approx[ppw->index_ap_rsa]);
-      //   }
-      // }
-
-      // if (k<0.2 && k>0.1){
-      //   printf("perturbations_sources: tau=%e \t k=%e \t t0=%e \t t1=%e \t t2=%e\n",tau,k,
-      //       _set_source_(ppt->index_tp_t0),
-      //       _set_source_(ppt->index_tp_t1),
-      //       _set_source_(ppt->index_tp_t2)
-      //       );
-      // }
     }
 
     /* scalar polarization */
@@ -9594,11 +9509,6 @@ int perturbations_derivs(double tau,
   a_prime_over_a = pvecback[pba->index_bg_H] * a;
   R = 4./3. * pvecback[pba->index_bg_rho_g]/pvecback[pba->index_bg_rho_b];
 
-  // if ((1./a-1.) < 50. && (1./a-1.) > 48.) {
-    // printf("perturbations_derivs 1: ppw->approx[ppw->index_ap_gr_smg]=%d\n",ppw->approx[ppw->index_ap_gr_smg]);
-    // printf("perturbations_derivs 2: z=%.15e \t a=%.16e \t a_gr_smg=%.16e\n",(1./a-1.),a,1/(1.+pba->z_gr_smg));
-    // printf("perturbations_derivs 1: tau=%.20e \t rho_smg=%e \t p_smg=%e\n",tau,pvecback[pba->index_bg_rho_smg],pvecback[pba->index_bg_p_smg]);
-  // }
 
   // if (pba->has_smg == _TRUE_) {
   //   if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
@@ -9612,10 +9522,6 @@ int perturbations_derivs(double tau,
   //     pvecback[pba->index_bg_rho_tot] = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
   //     pvecback[pba->index_bg_p_tot] = pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg];
   //   }
-  // }
-
-  // if (1/a-1 < 50. && 1/a-1 > 48.) {
-    // printf("perturbations_derivs 3: tau=%.16e \t rho_smg=%e \t p_smg=%e\n",tau,pvecback[pba->index_bg_rho_smg],pvecback[pba->index_bg_p_smg]);
   // }
 
   /** - get metric perturbations with perturbations_einstein() */
@@ -9738,10 +9644,6 @@ int perturbations_derivs(double tau,
       //metric_shear_prime = k2 * pvecmetric[ppw->index_mt_alpha_prime];
       metric_ufa_class = pvecmetric[ppw->index_mt_h_prime]/2.;
     }
-
-    // if (tau > 1.345220e+03 && tau < 3.226903e+03){
-    //   printf("pertrbations_derivs: tau=%e \t metric_continuity=%e \n",tau,metric_continuity);
-    // }
 
     if (ppt->gauge == newtonian) {
 
@@ -10084,10 +9986,6 @@ int perturbations_derivs(double tau,
         ppt->error_message
       );
     }
-
-    // if((k>0.0029999 && k<0.0030001) && (a>0.0099999 && a<0.0100001)){
-    //   printf("perturbations_derivs: k=%e tau=%e a=%.32e delta_rho=%e\n",k,tau,a,ppw->delta_rho);
-    // }
 
     /** - ---> interacting dark radiation */
     if (pba->has_idr == _TRUE_){

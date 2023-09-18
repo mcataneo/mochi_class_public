@@ -274,8 +274,6 @@ int gravity_models_gravity_properties_smg(
     class_alloc(pba->stable_params_aux_smg,pba->stable_params_size_smg*pba->num_stable_params_aux*sizeof(double),errmsg);
 
     /* - fill a table of ln(a) and stable parameters*/
-    // FILE * output_file;
-    // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_Delta_Mpl_hiclass.dat","w");
     for (row=0; row<pba->stable_params_size_smg; row++){
       status = fscanf(input_file,"%lf %lf %lf %lf",
                       &pba->stable_params_lna_smg[row],
@@ -284,21 +282,12 @@ int gravity_models_gravity_properties_smg(
                       &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg]);
       // Initialize alpha_M and update value below as dMpl/Mpl
       pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = 0.;
-
-      // printf("%d: (lna, Delta_M_pl, D_kin, cs2) = (%.15e,%.15e,%.15e,%.15e)\n",row,
-      //         pba->stable_params_lna_smg[row],
-      //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
-      //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
-      //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg]);
-      // fprintf(output_file,"%.15e \t %.15e\n",pba->stable_params_lna_smg[row],pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
     }
-    // fclose(output_file);
     fclose(input_file);
 
     // Assign value to a_file_gr_smg
     pba->a_file_gr_smg = exp(pba->stable_params_lna_smg[0]);
-    // Check that largest provided scale factor is >= 1.1 for stable numerical derivatives
-    // double a_max = 1.09;
+    // Check that largest provided scale factor is >= 1. for stable numerical derivatives
     double a_max = 1.;
     class_test((exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]) < a_max),
           errmsg,
@@ -335,19 +324,11 @@ int gravity_models_gravity_properties_smg(
 
     // Update value of alpha_M in pba->stable_params_smg
     double Mpl, dMpl; // M_pl^2, dM_pl^2/dlna
-    // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_planck_running_hiclass.dat","w");
     for (row=0; row<pba->stable_params_size_smg; row++){
                     Mpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_Delta_Mpl_smg] + 1.;
                     dMpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_dMpl_smg];
                     pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = dMpl/Mpl;
-
-                    // printf("%d: (lna, alpha_M) = (%.15e,%.15e)\n",row,
-                    //         pba->stable_params_lna_smg[row],
-                    //         pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg]);
-
-                    // fprintf(output_file,"%.15e \t %.15e\n",pba->stable_params_lna_smg[row],pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg]);
     }
-    // fclose(output_file);
 
     /** - re-spline stable input parameters for later interpolation */
     class_call(array_spline_table_lines(pba->stable_params_lna_smg,
@@ -359,19 +340,6 @@ int gravity_models_gravity_properties_smg(
                                         pba->error_message),
                pba->error_message,
                pba->error_message);
-
-    // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_hiclass.dat","w");
-    // for (row=0; row<pba->stable_params_size_smg; row++){
-    //                 fprintf(output_file,"%.15e \t %.15e \t %.15e \t %.15e \t %.15e\n",
-    //                 pba->stable_params_lna_smg[row],
-    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
-    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
-    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg],
-    //                 pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg]);
-    // }
-    // fclose(output_file);
-
-    // class_stop(errmsg,"Stop here, for now.");
 
   }
 
@@ -853,7 +821,8 @@ int gravity_models_expansion_properties_smg(
     if (flag1 == _TRUE_) {
         pba->has_expansion_file = _TRUE_;
         class_read_string("expansion_file_name",pba->expansion_file_name);
-    }else{
+    } 
+    else{
         class_stop(errmsg,"wext expansion model requested. Please specify full path to file containing w function");
     }
 
@@ -886,27 +855,16 @@ int gravity_models_expansion_properties_smg(
       class_alloc(pba->ddstable_rho_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
 
       /* - fill a table of ln(a) and stable parameters*/
-      // FILE * output_file;
-      // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_Delta_Mpl_hiclass.dat","w");
       for (row=0; row<pba->stable_wext_size_smg; row++){
         status = fscanf(input_file,"%lf %lf",
                         &pba->stable_wext_lna_smg[row],
                         &pba->stable_wext_smg[row]);
-
-        // printf("%d: (lna, w) = (%.15e,%.15e)\n",row,
-        //         pba->stable_wext_lna_smg[row],
-        //         pba->stable_wext_smg[row]);
-        // fprintf(output_file,"%.15e \t %.15e\n",pba->stable_params_lna_smg[row],pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
       }
-      // fclose(output_file);
       fclose(input_file);      
-
-      // class_stop(pba->error_message,"Have read external w. Stop for now.\n");
 
       // Assign value to a_file_lcdm_smg
       pba->a_file_lcdm_smg = exp(pba->stable_wext_lna_smg[0]);
-      // Check that largest provided scale factor is >= 1.1 for stable numerical derivatives
-      // double a_max = 1.09;
+      // Check that largest provided scale factor is >= 1. for stable numerical derivatives
       double a_max = 1.;
       class_test((exp(pba->stable_wext_lna_smg[pba->stable_wext_size_smg-1]) < a_max),
             errmsg,
@@ -922,13 +880,6 @@ int gravity_models_expansion_properties_smg(
                                           pba->error_message),
                 pba->error_message,
                 pba->error_message);
-
-      // for (row=0; row<pba->stable_wext_size_smg; row++){
-
-      //   printf("%d: (lna, ddw) = (%.15e,%.15e)\n",row,
-      //           pba->stable_wext_lna_smg[row],
-      //           pba->ddstable_wext_smg[row]);
-      // }
 
     }
 
@@ -992,14 +943,8 @@ int gravity_models_expansion_properties_smg(
         status = fscanf(input_file,"%lf %lf",
                         &pba->stable_wext_lna_smg[row],
                         &pba->stable_rho_smg[row]);
-
-        // printf("%d: (lna, w) = (%.15e,%.15e)\n",row,
-        //         pba->stable_wext_lna_smg[row],
-        //         pba->stable_rho_smg[row]);
       }
       fclose(input_file);      
-
-      // class_stop(pba->error_message,"Have read external w. Stop for now.\n");
 
       // Assign value to a_file_lcdm_smg
       pba->a_file_lcdm_smg = exp(pba->stable_wext_lna_smg[0]);
@@ -1019,12 +964,6 @@ int gravity_models_expansion_properties_smg(
                                           pba->error_message),
                 pba->error_message,
                 pba->error_message);
-
-      // for (row=0; row<pba->stable_wext_size_smg; row++){
-      //   printf("%d: (lna, ddw) = (%.15e,%.15e)\n",row,
-      //           pba->stable_wext_lna_smg[row],
-      //           pba->ddstable_rho_smg[row]);
-      // }
 
     }
 
@@ -1486,10 +1425,6 @@ int gravity_models_get_alphas_par_smg(
         free(ext_alphas);
       }
   }
-  // else if(pba->gravity_model_smg == stable_params){
-  /* -- do nothing for this parametrization. Only reduced/scalar Horndeski models are considered. 
-  M_pl is integrated from alpha_M given the hard-coded initial condition M_pl_ini = 1.*/
-  // }
 
 
   return _SUCCESS_;
