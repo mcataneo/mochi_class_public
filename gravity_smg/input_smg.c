@@ -371,6 +371,7 @@ int input_default_params_smg(
   pba->M_pl_evolution_smg = _FALSE_; /* does the model require integrating M_pl from alpha_M? */
   pba->skip_stability_tests_smg = _FALSE_; /*if you want to skip the stability tests for the perturbations */
   pba->a_min_stability_test_smg = 0; /** < skip stability tests for a < a_min */
+  pba->z_gr_smg = 99.;
 
   pba->hubble_evolution = _TRUE_; /** dynamical evolution of Friedmann eq. */
   pba->hubble_friction = 3.; /** friction coefficient in H' equation: H' = ... + H_friction*(H^2 - rho_crit) [NOT ONLY IN SMG!] */

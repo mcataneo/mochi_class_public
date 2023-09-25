@@ -458,7 +458,6 @@ int input_read_from_file(struct file_content * pfc,
     );
   }
 
-
   return _SUCCESS_;
 
 }

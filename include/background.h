@@ -482,7 +482,7 @@ struct background
   double * ddstable_wext_smg; /* array of size stable_params_size_smg containing second derivatives of input w */
   double * stable_rho_smg; /* array of size stable_params_size_smg containing the integrated rho_smg */
   double * ddstable_rho_smg; /* array of size stable_params_size_smg containing second derivatives of integrated rho_smg */
-  double rho_smg_final; /* value of rho_smg at final time of integration, loga_final */
+  // double rho_smg_final; /* value of rho_smg at final time of integration, loga_final */
   double loga_final_rho_smg; /* used to store loga_final  */
 
   //@}
@@ -526,10 +526,11 @@ struct background
   //@{
 
   int bt_bw_size;               /**< size of vector (i.e. time-steps) used to store result of backward integration for alpha_B */
-  double * loga_bw_table;       /**< vector loga_bw_table[index_loga] with values of log(a). Note that loga_bw_table[0] correspond to a=1 and loga_bw_table[bt_bw_size-1] to the smallest scale factor provided by the user */
   int bt_bw_rho_smg_size;               /**< size of vector (i.e. time-steps) used to store result of backward integration for rho_smg */
-  double * loga_fw_table_rho_smg;       /**< vector loga_fw_table_rho_smg[index_loga] with values of log(a) */
   double loga_final_bw_integration;
+  double * loga_bw_table;       /**< vector loga_bw_table[index_loga] with values of log(a). Note that loga_bw_table[0] correspond to a=1 and loga_bw_table[bt_bw_size-1] to the smallest scale factor provided by the user */
+  double * loga_bw_table_rho_smg;       /**< vector loga_bw_table_rho_smg[index_loga] with values of log(a). Note that loga_bw_table_rho_smg[0] correspond to a=1 and loga_bw_table_rho_smg[bt_bw_size-1] to the smallest scale factor provided by the user */
+  double * loga_fw_table_rho_smg;       /**< vector loga_fw_table_rho_smg[index_loga] with values of log(a) */
 
   //@}
 

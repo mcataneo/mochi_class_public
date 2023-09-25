@@ -342,7 +342,7 @@ int background_gravity_functions_smg(
 	*ptr_rho_de += pvecback[pba->index_bg_rho_smg];
 
 	/** - compute w_smg */
-	if (pba->rho_evolution_smg == _FALSE_) {
+	if (pba->rho_evolution_smg == _FALSE_ && pba->expansion_model_smg != wext && pba->expansion_model_smg != rho_de) {
 		pvecback[pba->index_bg_w_smg] = pvecback[pba->index_bg_p_smg] / pvecback[pba->index_bg_rho_smg];
 	}
 
@@ -367,6 +367,28 @@ int background_free_smg(
 	//dealocate parameters_2_smg only for parameterizations
 	if (pba->field_evolution_smg == _FALSE_ && pba->parameters_2_smg != NULL)
 	  free(pba->parameters_2_smg);
+	if(pba->gravity_model_smg == stable_params && pba->stable_params_lna_smg != NULL)
+		free(pba->stable_params_lna_smg);
+	if(pba->gravity_model_smg == stable_params && pba->stable_params_smg != NULL)
+		free(pba->stable_params_smg);
+	if(pba->gravity_model_smg == stable_params && pba->ddstable_params_smg != NULL)
+		free(pba->ddstable_params_smg);
+	if(pba->gravity_model_smg == stable_params && pba->stable_params_derived_smg != NULL)
+		free(pba->stable_params_derived_smg);
+	if(pba->gravity_model_smg == stable_params && pba->ddstable_params_derived_smg != NULL)
+		free(pba->ddstable_params_derived_smg);
+	if(pba->gravity_model_smg == stable_params && pba->stable_params_aux_smg != NULL)
+		free(pba->stable_params_aux_smg);
+	if(pba->gravity_model_smg == stable_params && (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) && pba->stable_wext_lna_smg != NULL)
+		free(pba->stable_wext_lna_smg);
+	if(pba->gravity_model_smg == stable_params && (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) && pba->stable_rho_smg != NULL)
+		free(pba->stable_rho_smg);
+	if(pba->gravity_model_smg == stable_params && (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) && pba->ddstable_rho_smg != NULL)
+		free(pba->ddstable_rho_smg);
+	if(pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext && pba->stable_wext_smg != NULL)
+		free(pba->stable_wext_smg);
+	if(pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext && pba->ddstable_wext_smg != NULL)
+		free(pba->ddstable_wext_smg);
 
 	return _SUCCESS_;
 }
@@ -715,6 +737,9 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2num_smg, pvec_stable_params_smg[pba->index_stable_cs2_smg]*(pvec_stable_params_smg[pba->index_stable_Dkin_smg] + pba->kineticity_safe_smg));
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] + pba->kineticity_safe_smg);				
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, pvec_stable_params_derived_smg[pba->index_derived_braiding_smg]);
+				/* stable_params only works for scalar Horndeski */
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_tensor_excess_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_beyond_horndeski_smg, 0.);
 
 				if(pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) {
 					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg];
@@ -739,6 +764,8 @@ int background_solve_smg(
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_cs2_smg, 1.);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_braiding_smg, 0.);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_kineticity_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_tensor_excess_smg, 0.);
+				copy_to_background_table_smg(pba, index_loga, pba->index_bg_beyond_horndeski_smg, 0.);
 
 				if(pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) {
 					pba->background_table_late[index_loga*pba->bg_size + pba->index_bg_delta_M2_smg] = 0.;
@@ -1148,23 +1175,25 @@ int background_solve_smg(
 	
 	free(pvecback_derivs);  //free the structure
 	if(pba->gravity_model_smg == stable_params){
+		free(pba->loga_bw_table);
+		free(loga_fw_table);
 		free(pvec_stable_params_smg);
 		free(pvec_stable_params_derived_smg);
-		free(pba->stable_params_lna_smg);
-		free(pba->stable_params_smg);
-		free(pba->ddstable_params_smg);
-		free(pba->stable_params_derived_smg);
-		free(pba->ddstable_params_derived_smg);
-		free(pba->stable_params_aux_smg);
-		if(pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de){
-			free(pba->background_table_late);
-			free(pba->d2background_dloga2_table_late);
-		// 	free(pba->stable_wext_lna_smg);
-		// 	free(pba->stable_wext_smg);
-		// 	free(pba->ddstable_wext_smg);
-		// 	free(pba->stable_rho_smg);
-		// 	free(pba->ddstable_rho_smg);
-		}
+	// 	free(pba->stable_params_lna_smg);
+	// 	free(pba->stable_params_smg);
+	// 	free(pba->ddstable_params_smg);
+	// 	free(pba->stable_params_derived_smg);
+	// 	free(pba->ddstable_params_derived_smg);
+	// 	free(pba->stable_params_aux_smg);
+	// 	if(pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de){
+	// 		free(pba->background_table_late);
+	// 		free(pba->d2background_dloga2_table_late);	
+	// 		free(pba->stable_wext_lna_smg);
+	// 		free(pba->stable_wext_smg);
+	// 		free(pba->ddstable_wext_smg);
+	// 		free(pba->stable_rho_smg);
+	// 		free(pba->ddstable_rho_smg);
+	// 	}
 	}
 
 	return _SUCCESS_;
@@ -1202,7 +1231,7 @@ int background_solve_rho_smg(
 	double loga_final = log((1. - ppr->eps_bw_integration_rho_smg)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.; // time used for initial conditions in backward integration
 	/* indices for the different arrays */
-	int index_loga, index_out;
+	int index_loga; // index_out;
 	/* necessary for calling array_interpolate(), but never used */
 	int last_index;
 	/* what times are used in the output? */
@@ -1217,16 +1246,20 @@ int background_solve_rho_smg(
 	bpaw.pba = pba;
 	/* allocate time and output flag arrays */
 	pba->bt_bw_rho_smg_size = pba->stable_wext_size_smg;
-	class_alloc(pba->loga_bw_table,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
+	class_alloc(pba->loga_bw_table_rho_smg,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
+	// class_alloc(pba->loga_bw_table,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
 	class_alloc(pba->loga_fw_table_rho_smg,pba->bt_bw_rho_smg_size*sizeof(double),pba->error_message);
-	class_alloc(used_in_output, pba->bt_bw_rho_smg_size*sizeof(int), pba->error_message);
+	// class_alloc(used_in_output, pba->bt_bw_rho_smg_size*sizeof(int), pba->error_message);
+	class_alloc(used_in_output, 1*sizeof(int), pba->error_message);
 
 	/** - define values of loga at which results will be stored from loga_ini to loga_final*/
 	for (index_loga=0; index_loga<pba->bt_bw_rho_smg_size; index_loga++) {
-		pba->loga_bw_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_bw_rho_smg_size-1);
+		pba->loga_bw_table_rho_smg[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_bw_rho_smg_size-1);
+		// pba->loga_bw_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_bw_rho_smg_size-1);
 		pba->loga_fw_table_rho_smg[index_loga] = loga_final + index_loga*(loga_ini-loga_final)/(pba->bt_bw_rho_smg_size-1);
-		used_in_output[index_loga] = 1;
+		// used_in_output[index_loga] = 1;
 	}
+	used_in_output[0] = 1;
 
 	/* - store final integration time */
 	pba->loga_final_rho_smg = loga_final;
@@ -1242,7 +1275,7 @@ int background_solve_rho_smg(
 								ppr->smallest_allowed_variation,
 								background_timescale, //'evaluate_timescale', required by evolver_rk but not by ndf15
 								ppr->background_integration_stepsize,
-								pba->loga_bw_table,
+								pba->loga_bw_table_rho_smg, // pba->loga_bw_table,
 								pba->bt_bw_rho_smg_size,
 								background_sources_bw_rho_smg,
 								NULL, //'print_variables' in evolver_rk could be set, but, not required
@@ -1260,22 +1293,23 @@ int background_solve_rho_smg(
 			pba->error_message,
 			pba->error_message);
 
-	// interpolate integrated rho_smg at loga_final and store value
-	class_call(array_interpolate_spline(
-										pba->loga_fw_table_rho_smg,
-										pba->bt_bw_rho_smg_size,
-										pba->stable_rho_smg,
-										pba->ddstable_rho_smg,
-										1,
-										loga_final,
-										&last_index, // not used
-										&pba->rho_smg_final,
-										1,
-										pba->error_message),
-				pba->error_message,
-				pba->error_message);    		
+	// // interpolate integrated rho_smg at loga_final and store value
+	// class_call(array_interpolate_spline(
+	// 									pba->loga_fw_table_rho_smg,
+	// 									pba->bt_bw_rho_smg_size,
+	// 									pba->stable_rho_smg,
+	// 									pba->ddstable_rho_smg,
+	// 									1,
+	// 									loga_final,
+	// 									&last_index, // not used
+	// 									&pba->rho_smg_final,
+	// 									1,
+	// 									pba->error_message),
+	// 			pba->error_message,
+	// 			pba->error_message);    		
 
-	free(pba->loga_bw_table);
+	free(pba->loga_bw_table_rho_smg);
+	// free(pba->loga_bw_table);
 	free(used_in_output);
 
 	return _SUCCESS_;
@@ -1373,7 +1407,8 @@ else if (pba->expansion_model_smg == rho_de) {
 					pba->error_message,
 					pba->error_message);    
 		// differentiate rho_de
-		class_call(array_derivate_spline(pba->stable_wext_lna_smg, // x_array
+		class_call(array_derivate_spline(
+						pba->stable_wext_lna_smg, // x_array
 						pba->stable_wext_size_smg, // int n_lines
 						pba->stable_rho_smg, // array
 						pba->ddstable_rho_smg, // double * array_splined

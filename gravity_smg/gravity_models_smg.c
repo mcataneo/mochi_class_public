@@ -197,151 +197,151 @@ int gravity_models_gravity_properties_smg(
 
   // MC stable parametrization with external input file
   if (strcmp(string1,"stable_params") == 0) {
-	pba->gravity_model_smg = stable_params;
-	pba->field_evolution_smg = _FALSE_;
-	pba->M_pl_evolution_smg = _FALSE_;
-	flag2=_TRUE_;
-	pba->parameters_2_size_smg = 1;
-  // read alpha_B(z=0) to set initial conditions
-	class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
-  // read z_gr_smg
-  class_read_double("z_gr_smg",pba->z_gr_smg);
+    pba->gravity_model_smg = stable_params;
+    pba->field_evolution_smg = _FALSE_;
+    pba->M_pl_evolution_smg = _FALSE_;
+    flag2=_TRUE_;
+    pba->parameters_2_size_smg = 1;
+    // read alpha_B(z=0) to set initial conditions
+    class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
+    // read z_gr_smg
+    class_read_double("z_gr_smg",pba->z_gr_smg);
 
-  class_call(parser_read_string(pfc,
-                                  "smg_file_name",
-                                  &string2,
-                                  &flag1,
-                                  errmsg),
-               errmsg,
-               errmsg);
+    class_call(parser_read_string(pfc,
+                                    "smg_file_name",
+                                    &string2,
+                                    &flag1,
+                                    errmsg),
+                errmsg,
+                errmsg);
 
-    if (flag1 == _TRUE_) {
-        pba->has_smg_file = _TRUE_;
-        class_read_string("smg_file_name",pba->smg_file_name);
-    }else{
-        class_stop(errmsg,"stable_params parameterization requested. Please specify full path to file containing M*^2, D_kin and cs^2 functions");
+      if (flag1 == _TRUE_) {
+          pba->has_smg_file = _TRUE_;
+          class_read_string("smg_file_name",pba->smg_file_name);
+      }else{
+          class_stop(errmsg,"stable_params parameterization requested. Please specify full path to file containing M*^2, D_kin and cs^2 functions");
+      }
+
+    /* for reading Delta_M_pl^2, D_kin and cs^2 functions */
+    FILE * input_file;
+    int row,status;
+    double tmp1,tmp2,tmp3,tmp4; // as many as the number of columns in input file
+    int index_stable_params, index_stable_params_derived, index_stable_params_aux;
+
+    pba->stable_params_size_smg = 0;
+
+    if (pba->has_smg_file == _TRUE_) {
+
+      input_file = fopen(pba->smg_file_name,"r");
+      class_test(input_file == NULL,
+                errmsg,
+                "Could not open file %s",pba->smg_file_name);
+
+      /* Find size of table */
+      for (row=0,status=4; status==4; row++){
+        status = fscanf(input_file,"%lf %lf %lf %lf",&tmp1,&tmp2,&tmp3,&tmp4);
+      }
+      rewind(input_file);
+      pba->stable_params_size_smg = row-1;
+
+      /** - define indices and allocate arrays for interpolation table*/
+
+      class_alloc(pba->stable_params_lna_smg,pba->stable_params_size_smg*sizeof(double),errmsg);
+
+      index_stable_params = 0;
+      class_define_index(pba->index_stable_Delta_Mpl_smg,_TRUE_,index_stable_params,1);
+      class_define_index(pba->index_stable_Dkin_smg,_TRUE_,index_stable_params,1);
+      class_define_index(pba->index_stable_cs2_smg,_TRUE_,index_stable_params,1);
+      class_define_index(pba->index_stable_Mpl_running_smg,_TRUE_,index_stable_params,1);
+      pba->num_stable_params = index_stable_params;
+      // parameters derived from ODE integration
+      index_stable_params_derived = 0;
+      class_define_index(pba->index_derived_braiding_smg,_TRUE_,index_stable_params_derived,1);
+      class_define_index(pba->index_derived_kineticity_smg,_TRUE_,index_stable_params_derived,1);
+      pba->num_stable_params_derived = index_stable_params_derived;
+      // auxiliary array to compute alpha_M from input Delta_M_pl^2
+      index_stable_params_aux = 0;
+      class_define_index(pba->index_aux_Delta_Mpl_smg,_TRUE_,index_stable_params_aux,1);
+      class_define_index(pba->index_aux_dMpl_smg,_TRUE_,index_stable_params_aux,1);
+      class_define_index(pba->index_aux_ddMpl_smg,_TRUE_,index_stable_params_aux,1);
+      pba->num_stable_params_aux = index_stable_params_aux;
+
+      /** - allocate various vectors */
+      class_alloc(pba->stable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
+      class_alloc(pba->ddstable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
+      class_alloc(pba->stable_params_derived_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+      class_alloc(pba->ddstable_params_derived_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+      class_alloc(pba->stable_params_aux_smg,pba->stable_params_size_smg*pba->num_stable_params_aux*sizeof(double),errmsg);
+
+      /* - fill a table of ln(a) and stable parameters*/
+      for (row=0; row<pba->stable_params_size_smg; row++){
+        status = fscanf(input_file,"%lf %lf %lf %lf",
+                        &pba->stable_params_lna_smg[row],
+                        &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
+                        &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
+                        &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg]);
+        // Initialize alpha_M and update value below as dMpl/Mpl
+        pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = 0.;
+      }
+      fclose(input_file);
+
+      // Assign value to a_file_gr_smg
+      pba->a_file_gr_smg = exp(pba->stable_params_lna_smg[0]);
+      // Check that largest provided scale factor is >= 1. for stable numerical derivatives
+      double a_max = 1.;
+      class_test((exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]) < a_max),
+            errmsg,
+            "maximum scale factor in input file is %f. For stable parametrization it must be >= %f for accurate numerical derivatives of smg parameters at late times", exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]), a_max);
+
+      /** - spline stable input parameters for later interpolation */
+      class_call(array_spline_table_lines(pba->stable_params_lna_smg,
+                                          pba->stable_params_size_smg,
+                                          pba->stable_params_smg,
+                                          pba->num_stable_params,
+                                          pba->ddstable_params_smg,
+                                          _SPLINE_EST_DERIV_,
+                                          pba->error_message),
+                pba->error_message,
+                pba->error_message);
+
+      /** - copy Delta_Mpl and ddMpl to auxiliary array */
+      for (row=0; row<pba->stable_params_size_smg; row++){
+        copy_to_aux_array_smg(pba,row,pba->index_aux_Delta_Mpl_smg,pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
+        copy_to_aux_array_smg(pba,row,pba->index_aux_ddMpl_smg,pba->ddstable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
+      }
+      /* Differentiate splined M_pl^2 to obtain alpha_m over the range of lna used by the ODE for alpha_b. */
+      // First step gives dM_pl^2/dlna
+      class_call(array_derive_spline_table_line_to_line(pba->stable_params_lna_smg,
+                                                        pba->stable_params_size_smg,
+                                                        pba->stable_params_aux_smg,
+                                                        pba->num_stable_params_aux,
+                                                        pba->index_aux_Delta_Mpl_smg,
+                                                        pba->index_aux_ddMpl_smg,
+                                                        pba->index_aux_dMpl_smg,
+                                                        pba->error_message),
+                pba->error_message,
+                pba->error_message);
+
+      // Update value of alpha_M in pba->stable_params_smg
+      double Mpl, dMpl; // M_pl^2, dM_pl^2/dlna
+      for (row=0; row<pba->stable_params_size_smg; row++){
+                      Mpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_Delta_Mpl_smg] + 1.;
+                      dMpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_dMpl_smg];
+                      pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = dMpl/Mpl;
+      }
+
+      /** - re-spline stable input parameters for later interpolation */
+      class_call(array_spline_table_lines(pba->stable_params_lna_smg,
+                                          pba->stable_params_size_smg,
+                                          pba->stable_params_smg,
+                                          pba->num_stable_params,
+                                          pba->ddstable_params_smg,
+                                          _SPLINE_EST_DERIV_,
+                                          pba->error_message),
+                pba->error_message,
+                pba->error_message);
+
     }
-
-  /* for reading Delta_M_pl^2, D_kin and cs^2 functions */
-  FILE * input_file;
-  int row,status;
-  double tmp1,tmp2,tmp3,tmp4; // as many as the number of columns in input file
-  int index_stable_params, index_stable_params_derived, index_stable_params_aux;
-
-  pba->stable_params_size_smg = 0;
-
-  if (pba->has_smg_file == _TRUE_) {
-
-    input_file = fopen(pba->smg_file_name,"r");
-    class_test(input_file == NULL,
-               errmsg,
-               "Could not open file %s",pba->smg_file_name);
-
-    /* Find size of table */
-    for (row=0,status=4; status==4; row++){
-      status = fscanf(input_file,"%lf %lf %lf %lf",&tmp1,&tmp2,&tmp3,&tmp4);
-    }
-    rewind(input_file);
-    pba->stable_params_size_smg = row-1;
-
-    /** - define indices and allocate arrays for interpolation table*/
-
-    class_alloc(pba->stable_params_lna_smg,pba->stable_params_size_smg*sizeof(double),errmsg);
-
-    index_stable_params = 0;
-    class_define_index(pba->index_stable_Delta_Mpl_smg,_TRUE_,index_stable_params,1);
-    class_define_index(pba->index_stable_Dkin_smg,_TRUE_,index_stable_params,1);
-    class_define_index(pba->index_stable_cs2_smg,_TRUE_,index_stable_params,1);
-    class_define_index(pba->index_stable_Mpl_running_smg,_TRUE_,index_stable_params,1);
-    pba->num_stable_params = index_stable_params;
-    // parameters derived from ODE integration
-    index_stable_params_derived = 0;
-    class_define_index(pba->index_derived_braiding_smg,_TRUE_,index_stable_params_derived,1);
-    class_define_index(pba->index_derived_kineticity_smg,_TRUE_,index_stable_params_derived,1);
-    pba->num_stable_params_derived = index_stable_params_derived;
-    // auxiliary array to compute alpha_M from input Delta_M_pl^2
-    index_stable_params_aux = 0;
-    class_define_index(pba->index_aux_Delta_Mpl_smg,_TRUE_,index_stable_params_aux,1);
-    class_define_index(pba->index_aux_dMpl_smg,_TRUE_,index_stable_params_aux,1);
-    class_define_index(pba->index_aux_ddMpl_smg,_TRUE_,index_stable_params_aux,1);
-    pba->num_stable_params_aux = index_stable_params_aux;
-
-    /** - allocate various vectors */
-    class_alloc(pba->stable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
-    class_alloc(pba->ddstable_params_smg,pba->stable_params_size_smg*pba->num_stable_params*sizeof(double),errmsg);
-    class_alloc(pba->stable_params_derived_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
-    class_alloc(pba->ddstable_params_derived_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
-    class_alloc(pba->stable_params_aux_smg,pba->stable_params_size_smg*pba->num_stable_params_aux*sizeof(double),errmsg);
-
-    /* - fill a table of ln(a) and stable parameters*/
-    for (row=0; row<pba->stable_params_size_smg; row++){
-      status = fscanf(input_file,"%lf %lf %lf %lf",
-                      &pba->stable_params_lna_smg[row],
-                      &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg],
-                      &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Dkin_smg],
-                      &pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_cs2_smg]);
-      // Initialize alpha_M and update value below as dMpl/Mpl
-      pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = 0.;
-    }
-    fclose(input_file);
-
-    // Assign value to a_file_gr_smg
-    pba->a_file_gr_smg = exp(pba->stable_params_lna_smg[0]);
-    // Check that largest provided scale factor is >= 1. for stable numerical derivatives
-    double a_max = 1.;
-    class_test((exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]) < a_max),
-          errmsg,
-          "maximum scale factor in input file is %f. For stable parametrization it must be >= %f for accurate numerical derivatives of smg parameters at late times", exp(pba->stable_params_lna_smg[pba->stable_params_size_smg-1]), a_max);
-
-    /** - spline stable input parameters for later interpolation */
-    class_call(array_spline_table_lines(pba->stable_params_lna_smg,
-                                        pba->stable_params_size_smg,
-                                        pba->stable_params_smg,
-                                        pba->num_stable_params,
-                                        pba->ddstable_params_smg,
-                                        _SPLINE_EST_DERIV_,
-                                        pba->error_message),
-               pba->error_message,
-               pba->error_message);
-
-    /** - copy Delta_Mpl and ddMpl to auxiliary array */
-    for (row=0; row<pba->stable_params_size_smg; row++){
-      copy_to_aux_array_smg(pba,row,pba->index_aux_Delta_Mpl_smg,pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
-      copy_to_aux_array_smg(pba,row,pba->index_aux_ddMpl_smg,pba->ddstable_params_smg[row*pba->num_stable_params + pba->index_stable_Delta_Mpl_smg]);
-    }
-    /* Differentiate splined M_pl^2 to obtain alpha_m over the range of lna used by the ODE for alpha_b. */
-    // First step gives dM_pl^2/dlna
-    class_call(array_derive_spline_table_line_to_line(pba->stable_params_lna_smg,
-                                                      pba->stable_params_size_smg,
-                                                      pba->stable_params_aux_smg,
-                                                      pba->num_stable_params_aux,
-                                                      pba->index_aux_Delta_Mpl_smg,
-                                                      pba->index_aux_ddMpl_smg,
-                                                      pba->index_aux_dMpl_smg,
-                                                      pba->error_message),
-               pba->error_message,
-               pba->error_message);
-
-    // Update value of alpha_M in pba->stable_params_smg
-    double Mpl, dMpl; // M_pl^2, dM_pl^2/dlna
-    for (row=0; row<pba->stable_params_size_smg; row++){
-                    Mpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_Delta_Mpl_smg] + 1.;
-                    dMpl = pba->stable_params_aux_smg[row*pba->num_stable_params_aux + pba->index_aux_dMpl_smg];
-                    pba->stable_params_smg[row*pba->num_stable_params + pba->index_stable_Mpl_running_smg] = dMpl/Mpl;
-    }
-
-    /** - re-spline stable input parameters for later interpolation */
-    class_call(array_spline_table_lines(pba->stable_params_lna_smg,
-                                        pba->stable_params_size_smg,
-                                        pba->stable_params_smg,
-                                        pba->num_stable_params,
-                                        pba->ddstable_params_smg,
-                                        _SPLINE_EST_DERIV_,
-                                        pba->error_message),
-               pba->error_message,
-               pba->error_message);
-
-  }
 
   }// MC end of stable_params
 
@@ -852,7 +852,7 @@ int gravity_models_expansion_properties_smg(
       class_alloc(pba->stable_wext_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
       class_alloc(pba->ddstable_wext_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
       class_alloc(pba->stable_rho_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
-      class_alloc(pba->ddstable_rho_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+      class_alloc(pba->ddstable_rho_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
 
       /* - fill a table of ln(a) and stable parameters*/
       for (row=0; row<pba->stable_wext_size_smg; row++){
@@ -936,7 +936,7 @@ int gravity_models_expansion_properties_smg(
       /** - allocate various vectors */
       class_alloc(pba->stable_wext_lna_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
       class_alloc(pba->stable_rho_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
-      class_alloc(pba->ddstable_rho_smg,pba->stable_params_size_smg*pba->num_stable_params_derived*sizeof(double),errmsg);
+      class_alloc(pba->ddstable_rho_smg,pba->stable_wext_size_smg*sizeof(double),errmsg);
 
       /* - fill in vectors for ln(a) and DE density normilised at z=0, i.e. rho_de(lna)/rho_de(0)*/
       for (row=0; row<pba->stable_wext_size_smg; row++){
@@ -1669,7 +1669,7 @@ int gravity_models_initial_conditions_smg(
     case stable_params:
       /* sets IC at a_initial for integration of alpha_M. It's only needed to initially fill in array and it will be adjusted
       after backward integration*/
-	    pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
+	    // pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
       /* For each backward integrated variable fix the initial condition at a_final. */
       pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = 1.; // Arbitrary constant. We set it to 1
 	    pvecback_bw_integration[pba->index_bibw_dB_tilde_smg] = 1. - 0.5 * pba->parameters_2_smg[0]; // 1 - alpha_B0/2
