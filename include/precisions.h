@@ -472,7 +472,8 @@ class_precision_parameter(selection_cut_at_sigma,double,5.0)/**< in sigma units,
 class_precision_parameter(selection_sampling,double,50.0) /**< controls sampling of integral over time when selection functions vary quicker than Bessel functions. Increase for better sampling. */
 class_precision_parameter(selection_sampling_bessel,double,20.0)/**< controls sampling of integral over time when selection functions vary slower than Bessel functions. Increase for better sampling. IMPORTANT for lensed contributions. */
 class_precision_parameter(selection_sampling_bessel_los,double,ppr->selection_sampling_bessel)/**< controls sampling of integral over time when selection functions vary slower than Bessel functions. This parameter is specific to number counts contributions to Cl integrated along the line of sight. Increase for better sampling */
-class_precision_parameter(selection_tophat_edge,double,0.1) /**< controls how smooth are the edge of top-hat window function (<<1 for very sharp, 0.1 for sharp) */
+// class_precision_parameter(selection_tophat_edge,double,0.1) /**< controls how smooth are the edge of top-hat window function (<<1 for very sharp, 0.1 for sharp) */
+class_precision_parameter(selection_tophat_edge,double,0.01) /**< controls how smooth are the edge of top-hat window function (<<1 for very sharp, 0.1 for sharp) */
 
 /*
  * Nonlinear module precision parameters

@@ -676,13 +676,30 @@ cdef class Class:
         # computes the size, given the number of correlations needed to be computed
         size = int((self.hr.d_size*(self.hr.d_size+1)-(self.hr.d_size-self.hr.non_diag)*
                 (self.hr.d_size-1-self.hr.non_diag))/2);
+        size_td = self.hr.d_size
+        # for elem in ['dd', 'll', 'dl']:
+        #    if elem in spectra:
+        #        cl[elem] = {}
+        #        for index in range(size):
+        #            cl[elem][index] = np.zeros(
+        #                lmax+1, dtype=np.double)
+        # for elem in ['td', 'tl']: # here 'td' has only 1 redshift (?!)
+        #    if elem in spectra:
+        #        cl[elem] = np.zeros(lmax+1, dtype=np.double)
+
         for elem in ['dd', 'll', 'dl']:
-            if elem in spectra:
-                cl[elem] = {}
-                for index in range(size):
-                    cl[elem][index] = np.zeros(
+           if elem in spectra:
+               cl[elem] = {}
+               for index in range(size):
+                   cl[elem][index] = np.zeros(
                         lmax+1, dtype=np.double)
-        for elem in ['td', 'tl']:
+        for elem in ['td']:
+           if elem in spectra:
+               cl[elem] = {}
+               for index in range(size_td):
+                   cl[elem][index] = np.zeros(
+                        lmax+1, dtype=np.double)
+        for elem in ['tl']:
             if elem in spectra:
                 cl[elem] = np.zeros(lmax+1, dtype=np.double)
 
@@ -698,8 +715,11 @@ cdef class Class:
             if 'dl' in spectra:
                 for index in range(size):
                     cl['dl'][index][ell] = dcl[self.hr.index_ct_dl+index]
+            # if 'td' in spectra: # single redshift (?!)
+            #    cl['td'][ell] = dcl[self.hr.index_ct_td]
             if 'td' in spectra:
-                cl['td'][ell] = dcl[self.hr.index_ct_td]
+                for index in range(size_td):
+                    cl['td'][index][ell] = dcl[self.hr.index_ct_td+index]
             if 'tl' in spectra:
                 cl['tl'][ell] = dcl[self.hr.index_ct_tl]
         cl['ell'] = np.arange(lmax+1)

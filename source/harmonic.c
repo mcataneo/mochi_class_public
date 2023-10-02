@@ -504,7 +504,7 @@ int harmonic_indices(
        transfer functions over a wide range, and a huge computation
        time. In the current version, we prefer to switch it off, rather
        than either slowing down the code considerably, or producing
-       very inaccurate spectra.
+       very inaccurate spectra. */
 
        if ((ppt->has_cl_cmb_temperature == _TRUE_) && (ppt->has_cl_number_count == _TRUE_) && (ppt->has_scalars == _TRUE_)) {
        phr->has_td = _TRUE_;
@@ -514,8 +514,8 @@ int harmonic_indices(
        else {
        phr->has_td = _FALSE_;
        }
-    */
-    phr->has_td = _FALSE_;
+    
+    // phr->has_td = _FALSE_;
 
     if ((ppt->has_cl_cmb_lensing_potential == _TRUE_) && (ppt->has_cl_number_count == _TRUE_) && (ppt->has_scalars == _TRUE_)) {
       phr->has_pd = _TRUE_;
@@ -539,17 +539,17 @@ int harmonic_indices(
        transfer functions over a wide range, and a huge computation
        time. In the current version, we prefer to switch it off, rather
        than either slowing down the code considerably, or producing
-       very inaccurate spectra.
+       very inaccurate spectra. */
 
-       if ((ppt->has_cl_cmb_temperature == _TRUE_) && (ppt->has_cl_lensing_potential == _TRUE_) && (ppt->has_scalars == _TRUE_)) {
-       phr->has_tl = _TRUE_;
-       phr->index_ct_tl=index_ct;
-       index_ct+=phr->d_size;
-       }
-       else {
-       phr->has_tl = _FALSE_;
-       }
-    */
+    // if ((ppt->has_cl_cmb_temperature == _TRUE_) && (ppt->has_cl_lensing_potential == _TRUE_) && (ppt->has_scalars == _TRUE_)) {
+    // phr->has_tl = _TRUE_;
+    // phr->index_ct_tl=index_ct;
+    // index_ct+=phr->d_size;
+    // }
+    // else {
+    // phr->has_tl = _FALSE_;
+    // }
+    
     phr->has_tl = _FALSE_;
 
     if ((ppt->has_cl_number_count == _TRUE_) && (ppt->has_cl_lensing_potential == _TRUE_) && (ppt->has_scalars == _TRUE_)) {

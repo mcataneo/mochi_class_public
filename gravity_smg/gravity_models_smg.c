@@ -215,7 +215,7 @@ int gravity_models_gravity_properties_smg(
     class_read_list_of_doubles("parameters_smg",pba->parameters_2_smg,pba->parameters_2_size_smg);
     // read z_gr_smg
     class_read_double("z_gr_smg",pba->z_gr_smg);
-
+    // first read entries for filename and stable_params arrays to check if they are present in input file
     class_call(parser_read_string(pfc,
                                     "smg_file_name",
                                     &string2,
@@ -307,28 +307,27 @@ int gravity_models_gravity_properties_smg(
 
     } else { // provide directly arrays for lna_smg, Delta(M*^2), D_kin and cs2
 
-      /* Read */
+      /* Read arrays with parser function to also count unkown size of arrays. The alternative class_read_list_of_doubles needs the size as input.*/
       class_call(parser_read_list_of_doubles(pfc,"lna_smg",&pba->stable_params_size_smg,&pba->stable_params_lna_smg,&flag1,errmsg),
              errmsg,
              errmsg);
+      
       class_call(parser_read_list_of_doubles(pfc,"Delta_M2",&int1,&pointer1,&flag1,errmsg),
              errmsg,
              errmsg);
-    // printf("gravity_models_gravity_properties_smg(): pba->stable_params_size_smg=%d \t int1=%d\n",pba->stable_params_size_smg,int1);
-    // for (row=0; row<int1; row++){
-    //   printf("lna_smg[%d] = %e \t Delta_M2[%d] = %e \n",
-    //           row,pba->stable_params_lna_smg[row],
-    //           row,pointer1[row]);
-    // }
-    // class_stop(errmsg,"stop here for now.\n");
+      // check that size of array matches that of lna_smg
       class_test(int1 != pba->stable_params_size_smg,errmsg,"Size of Delta_M2 array must match that of lna_smg.\n");
+
       class_call(parser_read_list_of_doubles(pfc,"D_kin",&int1,&pointer2,&flag1,errmsg),
              errmsg,
              errmsg);
+      // check that size of array matches that of lna_smg
       class_test(int1 != pba->stable_params_size_smg,errmsg,"Size of D_kin array must match that of lna_smg.\n");
+      
       class_call(parser_read_list_of_doubles(pfc,"cs2",&int1,&pointer3,&flag1,errmsg),
              errmsg,
              errmsg);
+      // check that size of array matches that of lna_smg
       class_test(int1 != pba->stable_params_size_smg,errmsg,"Size of cs2 array must match that of lna_smg.\n");
 
     }
