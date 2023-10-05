@@ -4472,9 +4472,9 @@ int input_read_parameters_spectra(struct file_content * pfc,
   int flag1, flag2;
   double param1, param2;
   char string1[_ARGUMENT_LENGTH_MAX_];
-  int int1;
+  int int1, fileentries, entries_read;
   double * pointer1;
-  int i;
+  int i, n;
   double z_max=0.;
   int bin;
 
@@ -4631,11 +4631,12 @@ int input_read_parameters_spectra(struct file_content * pfc,
                    phr->non_diag,ppt->selection_num-1);
     }
 
-    /** 2.b) Selection function */
+    /** 2.b) Global selection function */
     /* Read */
     class_call(parser_read_string(pfc,"dNdz_selection",&string1,&flag1,errmsg),
                errmsg,
                errmsg);
+    
     /* Complete set of parameters */
     if ((flag1 == _TRUE_)) {
       if ((strstr(string1,"analytic") != NULL)){
@@ -4645,6 +4646,29 @@ int input_read_parameters_spectra(struct file_content * pfc,
         ptr->has_nz_file = _TRUE_;
         class_read_string("dNdz_selection",ptr->nz_file_name);
       }
+    }
+
+    /* Read */
+    // class_read_list_of_integers_or_default("use_dNdz_files",ptr->got_nz_files,_FALSE_,ppt->selection_num);
+    class_call(parser_read_string(pfc,"use_dNdz_files",&string1,&flag1,errmsg),
+               errmsg,
+               errmsg);
+    class_test(flag1 == _TRUE_ && (ptr->has_nz_file == _TRUE_ || ptr->has_nz_analytic == _TRUE_),errmsg,
+              "Asked for both global (from file or analytic) and binned selection functions. Only one option at a time is supported."
+              );
+
+    if ((flag1 == _TRUE_) && (string_begins_with(string1,'y') || string_begins_with(string1,'Y'))){
+      ptr->got_nz_files = _TRUE_;
+      /** Check if filenames for interpolation tables are given */
+      /* Read. Make sure there are no spaces between file name. It must be a continuous string with file name separated by commas */
+      class_call(parser_read_list_of_strings(pfc,"dNdz_filenames",&entries_read,&(ptr->dNdz_files),&flag2,errmsg),
+                  errmsg,
+                  errmsg);
+      class_test(entries_read != ppt->selection_num,errmsg,
+                  "Number of filenames found (%d) does not match number of window functions (%d).",
+                  entries_read,ppt->selection_num);
+      /* Store number of files in transfer structure */
+      ptr->nz_files_num = entries_read;
     }
 
     /** 2.c) Source number counts evolution */
@@ -5838,6 +5862,7 @@ int input_default_params(struct background *pba,
   /** 2.b) Selection function */
   ptr->has_nz_analytic = _FALSE_;
   ptr->has_nz_file = _FALSE_;
+  ptr->got_nz_files = _FALSE_;
   /** 2.c) Source number counts evolution */
   ptr->has_nz_evo_analytic = _FALSE_;
   ptr->has_nz_evo_file = _FALSE_;

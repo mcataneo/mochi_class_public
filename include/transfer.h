@@ -93,13 +93,21 @@ struct transfer {
   double selection_bias[_SELECTION_NUM_MAX_];               /**< light-to-mass bias in the transfer function of density number count */
   double selection_magnification_bias[_SELECTION_NUM_MAX_]; /**< magnification bias in the transfer function of density number count */
 
-  short has_nz_file;     /**< Has dN/dz (selection function) input file? */
+  short has_nz_file;     /**< Has dN/dz (selection function) input file? This handles only **global** selection function. For binned dNdz see below */
   short has_nz_analytic; /**< Use analytic form for dN/dz (selection function) distribution? */
   FileName nz_file_name; /**< dN/dz (selection function) input file name */
   int nz_size;           /**< number of redshift values in input tabulated selection function */
   double * nz_z;         /**< redshift values in input tabulated selection function */
   double * nz_nz;        /**< input tabulated values of selection function */
   double * nz_ddnz;      /**< second derivatives in splined selection function*/
+  short got_nz_files;    /**< Has binned dN/dz (selection function) input files? This handles **binned** selection function. */
+  int nz_files_num;      /**< number of selection functions read from file */
+  char * dNdz_files;     /**< list of filenames for tabulated dNdz for each bin */
+  double ** nz_binned_z;     /**< Pointers to vectors of redshifts */
+  double ** nz_binned_nz;     /**< Pointers to vectors of corresponding selection functions */
+  double ** nz_binned_ddnz; /**< Pointers to vectors of second derivatives of selection functions */
+  int * nz_binned_size;    /**< Size of the selection functions arrays */
+
 
   short has_nz_evo_file;      /**< Has dN/dz (evolution function) input file? */
   short has_nz_evo_analytic;  /**< Use analytic form for dN/dz (evolution function) distribution? */
@@ -658,6 +666,10 @@ extern "C" {
                                     );
 
   int transfer_global_selection_read(
+                                     struct transfer * ptr
+                                     );
+
+  int transfer_binned_selection_read(
                                      struct transfer * ptr
                                      );
 

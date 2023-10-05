@@ -287,10 +287,15 @@ int transfer_init(
   */
 
   /** - eventually read the selection and evolution functions */
-
-  class_call(transfer_global_selection_read(ptr),
+  if (ptr->got_nz_files == _TRUE_) {
+    class_call(transfer_binned_selection_read(ptr),
              ptr->error_message,
              ptr->error_message);
+  } else {
+    class_call(transfer_global_selection_read(ptr),
+             ptr->error_message,
+             ptr->error_message);
+  }
 
   /** - precompute window function for integrated nCl/sCl quantities*/
   double* window = NULL;
@@ -458,6 +463,16 @@ int transfer_free(
       free(ptr->nz_z);
       free(ptr->nz_nz);
       free(ptr->nz_ddnz);
+    }
+
+    if (ptr->got_nz_files==_TRUE_) {
+      free(ptr->nz_binned_size);
+      for(int k=0; k<ptr->nz_files_num; k++) {
+        if (ptr->nz_binned_z[k] != NULL) free(ptr->nz_binned_z[k]);
+        if (ptr->nz_binned_nz[k] != NULL) free(ptr->nz_binned_nz[k]);
+        if (ptr->nz_binned_ddnz[k] != NULL) free(ptr->nz_binned_ddnz[k]);
+      }
+      if (ptr->dNdz_files!=NULL) free(ptr->dNdz_files);
     }
 
     if (ptr->nz_evo_size > 0) {
@@ -2566,6 +2581,23 @@ int transfer_selection_function(
       }
 
       *selection *= dNdz;
+    } else if (ptr->got_nz_files == _TRUE_) {
+      
+      class_call(array_interpolate_spline(
+                                            ptr->nz_binned_z[bin],
+                                            ptr->nz_binned_size[bin],
+                                            ptr->nz_binned_nz[bin],
+                                            ptr->nz_binned_ddnz[bin],
+                                            1,
+                                            z,
+                                            &last_index,
+                                            &dNdz,
+                                            1,
+                                            ptr->error_message),
+                   ptr->error_message,
+                   ptr->error_message);
+
+      *selection *= dNdz;
     }
 
     return _SUCCESS_;
@@ -4289,6 +4321,77 @@ int transfer_global_selection_read(
                ptr->error_message,
                ptr->error_message);
   }
+
+  return _SUCCESS_;
+
+};
+
+/* for reading binned selection function from multiple files */
+
+int transfer_binned_selection_read(
+                                   struct transfer * ptr
+                                   ) {
+
+  /* for reading selection functions */
+  FILE * input_file;
+  int k,row,status,filenum;
+  double tmp1,tmp2;
+
+  /* Allocate pointer arrays: */
+  class_alloc(ptr->nz_binned_z, sizeof(double*)*ptr->nz_files_num,ptr->error_message);
+  class_alloc(ptr->nz_binned_nz, sizeof(double*)*ptr->nz_files_num,ptr->error_message);
+  class_alloc(ptr->nz_binned_ddnz, sizeof(double*)*ptr->nz_files_num,ptr->error_message);
+
+  /* Allocate pointers: */
+  class_alloc(ptr->nz_binned_size,sizeof(int)*ptr->nz_files_num,ptr->error_message);
+
+  for(k=0, filenum=0; k<ptr->nz_files_num; k++) {
+    ptr->nz_binned_z[k] = NULL;
+    ptr->nz_binned_nz[k] = NULL;
+    ptr->nz_binned_ddnz[k] = NULL;
+    ptr->nz_binned_size[k] = 0;
+    /*Do we need to read in a file to interpolate the distribution function? */
+    input_file = fopen(ptr->dNdz_files+filenum*_ARGUMENT_LENGTH_MAX_,"r");
+    class_test(input_file == NULL,ptr->error_message,
+                "Could not open file %s!",ptr->dNdz_files+filenum*_ARGUMENT_LENGTH_MAX_);
+    // Find size of table:
+    for (row=0,status=2; status==2; row++) {
+      status = fscanf(input_file,"%lf %lf",&tmp1,&tmp2);
+    }
+    rewind(input_file);
+    ptr->nz_binned_size[k] = row-1;
+
+    /*Allocate room for interpolation table: */
+    class_alloc(ptr->nz_binned_z[k],sizeof(double)*ptr->nz_binned_size[k],ptr->error_message);
+    class_alloc(ptr->nz_binned_nz[k],sizeof(double)*ptr->nz_binned_size[k],ptr->error_message);
+    class_alloc(ptr->nz_binned_ddnz[k],sizeof(double)*ptr->nz_binned_size[k],ptr->error_message);
+    
+    for (row=0; row<ptr->nz_binned_size[k]; row++) {
+      status = fscanf(input_file,"%lf %lf",
+                      &ptr->nz_binned_z[k][row],&ptr->nz_binned_nz[k][row]);
+            //  printf("(z,nz) = (%g,%g)\n",ptr->nz_binned_z[k][row],ptr->nz_binned_nz[k][row]);
+    }
+    fclose(input_file);
+    /* Call spline interpolation: */
+    class_call(array_spline_table_lines(ptr->nz_binned_z[k],
+                                        ptr->nz_binned_size[k],
+                                        ptr->nz_binned_nz[k],
+                                        1,
+                                        ptr->nz_binned_ddnz[k],
+                                        _SPLINE_EST_DERIV_,
+                                        ptr->error_message),
+                ptr->error_message,
+                ptr->error_message);
+    filenum++;
+  }
+
+  // TODO_MC: add binned nz_evo
+  class_test(ptr->has_nz_evo_file == _TRUE_,
+              ptr->error_message,
+              "Binned source number counts evolution from file not yet supported. Use global dNdz (analytical or from file) with window function bins W_i(z).");
+
+
+  // class_stop(ptr->error_message,"Read all selection functions.");
 
   return _SUCCESS_;
 
