@@ -1357,6 +1357,14 @@ int fourier_init(
                pfo->error_message);
   }
 
+  /** - some non-standard cosmologies might give sigma8=NaN even though perturbations are calculated just fine. 
+   *  This test catches these cosmologies before other computationally expensive quantities are computed downstream. */
+  if (pba->has_smg == _TRUE_ && pba->gravity_model_smg == stable_params) {
+    class_test(isnan(pfo->sigma8[pfo->index_pk_m]),
+                pfo->error_message,
+                "sigma8 for total matter is NaN. Your smg model is free from gradient and ghost instabilities, but likely tachyonic instabilities make perturbations unstable.");
+  }
+
   if (pfo->fourier_verbose>0) {
 
     if (pfo->has_pk_m == _TRUE_)

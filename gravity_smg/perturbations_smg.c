@@ -998,9 +998,6 @@ int perturbations_einstein_scalar_smg(
         )*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
       )/cD;  
     }
-    
-    class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
-        ppt->error_message, " Isnan x'' at a =%e !",a);
   }//end of fully_dynamic equation
 
   return _SUCCESS_;

@@ -9537,7 +9537,6 @@ int perturbations_derivs(double tau,
              ppt->error_message,
              error_message);
 
-
   if((pba->has_idm_dr==_TRUE_)){
     Sinv = 4./3. * pvecback[pba->index_bg_rho_idr]/ pvecback[pba->index_bg_rho_idm_dr];
     dmu_idm_dr = pvecthermo[pth->index_th_dmu_idm_dr];
@@ -9980,6 +9979,12 @@ int perturbations_derivs(double tau,
     /** - ---> scalar modified gravity (smg) */
 
     if (pba->has_smg == _TRUE_) {
+      // Run tests to make sure our smg model doesn't produces unstable perturbations resulting in segfault 
+      class_test(isnan(pvecmetric[ppw->index_mt_alpha_prime]),
+          ppt->error_message, " Isnan mt_alpha' at tau =%e !",tau);
+      class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
+        ppt->error_message, " Isnan x'' at a =%e !",a);
+
       class_call(
         perturbations_derivs_smg(ppt, ppw, pv, dy, pvecmetric),
         ppt->error_message,
