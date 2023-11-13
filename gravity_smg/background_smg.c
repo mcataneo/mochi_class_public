@@ -1055,7 +1055,7 @@ int background_solve_smg(
 	class_test_except(pba->min_bra_smg < 2. && pba->max_bra_smg > 2.,
 	      pba->error_message,
 	      free(pvecback);free(pvecback_integration);background_free(pba),
-	      "Instability for metric tensor perturbations with alpha_B crossing 2 during evolution: alpha_B_min = %e and alpha_B_max = %e.\n", pba->min_bra_smg, pba->max_bra_smg);
+	      "Instability for scalar field perturbations with alpha_B crossing 2 during evolution: alpha_B_min = %e and alpha_B_max = %e.\n", pba->min_bra_smg, pba->max_bra_smg);
 
 	 /* Yet another (third!) loop to make sure the background table makes sense
 	 */
