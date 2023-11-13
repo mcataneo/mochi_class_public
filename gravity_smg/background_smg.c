@@ -1043,13 +1043,19 @@ int background_solve_smg(
 		}
 	}
 	
-	if (pba->gravity_model_smg != stable_params) {
+	// if (pba->gravity_model_smg != stable_params) { // not needed, we enforce skip_stability_tests_smg = _TRUE_ when pba->gravity_model_smg == stable_params
 		class_call(
 		stability_tests_smg(pba, pvecback, pvecback_integration),
 		pba->error_message,
 		pba->error_message
 		);
-	}
+	// }
+
+	/* Check that braiding doesn't cross 2., else we have instability at some point during evolution */
+	class_test_except(pba->min_bra_smg < 2. && pba->max_bra_smg > 2.,
+	      pba->error_message,
+	      free(pvecback);free(pvecback_integration);background_free(pba),
+	      "Instability for metric tensor perturbations with alpha_B crossing 2 during evolution: alpha_B_min = %e and alpha_B_max = %e.\n", pba->min_bra_smg, pba->max_bra_smg);
 
 	 /* Yet another (third!) loop to make sure the background table makes sense
 	 */
