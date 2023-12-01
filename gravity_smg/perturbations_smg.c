@@ -998,6 +998,9 @@ int perturbations_einstein_scalar_smg(
         )*ppw->pvecmetric[ppw->index_mt_x_prime_smg]
       )/cD;  
     }
+  } else if ((qs_array_smg[ppw->approx[ppw->index_ap_qs_smg]] == _FALSE_) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on)) {
+    // Because dynamical equations are always ON for stable_params in GR+LCDM regime, this ensures we don't come across numerical instabilities
+    ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg] = 0.;
   }//end of fully_dynamic equation
 
   return _SUCCESS_;

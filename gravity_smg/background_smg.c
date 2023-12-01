@@ -1045,9 +1045,9 @@ int background_solve_smg(
 	
 	// if (pba->gravity_model_smg != stable_params) { // not needed, we enforce skip_stability_tests_smg = _TRUE_ when pba->gravity_model_smg == stable_params
 		class_call(
-		stability_tests_smg(pba, pvecback, pvecback_integration),
-		pba->error_message,
-		pba->error_message
+			stability_tests_smg(pba, pvecback, pvecback_integration),
+			pba->error_message,
+			pba->error_message
 		);
 	// }
 

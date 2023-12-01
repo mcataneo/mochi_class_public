@@ -269,9 +269,9 @@ int input_read_parameters_smg(
     }
   }
 
-  // If gravity model is stable_params we always skip stability test and don't solve for Hubble
+  // Uncomment line below if you want to skip stability test when gravity model is stable_params. We also never solve for Hubble evolution
   if(pba->gravity_model_smg == stable_params){
-    pba->skip_stability_tests_smg = _TRUE_;
+    // pba->skip_stability_tests_smg = _TRUE_; // when commented, set proper flag value in INI file
     pba->hubble_evolution = _FALSE_;
   }
 
