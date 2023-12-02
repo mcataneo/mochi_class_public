@@ -9981,7 +9981,7 @@ int perturbations_derivs(double tau,
     if (pba->has_smg == _TRUE_) {
         // Run tests to make sure our smg model doesn't produces unstable perturbations resulting in segfault 
         class_test(isnan(pvecmetric[ppw->index_mt_alpha_prime]),
-            ppt->error_message, " Isnan mt_alpha' at tau =%e !",tau);
+            ppt->error_message, " Isnan mt_alpha' at tau =%e k =%e!",tau,k);
       // if ((pba->gravity_model_smg == stable_params && a > (1./(1 + pba->z_gr_smg))) || pba->gravity_model_smg != stable_params) {
         class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
           ppt->error_message, " Isnan x'' at a =%e !",a);
