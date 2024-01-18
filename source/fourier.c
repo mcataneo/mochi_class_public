@@ -1533,6 +1533,7 @@ int fourier_init(
                                       pnw),
                        pfo->error_message,
                        pfo->error_message,
+                       fourier_free(pfo);
                        fourier_hmcode_workspace_free(pfo,pnw);
                        for (index_pk=0; index_pk<pfo->pk_size; index_pk++){
                          free(pk_nl[index_pk]);
