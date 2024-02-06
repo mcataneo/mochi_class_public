@@ -500,6 +500,7 @@ struct background
   int index_aux_dMpl_smg; /* index used in auxiliary vector for dMpl/dlna */
   int index_aux_ddMpl_smg; /* index used in auxiliary vector for d2Mpl/dlna2 */
   int index_derived_braiding_smg; /* index for derived scalar field braiding alpha_B (derived from ODE integration) */
+  int index_derived_braiding_prime_smg; /* index for derived scalar field braiding alpha_B' (derived from ODE integration) -- experimental bit */
   int index_derived_kineticity_smg; /* index for derived scalar field kineticity alpha_K (derived from backward ODE integration) */
 
   // background expansion

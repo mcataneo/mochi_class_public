@@ -279,6 +279,7 @@ int gravity_models_gravity_properties_smg(
     // parameters derived from ODE integration
     index_stable_params_derived = 0;
     class_define_index(pba->index_derived_braiding_smg,_TRUE_,index_stable_params_derived,1);
+    class_define_index(pba->index_derived_braiding_prime_smg,_TRUE_,index_stable_params_derived,1); // experimental bit
     class_define_index(pba->index_derived_kineticity_smg,_TRUE_,index_stable_params_derived,1);
     pba->num_stable_params_derived = index_stable_params_derived;
     // auxiliary array to compute alpha_M from input Delta_M_pl^2
@@ -1835,8 +1836,11 @@ int gravity_models_initial_conditions_smg(
       after backward integration*/
 	    // pvecback_integration[pba->index_bi_delta_M_pl_smg] = 0.;
       /* For each backward integrated variable fix the initial condition at a_final. */
-      pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = 1.; // Arbitrary constant. We set it to 1
-	    pvecback_bw_integration[pba->index_bibw_dB_tilde_smg] = 1. - 0.5 * pba->parameters_2_smg[0]; // 1 - alpha_B0/2
+      // pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = 1.; // Arbitrary constant. We set it to 1
+	    // pvecback_bw_integration[pba->index_bibw_dB_tilde_smg] = 1. - 0.5 * pba->parameters_2_smg[0]; // 1 - alpha_B0/2
+      
+      // IC for 1st order ODE for alpha_B
+      pvecback_bw_integration[pba->index_bibw_B_tilde_smg] = pba->parameters_2_smg[0]; // alpha_B0
 	    break;
 	  }
 

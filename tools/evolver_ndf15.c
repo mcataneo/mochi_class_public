@@ -88,7 +88,6 @@ int evolver_ndf15(
   double alpha[5]={-37.0/200,-1.0/9.0,-8.23e-2,-4.15e-2, 0};
   double invGa[5],erconst[5];
   double abstol = 1e-15, eps=1e-16, threshold=abstol;
-  // double abstol = 1e-20, eps=1e-20, threshold=abstol;
   int maxit=4, maxk=5;
 
   /* Logicals: */
@@ -257,7 +256,7 @@ int evolver_ndf15(
     rh = MAX(rh,1.25/sqrt(rtol)*fabs(f0[jj]/wt[jj]));
   }
 
-  absh = MIN(hmax, htspan);
+  absh = MIN(fabs(hmax), htspan); // TODO_MC: fabs(hmax)?
   if (absh * rh > 1.0) absh = 1.0 / rh;
 
   absh = MAX(absh, hmin);
@@ -282,7 +281,7 @@ int evolver_ndf15(
     ddfddt[ii] += (tempvec1[ii] - f0[ii]) / tdel;
     rh = MAX(rh,1.25*sqrt(0.5*fabs(ddfddt[ii]/wt[ii])/rtol));
   }
-  absh = MIN(hmax, htspan);
+  absh = MIN(fabs(hmax), htspan); // TODO_MC: fabs(hmax)?
   if (absh * rh > 1.0) absh = 1.0 / rh;
 
   absh = MAX(absh, hmin);

@@ -587,8 +587,11 @@ int background_define_indices_bibw_smg(
 
 
 	//index for \tilde{B} and d\tilde{B}/dlna used to compute alpha_B
+	// class_define_index(pba->index_bibw_B_tilde_smg,_TRUE_,*index_bibw,1);
+	// class_define_index(pba->index_bibw_dB_tilde_smg,_TRUE_,*index_bibw,1);
+
+	//index for \tilde{B}=alpha_B -- 1st order ODE
 	class_define_index(pba->index_bibw_B_tilde_smg,_TRUE_,*index_bibw,1);
-	class_define_index(pba->index_bibw_dB_tilde_smg,_TRUE_,*index_bibw,1);
 
   return _SUCCESS_;
 }
@@ -636,6 +639,14 @@ int background_solve_smg(
 	double loga;
 	/* workspace for interpolation of derived parameters */
 	double * pvec_stable_params_derived_smg;
+	/* flag used to find first loga >= loga_final in loga_table */
+	short find_min_loga = _TRUE_;
+	/* value of braiding at min_loga */
+	double braid_min_loga = 0.;
+	/* braiding at z=0 */
+	double braid0 = 0.;
+	/* index of braiding element in background_table with value closest to some target value */
+	int braid_target_idx = 0;
 
     /* When gravity model is "stable parametrization" perform backward integration and overwrite alpha's as well as M_pl */ 
     if(pba->gravity_model_smg == stable_params){
@@ -694,6 +705,27 @@ int background_solve_smg(
                pba->error_message,
                pba->error_message);
 
+		/** Experimental workaround to avoid numerical instabilities  */
+		// double x0 = -2.78; // time setting transtion from power-law to full solution for alpha_B. For now fix it, though better define a function that finds it automatically based on some criterion	
+		/** interpolate alpha_B, alpha_B' and alpha_K */
+		// class_call(array_interpolate_spline(
+		// 						loga_fw_table,
+		// 						pba->bt_bw_size,
+		// 						pba->stable_params_derived_smg,
+		// 						pba->ddstable_params_derived_smg,
+		// 						pba->num_stable_params_derived,
+		// 						x0,
+		// 						&last_index, // not used
+		// 						pvec_stable_params_derived_smg,
+		// 						pba->num_stable_params_derived,
+		// 						pba->error_message),
+		// pba->error_message,
+		// pba->error_message);
+
+		// double bra_x0 = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
+		// double bra_p_x0 = pvec_stable_params_derived_smg[pba->index_derived_braiding_prime_smg];
+		/** end experimental bit */
+
 		// Update background table
 		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
 
@@ -714,8 +746,8 @@ int background_solve_smg(
 										pba->error_message),
 				pba->error_message,
 				pba->error_message);
-				// interpolate alpha_B and alpha_K
-				class_call(array_interpolate_spline(
+				// interpolate alpha_B, alpha_B' and alpha_K
+					class_call(array_interpolate_spline(
 										loga_fw_table,
 										pba->bt_bw_size,
 										pba->stable_params_derived_smg,
@@ -726,8 +758,39 @@ int background_solve_smg(
 										pvec_stable_params_derived_smg,
 										pba->num_stable_params_derived,
 										pba->error_message),
-				pba->error_message,
-				pba->error_message);
+					pba->error_message,
+					pba->error_message);
+
+				if(find_min_loga == _TRUE_){
+					braid_min_loga = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
+					find_min_loga = _FALSE_;
+				}
+				
+				/* Exprimental bit power-law approximation */ 
+				// if (loga >= x0) { 
+				// 	// interpolate alpha_B, alpha_B' and alpha_K
+				// 	class_call(array_interpolate_spline(
+				// 						loga_fw_table,
+				// 						pba->bt_bw_size,
+				// 						pba->stable_params_derived_smg,
+				// 						pba->ddstable_params_derived_smg,
+				// 						pba->num_stable_params_derived,
+				// 						loga,
+				// 						&last_index, // not used
+				// 						pvec_stable_params_derived_smg,
+				// 						pba->num_stable_params_derived,
+				// 						pba->error_message),
+				// 	pba->error_message,
+				// 	pba->error_message);
+				// }
+				// else {
+				// 	double bra_approx = bra_x0 * exp(bra_p_x0/bra_x0*(loga - x0));
+				// 	double D_kin = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
+				// 	pvec_stable_params_derived_smg[pba->index_derived_braiding_smg] = bra_approx;
+				// 	pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] = D_kin - 1.5 * bra_approx*bra_approx;
+				// }
+
+				/** end experimental bit*/
 
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1. + pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
@@ -805,6 +868,25 @@ int background_solve_smg(
 					pba->error_message,
 					pba->error_message);
 		}
+
+		// if braiding at ~log_final smaller than double precision shift z_gr_smg such that braid[z_gr_smg]~1e-14
+		// if this is working move 1e-15 and 1e-14 to precision.h as precision variables
+		// braid0 = pba->background_table[(pba->bt_size-1)*pba->bg_size + pba->index_bg_braiding_smg];
+		// if(abs(braid_min_loga/braid0) <= 1e-8){
+		// 	class_call(array_find_closest_background_table(pba->background_table,
+		// 												pba->bg_size,
+		// 												pba->index_bg_braiding_smg, 
+		// 												pba->bt_size, 
+		// 												braid0*1e-7, // move this to precision.h if it works
+		// 												&braid_target_idx,
+		// 												pba->error_message),
+		// 			pba->error_message,
+		// 			pba->error_message);
+		// 	/* update GR -> SMG transition redshift */
+		// 	pba->z_gr_smg = 1/exp(pba->loga_table[braid_target_idx]) - 1.;
+		// }
+
+		// printf("z_gr_smg=%e\n",pba->z_gr_smg);
 
     } // End stable parametrization
 
@@ -1890,7 +1972,7 @@ int background_derivs_smg(
  */
 int background_derivs_bw_smg(
                         double loga,
-                        double * y, /* vector with argument y[index_bi_bw] (must be already allocated with size pba->bi_bw_B_size) */
+                    	double * y, /* vector with argument y[index_bi_bw] (must be already allocated with size pba->bi_bw_B_size) */
                         double * dy, /* vector with argument dy[index_bi_bw]
                                      (must be already allocated with
                                      size pba->bi_bw_B_size) */
@@ -1905,7 +1987,7 @@ int background_derivs_bw_smg(
 	double * pvecback;
 	double * pvecback_B; // used to infer non-MG integrated quantities from interpolation and fed to background_functions
 	double * pvec_stable_params_smg;
-	double a, z, H, dH, rho_tot, P_tot;
+	double a, z, H, dH, rho_tot, P_tot, rho_smg, p_smg;
 	double Delta_Mpl, alpha_M, D_kin, cs2;
 	int last_index; // necessary for calling array_interpolate(), but never used
 	int pvecback_size;
@@ -1921,23 +2003,24 @@ int background_derivs_bw_smg(
 
 	a = exp(loga);
 	// Interpolate dH/dlna from background_table_late (GR->MG transition happening at loga_final_bw_integration) if expansion parametrized by rho_de
-	if (pba->expansion_model_smg == rho_de) {
-		class_call(array_interpolate_spline(
-                                        pba->loga_table,
-                                        pba->bt_size,
-                                        pba->background_table_late,
-                                        pba->d2background_dloga2_table_late,
-                                        pba->bg_size,
-                                        loga,
-                                        &last_index,
-                                        pvecback,
-                                        pvecback_size,
-                                        pba->error_message),
-               pba->error_message,
-               pba->error_message);
+	// TODO_MC: do we still need to evaluate dH here? We do that below anyway (!!!)
+	// if (pba->expansion_model_smg == rho_de) {
+	// 	class_call(array_interpolate_spline(
+    //                                     pba->loga_table,
+    //                                     pba->bt_size,
+    //                                     pba->background_table_late,
+    //                                     pba->d2background_dloga2_table_late,
+    //                                     pba->bg_size,
+    //                                     loga,
+    //                                     &last_index,
+    //                                     pvecback,
+    //                                     pvecback_size,
+    //                                     pba->error_message),
+    //            pba->error_message,
+    //            pba->error_message);
 
-		dH = pvecback[pba->index_bg_H_prime]; // this is dH/dtau
-	}
+	// 	dH = pvecback[pba->index_bg_H_prime]; // this is dH/dtau
+	// }
 
 	// Assign pvecback_B elements based on interpolation background table above
 	if (pba->has_dcdm == _TRUE_ || pba->has_dr == _TRUE_) {
@@ -1984,6 +2067,8 @@ int background_derivs_bw_smg(
 		dH = pvecback[pba->index_bg_H_prime]/a/H; // dH/dloga = 1/aH * dH/dtau
 	}
 	
+	rho_smg = pvecback[pba->index_bg_rho_smg];
+	p_smg = pvecback[pba->index_bg_p_smg];
 	rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]; // all matter exluding scalar field
 	P_tot = pvecback[pba->index_bg_p_tot_wo_smg]; // all matter excluding scalar field
 
@@ -2007,9 +2092,16 @@ int background_derivs_bw_smg(
 	cs2 = pvec_stable_params_smg[pba->index_stable_cs2_smg];
 	alpha_M = pvec_stable_params_smg[pba->index_stable_Mpl_running_smg];
 
-	// /* Derivatives here are w.r.t. loga */
-	dy[pba->index_bibw_B_tilde_smg] = y[pba->index_bibw_dB_tilde_smg];
-	dy[pba->index_bibw_dB_tilde_smg] = (1. + alpha_M - dH/H)*y[pba->index_bibw_dB_tilde_smg] - (1.5 * (rho_tot + P_tot)/(H * H * (1.+Delta_Mpl)) + 0.5 * D_kin * cs2)*y[pba->index_bibw_B_tilde_smg];
+	/* Derivatives here are w.r.t. loga */
+
+	/* system of two first-order linear ODE */
+	// dy[pba->index_bibw_B_tilde_smg] = y[pba->index_bibw_dB_tilde_smg];
+	// dy[pba->index_bibw_dB_tilde_smg] = (1. + alpha_M - dH/H)*y[pba->index_bibw_dB_tilde_smg] - (1.5 * (rho_tot + P_tot)/(H * H * (1.+Delta_Mpl)) + 0.5 * D_kin * cs2)*y[pba->index_bibw_B_tilde_smg];
+
+	/* single first-order non-linear ODE */
+	// dy[pba->index_bibw_B_tilde_smg] = (y[pba->index_bibw_B_tilde_smg] - 2.) * (0.5 * y[pba->index_bibw_B_tilde_smg] + alpha_M - dH/H) + D_kin * cs2 + 3. * (rho_tot + P_tot)/(H * H * (1.+Delta_Mpl));
+	/* re-written for increased numerical accuracy */
+	dy[pba->index_bibw_B_tilde_smg] = 0.5*y[pba->index_bibw_B_tilde_smg]*y[pba->index_bibw_B_tilde_smg] -(1. - alpha_M + dH/H)*y[pba->index_bibw_B_tilde_smg] - (2.*alpha_M - D_kin*cs2 - (1. - 1./(1.+Delta_Mpl))*2.*dH/H + 3*(rho_smg + p_smg)/(1.+ Delta_Mpl)/H/H);
 
 	return _SUCCESS_;
 
@@ -2098,19 +2190,35 @@ int background_sources_bw_smg(
 	struct background_parameters_and_workspace * pbpaw;
 	struct background * pba;
 	double * pvec_stable_params_smg;
-
+	/** experimental bit*/
+	double * pvecback;
+	double * pvecback_B; // used to infer non-MG integrated quantities from interpolation and fed to background_functions
+	double a, H, dH, rho_tot, P_tot;
+	double Delta_Mpl, alpha_M, cs2;
+	int pvecback_size;
+	int pvec_stable_params_size; // size of output vector, controlled by input parameter return_format
+	/** end experimental bit*/
 	pbpaw = parameters_and_workspace;
 	pba =  pbpaw->pba;
 	pvec_stable_params_smg = pbpaw->pvec_stable_params_smg;
-
+	/** experimental bit*/
+	pvecback = pbpaw->pvecback;
+	pvecback_B = pbpaw->pvecback_B;
+	pvecback_size = pba->bg_size;
+	pvec_stable_params_size = pba->num_stable_params;
+	/** end experimental bit*/
 	int last_index;
 	double D_kin;
 
-	double Btilde = y[pba->index_bibw_B_tilde_smg];
-	double dBtilde = y[pba->index_bibw_dB_tilde_smg];
+	// double Btilde = y[pba->index_bibw_B_tilde_smg];
+	// double dBtilde = y[pba->index_bibw_dB_tilde_smg];
 
-	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = 2. * (1. - dBtilde/Btilde);
-	double alpha_B = pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg];
+	// pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = 2. * (1. - dBtilde/Btilde);
+	// double alpha_B = pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg];
+
+	// To be used with 1st order ODE
+	double alpha_B = y[pba->index_bibw_B_tilde_smg];
+	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_smg] = alpha_B;
 
 	class_call(array_interpolate_spline(
                                         pba->stable_params_lna_smg,
@@ -2128,6 +2236,63 @@ int background_sources_bw_smg(
 
 	D_kin = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
 	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_kineticity_smg] = D_kin - 1.5 * alpha_B*alpha_B;
+
+	/** Experimental bit to store alpha_B', works only with 1st order ODE for now */
+	// Assign pvecback_B elements based on interpolation background table above
+	if (pba->has_dcdm == _TRUE_ || pba->has_dr == _TRUE_) {
+		class_call(array_interpolate_spline(
+                                        pba->loga_table,
+                                        pba->bt_size,
+                                        pba->background_table,
+                                        pba->d2background_dloga2_table,
+                                        pba->bg_size,
+                                        loga,
+                                        &last_index,
+                                        pvecback,
+                                        pvecback_size,
+                                        pba->error_message),
+               pba->error_message,
+               pba->error_message);
+		/* dcdm */
+		if (pba->has_dcdm == _TRUE_) {
+			pvecback_B[pba->index_bi_rho_dcdm] = pvecback[pba->index_bg_rho_dcdm];
+		}
+		/* dr */
+		if (pba->has_dr == _TRUE_) {
+			pvecback_B[pba->index_bi_rho_dr] = pvecback[pba->index_bg_rho_dr];
+		}
+	}
+
+	// call directly background_functions to speed up entire code and increase accuracy
+	a = exp(loga);
+	class_call(background_functions(pba, a, pvecback_B, normal_info, pvecback),
+             pba->error_message,
+             error_message);
+
+	if (pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de) {
+		class_call(interpolate_rho_smg_p_smg(pba, log(a), pba->loga_final_bw_integration, pvecback),
+                 pba->error_message,
+                 pba->error_message
+      	);
+		// Update quantities depending on rho_smg and p_smg
+		H = sqrt(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg] - pba->K/a/a);
+		dH = (-1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
+													+ pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a)/a/H; // dH/dloga = 1/aH * dH/dtau
+	}
+	else {
+		H = pvecback[pba->index_bg_H];
+		dH = pvecback[pba->index_bg_H_prime]/a/H; // dH/dloga = 1/aH * dH/dtau
+	}
+	
+	rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg]; // all matter exluding scalar field
+	P_tot = pvecback[pba->index_bg_p_tot_wo_smg]; // all matter excluding scalar field
+
+	Delta_Mpl = pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg];
+	cs2 = pvec_stable_params_smg[pba->index_stable_cs2_smg];
+	alpha_M = pvec_stable_params_smg[pba->index_stable_Mpl_running_smg];
+
+	pba->stable_params_derived_smg[((pba->bt_bw_size-1) - index_loga)*pba->num_stable_params_derived + pba->index_derived_braiding_prime_smg] = (alpha_B - 2.) * (0.5 * alpha_B + alpha_M - dH/H) + D_kin * cs2 + 3. * (rho_tot + P_tot)/(H * H * (1.+Delta_Mpl));
+	/** End experimental bit*/
 
 	return _SUCCESS_;
 

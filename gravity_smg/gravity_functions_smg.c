@@ -510,6 +510,10 @@ int gravity_functions_As_from_alphas_smg(
   double p_tot_p = factor*pvecback_derivs[pba->index_bg_p_tot_wo_smg];
   double p_smg_p = factor*pvecback_derivs[pba->index_bg_p_smg];
 
+  if(pba->gravity_model_smg == stable_params){
+    //recompute derivative of brading for increased numerical stability
+    bra_p = a*H*(cs2num - (2 - bra)*(1.5*(rho_tot+rho_smg+p_tot+p_smg)/pow(H,2.) + bra/2. + run) + 3*(rho_tot+p_tot)/(pow(H,2.)*M2));
+  }
   // kinetic term D
   if(pba->gravity_model_smg != stable_params){
     pvecback[pba->index_bg_kinetic_D_smg] = kin + 3./2.*pow(bra,2);
@@ -661,11 +665,6 @@ int gravity_functions_As_from_alphas_smg(
 
 
   // TODO_EB: remove below this when IC are recalculated
-
-  if(pba->gravity_model_smg == stable_params){
-    //recompute derivative of brading for more numerical stability
-    bra_p = a*H*(cs2num - (2 - bra)*(1.5*(rho_tot+rho_smg+p_tot+p_smg)/pow(H,2.) + bra/2. + run) + 3*(rho_tot+p_tot)/(pow(H,2.)*M2));
-  }
 
   pvecback[pba->index_bg_lambda_1_smg] = (run + (-1.)*ten)*(-3.)*bra + (1. + ten)*kin;
 

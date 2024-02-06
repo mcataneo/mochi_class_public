@@ -3764,3 +3764,31 @@ int array_hunt_ascending(
 
   return _SUCCESS_;
 }
+
+// Function to find the element closest in magnitude to the target
+int array_find_closest_background_table(
+                        double * bg_table,
+                        int bg_size,
+                        int bg_index, 
+                        int size, 
+                        double value,
+                        int * index,
+                        ErrorMsg errmsg
+                        ) {
+    *index = 0; // Start with the first element
+    double minDiff = fabs(fabs(bg_table[bg_index]) - value); // Initial difference
+
+    // Iterate through the array to find the closest value in magnitude
+    for (int index_loga = 1; index_loga < size; index_loga++) {
+        double diff = fabs(fabs(bg_table[index_loga*bg_size + bg_index]) - value);
+        // Update index if a closer element is found in magnitude
+        if (diff < minDiff) {
+            minDiff = diff;
+            *index = index_loga;
+        }
+    }
+
+    // TODO_MC: no checks for inconsistencies. Add them later if necessary
+
+    return _SUCCESS_;
+}

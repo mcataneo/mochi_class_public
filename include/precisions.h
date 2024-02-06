@@ -13,6 +13,7 @@ class_precision_parameter(a_ini_over_a_today_default,double,1.e-14)
  * Number of background integration steps that are stored in the output vector
  */
 class_precision_parameter(background_Nloga,int,3000)
+// class_precision_parameter(background_Nloga,int,60000)
 /**
  * Evolver to be used for thermodynamics (rk, ndf15)
  */
@@ -22,6 +23,7 @@ class_type_parameter(background_evolver,int,enum evolver_type,ndf15)
  * (used by both evolvers)
  */
 class_precision_parameter(tol_background_integration,double,1.e-10)
+// class_precision_parameter(tol_background_integration,double,1.e-16)
 /**
  * Only relevant for rk evolver: the default integration step is given
  * by this number multiplied by the timescale defined in
@@ -597,7 +599,8 @@ class_precision_parameter(eps_s_qs_smg,double,0.01) /**< when the system enters 
 /* Only for stable params */
 class_precision_parameter(eps_bw_integration_rho_smg,double,0.1) /**< small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg as well as at final time of backward integration for alpha_B. */
 class_precision_parameter(eps_bw_integration_braid,double,0.1) /**< small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg. Must be <= eps_bw_integration_rho_smg*/
-class_precision_parameter(tol_background_bw_integration,double,1.e-13) /**< Tolerance of the backward background integration for braiding, giving the allowed relative integration error */
+// class_precision_parameter(tol_background_bw_integration,double,1.e-13) /**< Tolerance of the backward background integration for braiding, giving the allowed relative integration error -- 2nd order ODE */
+class_precision_parameter(tol_background_bw_integration,double,1.e-13) /**< Tolerance of the backward background integration for braiding, giving the allowed relative integration error -- 1st order ODE */
 class_precision_parameter(dtau_start_qs,double,0.01) /**< enforce conformal time delay to switch from FD to QS such that scalar field ICs can be properly set up with stable_params */
 
 class_precision_parameter(min_a_pert_smg,double,1.) /**< minimum value of scale factor to start integration (important to test some ede models */

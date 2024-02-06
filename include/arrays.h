@@ -527,6 +527,15 @@ int array_integrate_all_trapzd_or_spline(
                            int * index,
                            ErrorMsg errmsg);
 
+  int array_find_closest_background_table(
+							double * bg_table,
+							int bg_size,
+							int bg_index, 
+							int size, 
+							double value,
+							int * index,
+							ErrorMsg errmsg);
+
 #ifdef __cplusplus
 }
 #endif
