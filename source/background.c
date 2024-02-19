@@ -3058,7 +3058,7 @@ double dV_e_scf(struct background *pba,
   //  double scf_A      = pba->scf_parameters[2];
   //  double scf_B      = pba->scf_parameters[3];
 
-  return -scf_lambda*V_scf(pba,phi);
+  return -scf_lambda*V_e_scf(pba,phi);
 }
 
 double ddV_e_scf(struct background *pba,
@@ -3069,7 +3069,7 @@ double ddV_e_scf(struct background *pba,
   //  double scf_A      = pba->scf_parameters[2];
   //  double scf_B      = pba->scf_parameters[3];
 
-  return pow(-scf_lambda,2)*V_scf(pba,phi);
+  return pow(-scf_lambda,2)*V_e_scf(pba,phi);
 }
 
 
