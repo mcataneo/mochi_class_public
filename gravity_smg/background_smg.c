@@ -254,6 +254,12 @@ int background_gravity_functions_smg(
 	}
   pvecback[pba->index_bg_cs2num_smg] = 0.;
   pvecback[pba->index_bg_cs2num_prime_smg] = 0.;
+  pvecback[pba->index_bg_mu_p_smg] = 0.;
+  pvecback[pba->index_bg_mu_inf_smg] = 0.;
+  pvecback[pba->index_bg_muZ_inf_smg] = 0.;
+  pvecback[pba->index_bg_mu_p_prime_smg] = 0.;
+  pvecback[pba->index_bg_mu_inf_prime_smg] = 0.;
+  pvecback[pba->index_bg_muZ_inf_prime_smg] = 0.;
   pvecback[pba->index_bg_A0_smg] = 0.;
   pvecback[pba->index_bg_A1_smg] = 0.;
   pvecback[pba->index_bg_A2_smg] = 0.;
@@ -540,6 +546,12 @@ int background_define_indices_bg_smg(
 	class_define_index(pba->index_bg_p_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_p_tot_wo_prime_prime_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_p_prime_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_mu_p_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_mu_inf_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_muZ_inf_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_mu_p_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_mu_inf_prime_smg,_TRUE_,*index_bg,1);
+	class_define_index(pba->index_bg_muZ_inf_prime_smg,_TRUE_,*index_bg,1);
 
 	class_define_index(pba->index_bg_G_eff_smg,_TRUE_,*index_bg,1);
 	class_define_index(pba->index_bg_slip_eff_smg,_TRUE_,*index_bg,1);
@@ -640,12 +652,10 @@ int background_solve_smg(
 	/* workspace for interpolation of derived parameters */
 	double * pvec_stable_params_derived_smg;
 	/* flag used to find first loga >= loga_final in loga_table */
-	short find_min_loga = _TRUE_;
+	short find_min = _TRUE_;
 	/* value of braiding at min_loga */
-	double braid_min_loga = 0.;
-	/* braiding at z=0 */
-	double braid0 = 0.;
-	/* index of braiding element in background_table with value closest to some target value */
+	double braid_min = 0.;
+	/* index of braiding element in background_table with value closest to braid_activation_threshold */
 	int braid_target_idx = 0;
 
     /* When gravity model is "stable parametrization" perform backward integration and overwrite alpha's as well as M_pl */ 
@@ -705,27 +715,6 @@ int background_solve_smg(
                pba->error_message,
                pba->error_message);
 
-		/** Experimental workaround to avoid numerical instabilities  */
-		// double x0 = -2.78; // time setting transtion from power-law to full solution for alpha_B. For now fix it, though better define a function that finds it automatically based on some criterion	
-		/** interpolate alpha_B, alpha_B' and alpha_K */
-		// class_call(array_interpolate_spline(
-		// 						loga_fw_table,
-		// 						pba->bt_bw_size,
-		// 						pba->stable_params_derived_smg,
-		// 						pba->ddstable_params_derived_smg,
-		// 						pba->num_stable_params_derived,
-		// 						x0,
-		// 						&last_index, // not used
-		// 						pvec_stable_params_derived_smg,
-		// 						pba->num_stable_params_derived,
-		// 						pba->error_message),
-		// pba->error_message,
-		// pba->error_message);
-
-		// double bra_x0 = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
-		// double bra_p_x0 = pvec_stable_params_derived_smg[pba->index_derived_braiding_prime_smg];
-		/** end experimental bit */
-
 		// Update background table
 		for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
 
@@ -761,36 +750,11 @@ int background_solve_smg(
 					pba->error_message,
 					pba->error_message);
 
-				if(find_min_loga == _TRUE_){
-					braid_min_loga = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
-					find_min_loga = _FALSE_;
+				/** store value of braiding at loga_final */
+				if(find_min == _TRUE_){
+					braid_min = pvec_stable_params_derived_smg[pba->index_derived_braiding_smg];
+					find_min = _FALSE_;
 				}
-				
-				/* Exprimental bit power-law approximation */ 
-				// if (loga >= x0) { 
-				// 	// interpolate alpha_B, alpha_B' and alpha_K
-				// 	class_call(array_interpolate_spline(
-				// 						loga_fw_table,
-				// 						pba->bt_bw_size,
-				// 						pba->stable_params_derived_smg,
-				// 						pba->ddstable_params_derived_smg,
-				// 						pba->num_stable_params_derived,
-				// 						loga,
-				// 						&last_index, // not used
-				// 						pvec_stable_params_derived_smg,
-				// 						pba->num_stable_params_derived,
-				// 						pba->error_message),
-				// 	pba->error_message,
-				// 	pba->error_message);
-				// }
-				// else {
-				// 	double bra_approx = bra_x0 * exp(bra_p_x0/bra_x0*(loga - x0));
-				// 	double D_kin = pvec_stable_params_smg[pba->index_stable_Dkin_smg];
-				// 	pvec_stable_params_derived_smg[pba->index_derived_braiding_smg] = bra_approx;
-				// 	pvec_stable_params_derived_smg[pba->index_derived_kineticity_smg] = D_kin - 1.5 * bra_approx*bra_approx;
-				// }
-
-				/** end experimental bit*/
 
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_delta_M2_smg, pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
 				copy_to_background_table_smg(pba, index_loga, pba->index_bg_M2_smg, 1. + pvec_stable_params_smg[pba->index_stable_Delta_Mpl_smg]);
@@ -869,24 +833,24 @@ int background_solve_smg(
 					pba->error_message);
 		}
 
-		// if braiding at ~log_final smaller than double precision shift z_gr_smg such that braid[z_gr_smg]~1e-14
-		// if this is working move 1e-15 and 1e-14 to precision.h as precision variables
-		// braid0 = pba->background_table[(pba->bt_size-1)*pba->bg_size + pba->index_bg_braiding_smg];
-		// if(abs(braid_min_loga/braid0) <= 1e-8){
-		// 	class_call(array_find_closest_background_table(pba->background_table,
-		// 												pba->bg_size,
-		// 												pba->index_bg_braiding_smg, 
-		// 												pba->bt_size, 
-		// 												braid0*1e-7, // move this to precision.h if it works
-		// 												&braid_target_idx,
-		// 												pba->error_message),
-		// 			pba->error_message,
-		// 			pba->error_message);
-		// 	/* update GR -> SMG transition redshift */
-		// 	pba->z_gr_smg = 1/exp(pba->loga_table[braid_target_idx]) - 1.;
-		// }
-
-		// printf("z_gr_smg=%e\n",pba->z_gr_smg);
+		/** if braiding smaller than braid_activation_threshold and braid(0) larger that this threshold z_gr_smg such that abs(bra(z_gr_smg))~1e-12 */
+		if(fabs(braid_min) < ppr->braid_activation_threshold && fabs(pba->parameters_2_smg[0]) > ppr->braid_activation_threshold){
+			class_call(array_find_closest_background_table(pba->background_table,
+														pba->bg_size,
+														pba->index_bg_braiding_smg, 
+														pba->bt_size, 
+														ppr->braid_activation_threshold,
+														&braid_target_idx,
+														pba->error_message),
+					pba->error_message,
+					pba->error_message);
+			/* update GR -> SMG transition redshift used by the perturbations */
+			pba->z_gr_smg = 1/exp(pba->loga_table[braid_target_idx]) - 1.;
+			
+			if (pba->background_verbose > 0) {
+				printf(" -> transition to smg delayed to z_gr_smg = %e\n",pba->z_gr_smg);
+			}
+		}
 
     } // End stable parametrization
 
@@ -1142,6 +1106,9 @@ int background_solve_smg(
 	 /* Yet another (third!) loop to make sure the background table makes sense
 	 */
 	double factor;
+	/* These below are used to compute QSA quantities */
+	double cB, cM, M2, cs2num, H, rho_tot, p_tot, rho_tot_wo_smg, p_tot_wo_smg, rho_smg, p_smg;
+	double p_tot_wo_smg_prime, p_smg_prime, p_tot_wo_smg_prime_prime, p_smg_prime_prime, cs2num_p, cM_p;
 	for (i=0; i < pba->bt_size; i++) {
 		//Need to update pvecback
 		class_call(background_at_tau(pba,
@@ -1250,6 +1217,54 @@ int background_solve_smg(
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_prime_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_p_prime_prime_smg, d_over_dtau);
 
+		// TODO_MC: add here calculations for mu_p, mu_inf, muZ_inf and derivatives when using stable parametrisation
+		if(pba->gravity_model_smg == stable_params){
+			/** QSA expressions */
+			a = pba->background_table[i*pba->bg_size + pba->index_bg_a];
+			H = pba->background_table[i*pba->bg_size + pba->index_bg_H];
+			cB = pba->background_table[i*pba->bg_size + pba->index_bg_braiding_smg];
+			cM = pba->background_table[i*pba->bg_size + pba->index_bg_mpl_running_smg];
+			M2 = pba->background_table[i*pba->bg_size + pba->index_bg_M2_smg];
+			cs2num = pba->background_table[i*pba->bg_size + pba->index_bg_cs2num_smg];
+			cs2num_p = pba->background_table[i*pba->bg_size + pba->index_bg_cs2num_prime_smg];
+			cM_p = pba->background_table[i*pba->bg_size + pba->index_bg_mpl_running_prime_smg];
+			rho_tot = pba->background_table[i*pba->bg_size + pba->index_bg_rho_tot];
+			rho_tot_wo_smg = pba->background_table[i*pba->bg_size + pba->index_bg_rho_tot_wo_smg];
+			p_tot = pba->background_table[i*pba->bg_size + pba->index_bg_p_tot];
+			p_tot_wo_smg = pba->background_table[i*pba->bg_size + pba->index_bg_p_tot_wo_smg];
+			p_tot_wo_smg_prime = pba->background_table[i*pba->bg_size + pba->index_bg_p_tot_wo_prime_smg];
+			p_smg_prime = pba->background_table[i*pba->bg_size + pba->index_bg_p_prime_smg];
+			p_tot_wo_smg_prime_prime = pba->background_table[i*pba->bg_size + pba->index_bg_p_tot_wo_prime_prime_smg];
+			p_smg_prime_prime = pba->background_table[i*pba->bg_size + pba->index_bg_p_prime_prime_smg];
+
+			/** mu_p */
+			pba->background_table[i*pba->bg_size + pba->index_bg_mu_p_smg] = 9./(4*a*pow(H,3.)) * (a*H*(2.*cs2num + (cB - 2.)*cB + 4.*(cB - 1.)*cM)*(rho_tot + p_tot) + 2.*cB*(p_tot_wo_smg_prime + p_smg_prime));
+			/** mu_inf */
+			pba->background_table[i*pba->bg_size + pba->index_bg_mu_inf_smg] = (2.*cs2num + pow(cB + 2.*cM, 2.))/(2.*cs2num*M2);
+			/** muZ_inf */
+			pba->background_table[i*pba->bg_size + pba->index_bg_muZ_inf_smg] = (2.*cs2num + cB*(cB + 2.*cM))/(2.*cs2num*M2);
+			/** mu_p' */
+			pba->background_table[i*pba->bg_size + pba->index_bg_mu_p_prime_smg] = (9*(2*a*pow(H,3)*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_tot + rho_tot) - 3*a*H*(2*cs2num + (-2 + cB)*cB 
+																				+ 4*(-1 + cB)*cM)*pow(p_tot + rho_tot,2) + 4*(cs2num*pow(H,2) + (3*(p_tot_wo_smg + rho_tot_wo_smg))/M2 + ((-2 + cB)*(3*p_tot 
+																				+ pow(H,2)*(cB + 2*cM) + 3*rho_tot))/2.)*(p_tot_wo_smg_prime + p_smg_prime) + 2*pow(H,2)*(2*cs2num + (-2 + cB)*cB 
+																				+ 4*(-1 + cB)*cM)*(-3*a*H*(p_tot + rho_tot) + p_tot_wo_smg_prime + p_smg_prime) - 2*pow(H,2)*(a*H*(2*cs2num 
+																				+ (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_tot + rho_tot) + 2*cB*(p_tot_wo_smg_prime + p_smg_prime)) + 9*(p_tot 
+																				+ rho_tot)*(a*H*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_tot + rho_tot) + 2*cB*(p_tot_wo_smg_prime + p_smg_prime)) 
+																				+ (2*H*(p_tot + rho_tot)*(a*(-1 + cB + 2*cM)*(6*(p_tot_wo_smg + rho_tot_wo_smg) + M2*(2*cs2num*pow(H,2) + (-2 + cB)*(3*p_tot
+																				+ pow(H,2)*(cB + 2*cM) + 3*rho_tot))) + 2*H*M2*(cs2num_p + 2*(-1 + cB)*cM_p)))/M2 + (4*H*cB*(p_tot_wo_smg_prime_prime + p_smg_prime_prime))/a))/(8.*pow(H,4));
+			/** mu_inf' */
+			pba->background_table[i*pba->bg_size + pba->index_bg_mu_inf_prime_smg] = -0.5*(a*cs2num*H*M2*cM*(2*cs2num + pow(cB + 2*cM,2)) - (a*cs2num*(cB + 2*cM)*(6*(p_tot_wo_smg + rho_tot_wo_smg) 
+                																	+ M2*(2*cs2num*pow(H,2) + (-2 + cB)*(3*p_tot + pow(H,2)*(cB + 2*cM) + 3*rho_tot))))/H 
+                																	+ M2*(cB + 2*cM)*((cB + 2*cM)*cs2num_p - 4*cs2num*cM_p))/(pow(cs2num,2)*pow(M2,2));
+			/** muZ_inf' */
+			pba->background_table[i*pba->bg_size + pba->index_bg_muZ_inf_prime_smg] = (-2*a*pow(cs2num,2)*H*cM - a*cs2num*H*cB*cM*(cB + 2*cM) + (a*cs2num*(cB + 2*cM)*(cs2num*pow(H,2) + (3*(p_tot_wo_smg + rho_tot_wo_smg))/M2 + 
+                  																	((-2 + cB)*(3*p_tot + pow(H,2)*(cB + 2*cM) + 3*rho_tot))/2.))/H - cB*(cB + 2*cM)*cs2num_p 
+                  																	+ cs2num*cB*((a*(cs2num*pow(H,2) + (3*(p_tot_wo_smg + rho_tot_wo_smg))/M2 + ((-2 + cB)*(3*p_tot + pow(H,2)*(cB + 2*cM) 
+                  																	+ 3*rho_tot))/2.))/H + 2*cM_p))/(2.*pow(cs2num,2)*M2);
+
+		}
+
+
 		int j = 0;
 		while (j < pba->bg_size){
 			class_test_except(isnan(pvecback[j]) && (pba->parameters_tuned_smg == _TRUE_),
@@ -1267,21 +1282,6 @@ int background_solve_smg(
 		free(loga_fw_table);
 		free(pvec_stable_params_smg);
 		free(pvec_stable_params_derived_smg);
-	// 	free(pba->stable_params_lna_smg);
-	// 	free(pba->stable_params_smg);
-	// 	free(pba->ddstable_params_smg);
-	// 	free(pba->stable_params_derived_smg);
-	// 	free(pba->ddstable_params_derived_smg);
-	// 	free(pba->stable_params_aux_smg);
-	// 	if(pba->expansion_model_smg == wext || pba->expansion_model_smg == rho_de){
-	// 		free(pba->background_table_late);
-	// 		free(pba->d2background_dloga2_table_late);	
-	// 		free(pba->stable_wext_lna_smg);
-	// 		free(pba->stable_wext_smg);
-	// 		free(pba->ddstable_wext_smg);
-	// 		free(pba->stable_rho_smg);
-	// 		free(pba->ddstable_rho_smg);
-	// 	}
 	}
 
 	return _SUCCESS_;
@@ -1777,6 +1777,12 @@ int background_store_columntitles_smg(
     class_store_columntitle(titles,"lambda_11_p",_TRUE_);
     class_store_columntitle(titles,"cs2num",_TRUE_);
     class_store_columntitle(titles,"cs2num_p",_TRUE_);
+	class_store_columntitle(titles,"mu_p",_TRUE_);
+	class_store_columntitle(titles,"mu_inf",_TRUE_);
+	class_store_columntitle(titles,"muZ_inf",_TRUE_);
+	class_store_columntitle(titles,"mu_p_prime",_TRUE_);
+	class_store_columntitle(titles,"mu_inf_prime",_TRUE_);
+	class_store_columntitle(titles,"muZ_inf_prime",_TRUE_);
   }
 
 	return _SUCCESS_;
@@ -1914,6 +1920,12 @@ int background_output_data_smg(
 		class_store_double(dataptr,pvecback[pba->index_bg_lambda_11_prime_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_cs2num_smg],_TRUE_,storeidx);
 		class_store_double(dataptr,pvecback[pba->index_bg_cs2num_prime_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_mu_p_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_mu_inf_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_muZ_inf_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_mu_p_prime_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_mu_inf_prime_smg],_TRUE_,storeidx);
+		class_store_double(dataptr,pvecback[pba->index_bg_muZ_inf_prime_smg],_TRUE_,storeidx);
 	}
 
 	*ptr_storeidx = storeidx;

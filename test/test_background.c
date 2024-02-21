@@ -38,11 +38,13 @@ int main(int argc, char **argv) {
   FILE * output_file;
   // output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/output/designer_fR_small_fr_stable_params_full_grid.dat","w");
 	// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass_v2.dat","w");
-  output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/brans_dicke_stable_params_hiclass.dat","w");
+  // output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/brans_dicke_stable_params_hiclass.dat","w");
+  // output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/cubic_galileon_mnu_0p4_background.dat","w");
+  output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/propto_omega_background.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_full_grid_hiclass.dat","w");
-  FILE * output_file_w;
+  // FILE * output_file_w;
   // output_file_w = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/w_de_stable_nkgb_mnu_0p4_hiclass.dat","w");
-  output_file_w = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/rho_de_stable_brans_dicke_hiclass.dat","w");
+  // output_file_w = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/rho_de_stable_brans_dicke_hiclass.dat","w");
   
   for (index_tau=0; index_tau<ba.bt_size; index_tau++) {
 
@@ -77,28 +79,47 @@ int main(int argc, char **argv) {
 
     double a = ba.background_table[index_tau*ba.bg_size+ba.index_bg_a];
     
-    if (a > 0.0069) {
-      fprintf(output_file,"%.15e %.15e %.15e %.15e\n",
-      log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
-      ba.background_table[index_tau*ba.bg_size + ba.index_bg_delta_M2_smg],
-      ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_smg],
-      // ba.background_table[index_tau*ba.bg_size + ba.index_bg_cs2_smg]
-      1.
+    if (a > exp(-5)) {
+      // fprintf(output_file,"%.15e %.15e %.15e %.15e\n",
+      // log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+      // ba.background_table[index_tau*ba.bg_size + ba.index_bg_delta_M2_smg],
+      // ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_smg],
+      // // ba.background_table[index_tau*ba.bg_size + ba.index_bg_cs2_smg]
+      // 1.
+      // );
+
+      // fprintf(output_file_w,"%.15e %.15e\n",
+      // log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+      // // ba.background_table[index_tau*ba.bg_size + ba.index_bg_p_smg]/ba.background_table[index_tau*ba.bg_size + ba.index_bg_rho_smg]
+      // ba.background_table[index_tau*ba.bg_size + ba.index_bg_rho_smg]/ba.background_table[(ba.bt_size-1)*ba.bg_size + ba.index_bg_rho_smg]
+      // );
+
+      fprintf(output_file,"%.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e %.15e\n",
+      log(ba.background_table[index_tau*ba.bg_size + ba.index_bg_a]),
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_H],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_rho_tot],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_p_tot],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_rho_smg],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_p_smg],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_M2_smg],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_smg],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_mpl_running_smg],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_cs2_smg],
+      ba.background_table[index_tau*ba.bg_size + ba.index_bg_kinetic_D_smg]
       );
 
-      fprintf(output_file_w,"%.15e %.15e\n",
-      log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
-      // ba.background_table[index_tau*ba.bg_size + ba.index_bg_p_smg]/ba.background_table[index_tau*ba.bg_size + ba.index_bg_rho_smg]
-      ba.background_table[index_tau*ba.bg_size + ba.index_bg_rho_smg]/ba.background_table[(ba.bt_size-1)*ba.bg_size + ba.index_bg_rho_smg]
-      );
+      // fprintf(output_file,"%.15e %.15e\n",
+      // log(ba.background_table[index_tau*ba.bg_size+ba.index_bg_a]),
+      // ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_smg]
+      // );
     }
 
     if (a==1.) {
-      printf("alpha_B(z=0) = %e\n",ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_smg]);
+      printf("alpha_B(z=0) = %.15e\n",ba.background_table[index_tau*ba.bg_size + ba.index_bg_braiding_smg]);
     }
 	}
 	fclose(output_file);
-  fclose(output_file_w);
+  // fclose(output_file_w);
 	// class_stop(pba->error_message,"Stop here, for now.");
 
   /****** all calculations done, now free the structures ******/

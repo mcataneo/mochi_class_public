@@ -134,7 +134,7 @@ int get_qsa_mu_gamma_smg(
     double k,
     double * mu_smg, 
     double * gamma_smg);
-
+/** comment for debugging */
 int get_qsa_mu_prime_gamma_prime_smg(
     struct background * pba,
     struct perturbations * ppt,
@@ -143,7 +143,7 @@ int get_qsa_mu_prime_gamma_prime_smg(
     double * mu_prime_smg, 
     double * gamma_prime_smg);
 
-//for debugging
+/** uncomment for debugging */
 // int get_qsa_mu_prime_gamma_prime_smg(
 //     struct background * pba,
 //     struct perturbations * ppt,

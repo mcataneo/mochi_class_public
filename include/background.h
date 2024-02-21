@@ -417,6 +417,12 @@ struct background
   int index_bg_p_tot_wo_prime_prime_smg; /**< second derivative of the total pressure minus scalar field (necessary for QSA in stable parametrization) */
   int index_bg_p_prime_prime_smg; /**< second derivative of the pressure of the scalar field (necessary for QSA in stable parametrization) */
   int index_bg_w_smg; /**< equation of state of the scalar field */
+  int index_bg_mu_p_smg; /**< mu_p in EFE QSA eq. 3.2 in 2011.05713*/
+  int index_bg_mu_inf_smg; /**< mu_infinity in EFE QSA eq. 4.1 in 2011.05713*/
+  int index_bg_muZ_inf_smg; /**< mu_{Z,infinity} in EFE QSA eq. 4.2 in 2011.05713*/
+  int index_bg_mu_p_prime_smg; /**< conformal time derivative of mu_p*/
+  int index_bg_mu_inf_prime_smg; /**< conformal time derivative of mu_infinity*/
+  int index_bg_muZ_inf_prime_smg; /**< conformal time derivative of mu_{Z,infinity}*/
 
   int index_bg_G_eff_smg; /**< G effective in the infinite k limit */
   int index_bg_slip_eff_smg; /**< slip effective in the infinite k limit */

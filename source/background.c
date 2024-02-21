@@ -2046,6 +2046,7 @@ int background_solve(
   /** - Determine output vector */
   loga_final = 0.; // with our conventions, loga is in fact log(a/a_0); we integrate until today, when log(a/a_0) = 0
   pba->bt_size = ppr->background_Nloga;
+  if (pba->gravity_model_smg == stable_params) pba->bt_size = ppr->background_Nloga + ppr->background_Nloga_smg;
 
   /** - allocate background tables */
   class_alloc(pba->tau_table,pba->bt_size * sizeof(double),pba->error_message);
@@ -2072,9 +2073,22 @@ int background_solve(
   class_alloc(used_in_output, pba->bt_size*sizeof(int), pba->error_message);
 
   /** - define values of loga at which results will be stored */
-  for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
-    pba->loga_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_size-1);
-    used_in_output[index_loga] = 1;
+  if (pba->has_smg == _TRUE_ && pba->gravity_model_smg == stable_params) {
+    /** denser time sampling between [loga_split,loga_final] for improved accuracy required by some smg models */
+    for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
+      if (index_loga < ppr->background_Nloga) {
+        pba->loga_table[index_loga] = loga_ini + index_loga*(ppr->loga_split-loga_ini)/(ppr->background_Nloga-1);
+      } else {
+        pba->loga_table[index_loga] = ppr->loga_split + (index_loga - ppr->background_Nloga + 1)*(loga_final - ppr->loga_split)/(ppr->background_Nloga_smg);
+      }
+      used_in_output[index_loga] = 1;
+    }
+  } else {
+    /** standard uniform sampling in loga */
+    for (index_loga=0; index_loga<pba->bt_size; index_loga++) {
+      pba->loga_table[index_loga] = loga_ini + index_loga*(loga_final-loga_ini)/(pba->bt_size-1);
+      used_in_output[index_loga] = 1;
+    }
   }
 
   /** - choose the right evolver */

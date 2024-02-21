@@ -454,7 +454,7 @@ int perturbations_print_variables_smg(
   short approx;
 
   double mu=0., gamma=0., mu_prime=0., gamma_prime=0.;
-  //double mu_p_prime=0., mu_inf_prime=0., mu_Z_inf_prime=0.; // for debugging
+  // double mu_p_prime=0., mu_inf_prime=0., mu_Z_inf_prime=0.; // for debugging
 
   double x_smg = ppw->pvecmetric[ppw->index_mt_x_smg];
   double x_prime_smg = ppw->pvecmetric[ppw->index_mt_x_prime_smg];
@@ -482,7 +482,7 @@ int perturbations_print_variables_smg(
                 &gamma
                 );
 
-  
+  // Comment for debugging
   get_qsa_mu_prime_gamma_prime_smg(
                             pba,
                             ppt,
@@ -492,7 +492,7 @@ int perturbations_print_variables_smg(
                             &gamma_prime
                             );
 
-  // For debugging
+  // Uncomment for debugging
   // get_qsa_mu_prime_gamma_prime_smg(
   //                           pba,
   //                           ppt,
@@ -666,7 +666,7 @@ int perturbations_einstein_scalar_smg(
                 &gamma
                 ), 
         pba->error_message, ppt->error_message);
-
+      // comment for debugging
       class_call(
         get_qsa_mu_prime_gamma_prime_smg(
                 pba,
@@ -846,7 +846,8 @@ int perturbations_einstein_scalar_smg(
           * (3.*ppw->rho_plus_p_theta*mu*gamma*(1. + 3./k2*(pow(a*H,2.) - Hconf_prime)) + 3.*rho_Delta*(a*H*mu*(gamma - 1.) - mu_prime*gamma - mu*gamma_prime)
           + 9.*mu*(1. - gamma)*ppw->rho_plus_p_shear_prime + k2*alpha*(3.*mu*gamma*(ppw->pvecback[pba->index_bg_rho_tot_wo_smg] + ppw->pvecback[pba->index_bg_p_tot_wo_smg])
           - 2/a2*(pow(a*H,2.) - Hconf_prime)) + 9.*a*H*mu*(gamma - 1.)*ppw->rho_plus_p_shear_eos_factor - 9.*ppw->rho_plus_p_shear
-          * (mu_prime*(gamma - 1.) - gamma_prime*mu) - 9.*mu*(1. - gamma)*ppw->rho_shear_w_prime);
+          // * (mu_prime*(gamma - 1.) - gamma_prime*mu) - 9.*mu*(1. - gamma)*ppw->rho_shear_w_prime);
+          * (mu_prime*(gamma - 1.) + gamma_prime*mu) + 9.*mu*(1. - gamma)*ppw->rho_shear_w_prime); // corrected typos; only relevant with massive neutrinos
     } 
     else {
       ppw->pvecmetric[ppw->index_mt_eta_prime] =
@@ -1954,13 +1955,9 @@ int get_qsa_mu_gamma_smg(
       ppt->error_message,
       ppt->error_message);
 
-  // The expressions below only apply to scalar Horndeski (i.e. alpha_T = 0). They are derived from the EFE in 2011.05713
-  mu_p = 9./(4*a*pow(H,3.)) * 
-        (a*H*(2.*cs2num + (cB - 2.)*cB + 4.*(cB - 1.)*cM)*(ppw->pvecback[pba->index_bg_rho_tot] + ppw->pvecback[pba->index_bg_p_tot]) + 2.*cB*(ppw->pvecback[pba->index_bg_p_tot_wo_prime_smg]+ppw->pvecback[pba->index_bg_p_prime_smg]));
-
-  mu_inf = (2.*cs2num + pow(cB + 2.*cM, 2.))/(2.*cs2num*M2);
-
-  mu_Z_inf = (2.*cs2num + cB*(cB + 2.*cM))/(2.*cs2num*M2);
+  mu_p = ppw->pvecback[pba->index_bg_mu_p_smg];
+  mu_inf = ppw->pvecback[pba->index_bg_mu_inf_smg];
+  mu_Z_inf = ppw->pvecback[pba->index_bg_muZ_inf_smg];
 
   // mu and gamma in EFE QSA
   *mu_smg = (mu_p + k2*cs2num*M2*mu_inf/(a2*pow(H,2.)))/(mu_p + k2*cs2num/(a2*pow(H,2.)))/M2;
@@ -2039,52 +2036,19 @@ int get_qsa_mu_prime_gamma_prime_smg(
       ppt->error_message,
       ppt->error_message);
 
-  // The expressions below only apply to scalar Horndeski (i.e. alpha_T = 0). They are derived from the EFE in 2011.05713
-  mu_p = (9*(a*H*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) + 2*cB*(p_m_prime + p_smg_prime)))/(4.*a*pow(H,3));
-
-  mu_inf = (2.*cs2num + pow(cB + 2.*cM, 2.))/(2.*cs2num*M2);
-
-  mu_Z_inf = (2.*cs2num + cB*(cB + 2.*cM))/(2.*cs2num*M2);
-
+  mu_p = ppw->pvecback[pba->index_bg_mu_p_smg];
+  mu_inf = ppw->pvecback[pba->index_bg_mu_inf_smg];
+  mu_Z_inf = ppw->pvecback[pba->index_bg_muZ_inf_smg];
   /*comment for debugging*/
-  mu_p_prime = (9*(2*a*pow(H,3)*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) - 3*a*H*(2*cs2num + (-2 + cB)*cB 
-              + 4*(-1 + cB)*cM)*pow(p_m + p_smg + rho_m + rho_smg,2) + 4*(cs2num*pow(H,2) + (3*(p_m + rho_m))/M2 + ((-2 + cB)*(3*p_m 
-              + 3*p_smg + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))/2.)*(p_m_prime + p_smg_prime) + 2*pow(H,2)*(2*cs2num + (-2 + cB)*cB 
-              + 4*(-1 + cB)*cM)*(-3*a*H*(p_m + p_smg + rho_m + rho_smg) + p_m_prime + p_smg_prime) - 2*pow(H,2)*(a*H*(2*cs2num 
-              + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) + 2*cB*(p_m_prime + p_smg_prime)) + 9*(p_m + p_smg 
-              + rho_m + rho_smg)*(a*H*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) + 2*cB*(p_m_prime + p_smg_prime)) 
-              + (2*H*(p_m + p_smg + rho_m + rho_smg)*(a*(-1 + cB + 2*cM)*(6*(p_m + rho_m) + M2*(2*cs2num*pow(H,2) + (-2 + cB)*(3*p_m + 3*p_smg 
-              + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))) + 2*H*M2*(cs2num_p + 2*(-1 + cB)*cM_p)))/M2 + (4*H*cB*(p_m_prime_prime + p_smg_prime_prime))/a))/(8.*pow(H,4));
-
-  mu_inf_prime = -0.5*(2*a*pow(cs2num,2)*H*cM + a*cs2num*H*cM*pow(cB + 2*cM,2) + pow(cB + 2*cM,2)*cs2num_p - 2*cs2num*(cB + 2*cM)*((a*(cs2num*pow(H,2)
-                + (3*(p_m + rho_m))/M2 + ((-2 + cB)*(3*p_m + 3*p_smg + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))/2.))/H + 2*cM_p))/(pow(cs2num,2)*M2);
-
-  mu_Z_inf_prime = (-2*a*pow(cs2num,2)*H*cM - a*cs2num*H*cB*cM*(cB + 2*cM) + (a*cs2num*(cB + 2*cM)*(cs2num*pow(H,2) + (3*(p_m + rho_m))/M2 + 
-                  ((-2 + cB)*(3*p_m + 3*p_smg + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))/2.))/H - cB*(cB + 2*cM)*cs2num_p 
-                  + cs2num*cB*((a*(cs2num*pow(H,2) + (3*(p_m + rho_m))/M2 + ((-2 + cB)*(3*p_m + 3*p_smg + pow(H,2)*(cB + 2*cM) 
-                  + 3*(rho_m + rho_smg)))/2.))/H + 2*cM_p))/(2.*pow(cs2num,2)*M2);
-
+  mu_p_prime = ppw->pvecback[pba->index_bg_mu_p_prime_smg];
+  mu_inf_prime = ppw->pvecback[pba->index_bg_mu_inf_prime_smg];
+  mu_Z_inf_prime = ppw->pvecback[pba->index_bg_muZ_inf_prime_smg];
   // uncomment for debugging
-  // *mu_p_prime = (9*(2*a*pow(H,3)*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) - 3*a*H*(2*cs2num + (-2 + cB)*cB 
-  //             + 4*(-1 + cB)*cM)*pow(p_m + p_smg + rho_m + rho_smg,2) + 4*(cs2num*pow(H,2) + (3*(p_m + rho_m))/M2 + ((-2 + cB)*(3*p_m 
-  //             + 3*p_smg + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))/2.)*(p_m_prime + p_smg_prime) + 2*pow(H,2)*(2*cs2num + (-2 + cB)*cB 
-  //             + 4*(-1 + cB)*cM)*(-3*a*H*(p_m + p_smg + rho_m + rho_smg) + p_m_prime + p_smg_prime) - 2*pow(H,2)*(a*H*(2*cs2num 
-  //             + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) + 2*cB*(p_m_prime + p_smg_prime)) + 9*(p_m + p_smg 
-  //             + rho_m + rho_smg)*(a*H*(2*cs2num + (-2 + cB)*cB + 4*(-1 + cB)*cM)*(p_m + p_smg + rho_m + rho_smg) + 2*cB*(p_m_prime + p_smg_prime)) 
-  //             + (2*H*(p_m + p_smg + rho_m + rho_smg)*(a*(-1 + cB + 2*cM)*(6*(p_m + rho_m) + M2*(2*cs2num*pow(H,2) + (-2 + cB)*(3*p_m + 3*p_smg 
-  //             + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))) + 2*H*M2*(cs2num_p + 2*(-1 + cB)*cM_p)))/M2 + (4*H*cB*(p_m_prime_prime + p_smg_prime_prime))/a))/(8.*pow(H,4));
+  // *mu_p_prime = ppw->pvecback[pba->index_bg_mu_p_prime_smg];
+  // *mu_inf_prime = ppw->pvecback[pba->index_bg_mu_inf_prime_smg];
+  // *mu_Z_inf_prime = ppw->pvecback[pba->index_bg_muZ_inf_prime_smg];
 
-  // *mu_inf_prime = -0.5*(a*cs2num*H*M2*cM*(2*cs2num + pow(cB + 2*cM,2)) - (a*cs2num*(cB + 2*cM)*(6*(p_m + rho_m) 
-  //               + M2*(2*cs2num*pow(H,2) + (-2 + cB)*(3*p_m + 3*p_smg + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))))/H 
-  //               + M2*(cB + 2*cM)*((cB + 2*cM)*cs2num_p - 4*cs2num*cM_p))/(pow(cs2num,2)*pow(M2,2));
-
-  // *mu_Z_inf_prime = (-2*a*pow(cs2num,2)*H*cM - a*cs2num*H*cB*cM*(cB + 2*cM) + (a*cs2num*(cB + 2*cM)*(cs2num*pow(H,2) + (3*(p_m + rho_m))/M2 + 
-  //                 ((-2 + cB)*(3*p_m + 3*p_smg + pow(H,2)*(cB + 2*cM) + 3*(rho_m + rho_smg)))/2.))/H - cB*(cB + 2*cM)*cs2num_p 
-  //                 + cs2num*cB*((a*(cs2num*pow(H,2) + (3*(p_m + rho_m))/M2 + ((-2 + cB)*(3*p_m + 3*p_smg + pow(H,2)*(cB + 2*cM) 
-  //                 + 3*(rho_m + rho_smg)))/2.))/H + 2*cM_p))/(2.*pow(cs2num,2)*M2);
-
-
-  // mu and gamma in EFE QSA
+  // mu' and gamma' in EFE QSA
   /*comment for debugging*/
   *mu_prime_smg = ((a*H*(mu_p*(-(a2*pow(H,2)*M2*cM*(k2*cs2num + a2*pow(H,2)*mu_p)) + k2*M2*(-1 + M2*mu_inf)*(a*H*cs2num_p
                   - 2*cs2num*(a2*pow(H,2) + a*H_prime))) + k2*a*cs2num*H*M2*(1 - M2*mu_inf)*mu_p_prime))/pow(M2,2) + k2*cs2num*(k2*cs2num 
