@@ -1892,20 +1892,6 @@ int perturbations_timesampling_for_sources(
                ppt->error_message);
 
     if (ppt->has_cmb == _TRUE_) {
-
-      // if (pba->has_smg == _TRUE_) {
-      //   if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
-      //     double a = pvecback[pba->index_bg_a];
-      //     // To avoid rapid transition at z_gr_smg update H_prime in pvecback using interpolation of rho_smg and p_smg
-      //     class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
-      //               pba->error_message,
-      //               pba->error_message
-      //     );
-      //     pvecback[pba->index_bg_H_prime] = -1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
-      //                                               + pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a;
-      //   }
-      // }
-
       /* variation rate of thermodynamics variables */
       rate_thermo = pvecthermo[pth->index_th_rate];
 
@@ -1988,20 +1974,6 @@ int perturbations_timesampling_for_sources(
                ppt->error_message);
 
     if (ppt->has_cmb == _TRUE_) {
-
-      // if (pba->has_smg == _TRUE_) {
-      //   if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
-      //     double a = pvecback[pba->index_bg_a];
-      //     // To avoid rapid transition at z_gr_smg update H_prime in pvecback using interpolation of rho_smg and p_smg
-      //     class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
-      //               pba->error_message,
-      //               pba->error_message
-      //     );
-      //     pvecback[pba->index_bg_H_prime] = -1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
-      //                                               + pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a;
-      //   }
-      // }
-
       /* variation rate of thermodynamics variables */
       rate_thermo = pvecthermo[pth->index_th_rate];
 
@@ -4694,187 +4666,195 @@ int perturbations_vector_init(
 
           /* photons */
 
-        if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) { /* if radiation streaming approximation is off */
+          if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) { /* if radiation streaming approximation is off */
 
-          /* temperature */
-          ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
-          ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
+            /* temperature */
+            ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
+            ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
 
-          /* Differently from all other approximation schemes, we start with TCA on. Therefore the integration variables must first be allocated and initialised. 
-          Enter here only if TCA has been switched off for at least two time steps. If TCA has just been switched off, ICs will be set below */
-          if ((pa_old[ppw->index_ap_tca] == (int)tca_off) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
+            /* Differently from all other approximation schemes, we start with TCA on. Therefore the integration variables must first be allocated and initialised. 
+            Enter here only if TCA has been switched off for at least two time steps. If TCA has just been switched off, ICs will be set below */
+            if ((pa_old[ppw->index_ap_tca] == (int)tca_off) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
-            ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
-            ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
+              ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
+              ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
 
-            for (l = 4; l <= ppw->pv->l_max_g; l++) {
+              for (l = 4; l <= ppw->pv->l_max_g; l++) {
 
-              ppv->y[ppv->index_pt_delta_g+l] =
-                ppw->pv->y[ppw->pv->index_pt_delta_g+l];
-            }
-
-            /* polarization */
-            ppv->y[ppv->index_pt_pol0_g] = ppw->pv->y[ppw->pv->index_pt_pol0_g]; 
-            ppv->y[ppv->index_pt_pol1_g] = ppw->pv->y[ppw->pv->index_pt_pol1_g]; 
-            ppv->y[ppv->index_pt_pol2_g] = ppw->pv->y[ppw->pv->index_pt_pol2_g]; 
-            ppv->y[ppv->index_pt_pol3_g] = ppw->pv->y[ppw->pv->index_pt_pol3_g]; 
-
-            for (l = 4; l <= ppw->pv->l_max_pol_g; l++) {
-
-              ppv->y[ppv->index_pt_pol0_g+l] =
-                ppw->pv->y[ppw->pv->index_pt_pol0_g+l];
-            }
-
-          }
-        
-        }
-
-        /* perturbed recombination: the indices are defined once tca is off. */
-
-        if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
-          ppv->y[ppv->index_pt_perturbed_recombination_delta_temp] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_temp];
-          ppv->y[ppv->index_pt_perturbed_recombination_delta_chi] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_chi]; 
-        }
-
-        /* ultra relativistic neutrinos */
-
-        if (pba->has_ur && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off)) {
-
-          ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur]; 
-          ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur]; 
-          ppv->y[ppv->index_pt_shear_ur] = ppw->pv->y[ppw->pv->index_pt_shear_ur]; 
-
-          if (ppw->approx[ppw->index_ap_ufa] == (int)ufa_off) {
-            ppv->y[ppv->index_pt_l3_ur] = ppw->pv->y[ppw->pv->index_pt_l3_ur]; 
-          }
-        }
-
-        /* interacting dark radiation */
-
-        if (pba->has_idr == _TRUE_){
-          if(ppw->approx[ppw->index_ap_rsa_idr]==(int)rsa_idr_off) {
-            ppv->y[ppv->index_pt_delta_idr] = ppw->pv->y[ppw->pv->index_pt_delta_idr];
-            ppv->y[ppv->index_pt_theta_idr] = ppw->pv->y[ppw->pv->index_pt_theta_idr];
-            if (ppt->idr_nature == idr_free_streaming){
-              if ((pba->has_idm_dr == _FALSE_)||((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_off))){
-                ppv->y[ppv->index_pt_shear_idr] = ppw->pv->y[ppw->pv->index_pt_shear_idr];
-                ppv->y[ppv->index_pt_l3_idr] = ppw->pv->y[ppw->pv->index_pt_l3_idr];
+                ppv->y[ppv->index_pt_delta_g+l] =
+                  ppw->pv->y[ppw->pv->index_pt_delta_g+l];
               }
+
+              /* polarization */
+              ppv->y[ppv->index_pt_pol0_g] = ppw->pv->y[ppw->pv->index_pt_pol0_g]; 
+              ppv->y[ppv->index_pt_pol1_g] = ppw->pv->y[ppw->pv->index_pt_pol1_g]; 
+              ppv->y[ppv->index_pt_pol2_g] = ppw->pv->y[ppw->pv->index_pt_pol2_g]; 
+              ppv->y[ppv->index_pt_pol3_g] = ppw->pv->y[ppw->pv->index_pt_pol3_g]; 
+
+              for (l = 4; l <= ppw->pv->l_max_pol_g; l++) {
+
+                ppv->y[ppv->index_pt_pol0_g+l] =
+                  ppw->pv->y[ppw->pv->index_pt_pol0_g+l];
+              }
+
+            }
+          
+          }
+
+          /* perturbed recombination: the indices are defined once tca is off. */
+
+          if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
+            ppv->y[ppv->index_pt_perturbed_recombination_delta_temp] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_temp];
+            ppv->y[ppv->index_pt_perturbed_recombination_delta_chi] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_chi]; 
+          }
+
+          /* ultra relativistic neutrinos */
+
+          if (pba->has_ur && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off)) {
+
+            ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur]; 
+            ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur]; 
+            ppv->y[ppv->index_pt_shear_ur] = ppw->pv->y[ppw->pv->index_pt_shear_ur]; 
+
+            if (ppw->approx[ppw->index_ap_ufa] == (int)ufa_off) {
+              ppv->y[ppv->index_pt_l3_ur] = ppw->pv->y[ppw->pv->index_pt_l3_ur]; 
+
+              for (l=4; l <= ppv->l_max_ur; l++)
+                  ppv->y[ppv->index_pt_delta_ur+l] =
+                    ppw->pv->y[ppw->pv->index_pt_delta_ur+l];
             }
           }
-        }
 
-        /* non-cold dark matter, e.g. massive neutrinos, sterile neutrinos, warm dark matter etc. */
-        if (pba->has_ncdm == _TRUE_) {
-            index_pt = 0;
-            for(n_ncdm = 0; n_ncdm < ppv->N_ncdm; n_ncdm++){
-              for(index_q=0; index_q < ppv->q_size_ncdm[n_ncdm]; index_q++){
-                for(l=0; l<=ppv->l_max_ncdm[n_ncdm]; l++){
-                  /* This is correct even when ncdmfa == off, since ppv->l_max_ncdm and
-                    ppv->q_size_ncdm is updated.*/
-                  ppv->y[ppv->index_pt_psi0_ncdm1+index_pt] =
-                    ppw->pv->y[ppw->pv->index_pt_psi0_ncdm1+index_pt];
+          /* interacting dark radiation */
 
-                  // printf("perturbations_vector_init has_smg: n_ncdm=%d \t index_q=%d \t l=%d \t y[%d]=%e \n",n_ncdm,index_q,l,ppw->pv->index_pt_psi0_ncdm1+index_pt,ppv->y[ppv->index_pt_psi0_ncdm1+index_pt]);
-
-                  index_pt++;
+          if (pba->has_idr == _TRUE_){
+            if(ppw->approx[ppw->index_ap_rsa_idr]==(int)rsa_idr_off) {
+              ppv->y[ppv->index_pt_delta_idr] = ppw->pv->y[ppw->pv->index_pt_delta_idr];
+              ppv->y[ppv->index_pt_theta_idr] = ppw->pv->y[ppw->pv->index_pt_theta_idr];
+              if (ppt->idr_nature == idr_free_streaming){
+                if ((pba->has_idm_dr == _FALSE_)||((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_off))){
+                  ppv->y[ppv->index_pt_shear_idr] = ppw->pv->y[ppw->pv->index_pt_shear_idr];
+                  ppv->y[ppv->index_pt_l3_idr] = ppw->pv->y[ppw->pv->index_pt_l3_idr];
                 }
               }
             }
           }
+
+          /* non-cold dark matter, e.g. massive neutrinos, sterile neutrinos, warm dark matter etc. */
+          if (pba->has_ncdm == _TRUE_) {
+              index_pt = 0;
+              for(n_ncdm = 0; n_ncdm < ppv->N_ncdm; n_ncdm++){
+                for(index_q=0; index_q < ppv->q_size_ncdm[n_ncdm]; index_q++){
+                  for(l=0; l<=ppv->l_max_ncdm[n_ncdm]; l++){
+                    /* This is correct even when ncdmfa == off, since ppv->l_max_ncdm and
+                      ppv->q_size_ncdm is updated.*/
+                    ppv->y[ppv->index_pt_psi0_ncdm1+index_pt] =
+                      ppw->pv->y[ppw->pv->index_pt_psi0_ncdm1+index_pt];
+
+                    // printf("perturbations_vector_init has_smg: n_ncdm=%d \t index_q=%d \t l=%d \t y[%d]=%e \n",n_ncdm,index_q,l,ppw->pv->index_pt_psi0_ncdm1+index_pt,ppv->y[ppv->index_pt_psi0_ncdm1+index_pt]);
+
+                    index_pt++;
+                  }
+                }
+              }
+            }
 
         }
 
         //   /* Switching off GR approximation */
-          if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+        if ((pa_old[ppw->index_ap_gr_smg] == (int)gr_smg_on) && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
 
-            if (ppt->perturbations_verbose>2)
+          if (ppt->perturbations_verbose>2)
               fprintf(stdout,"Mode k=%e: switch off gr approximation at tau=%e\n",k,tau);
 
-            /** -  QS ICs at z_gr_smg */
-            class_call(
-              get_x_x_prime_qs_smg(
-                ppr, pba, ppt, ppw, k,
-                &ppv->y[ppv->index_pt_x_smg],
-                &ppv->y[ppv->index_pt_x_prime_smg]
-              ),
-            ppt->error_message,
-            ppt->error_message);
+          /** -  QS ICs at z_gr_smg */
+          class_call(
+            get_x_x_prime_qs_smg(
+              ppr, pba, ppt, ppw, k,
+              &ppv->y[ppv->index_pt_x_smg],
+              &ppv->y[ppv->index_pt_x_prime_smg]
+            ),
+          ppt->error_message,
+          ppt->error_message);
 
-            /* photons */
+          /* photons */
 
-        if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) { /* if radiation streaming approximation is off */
+          if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off) { /* if radiation streaming approximation is off */
 
-          /* temperature */
-          ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
-          ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
+            /* temperature */
+            ppv->y[ppv->index_pt_delta_g] = ppw->pv->y[ppw->pv->index_pt_delta_g]; 
+            ppv->y[ppv->index_pt_theta_g] = ppw->pv->y[ppw->pv->index_pt_theta_g]; 
 
-          /* Differently from all other approximation schemes, we start with TCA on. Therefore the integration variables must first be allocated and initialised. 
-          Enter here only if TCA has been switched off for at least two time steps. If TCA has just been switched off, ICs will be set below */
-          if ((pa_old[ppw->index_ap_tca] == (int)tca_off) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
+            /* Differently from all other approximation schemes, we start with TCA on. Therefore the integration variables must first be allocated and initialised. 
+            Enter here only if TCA has been switched off for at least two time steps. If TCA has just been switched off, ICs will be set below */
+            if ((pa_old[ppw->index_ap_tca] == (int)tca_off) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off)) {
 
-            ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
-            ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
+              ppv->y[ppv->index_pt_shear_g] = ppw->pv->y[ppw->pv->index_pt_shear_g]; 
+              ppv->y[ppv->index_pt_l3_g] = ppw->pv->y[ppw->pv->index_pt_l3_g]; 
 
-            for (l = 4; l <= ppw->pv->l_max_g; l++) {
+              for (l = 4; l <= ppw->pv->l_max_g; l++) {
 
-              ppv->y[ppv->index_pt_delta_g+l] =
-                ppw->pv->y[ppw->pv->index_pt_delta_g+l];
+                ppv->y[ppv->index_pt_delta_g+l] =
+                  ppw->pv->y[ppw->pv->index_pt_delta_g+l];
+              }
+
+              /* polarization */
+              ppv->y[ppv->index_pt_pol0_g] = ppw->pv->y[ppw->pv->index_pt_pol0_g]; 
+              ppv->y[ppv->index_pt_pol1_g] = ppw->pv->y[ppw->pv->index_pt_pol1_g]; 
+              ppv->y[ppv->index_pt_pol2_g] = ppw->pv->y[ppw->pv->index_pt_pol2_g]; 
+              ppv->y[ppv->index_pt_pol3_g] = ppw->pv->y[ppw->pv->index_pt_pol3_g]; 
+
+              for (l = 4; l <= ppw->pv->l_max_pol_g; l++) {
+
+                ppv->y[ppv->index_pt_pol0_g+l] =
+                  ppw->pv->y[ppw->pv->index_pt_pol0_g+l];
+              }
+
             }
-
-            /* polarization */
-            ppv->y[ppv->index_pt_pol0_g] = ppw->pv->y[ppw->pv->index_pt_pol0_g]; 
-            ppv->y[ppv->index_pt_pol1_g] = ppw->pv->y[ppw->pv->index_pt_pol1_g]; 
-            ppv->y[ppv->index_pt_pol2_g] = ppw->pv->y[ppw->pv->index_pt_pol2_g]; 
-            ppv->y[ppv->index_pt_pol3_g] = ppw->pv->y[ppw->pv->index_pt_pol3_g]; 
-
-            for (l = 4; l <= ppw->pv->l_max_pol_g; l++) {
-
-              ppv->y[ppv->index_pt_pol0_g+l] =
-                ppw->pv->y[ppw->pv->index_pt_pol0_g+l];
-            }
-
-          }
         
-        }
-
-        /* perturbed recombination: the indices are defined once tca is off. */
-
-        if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
-          ppv->y[ppv->index_pt_perturbed_recombination_delta_temp] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_temp];
-          ppv->y[ppv->index_pt_perturbed_recombination_delta_chi] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_chi]; 
-        }
-
-        /* ultra relativistic neutrinos */
-
-        if (pba->has_ur && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off)) {
-
-          ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur]; 
-          ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur]; 
-          ppv->y[ppv->index_pt_shear_ur] = ppw->pv->y[ppw->pv->index_pt_shear_ur]; 
-
-          if (ppw->approx[ppw->index_ap_ufa] == (int)ufa_off) {
-            ppv->y[ppv->index_pt_l3_ur] = ppw->pv->y[ppw->pv->index_pt_l3_ur]; 
           }
-        }
 
-        /* interacting dark radiation */
+          /* perturbed recombination: the indices are defined once tca is off. */
 
-        if (pba->has_idr == _TRUE_){
-          if(ppw->approx[ppw->index_ap_rsa_idr]==(int)rsa_idr_off) {
-            ppv->y[ppv->index_pt_delta_idr] = ppw->pv->y[ppw->pv->index_pt_delta_idr];
-            ppv->y[ppv->index_pt_theta_idr] = ppw->pv->y[ppw->pv->index_pt_theta_idr];
-            if (ppt->idr_nature == idr_free_streaming){
-              if ((pba->has_idm_dr == _FALSE_)||((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_off))){
-                ppv->y[ppv->index_pt_shear_idr] = ppw->pv->y[ppw->pv->index_pt_shear_idr];
-                ppv->y[ppv->index_pt_l3_idr] = ppw->pv->y[ppw->pv->index_pt_l3_idr];
+          if ( (ppt->has_perturbed_recombination == _TRUE_) && (ppw->approx[ppw->index_ap_tca] == (int)tca_off) ){
+            ppv->y[ppv->index_pt_perturbed_recombination_delta_temp] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_temp];
+            ppv->y[ppv->index_pt_perturbed_recombination_delta_chi] = ppw->pv->y[ppw->pv->index_pt_perturbed_recombination_delta_chi]; 
+          }
+
+          /* ultra relativistic neutrinos */
+
+          if (pba->has_ur && (ppw->approx[ppw->index_ap_rsa] == (int)rsa_off)) {
+
+            ppv->y[ppv->index_pt_delta_ur] = ppw->pv->y[ppw->pv->index_pt_delta_ur]; 
+            ppv->y[ppv->index_pt_theta_ur] = ppw->pv->y[ppw->pv->index_pt_theta_ur]; 
+            ppv->y[ppv->index_pt_shear_ur] = ppw->pv->y[ppw->pv->index_pt_shear_ur]; 
+
+            if (ppw->approx[ppw->index_ap_ufa] == (int)ufa_off) {
+              ppv->y[ppv->index_pt_l3_ur] = ppw->pv->y[ppw->pv->index_pt_l3_ur]; 
+
+              for (l=4; l <= ppv->l_max_ur; l++)
+                  ppv->y[ppv->index_pt_delta_ur+l] =
+                    ppw->pv->y[ppw->pv->index_pt_delta_ur+l];
+            }
+          }
+
+          /* interacting dark radiation */
+
+          if (pba->has_idr == _TRUE_){
+            if(ppw->approx[ppw->index_ap_rsa_idr]==(int)rsa_idr_off) {
+              ppv->y[ppv->index_pt_delta_idr] = ppw->pv->y[ppw->pv->index_pt_delta_idr];
+              ppv->y[ppv->index_pt_theta_idr] = ppw->pv->y[ppw->pv->index_pt_theta_idr];
+              if (ppt->idr_nature == idr_free_streaming){
+                if ((pba->has_idm_dr == _FALSE_)||((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_off))){
+                  ppv->y[ppv->index_pt_shear_idr] = ppw->pv->y[ppw->pv->index_pt_shear_idr];
+                  ppv->y[ppv->index_pt_l3_idr] = ppw->pv->y[ppw->pv->index_pt_l3_idr];
+                }
               }
             }
           }
-        }
 
-        /* non-cold dark matter, e.g. massive neutrinos, sterile neutrinos, warm dark matter etc. */
-        if (pba->has_ncdm == _TRUE_) {
+          /* non-cold dark matter, e.g. massive neutrinos, sterile neutrinos, warm dark matter etc. */
+          if (pba->has_ncdm == _TRUE_) {
             index_pt = 0;
             for(n_ncdm = 0; n_ncdm < ppv->N_ncdm; n_ncdm++){
               for(index_q=0; index_q < ppv->q_size_ncdm[n_ncdm]; index_q++){
@@ -4892,7 +4872,7 @@ int perturbations_vector_init(
             }
           }
 
-          }
+        }
 
       }
 
@@ -8210,20 +8190,6 @@ int perturbations_sources(
   a = ppw->pvecback[pba->index_bg_a];
   a2 = a * a;
 
-  // if (pba->has_smg == _TRUE_) {
-  //   if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
-  //     // To avoid rapid transition at z_gr_smg update H_prime, rho_smg, p_smg, rho_tot and p_tot in pvecback using interpolation of rho_smg and p_smg
-  //     class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
-  //               pba->error_message,
-  //               pba->error_message
-  //     );
-  //     pvecback[pba->index_bg_H_prime] = -1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
-  //                                               + pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a;
-  //     pvecback[pba->index_bg_rho_tot] = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
-  //     pvecback[pba->index_bg_p_tot] = pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg];
-  //   }
-  // }
-
   a_prime_over_a = pvecback[pba->index_bg_a] * pvecback[pba->index_bg_H]; /* (a'/a)=aH */
   a_prime_over_a_prime = pvecback[pba->index_bg_H_prime] * pvecback[pba->index_bg_a] + pow(pvecback[pba->index_bg_H] * pvecback[pba->index_bg_a],2); /* (a'/a)' = aH'+(aH)^2 */
 
@@ -9508,21 +9474,6 @@ int perturbations_derivs(double tau,
   a2 = a*a;
   a_prime_over_a = pvecback[pba->index_bg_H] * a;
   R = 4./3. * pvecback[pba->index_bg_rho_g]/pvecback[pba->index_bg_rho_b];
-
-
-  // if (pba->has_smg == _TRUE_) {
-  //   if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
-  //     // To avoid rapid transition at z_gr_smg update H_prime, rho_smg, p_smg, rho_tot and p_tot in pvecback using interpolation of rho_smg and p_smg
-  //     class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
-  //               pba->error_message,
-  //               pba->error_message
-  //     );
-  //     pvecback[pba->index_bg_H_prime] = -1.5*a*(pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg]
-  //                                               + pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg]) + pba->K/a;
-  //     pvecback[pba->index_bg_rho_tot] = pvecback[pba->index_bg_rho_tot_wo_smg] + pvecback[pba->index_bg_rho_smg];
-  //     pvecback[pba->index_bg_p_tot] = pvecback[pba->index_bg_p_tot_wo_smg] + pvecback[pba->index_bg_p_smg];
-  //   }
-  // }
 
   /** - get metric perturbations with perturbations_einstein() */
   class_call(perturbations_einstein(ppr,

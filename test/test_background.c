@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 	// output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/designer_fR_stable_params_full_grid_hiclass_v2.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/brans_dicke_stable_params_hiclass.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/cubic_galileon_mnu_0p4_background.dat","w");
-  output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/propto_omega_background.dat","w");
+  output_file = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/nkgb_background.dat","w");
   // output_file = fopen("/Users/matteoc/Documents/Projects/Pseudo_Emulator_v2/test_hiclass/designer_fR/propto_omega_stable_params_full_grid_hiclass.dat","w");
   // FILE * output_file_w;
   // output_file_w = fopen("/Users/matteoc/Documents/Projects/class_env/hi_class_pub_devel/w_de_stable_nkgb_mnu_0p4_hiclass.dat","w");

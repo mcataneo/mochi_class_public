@@ -1444,20 +1444,6 @@ int perturbations_qs_functions_at_tau_and_k_qs_smg(
   rho_tot = pvecback[pba->index_bg_rho_tot_wo_smg];
   p_tot = pvecback[pba->index_bg_p_tot_wo_smg];
 
-  // if (pba->gravity_model_smg == stable_params && pba->expansion_model_smg == wext) {
-  //   To avoid rapid transition at z_gr_smg update rho_smg and p_smg in pvecback using interpolation of rho_smg and p_smg
-  //   class_call(interpolate_rho_smg_p_smg(pba, log(a), log(1/(1.+pba->z_gr_smg)), pvecback),
-  //             pba->error_message,
-  //             pba->error_message
-  //   );
-  //   rho_smg = pvecback[pba->index_bg_rho_smg];
-  //   p_smg = pvecback[pba->index_bg_p_smg];
-  // }
-  // else {
-  //   rho_smg = pvecback[pba->index_bg_rho_smg];
-  //   p_smg = pvecback[pba->index_bg_p_smg];
-  // }
-
   rho_smg = pvecback[pba->index_bg_rho_smg];
   p_smg = pvecback[pba->index_bg_p_smg];
 
