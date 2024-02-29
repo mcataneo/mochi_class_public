@@ -170,6 +170,7 @@ cdef extern from "class.h":
         int k_output_values_num
         double k_output_values[_MAX_NUMBER_OF_K_FILES_]
         double k_max_for_pk
+        double z_max_pk
         int index_k_output_values[_MAX_NUMBER_OF_K_FILES_]
         char scalar_titles[_MAXTITLESTRINGLENGTH_]
         char vector_titles[_MAXTITLESTRINGLENGTH_]
