@@ -1525,7 +1525,7 @@ int fourier_init(
                          pfo->error_message, pfo->error_message);
             }
 
-            class_call(fourier_hmcode(ppr,
+            class_call_except(fourier_hmcode(ppr,
                                       pba,
                                       ppt,
                                       ppm,
@@ -1540,7 +1540,18 @@ int fourier_init(
                                       &nl_corr_not_computable_at_this_k,
                                       pnw),
                        pfo->error_message,
-                       pfo->error_message);
+                       pfo->error_message,
+                       fourier_free(pfo);
+                       fourier_hmcode_workspace_free(pfo,pnw);
+                       for (index_pk=0; index_pk<pfo->pk_size; index_pk++){
+                         free(pk_nl[index_pk]);
+                         free(lnpk_l[index_pk]);
+                         free(ddlnpk_l[index_pk]);
+                       };
+                       free(pk_nl);
+                       free(lnpk_l);
+                       free(ddlnpk_l);
+                       );
           }
 
           /* infer and store R_NL=(P_NL/P_L)^1/2 */
@@ -3357,7 +3368,7 @@ int fourier_hmcode(
   }
 
   /* make a first guess for the nonlinear scale */
-  class_call(array_interpolate_two_arrays_one_column(
+  class_call_except(array_interpolate_two_arrays_one_column(
                                                      nu_arr,
                                                      r_real,
                                                      1,
@@ -3366,7 +3377,8 @@ int fourier_hmcode(
                                                      nu_nl,
                                                      &r_nl,
                                                      pfo->error_message),
-             pfo->error_message, pfo->error_message);
+             pfo->error_message, pfo->error_message,
+             free(mass); free(r_real); free(r_virial); free(sigma_r); free(sigmaf_r); free(nu_arr););
 
   class_call(array_search_bisect(ppr->nsteps_for_p1h_integral,nu_arr,nu_nl,&index_nl,pfo->error_message), pfo->error_message, pfo->error_message);
 

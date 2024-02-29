@@ -2111,7 +2111,7 @@ int background_solve(
   }
 
   /** - perform the integration */
-  class_call(generic_evolver(background_derivs,
+  class_call_except(generic_evolver(background_derivs,
                              loga_ini,
                              loga_final,
                              pvecback_integration,
@@ -2128,8 +2128,13 @@ int background_solve(
                              NULL, //'print_variables' in evolver_rk could be set, but, not required
                              pba->error_message),
              pba->error_message,
-             pba->error_message);  
-  
+             pba->error_message,
+             background_free_noinput(pba);
+             free(pvecback);
+             free(pvecback_integration);
+             free(used_in_output);
+             );
+
   /** - recover some quantities today */
   /* -> age in Gyears */
   pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
