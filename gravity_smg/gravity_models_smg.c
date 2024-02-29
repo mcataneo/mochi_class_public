@@ -744,11 +744,13 @@ int gravity_models_gravity_properties_smg(
           errmsg,
           errmsg);
 
-     if(flag3 == _TRUE_ && ((strstr(string3,"y") != NULL) || (strstr(string3,"Y") != NULL))){
-       pba->attractor_ic_smg = _TRUE_;
-     }
-     else{
-       pba->attractor_ic_smg = _FALSE_;
+     if (flag3 == _TRUE_) {
+       if ((strstr(string3,"y") != NULL) || (strstr(string3,"Y") != NULL)) {
+         pba->attractor_ic_smg = _TRUE_;
+       }
+       else{
+         pba->attractor_ic_smg = _FALSE_;
+       }
      }
    }
   //end of Galileon
