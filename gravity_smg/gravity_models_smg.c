@@ -670,7 +670,7 @@ int gravity_models_gravity_properties_smg(
 
        /*  temporary allocation, will be rewritten latter
         *  order is xi, phi, c2, c3, c4, c5  */
-       class_alloc(pba->parameters_smg, sizeof(double*)*7,pba->error_message);
+       class_alloc(pba->parameters_smg, sizeof(double*)*pba->parameters_size_smg,pba->error_message);
        double * input_params_gal; //dummy allocation vector
 
        double xi, c2, c3, c4, c5;
@@ -733,7 +733,7 @@ int gravity_models_gravity_properties_smg(
      if (has_tuning_index_smg == _FALSE_){
        pba->tuning_index_smg = 3; //use c3 for default tuning
        //Use the tracker condition for the cubic to define xi_0, in case xi is used as an IC.
-         pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[2]/6./pba->parameters_smg[3],3);
+       pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[2]/6./pba->parameters_smg[3],3);
        //pba->tuning_dxdy_guess_smg = 2./pow(pba->parameters_smg[0],3); // d(c3)/d(Omega_smg) = 2/xi^3 and xi = c2/6./c3;
      }
      class_test(has_dxdy_guess_smg == _TRUE_ && has_tuning_index_smg == _FALSE_,
