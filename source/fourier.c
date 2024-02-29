@@ -87,6 +87,8 @@ int fourier_pk_at_z(
   if ((pk_output == pk_linear) && (pfo->ic_size > 1) && (out_pk_ic != NULL))
     do_ic = _TRUE_;
 
+  class_test(pk_output == pk_nonlinear && pfo->method == nl_none, pfo->error_message, "Cannot get nonlinear power spectrum when no nonlinear method is employed");
+
   /** - case z=0 requiring no interpolation in z */
   if (z == 0) {
 
@@ -130,7 +132,7 @@ int fourier_pk_at_z(
     if (ln_tau <= pfo->ln_tau[0]) {
 
       /** --> if ln(tau) much too small, raise an error */
-      class_test(ln_tau<pfo->ln_tau[0]-_EPSILON_,
+      class_test(ln_tau<pfo->ln_tau[0]-100.*_EPSILON_,
                  pfo->error_message,
                  "requested z was not inside of tau tabulation range (Requested ln(tau_=%.10e, Min %.10e). Solution might be to increase input parameter z_max_pk (see explanatory.ini)",ln_tau,pfo->ln_tau[0]);
 
@@ -1942,7 +1944,6 @@ int fourier_get_tau_list(
 
   /** -> for linear calculations: only late times are considered, given the value z_max_pk inferred from the ionput */
   pfo->ln_tau_size = ppt->ln_tau_size;
-  pfo->index_ln_tau_pk = ppt->index_ln_tau_pk;
 
   if (ppt->ln_tau_size > 1) {
 

@@ -309,17 +309,18 @@ int perturbations_output_data_at_z(
                 ppt->k_size[index_md]*sizeof(double),
                 ppt->error_message);
 
-    for (index_k=0; index_k<ppt->k_size[index_md]; index_k++) {
-      for (index_tp=0; index_tp<ppt->tp_size[index_md]; index_tp++) {
-        for (index_ic=0; index_ic<ppt->ic_size[index_md]; index_ic++) {
-          class_call(perturbations_sources_at_tau(ppt,
-                                                  index_md,
-                                                  index_ic,
-                                                  index_tp,
-                                                  tau,
-                                                  pvecsources),
-                     ppt->error_message,
-                     ppt->error_message);
+
+    for (index_tp=0; index_tp<ppt->tp_size[index_md]; index_tp++) {
+      for (index_ic=0; index_ic<ppt->ic_size[index_md]; index_ic++) {
+	class_call(perturbations_sources_at_tau(ppt,
+						index_md,
+						index_ic,
+						index_tp,
+						tau,
+						pvecsources),
+		   ppt->error_message,
+		   ppt->error_message);
+	for (index_k=0; index_k<ppt->k_size[index_md]; index_k++) {
 
           tkfull[(index_k * ppt->ic_size[index_md] + index_ic) * ppt->tp_size[index_md] + index_tp] =
             pvecsources[index_k];
@@ -375,8 +376,8 @@ int perturbations_output_data_at_index_tau(
   int index_tp;
 
   class_test((index_tau < 0) || (index_tau >= ppt->ln_tau_size),
-             "index_tau outside of array range",
-             ppt->error_message);
+             ppt->error_message,
+             "index_tau outside of array range");
 
   /** - allocate and fill tkfull */
 
@@ -390,7 +391,7 @@ int perturbations_output_data_at_index_tau(
     for (index_tp=0; index_tp<ppt->tp_size[index_md]; index_tp++) {
       for (index_ic=0; index_ic<ppt->ic_size[index_md]; index_ic++) {
         tkfull[(index_k * ppt->ic_size[index_md] + index_ic) * ppt->tp_size[index_md] + index_tp]
-          = ppt->sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp][index_tau * ppt->k_size[index_md] + index_k];
+          = ppt->late_sources[index_md][index_ic * ppt->tp_size[index_md] + index_tp][index_tau * ppt->k_size[index_md] + index_k];
       }
     }
   }
@@ -1696,7 +1697,6 @@ int perturbations_timesampling_for_sources(
   int index_tp;
   int index_ic;
   int index_tau;
-  int index_tau_pk;
   int index_ln_tau;
   int last_index_back;
   int last_index_thermo;
@@ -1721,6 +1721,12 @@ int perturbations_timesampling_for_sources(
 
   class_alloc(pvecback,pba->bg_size*sizeof(double),ppt->error_message);
   class_alloc(pvecthermo,pth->th_size*sizeof(double),ppt->error_message);
+
+  /** - check validity of age_fraction precision parameter */
+  class_test((ppr->perturbations_sampling_boost_above_age_fraction < 0.) || (ppr->perturbations_sampling_boost_above_age_fraction > 1.),
+             ppt->error_message,
+             "The precision parameter perturbations_sampling_boost_above_age_fraction should be between 0 and 1, not %e",
+             ppr->perturbations_sampling_boost_above_age_fraction);
 
   /** - first, just count the number of sampling points in order to allocate the array containing all values */
 
@@ -1936,6 +1942,15 @@ int perturbations_timesampling_for_sources(
     /* compute inverse rate */
     timescale_source = 1./timescale_source;
 
+    /* added in v3.2.2: age fraction (between 0 and 1 ) such that,
+       when tau > conformal_age * age_fraction, the time sampling of
+       sources is twice finer, in order to boost the accuracy of the
+       lensing line-of-sight integrals without changing that of
+       unlensed CMB observables */
+    if (tau > pba->conformal_age * ppr->perturbations_sampling_boost_above_age_fraction) {
+      timescale_source /= 2.;
+    }
+
     class_test(fabs(ppr->perturbations_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
                ppt->error_message,
                "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturbations_sampling_stepsize*timescale_source);
@@ -2016,6 +2031,15 @@ int perturbations_timesampling_for_sources(
     /* compute inverse rate */
     timescale_source = 1./timescale_source;
 
+    /* added in v3.2.2: age fraction (between 0 and 1 ) such that,
+       when tau > conformal_age * age_fraction, the time sampling of
+       sources is twice finer, in order to boost the accuracy of the
+       lensing line-of-sight integrals without changing that of
+       unlensed CMB observables */
+    if (tau > pba->conformal_age * ppr->perturbations_sampling_boost_above_age_fraction) {
+      timescale_source /= 2.;
+    }
+
     class_test(fabs(ppr->perturbations_sampling_stepsize*timescale_source/tau) < ppr->smallest_allowed_variation,
                ppt->error_message,
                "integration step =%e < machine precision : leads either to numerical error or infinite loop",ppr->perturbations_sampling_stepsize*timescale_source);
@@ -2068,8 +2092,7 @@ int perturbations_timesampling_for_sources(
     }
     index_tau --;
 
-    /* now we are at the largest value of tau such that z>z_max_pk. We store it. */
-    index_tau_pk = index_tau;
+    /* now we are at the largest value of tau such that z>z_max_pk. */
     class_test(index_tau<0,
                ppt->error_message,
                "by construction, this should never happen, a bug must have been introduced somewhere");
@@ -2081,8 +2104,8 @@ int perturbations_timesampling_for_sources(
     if (index_tau>0) index_tau--;
     ppt->ln_tau_size=ppt->tau_size-index_tau;
 
-    /* allocate and fill array of log(tau), as well as the value of
-       index_ln_tau_pk. The arrays tau_sampling[] and ln_tau[] refer
+    /* allocate and fill array of log(tau).
+       The arrays tau_sampling[] and ln_tau[] refer
        to the same times, but their indices are shifted by
        (-ppt->ln_tau_size+ppt->tau_size), such that index_ln_tau=0
        corresponds to index_tau=ppt->tau_size-ppt->ln_tau_size a*/
@@ -2091,7 +2114,6 @@ int perturbations_timesampling_for_sources(
     for (index_ln_tau=0; index_ln_tau<ppt->ln_tau_size; index_ln_tau++) {
       ppt->ln_tau[index_ln_tau]=log(ppt->tau_sampling[index_ln_tau-ppt->ln_tau_size+ppt->tau_size]);
     }
-    ppt->index_ln_tau_pk = index_tau_pk-ppt->ln_tau_size+ppt->tau_size;
   }
 
   /** - loop over modes, initial conditions and types. For each of
@@ -2257,6 +2279,9 @@ int perturbations_get_k_list(
 
     if (ppt->has_nl_corrections_based_on_delta_m == _TRUE_)
       k_max = MAX(k_max,ppr->nonlinear_min_k_max);
+
+    if ((ppt->has_cl_cmb_lensing_potential == _TRUE_) && (ppt->want_lcmb_full_limber == _TRUE_))
+      k_max = MAX(k_max, ppr->k_max_limber_over_l_max_scalars * ppt->l_scalar_max);
 
     /** - --> test that result for k_min, k_max make sense */
 
@@ -8262,8 +8287,6 @@ int perturbations_sources(
   a_prime_over_a = pvecback[pba->index_bg_a] * pvecback[pba->index_bg_H]; /* (a'/a)=aH */
   a_prime_over_a_prime = pvecback[pba->index_bg_H_prime] * pvecback[pba->index_bg_a] + pow(pvecback[pba->index_bg_H] * pvecback[pba->index_bg_a],2); /* (a'/a)' = aH'+(aH)^2 */
 
-  theta_b = y[ppw->pv->index_pt_theta_b];
-  theta_b_prime = dy[ppw->pv->index_pt_theta_b];
   dkappa = pvecthermo[pth->index_th_dkappa];
   ddkappa = pvecthermo[pth->index_th_ddkappa];
   exp_m_kappa = pvecthermo[pth->index_th_exp_m_kappa];
@@ -8282,6 +8305,9 @@ int perturbations_sources(
 
   /** - for scalars */
   if (_scalars_) {
+
+    theta_b = y[ppw->pv->index_pt_theta_b];
+    theta_b_prime = dy[ppw->pv->index_pt_theta_b];
 
     /** - --> compute metric perturbations */
 
@@ -10794,10 +10820,10 @@ int perturbations_tca_slip_and_shear(double * y,
 
   /* idm_g effects on tca */
   double theta_idm = 0., theta_idm_prime = 0.;
-  double tau_2_idm_g, dtau_2_idm_g;
+  double tau_2_idm_g=0., dtau_2_idm_g=0.;
   double dmu_idm_g = 0., ddmu_idm_g = 0.;
   /* in case of idm_b - for notation see 1802.06788 */
-  double tau_idm_b, dtau_idm_b;
+  double tau_idm_b=0., dtau_idm_b=0.;
   double R_idm_b = 0., R_idm_b_prime = 0.;
   double S_idm_b = 0.;
 

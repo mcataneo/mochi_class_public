@@ -517,8 +517,8 @@ int input_shooting(struct file_content * pfc,
   /** Summary: */
 
   /** Define local variables */
-  int flag1;
-  double param1;
+  int flag1, flag2;
+  double param1, param2;
   double * unknown_parameter;
   int unknown_parameters_size;
   int counter, index_target, i;
@@ -531,6 +531,7 @@ int input_shooting(struct file_content * pfc,
 
   /* array of parameters passed by the user for which we need shooting (= target parameters) */
   char * const target_namestrings[] = {"100*theta_s",
+                                       "theta_s_100",
                                        "Omega_dcdmdr",
                                        "omega_dcdmdr",
                                        "Omega_scf",
@@ -541,8 +542,9 @@ int input_shooting(struct file_content * pfc,
 
   /* array of corresponding parameters that must be adjusted in order to meet the target (= unknown parameters) */
   char * const unknown_namestrings[] = {"h",                        /* unknown param for target '100*theta_s' */
+                                        "h",                        /* unknown param for target 'theta_s_100' */
                                         "Omega_ini_dcdm",           /* unknown param for target 'Omega_dcdmd' */
-                                        "Omega_ini_dcdm",           /* unknown param for target 'omega_dcdmdr' */
+                                        "omega_ini_dcdm",           /* unknown param for target 'omega_dcdmdr' */
                                         "scf_shooting_parameter",   /* unknown param for target 'Omega_scf' */
                                         "Omega_dcdmdr",             /* unknown param for target 'Omega_ini_dcdm' */
                                         "omega_dcdmdr",             /* unknown param for target 'omega_ini_dcdm' */
@@ -554,6 +556,7 @@ int input_shooting(struct file_content * pfc,
      each time to saves a lot of time) */
   // TODO_EB: here we didn't add any computation stage in the previous version of hi_class, I think we should. Check it
   enum computation_stage target_cs[] = {cs_thermodynamics, /* computation stage for target '100*theta_s' */
+                                        cs_thermodynamics, /* computation stage for target 'theta_s_100' */
                                         cs_background,     /* computation stage for target 'Omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'omega_dcdmdr' */
                                         cs_background,     /* computation stage for target 'Omega_scf' */
@@ -749,6 +752,7 @@ int input_shooting(struct file_content * pfc,
     pba->shooting_failed = shooting_failed;
     if (pba->shooting_failed == _TRUE_) {
       background_free_input(pba);
+      thermodynamics_free_input(pth);
       perturbations_free_input(ppt);
     }
 
@@ -775,7 +779,13 @@ int input_shooting(struct file_content * pfc,
   class_call(parser_read_double(pfc,"sigma8",&param1,&flag1,errmsg),
              errmsg,
              errmsg);
-  if (flag1 == _TRUE_){
+  class_call(parser_read_double(pfc,"S8",&param2,&flag2,errmsg),
+             errmsg,
+             errmsg);
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+             errmsg,
+             "You can only enter one of 'sigma8' or 'S8'.");
+  if (flag1 == _TRUE_ || flag2 == _TRUE_) {
     /* Tell the main function that shooting indeed has occured */
     *has_shooting=_TRUE_;
     /* Create file content structure with additional entries */
@@ -802,9 +812,15 @@ int input_shooting(struct file_content * pfc,
                 errmsg);
 
     /* store name of target parameter */
-    fzw.target_name[0] = sigma8;
+    if (flag1 == _TRUE_) {
+      fzw.target_name[0] = sigma8;
+      fzw.target_value[0] = param1;
+    }
+    else if (flag2 == _TRUE_) {
+      fzw.target_name[0] = S8;
+      fzw.target_value[0] = param2;
+    }
     /* store target value of target parameter */
-    fzw.target_value[0] = param1;
     fzw.unknown_parameters_index[0]=pfc->size;
     fzw.required_computation_stage = cs_nonlinear;
     /* substitute the name of the target parameter with the name of the
@@ -815,24 +831,30 @@ int input_shooting(struct file_content * pfc,
     if (input_verbose > 0) {
       fprintf(stdout,
               "Computing unknown input parameter '%s' using input parameter '%s'\n",
-              "sigma8",
+              (flag1 ==_TRUE_?"sigma8":"S8"),
               "A_s");
     }
 
-    /* Set a guess for A_s from LCDM */
-    double A_s = param1 * 2.43e-9/0.87659;
-    double sigma8;
+    /* Set a guess for A_s from LCDM (doesn't need to be super accurate) */
+    double A_s;
+    if (flag1 == _TRUE_) {
+      A_s = param1 * 2.43e-9/0.87659;
+    }
+    else if (flag2 == _TRUE_) {
+      A_s = param2 *2.43e-9/0.891;
+    }
+    double sigma8_or_S8;
 
-    /* Now run for a single time, get the value of sigma8 for the guess*/
+    /* Now run for a single time, get the value of sigma8 (or S8) for the guess*/
     class_call(input_try_unknown_parameters(&A_s,
                                             1,
                                             &fzw,
-                                            &sigma8,
+                                            &sigma8_or_S8,
                                             errmsg),
                errmsg,
                errmsg);
 
-    A_s = (fzw.target_value[0]/sigma8) *(fzw.target_value[0]/sigma8) * A_s; //(truesigma/sigma_for_guess)^2 *A_s_for_guess
+    A_s = (fzw.target_value[0]/sigma8_or_S8) *(fzw.target_value[0]/sigma8_or_S8) * A_s; //(truesigma/sigma_for_guess)^2 *A_s_for_guess
 
     /* Store the derived value with high enough accuracy */
     sprintf(fzw.fc.value[pfc->size],"%.20e",A_s);
@@ -1203,6 +1225,7 @@ int input_get_guess(double *xguess,
   for (index_guess=0; index_guess < pfzw->target_size; index_guess++) {
     switch (pfzw->target_name[index_guess]) {
     case theta_s:
+    case theta_s_100:
       xguess[index_guess] = 3.54*pow(pfzw->target_value[index_guess],2)-5.455*pfzw->target_value[index_guess]+2.548;
       dxdy[index_guess] = (7.08*pfzw->target_value[index_guess]-5.455);
       /** Update pb to reflect guess */
@@ -1280,6 +1303,13 @@ int input_get_guess(double *xguess,
       xguess[index_guess] = 2.43e-9/0.87659*pfzw->target_value[index_guess];
       dxdy[index_guess] = 2.43e-9/0.87659;
       break;
+    case S8:
+      /* Assume linear relationship between A_s and S8 and fix coefficient
+         according to vanilla LambdaCDM. Should be good enough... */
+      xguess[index_guess] = 2.43e-9/0.891*pfzw->target_value[index_guess];
+      dxdy[index_guess] = 2.43e-9/0.891;
+      break;
+
     case Omega_smg:
       xguess[index_guess] = ba.parameters_smg[ba.tuning_index_smg];
       dxdy[index_guess] = ba.tuning_dxdy_guess_smg;
@@ -1287,7 +1317,6 @@ int input_get_guess(double *xguess,
     case M_pl_today_smg:
       xguess[index_guess] = ba.parameters_smg[ba.tuning_index_2_smg];
       dxdy[index_guess] = 1;
-      break;
     }
   }
 
@@ -1297,6 +1326,7 @@ int input_get_guess(double *xguess,
 
   /** - Deallocate everything allocated by input_read_parameters */
   background_free_input(&ba);
+  thermodynamics_free_input(&th);
   perturbations_free_input(&pt);
 
   return _SUCCESS_;
@@ -1376,6 +1406,9 @@ int input_try_unknown_parameters(double * unknown_parameter,
     if (pfzw->target_name[i] == sigma8) {
       compute_sigma8 = _TRUE_;
     }
+    if (pfzw->target_name[i] == S8) {
+      compute_sigma8 = _TRUE_;
+    }
   }
 
   /* Sigma8 depends on linear P(k), so no need to run anything except linear P(k) during shooting */
@@ -1404,7 +1437,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
     if (input_verbose>2)
       printf("Stage 1: background\n");
     ba.background_verbose = 0;
-    class_call_except(background_init(&pr,&ba), ba.error_message, errmsg, background_free_input(&ba);perturbations_free_input(&pt););
+    class_call_except(background_init(&pr,&ba), ba.error_message, errmsg, background_free_input(&ba);thermodynamics_free_input(&th);perturbations_free_input(&pt););
   }
 
   if (pfzw->required_computation_stage >= cs_thermodynamics){
@@ -1414,7 +1447,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
     pr.thermo_Nz_log = 500;
     th.thermodynamics_verbose = 0;
     th.hyrec_verbose = 0;
-    class_call_except(thermodynamics_init(&pr,&ba,&th), th.error_message, errmsg, background_free(&ba);perturbations_free_input(&pt););
+    class_call_except(thermodynamics_init(&pr,&ba,&th), th.error_message, errmsg, background_free(&ba);thermodynamics_free_input(&th);perturbations_free_input(&pt););
   }
 
   if (pfzw->required_computation_stage >= cs_perturbations){
@@ -1456,6 +1489,7 @@ int input_try_unknown_parameters(double * unknown_parameter,
   for (i=0; i < pfzw->target_size; i++) {
     switch (pfzw->target_name[i]) {
     case theta_s:
+    case theta_s_100:
       output[i] = 100.*th.rs_rec/th.ra_rec-pfzw->target_value[i];
       break;
     case Omega_dcdmdr:
@@ -1490,6 +1524,9 @@ int input_try_unknown_parameters(double * unknown_parameter,
     case sigma8:
       output[i] = fo.sigma8[fo.index_pk_m];
       break;
+    case S8:
+      output[i] = fo.sigma8[fo.index_pk_m]*sqrt(ba.Omega0_m/0.3);
+      break;
     case Omega_smg:
       output[i] = ba.background_table[(ba.bt_size-1)*ba.bg_size+ba.index_bg_rho_smg]/pow(ba.H0,2) - ba.Omega0_smg;
       if (input_verbose > 2)
@@ -1507,7 +1544,6 @@ int input_try_unknown_parameters(double * unknown_parameter,
          ba.M_pl_today_smg,
          ba.parameters_smg[ba.tuning_index_2_smg]
         );
-      break;
     }
   }
 
@@ -1543,6 +1579,9 @@ int input_try_unknown_parameters(double * unknown_parameter,
   if (pfzw->required_computation_stage < cs_perturbations) {
     /** Some pointers in ppt may not be allocated if has_perturbations is _FALSE_, but this is handled in perturbations_free_input as neccessary. */
     perturbations_free_input(&pt);
+  }
+  if (pfzw->required_computation_stage < cs_thermodynamics) {
+    thermodynamics_free_input(&th);
   }
   if (pfzw->required_computation_stage < cs_background) {
     background_free_input(&ba);
@@ -4121,8 +4160,8 @@ int input_read_parameters_primordial(struct file_content * pfc,
   /** Summary: */
 
   /** Define local variables */
-  int flag1, flag2;
-  double param1, param2;
+  int flag1, flag2, flag3;
+  double param1, param2, param3;
   char string1[_ARGUMENT_LENGTH_MAX_];
   char string2[_ARGUMENT_LENGTH_MAX_];
   double R0,R1,R2,R3,R4;
@@ -4192,19 +4231,25 @@ int input_read_parameters_primordial(struct file_content * pfc,
       class_call(parser_read_double(pfc,"A_s",&param1,&flag1,errmsg),
                  errmsg,
                  errmsg);
-      class_call(parser_read_double(pfc,"ln10^{10}A_s",&param2,&flag2,errmsg),
+      class_call(parser_read_double(pfc,"ln_A_s_1e10",&param2,&flag2,errmsg),
                  errmsg,
                  errmsg);
-      /* Test */
-      class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+      /* Deprecated input parameters, read for backwards compatibility) */
+      class_call(parser_read_double(pfc,"ln10^{10}A_s",&param3,&flag3,errmsg),
                  errmsg,
-                 "You can only enter one of 'A_s' or 'ln10^{10}A_s'.");
+                 errmsg);
+      class_test(class_at_least_two_of_three(flag1,flag2,flag3),
+                 errmsg,
+                 "In input file, you can only enter one of {'A_s', 'ln_A_s_1e10', or 'ln10^{10}A_s' (deprecated)}, choose one");
       /* Complete set of parameters */
       if (flag1 == _TRUE_){
         ppm->A_s = param1;
       }
       else if (flag2 == _TRUE_){
         ppm->A_s = exp(param2)*1.e-10;
+      }
+      else if (flag3 == _TRUE_){
+        ppm->A_s = exp(param3)*1.e-10;
       }
 
       /** 1.b.1.1) Adiabatic perturbations */
@@ -5068,7 +5113,8 @@ int input_read_parameters_spectra(struct file_content * pfc,
 
 
 /**
- * Read the parameters of lensing structure.
+ * Read the parameters of perturbations, transfer and lensing
+ * structures that are relevant for lensing.
  *
  * @param pfc     Input: pointer to local structure
  * @param ppr     Input: pointer to precision structure
@@ -5136,6 +5182,10 @@ int input_read_parameters_lensing(struct file_content * pfc,
     class_read_double("lcmb_tilt",ptr->lcmb_tilt);
     class_read_double("lcmb_pivot",ptr->lcmb_pivot);
   }
+
+  /** 3) In general, do we want to use the full Limber scheme introduced in v3.2.2? With this full Limber scheme, the calculation of the CMB lensing potential spectrum C_l^phiphi for l > ppr->l_switch_limber is based on a new integration scheme. Compared to the previous scheme, which can be recovered by switching this parameter to _FALSE_, the new scheme uses a larger k_max and a coarser k-grid (or q-grid) than the CMB transfer function. The new scheme is used by default, because the old one is inaccurate at large l due to the too small k_max. */
+
+  class_read_flag("want_lcmb_full_limber",ppt->want_lcmb_full_limber);
 
   return _SUCCESS_;
 
@@ -5995,13 +6045,13 @@ int input_default_params(struct background *pba,
   /** 5) Injection efficiency */
   pin->f_eff_type = f_eff_on_the_spot;
   pin->f_eff = 1.;
-  sprintf(pin->f_eff_file,"/external/heating/example_f_eff_file.dat");
+  sprintf(pin->f_eff_file,"external/heating/example_f_eff_file.dat");
 
   /** 6) Deposition function */
   pin->chi_type = chi_CK;
   /** 6.1) External file */
-  sprintf(pin->chi_z_file,"/external/heating/example_chiz_file.dat");
-  sprintf(pin->chi_x_file,"/external/heating/example_chix_file.dat");
+  sprintf(pin->chi_z_file,"external/heating/example_chiz_file.dat");
+  sprintf(pin->chi_x_file,"external/heating/example_chix_file.dat");
 
   /**
    * Default to input_read_parameters_nonlinear
@@ -6167,6 +6217,7 @@ int input_default_params(struct background *pba,
   ptr->lcmb_rescale=1.;
   ptr->lcmb_tilt=0.;
   ptr->lcmb_pivot=0.1;
+  ppt->want_lcmb_full_limber = _TRUE_;
 
   /**
    * Default to input_read_parameters_distortions
