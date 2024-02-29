@@ -2207,9 +2207,10 @@ int background_solve(
              pba->error_message);
     }
     
-    class_call(background_solve_smg(ppr, pba, pvecback, pvecback_integration, pvecback_bw_integration),
+    class_call_except(background_solve_smg(ppr, pba, pvecback, pvecback_integration, pvecback_bw_integration),
               pba->error_message,
-              pba->error_message);
+              pba->error_message,
+              free(used_in_output););
     
   }
   

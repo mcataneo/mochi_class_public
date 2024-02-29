@@ -2372,21 +2372,17 @@ int stability_tests_smg(
 	if ((pba->parameters_tuned_smg == _TRUE_) &&
 	    (pba->skip_stability_tests_smg == _FALSE_)){
 
-	  class_test_except(pba->min_D_smg <= -fabs(pba->D_safe_smg),
+	  class_test(pba->min_D_smg <= -fabs(pba->D_safe_smg),
 	      pba->error_message,
-	      free(pvecback);free(pvecback_integration);background_free(pba),
 	      "Ghost instability for scalar field perturbations with minimum D=%g at a=%e\n", pba->min_D_smg, pba->a_min_D_smg);
-	  class_test_except(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
+	  class_test(pba->min_cs2_smg < -fabs(pba->cs2_safe_smg),
 	      pba->error_message,
-	      free(pvecback);free(pvecback_integration);background_free(pba),
 	      "Gradient instability for scalar field perturbations with minimum c_s^2=%g at a=%e\n", pba->min_cs2_smg, pba->a_min_cs2_smg);
-	  class_test_except(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
+	  class_test(pba->min_M2_smg < -fabs(pba->M2_safe_smg),
 	      pba->error_message,
-	      free(pvecback);free(pvecback_integration);background_free(pba),
 	      "Ghost instability for metric tensor perturbations with minimum M*^2=%g at a=%e\n", pba->min_M2_smg, pba->a_min_M2_smg);
-	  class_test_except(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
+	  class_test(pba->min_ct2_smg < -fabs(pba->ct2_safe_smg),
 	      pba->error_message,
-	      free(pvecback);free(pvecback_integration);background_free(pba),
 	      "Gradient instability for metric tensor perturbations with minimum c_t^2=%g at a=%e\n",pba->min_ct2_smg,pba->a_min_ct2_smg);
 
 	 }

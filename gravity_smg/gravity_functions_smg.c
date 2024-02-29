@@ -694,7 +694,8 @@ int gravity_functions_As_from_alphas_smg(
   if(pba->gravity_model_smg != stable_params){
        pvecback[pba->index_bg_cs2num_smg] = ((-2.) + bra)*((-1.)*bra + (-2.)*run + 2.*ten + (-1.)*bra*ten)*1./2. + pvecback[pba->index_bg_lambda_2_smg];
 
-    if (pvecback[pba->index_bg_cs2num_smg] == pvecback[pba->index_bg_kinetic_D_smg]) {
+  // TODO_EB: check if there is a better alternative to regularizing these quantities
+	if (pvecback[pba->index_bg_cs2num_smg] == pvecback[pba->index_bg_kinetic_D_smg]) {
 		pvecback[pba->index_bg_cs2_smg] = 1.;
 	  }
 	  else {
@@ -704,6 +705,7 @@ int gravity_functions_As_from_alphas_smg(
 	
   // printf("gravity_functions: a=%e \t bra=%e\n",a,bra,pvecback[pba->index_bg_G_eff_smg]);
 
+  // TODO_EB: rewrite Geff and slip for beyond Horndeski (calculate them in the hi_class.nb Mathematica notebook)
 	double beta_1 = (run + (-1.)*ten)*2. + (1. + ten)*bra;
 	double beta_2 = 2.*beta_1 + (2. + (-2.)*M2 + bra*M2)*(rho_tot + p_tot)*(-3.)*pow(H,-2)*pow(M2,-1) + ((-2.) + bra)*(rho_smg + p_smg)*(-3.)*pow(H,-2) + 2.*pow(H,-1)*bra_p*pow(a,-1);
 
