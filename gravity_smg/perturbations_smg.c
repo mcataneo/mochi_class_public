@@ -769,7 +769,10 @@ int perturbations_einstein_scalar_smg(
     }
   }
 
-  /* eventually, infer radiation streaming approximation for gamma and ur (this is exactly the right place to do it because the result depends on h_prime) */
+    /* eventually, infer radiation streaming approximation for
+       gamma and ur (this is exactly the right place to do it
+       because the result depends on h_prime) */
+
   if (ppw->approx[ppw->index_ap_rsa] == (int)rsa_on) {
 
     if (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_on) {
@@ -931,17 +934,24 @@ int perturbations_einstein_scalar_smg(
   // tca_off always when gr_smg_off, so no need to add condition
   if (ppw->approx[ppw->index_ap_tca] == (int)tca_on) {
 
-    shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+    if (pth->has_idm_g == _TRUE_) {
+      shear_g = 16./45./(ppw->pvecthermo[pth->index_th_dkappa] + ppw->pvecthermo[pth->index_th_dmu_idm_g])*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+    }
+    else {
+      shear_g = 16./45./ppw->pvecthermo[pth->index_th_dkappa]*(y[ppw->pv->index_pt_theta_g]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+    }
 
     ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_g]*shear_g;
 
   }
 
-  if ((pba->has_idm_dr == _TRUE_)&&(ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_on)){
+  if (pth->has_idm_dr == _TRUE_) {
+    if (ppw->approx[ppw->index_ap_tca_idm_dr] == (int)tca_idm_dr_on){
 
-    shear_idr = 0.5*8./15./ppw->pvecthermo[pth->index_th_dmu_idm_dr]/ppt->alpha_idm_dr[0]*(y[ppw->pv->index_pt_theta_idr]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
+      shear_idr = 0.5*8./15./ppw->pvecthermo[pth->index_th_dmu_idm_dr]/ppt->alpha_idm_dr[0]*(y[ppw->pv->index_pt_theta_idr]+k2*ppw->pvecmetric[ppw->index_mt_alpha]);
 
-    ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*shear_idr;
+      ppw->rho_plus_p_shear += 4./3.*ppw->pvecback[pba->index_bg_rho_idr]*shear_idr;
+    }
   }
 
 

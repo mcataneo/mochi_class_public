@@ -91,6 +91,10 @@ class_precision_parameter(tol_shooting_deltaF,double,1.e-6)
  */
 class_precision_parameter(tol_shooting_deltax_rel,double,1.e-5)
 /**
+ * Tolerance on input of various fractions (e.g. f_idm)
+ */
+class_precision_parameter(tol_fraction_accuracy,double,1.e-10)
+/**
  * Threshold value of M_ncdm=T_ncdm/m_ncdm above wich a species is
  * considered a "non-free-streaming" when comuting the parameter
  * Omega0_nfsm, relevant for HyRec and non-linear correction
@@ -113,10 +117,15 @@ class_string_parameter(sBBN_file,"/external/bbn/sBBN_2017.dat","sBBN file")
  */
 
 /**
- * The initial z for the recfast calculation of the recombination history
+ * The initial z for the calculation of the recombination history
  */
 class_precision_parameter(thermo_z_initial,double,5.e6)
-class_precision_parameter(thermo_z_initial_if_idm_dr,double,1.e9)
+/**
+ * The initial z for the calculation of the recombination history in
+ * presence of idm (unless the later is tightly-coupled at this
+ * redshift)
+ */
+class_precision_parameter(thermo_z_initial_if_idm,double,1.e9)
 /**
  * The switch z for the recfast calculation towards linear sampling
  */
@@ -129,7 +138,6 @@ class_precision_parameter(thermo_Nz_lin,int,20000)
  * Number of recfast integration steps (logarithmnic sampling. early times between z-initial and z_linear)
  */
 class_precision_parameter(thermo_Nz_log,int,5000)
-class_precision_parameter(thermo_Nz_log_if_idm_dr,int,10000)
 /**
  * Evolver to be used for thermodynamics (rk, ndf15)
  */
@@ -278,6 +286,18 @@ class_precision_parameter(tight_coupling_trigger_tau_c_over_tau_h,double,0.015)
  * Decrease this value to switch off earlier in time.
  */
 class_precision_parameter(tight_coupling_trigger_tau_c_over_tau_k,double,0.01)
+
+/**
+ * when to switch off tight-coupling approximation:
+ * third condition: for the case of idm with photons.
+ */
+class_precision_parameter(tight_coupling_trigger_tau_c_over_tau_dmu_idm_g, double, 0.01);
+
+/**
+ * when to switch off tight-coupling approximation:
+ * fourth condition: for the case of idm with baryons.
+ */
+class_precision_parameter(tight_coupling_trigger_tau_c_over_tau_R_idm_b, double, 0.01)
 
 class_precision_parameter(start_sources_at_tau_c_over_tau_h,double,0.008) /**< sources start being sampled when universe is sufficiently opaque. This is quantified in terms of the ratio of thermo to hubble time scales, \f$ \tau_c/\tau_H \f$. Start when start_sources_at_tau_c_over_tau_h equals this ratio. Decrease this value to start sampling the sources earlier in time. */
 
