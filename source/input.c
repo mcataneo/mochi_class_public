@@ -917,6 +917,8 @@ int input_needs_shooting_for_target(struct file_content * pfc,
                                     ErrorMsg errmsg){
 
   *needs_shooting = _TRUE_;
+  int flag1;
+  char string1[_ARGUMENT_LENGTH_MAX_];
   switch (target_name){
     case Omega_dcdmdr:
     case omega_dcdmdr:
@@ -928,7 +930,12 @@ int input_needs_shooting_for_target(struct file_content * pfc,
       *needs_shooting = _FALSE_;
     break;
     case Omega_smg:
-      if (target_value == 0.)
+      class_call(parser_read_string(pfc,"gravity_model",&string1,&flag1,errmsg),
+             errmsg,
+             errmsg);
+      // if (target_value == 0.)
+      /** no shooting needed if Omega_smg = 0 or if < 0. and gravity_model == stable_params*/
+      if (target_value == 0. || (target_value != 0. && strstr(string1,"stable_params") != NULL))
         *needs_shooting = _FALSE_;
       break;
     case M_pl_today_smg:

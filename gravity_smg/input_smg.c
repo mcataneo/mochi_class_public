@@ -238,6 +238,11 @@ int input_read_parameters_smg(
     class_call(gravity_models_expansion_properties_smg(pfc, pba, string1, errmsg),
                errmsg,
                errmsg);
+    
+    /** For stable_params we don't perform Omega_smg shooting -- saves computing time */
+    if(pba->gravity_model_smg == stable_params){      
+      pba->parameters_smg[0] = pba->Omega0_smg;
+    }    
 
   }
 

@@ -18,7 +18,7 @@ vpath .base build
 ########################################################
 
 # your C compiler:
-CC       = gcc-11
+CC       = gcc-13
 #CC       = icc
 #CC       = pgcc
 
@@ -33,7 +33,7 @@ AR        = ar rv
 PYTHON ?= python3
 
 # your optimization flag
-OPTFLAG = -O4
+OPTFLAG = -O3
 #OPTFLAG = -Ofast -ffast-math #-march=native
 #OPTFLAG = -fast
 
