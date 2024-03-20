@@ -683,9 +683,8 @@ int background_solve_smg(
 		for (index_out=0; index_out<pba->bi_bw_B_size; index_out++) {
 			used_in_output[index_out] = 1;
 		}
-
-		/** - perform the backward integration for \tilde{B}*/
-		class_call(generic_evolver(background_derivs_bw_smg,
+		
+		class_call_except(generic_evolver(background_derivs_bw_smg,
 									loga_ini,
 									loga_final,
 									pvecback_bw_integration,
@@ -702,7 +701,17 @@ int background_solve_smg(
 									NULL, //'print_variables' in evolver_rk could be set, but, not required
 									pba->error_message),
 					pba->error_message,
-					pba->error_message);
+					pba->error_message,
+					free(pba->loga_bw_table);
+					free(pvecback);
+					free(pvecback_integration);
+					free(pvecback_bw_integration);
+					free(used_in_output);
+					free(loga_fw_table);
+					free(pvec_stable_params_smg);
+					free(pvec_stable_params_derived_smg);
+					background_free(pba);
+					);
 
 		// Spline new alpha_B and alpha_K
 		class_call(array_spline_table_lines(loga_fw_table,
@@ -1397,7 +1406,6 @@ int background_solve_rho_smg(
 	// 			pba->error_message);    		
 
 	free(pba->loga_bw_table_rho_smg);
-	// free(pba->loga_bw_table);
 	free(used_in_output);
 
 	return _SUCCESS_;

@@ -2004,8 +2004,6 @@ int background_solve(
   class_alloc(pvecback_integration,pba->bi_size*sizeof(double),pba->error_message);
   /** - allocate vector of quantities to be integrated backward */
   class_alloc(pvecback_bw_integration,pba->bi_bw_B_size*sizeof(double),pba->error_message);
-  /** - allocate scalar rho_smg to be integrated backward */
-  class_alloc(pback_rho_smg_bw_integration,1*sizeof(double),pba->error_message);
 
   /* Integrator for rho_smg with arbitrary EOS, this way we are still consistent with shooting. This
      computation must happen before calling background_initial_conditions because it uses rho_tot at a_ini to evaluate
@@ -2016,6 +2014,8 @@ int background_solve(
   if (pba->has_smg == _TRUE_) {
     if (pba->gravity_model_smg == stable_params) {
       if (pba->expansion_model_smg == wext){
+        /** - allocate scalar rho_smg to be integrated backward */
+        class_alloc(pback_rho_smg_bw_integration,1*sizeof(double),pba->error_message);
         /** - set initial conditions at a/a0=1 for rho_smg */
         class_call(background_ic_rho_smg(pba,pback_rho_smg_bw_integration),
                   pba->error_message,
