@@ -1098,13 +1098,11 @@ int background_solve_smg(
 		}
 	}
 	
-	// if (pba->gravity_model_smg != stable_params) { // not needed, we enforce skip_stability_tests_smg = _TRUE_ when pba->gravity_model_smg == stable_params
-		class_call(
-			stability_tests_smg(pba, pvecback, pvecback_integration),
-			pba->error_message,
-			pba->error_message
-		);
-	// }
+	class_call(
+		stability_tests_smg(pba, pvecback, pvecback_integration),
+		pba->error_message,
+		pba->error_message
+	);
 
 	/* Check that braiding doesn't cross 2., else we have instability at some point during evolution */
 	class_test_except(pba->min_bra_smg < 2. && pba->max_bra_smg > 2.,
@@ -1226,7 +1224,7 @@ int background_solve_smg(
 		d_over_dtau = factor*pvecback_derivs[pba->index_bg_p_prime_smg];
 		copy_to_background_table_smg(pba, i, pba->index_bg_p_prime_prime_smg, d_over_dtau);
 
-		// TODO_MC: add here calculations for mu_p, mu_inf, muZ_inf and derivatives when using stable parametrisation
+		//calculations for mu_p, mu_inf, muZ_inf and derivatives when using stable parametrisation
 		if(pba->gravity_model_smg == stable_params){
 			/** QSA expressions */
 			a = pba->background_table[i*pba->bg_size + pba->index_bg_a];
@@ -1298,11 +1296,8 @@ int background_solve_smg(
 }
 
 /**
-* In background_solve_rho_smg, after quantities {B} and {C} have been
-* inegrated, this routine computes derived quantities, such as
-* numerical derivatives of the alphas and functions that depend
-* on combinations of alphas and derivatives. This is also the
-* place where stability tests are done (in stability_tests_smg).
+* In background_solve_rho_smg we integrate the scalar field background
+* energy-density when expansion_model = wext
 *
 * @param pba                  Input: pointer to background structure
 * @param pvecback             Output: vector of background quantities (assumed to be already allocated)
@@ -1324,7 +1319,6 @@ int background_solve_rho_smg(
 	int (*generic_evolver)();
 	generic_evolver = evolver_ndf15;
 	/* initial and final time for backward integration in stable_params */
-	// double eps_bw_integration = 0.1; // small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg.
 	double loga_final = log((1. - ppr->eps_bw_integration_rho_smg)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.; // time used for initial conditions in backward integration
 	/* indices for the different arrays */
@@ -1389,21 +1383,6 @@ int background_solve_rho_smg(
 										pba->error_message),
 			pba->error_message,
 			pba->error_message);
-
-	// // interpolate integrated rho_smg at loga_final and store value
-	// class_call(array_interpolate_spline(
-	// 									pba->loga_fw_table_rho_smg,
-	// 									pba->bt_bw_rho_smg_size,
-	// 									pba->stable_rho_smg,
-	// 									pba->ddstable_rho_smg,
-	// 									1,
-	// 									loga_final,
-	// 									&last_index, // not used
-	// 									&pba->rho_smg_final,
-	// 									1,
-	// 									pba->error_message),
-	// 			pba->error_message,
-	// 			pba->error_message);    		
 
 	free(pba->loga_bw_table_rho_smg);
 	free(used_in_output);
@@ -1488,7 +1467,7 @@ if(pba->expansion_model_smg == wext) {
 }
 else if (pba->expansion_model_smg == rho_de) {
 	if (loga >= loga_transition) {
-		// interpolate integrated rho_smg
+		// interpolate rho_smg
 		class_call(array_interpolate_spline(
 											pba->stable_wext_lna_smg,
 											pba->stable_wext_size_smg,

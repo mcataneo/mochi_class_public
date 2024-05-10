@@ -627,6 +627,7 @@ int perturbations_einstein_scalar_smg(
   double cs2num, lambda1, lambda2, lambda3, lambda4, lambda5, lambda6, lambda7, lambda8;
   double cs2num_p, lambda2_p, lambda8_p;
   double mu, mu_prime, gamma, gamma_prime;
+  double coeff1, coeff2, coeff3, coeff4, Delta, root1, root2;
   // double mu_inf_prime, mu_p_prime, mu_Z_inf_prime; // for debugging only
   double rho_Delta=0., alpha=0.;
 
@@ -974,6 +975,33 @@ int perturbations_einstein_scalar_smg(
         - a*H*(2. + run)*ppw->pvecmetric[ppw->index_mt_alpha]
         - res*c8*ppw->pvecmetric[ppw->index_mt_x_smg]
         + res*cH*ppw->pvecmetric[ppw->index_mt_x_prime_smg]/a/H;
+    }
+  }
+
+  /* test if exponentially growing modes are present */
+  if (ppt->skip_math_stability_smg == _FALSE_ && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)) {
+    coeff1 = cD*(2. - cB);
+    coeff2 = 8.*a*H*lambda7;
+    coeff3 = -8.*pow(a*H,2)*lambda8;
+    coeff4 = 2*cs2num;
+
+    Delta = pow(coeff2,2.) - 4.*coeff1*(coeff3 + k2*coeff4);
+
+    if (Delta > 0) {
+      root1 = (-coeff2 + sqrt(Delta))/2./coeff1;
+      root2 = (-coeff2 - sqrt(Delta))/2./coeff1;
+
+      if((root1 > ppt->exp_rate_smg * pba->H0) || (root2 > ppt->exp_rate_smg * pba->H0)){
+        ppt->has_math_instability_smg = _TRUE_;
+      }
+
+    } else {
+      root1 = -coeff2/2./coeff1;
+
+      if(root1 > ppt->exp_rate_smg * pba->H0){
+        ppt->has_math_instability_smg = _TRUE_;
+      }
+
     }
   }
 

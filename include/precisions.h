@@ -13,7 +13,7 @@ class_precision_parameter(a_ini_over_a_today_default,double,1.e-14)
  * Number of background integration steps that are stored in the output vector. For smg stable parametrisation 
  * they only sample the range loga \in (loga_ini,-2]
  */
-class_precision_parameter(background_Nloga,int,40000)
+class_precision_parameter(background_Nloga,int,3000)
 /**
  * Evolver to be used for thermodynamics (rk, ndf15)
  */
@@ -632,7 +632,7 @@ class_precision_parameter(trigger_rad_qs_smg,double,1.e3) /**< if the radiation 
 class_precision_parameter(eps_s_qs_smg,double,0.01) /**< when the system enters the quasi-static evolution this parameter measures how much the oscillation are decaying with time */
 
 /* Only for stable params */
-class_precision_parameter(background_Nloga_smg,int,2000) /**< Number of background integration steps that are stored in the output vector for loga in range (loga_split,0] */
+class_precision_parameter(background_Nloga_smg,int,3000) /**< Number of background integration steps that are stored in the output vector for loga in range (loga_split,0] */
 class_precision_parameter(loga_split,double,-3.) /**< loga at which we change the sampling density */
 class_precision_parameter(eps_bw_integration_rho_smg,double,0.1) /**< small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg as well as at final time of backward integration for alpha_B. */
 class_precision_parameter(eps_bw_integration_braid,double,0.1) /**< small correction to z_gr_smg to make sure bw integration gives us non-zero value at z_gr_smg. Must be <= eps_bw_integration_rho_smg*/

@@ -209,6 +209,11 @@ struct perturbations
 
   int idr_nature; /**< Nature of the interacting dark radiation (free streaming or fluid) */
 
+  /* test exponential growth for each k-mode */
+  short skip_math_stability_smg;
+  double exp_rate_smg;
+  short has_math_instability_smg;
+
   //@}
 
   /** @name - useful flags inferred from the ones above */

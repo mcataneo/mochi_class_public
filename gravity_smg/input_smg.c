@@ -285,6 +285,26 @@ int input_read_parameters_smg(
     }
   }
 
+  class_call(parser_read_string(pfc,
+			  "skip_math_stability_smg",
+			  &string1,
+			  &flag1,
+			  errmsg),
+	errmsg,
+	errmsg);
+
+  if (flag1 == _TRUE_){
+    if((strstr(string1,"y") != NULL) || (strstr(string1,"Y") != NULL)){
+      ppt->skip_math_stability_smg = _TRUE_;
+    }
+    else{
+      ppt->skip_math_stability_smg = _FALSE_;
+      ppt->has_math_instability_smg = _FALSE_; // initialise to false
+    }
+  }
+
+  class_read_double("exp_rate_smg",ppt->exp_rate_smg);
+
   // Uncomment line below if you want to skip stability test when gravity model is stable_params. We also never solve for Hubble evolution
   if(pba->gravity_model_smg == stable_params){
     // pba->skip_stability_tests_smg = _TRUE_; // when commented, set proper flag value in INI file
@@ -439,6 +459,9 @@ int input_default_params_smg(
   ppt->method_gr_smg=switch_off_gr_smg;
 
   ppt->use_pert_var_deltaphi_smg=_FALSE_;
+
+  ppt->skip_math_stability_smg = _TRUE_; /*if you want to skip the mathematical stability tests for the perturbations */
+  ppt->exp_rate_smg = 1.; /* default maximum accepted rate in Hubble units */
 
   return _SUCCESS_;
 

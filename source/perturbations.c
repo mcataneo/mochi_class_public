@@ -10214,8 +10214,12 @@ int perturbations_derivs(double tau,
     /** - ---> scalar modified gravity (smg) */
     if (pba->has_smg == _TRUE_) {
         // Run tests to make sure our smg model doesn't produces unstable perturbations resulting in segfault 
-        class_test(isnan(pvecmetric[ppw->index_mt_alpha_prime]),
-            ppt->error_message, " Isnan mt_alpha' at tau =%e k =%e! Possible tachyonic instability with perturbations growing exponentially",tau,k);
+        if (ppt->skip_math_stability_smg == _FALSE_ && (ppw->approx[ppw->index_ap_gr_smg] == (int)gr_smg_off)){
+          class_test(ppt->has_math_instability_smg,
+              ppt->error_message,"\n Mathematical instability detected. Mode k=%e is growing exponentially at a rate faster than %.2f*H0. \n",k,ppt->exp_rate_smg);
+        }
+        // class_test(isnan(pvecmetric[ppw->index_mt_alpha_prime]),
+        //     ppt->error_message, " Isnan mt_alpha' at tau =%e k =%e! Possible tachyonic instability with perturbations growing exponentially",tau,k);
         class_test(isnan(ppw->pvecmetric[ppw->index_mt_x_prime_prime_smg]),
           ppt->error_message, " Isnan x'' at a =%e !",a);
       class_call(
