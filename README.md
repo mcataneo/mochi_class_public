@@ -1,20 +1,15 @@
-CLASS: Cosmic Linear Anisotropy Solving System  {#mainpage}
+mochi_class: Modelling Optimisation to Compute Horndeski in CLASS
 ==============================================
 
-Authors: Julien Lesgourgues, Thomas Tram, Nils Schoeneberg
+Authors: Matteo Cataneo, Emilio Bellini
 
-with several major inputs from other people, especially Benjamin
-Audren, Simon Prunet, Jesus Torrado, Miguel Zumalacarregui, Francesco
-Montanari, Deanna Hooper, Samuel Brieden, Daniel Meinert, Matteo Lucca, etc.
-
-For download and information, see http://class-code.net
+This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_class_public/), itself a patch of the Einstein-Boltzmann solver CLASS (http://class-code.net) 
 
 
 Compiling CLASS and getting started
 -----------------------------------
 
-(the information below can also be found on the webpage, just below
-the download button)
+
 
 Download the code from the webpage and unpack the archive (tar -zxvf
 class_vx.y.z.tar.gz), or clone it from
