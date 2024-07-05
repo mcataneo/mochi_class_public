@@ -1,8 +1,9 @@
 mochi_class: Modelling Optimisation to Compute Horndeski in CLASS
 ==============================================
 
-![mochi_class logo](logos/mochi_class_logo_github.jpg){: width="200px" style="display: block; margin: 0 auto;" }
-
+<p align="center">
+  <img src="logos/mochi_class_logo_github.jpg" alt="mochi_class logo" width="200" />
+</p>
 
 Authors: Matteo Cataneo, Emilio Bellini
 
