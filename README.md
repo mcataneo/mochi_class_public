@@ -1,6 +1,8 @@
 mochi_class: Modelling Optimisation to Compute Horndeski in CLASS
 ==============================================
 
+![mochi_class logo](logos/mochi_class_logo_github)
+
 Authors: Matteo Cataneo, Emilio Bellini
 
 This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_class_public/), itself a patch to the Einstein-Boltzmann solver CLASS (http://class-code.net) 
