@@ -1,7 +1,7 @@
 mochi_class: Modelling Optimisation to Compute Horndeski in CLASS
 ==============================================
 
-<p align="center">
+<p align="left">
   <img src="logos/mochi_class_logo_github.jpg" alt="mochi_class logo" width="300" />
 </p>
 
