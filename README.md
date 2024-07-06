@@ -10,14 +10,10 @@ Authors: Matteo Cataneo, Emilio Bellini
 This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_class_public/), itself a patch to the Einstein-Boltzmann solver CLASS (http://class-code.net) 
 
 
-Compiling CLASS and getting started
+Compiling mochi_class and getting started
 -----------------------------------
 
-
-
-Download the code from the webpage and unpack the archive (tar -zxvf
-class_vx.y.z.tar.gz), or clone it from
-https://github.com/lesgourg/class_public. Go to the class directory
+Clone the code from https://github.com/lesgourg/class_public. Go to the class directory
 (cd class/ or class_public/ or class_vx.y.z/) and compile (make clean;
 make class). You can usually speed up compilation with the option -j:
 make -j class. If the first compilation attempt fails, you may need to
