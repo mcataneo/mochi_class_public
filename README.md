@@ -13,8 +13,8 @@ This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_c
 Compiling mochi_class and getting started
 -----------------------------------
 
-Clone the code from https://github.com/lesgourg/class_public. Go to the class directory
-(cd class/ or class_public/ or class_vx.y.z/) and compile (make clean;
+Clone the code from [https://github.com/mcataneo/mochi_class_public](https://github.com/mcataneo/mochi_class_public.git). 
+Go to the class directory (cd mochi_class_public/) and compile (make clean;
 make class). You can usually speed up compilation with the option -j:
 make -j class. If the first compilation attempt fails, you may need to
 open the Makefile and adapt the name of the compiler (default: gcc),
