@@ -59,9 +59,9 @@ code, but also its python wrapper. This can be done by typing just
 a smooth experience, before installing class we recommend you first install 
 its dependencies:
 
-  numpy <= 1.26.4
-  cython >= 3.0.7
-  setuptools <= 65.5.1
+  * numpy <= 1.26.4
+  * cython >= 3.0.7
+  * setuptools <= 65.5.1
 
 More details on the wrapper and its compilation are found on the wiki page (again slightly out-of-date)
 
