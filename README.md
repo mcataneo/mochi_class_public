@@ -33,6 +33,8 @@ To test the code has been properly installed, type, for instance:
 
     ./class /inifiles/galileon.ini
 
+If everything works as expected, this will generate CMB and matter power spectra in the /output directory.
+
 The <cosmology>.ini files is the inifiles/ sub-directory can be used as reference input files, containing and
 explaining the use of all possible input parameters. When creating
 your own input files, make sure they have a *.ini
@@ -60,8 +62,10 @@ a smooth experience, before installing class we recommend you first install
 its dependencies:
 
   * numpy <= 1.26.4
-  * cython >= 3.0.7
+  * cython >= 3.x.y
   * setuptools <= 65.5.1
+
+We provide an example notebook (stable_params.ipynb) using the new mochi_class features. It can be found in the /notebooks directory.
 
 More details on the wrapper and its compilation are found on the wiki page (again slightly out-of-date)
 
