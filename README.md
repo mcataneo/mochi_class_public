@@ -31,16 +31,12 @@ incompatibility with OpenMP).
 
 To test the code has been properly installed, type, for instance:
 
-    ./class /inifile/galileon.ini
+    ./class /inifiles/galileon.ini
 
-The explanatory.ini file is THE reference input file, containing and
-explaining the use of all possible input parameters. We recommend to
-read it, to keep it unchanged (for future reference), and to create
-for your own purposes some shorter input files, containing only the
-input lines which are useful for you. Input files must have a *.ini
-extension. We provide an example of an input file containing a
-selection of the most used parameters, default.ini, that you may use as a
-starting point.
+The <cosmology>.ini files is the inifiles/ sub-directory can be used as reference input files, containing and
+explaining the use of all possible input parameters. When creating
+your own input files, make sure they have a *.ini
+extension.
 
 If you want to play with the precision/speed of the code, you can use
 one of the provided precision files (e.g. cl_permille.pre) or modify
@@ -50,53 +46,26 @@ one of them, and run with two input files, for instance:
 
 The files *.pre are suppposed to specify the precision parameters for
 which you don't want to keep default values. If you find it more
-convenient, you can pass these precision parameter values in your *.ini
+convenient, you can pass some (or all of) these precision parameter values in your *.ini
 file instead of an additional *.pre file.
-
-The automatically-generated documentation is located in
-
-    doc/manual/html/index.html
-    doc/manual/CLASS_manual.pdf
-
-On top of that, if you wish to modify the code, you will find lots of
-comments directly in the files.
 
 Python
 ------
 
-To use CLASS from python, or ipython notebooks, or from the Monte
+To use mochi_class from python, or ipython notebooks, or from the Monte
 Python parameter extraction code, you need to compile not only the
 code, but also its python wrapper. This can be done by typing just
-'make' instead of 'make class' (or for speeding up: 'make -j'). More
-details on the wrapper and its compilation are found on the wiki page
+'make' instead of 'make class' (or for speeding up: 'make -j'). To ensure 
+a smooth experience, before installing class we recommend you first install 
+its dependencies:
+
+  numpy <= 1.26.6
+
+
+More details on the wrapper and its compilation are found on the wiki page
 
 https://github.com/lesgourg/class_public/wiki
 
-Plotting utility
-----------------
-
-Since version 2.3, the package includes an improved plotting script
-called CPU.py (Class Plotting Utility), written by Benjamin Audren and
-Jesus Torrado. It can plot the Cl's, the P(k) or any other CLASS
-output, for one or several models, as well as their ratio or percentage
-difference. The syntax and list of available options is obtained by
-typing 'pyhton CPU.py -h'. There is a similar script for MATLAB,
-written by Thomas Tram. To use it, once in MATLAB, type 'help
-plot_CLASS_output.m'
-
-Developing the code
---------------------
-
-If you want to develop the code, we suggest that you download it from
-the github webpage
-
-https://github.com/lesgourg/class_public
-
-rather than from class-code.net. Then you will enjoy all the feature
-of git repositories. You can even develop your own branch and get it
-merged to the public distribution. For related instructions, check
-
-https://github.com/lesgourg/class_public/wiki/Public-Contributing
 
 Using the code
 --------------
