@@ -14,15 +14,14 @@ Compiling mochi_class and getting started
 -----------------------------------
 
 Clone the code from [https://github.com/mcataneo/mochi_class_public](https://github.com/mcataneo/mochi_class_public.git). 
-Go to the class directory (cd mochi_class_public/) and compile (make clean;
+Go to the mochi_class directory (cd mochi_class_public/) and compile (make clean;
 make class). You can usually speed up compilation with the option -j:
 make -j class. If the first compilation attempt fails, you may need to
-open the Makefile and adapt the name of the compiler (default: gcc),
-of the optimization flag (default: -O4 -ffast-math) and of the OpenMP
+open the Makefile and adapt the name of the compiler (default: gcc-13),
+of the optimization flag (default: -O3) and of the OpenMP
 flag (default: -fopenmp; this flag is facultative, you are free to
-compile without OpenMP if you don't want parallel execution; note that
-you need the version 4.2 or higher of gcc to be able to compile with
--fopenmp). Many more details on the CLASS compilation are given on the
+compile without OpenMP if you don't want parallel execution). 
+Many more details (although a bit out-of-date) on the CLASS compilation are given on the
 wiki page
 
 https://github.com/lesgourg/class_public/wiki/Installation
@@ -30,9 +29,9 @@ https://github.com/lesgourg/class_public/wiki/Installation
 (in particular, for compiling on Mac >= 10.9 despite of the clang
 incompatibility with OpenMP).
 
-To check that the code runs, type:
+To test the code has been properly installed, type, for instance:
 
-    ./class explanatory.ini
+    ./class /inifile/galileon.ini
 
 The explanatory.ini file is THE reference input file, containing and
 explaining the use of all possible input parameters. We recommend to
