@@ -35,7 +35,7 @@ To test the code has been properly installed, type, for instance:
 
 If everything works as expected, this will generate CMB and matter power spectra in the /output directory.
 
-The <cosmology>.ini files in the inifiles/ directory can be used as reference input files, containing and
+The '<cosmology>.ini' files in the inifiles/ directory can be used as reference input files, containing and
 explaining the use of all possible input parameters. When creating
 your own input files, make sure they have a *.ini
 extension.
