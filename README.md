@@ -91,15 +91,15 @@ You are free to use mochi_class, provided that you cite the following paper in y
 
 Additionally, please cite the following works, without which mochi_class could not exist:
 
-  * `Inherently stable effective field theory for dark energy and modified gravity` <https://arxiv.org/abs/1810.05225>
-  * `Maximal freedom at minimum cost: linear large-scale structure in general modifications of gravity` (https://arxiv.org/abs/1404.3713)
-  * `hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System <https://arxiv.org/abs/1605.06102>`
-  * `hi_class: Background Evolution, Initial Conditions and Approximation Schemes <https://arxiv.org/abs/1909.01828>`
-  * `CLASS II: Approximation schemes <http://arxiv.org/abs/1104.2933>`
-  * `CLASS IV: Efficient implementation of non-cold relics <https://arxiv.org/abs/1104.2935>` (when including non-cold relics, for example, massive neutrinos)
-  * `EFTCAMB/EFTCosmoMC: Numerical Notes v3.0 <https://arxiv.org/abs/1405.3590>` (when enforcing mathematical stability)
-  * `MGCAMB with massive neutrinos and dynamical dark energy <https://arxiv.org/abs/1901.05956>` (when using QSA)
-  * `What can Cosmology tell us about Gravity? Constraining Horndeski with Sigma and Mu <https://arxiv.org/abs/1606.05339>` (when using QSA)
+  * `Inherently stable effective field theory for dark energy and modified gravity` [(1810.05225)](https://arxiv.org/abs/1810.05225)
+  * `Maximal freedom at minimum cost: linear large-scale structure in general modifications of gravity` [(1404.3713)](https://arxiv.org/abs/1404.3713)
+  * `hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System` [(1605.06102)](https://arxiv.org/abs/1605.06102)
+  * `hi_class: Background Evolution, Initial Conditions and Approximation Schemes` [(1909.01828)](https://arxiv.org/abs/1909.01828)
+  * `CLASS II: Approximation schemes` [(1104.2933)](http://arxiv.org/abs/1104.2933)
+  * `CLASS IV: Efficient implementation of non-cold relics` [(1104.2935 when including non-cold relics, for example, massive neutrinos)](https://arxiv.org/abs/1104.2935)
+  * `EFTCAMB/EFTCosmoMC: Numerical Notes v3.0` [(1405.3590 when enforcing mathematical stability)](<https://arxiv.org/abs/1405.3590)
+  * `MGCAMB with massive neutrinos and dynamical dark energy` [(1901.05956 when using QSA)](https://arxiv.org/abs/1901.05956)
+  * `What can Cosmology tell us about Gravity? Constraining Horndeski with Sigma and Mu` [(1606.05339 when using QSA)](https://arxiv.org/abs/1606.05339)
 
 Support
 -------
