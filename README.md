@@ -10,7 +10,7 @@ Authors: Matteo Cataneo, Emilio Bellini
 This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_class_public/), itself a patch to the Einstein-Boltzmann solver CLASS (http://class-code.net). The new features include:
 
   * $\alpha$-functions replaced by stable basis \{ $M_{\ast}^2$, $D_{\rm kin}$, $c_{\rm s}^2$ \} to ensure stability from the start.
-  * No need for hard-coding of basis function parametrisations. The code can take general functions of time as input.
+  * No need for hard-coding of basis function parametrisations. The code can take general functions of time as input, inlcuding the dark energy equation of state or its normalised background energy-density .
   * Numerically stable quasi-static approximation connecting ($\mu$, $\gamma$)-parametrisation to the Horndeski $\alpha$'s. 
   * Additional stability test checking for mathematical (classical) instabilities in the scalar field fluctuations.
   * GR approximation scheme. Modified gravity/dark energy activated at late times, deep in the matter dominated era.
