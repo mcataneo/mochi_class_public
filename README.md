@@ -86,9 +86,12 @@ Using the code
 --------------
 
 You can use mochi_class freely, provided that in your publications you cite
-the papers: 
+the paper: 
 
   * `mochi_class: ... <arxiv link here>`
+
+and, please, also cite the following works without which mochi_class couldn't exist:
+
   * `Inherently stable effective field theory for dark energy and modified gravity <https://arxiv.org/abs/1810.05225>`
   * `Maximal freedom at minimum cost: linear large-scale structure in general modifications of gravity <https://arxiv.org/abs/1404.3713>`
   * `hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System <https://arxiv.org/abs/1605.06102>`
