@@ -13,6 +13,7 @@ This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_c
   * No need for hard-coding of basis function parametrisations. The code can take general functions of time as input.
   * Numerically stable quasi-static approximation connecting ($\mu$, $\gamma$)-parametrisation to the Horndeski $\alpha$'s. 
   * Additional stability test checking for mathematical (classical) instabilities.
+  * GR approximation scheme. Modified gravity/dark energy activated at late times, deep in the matter dominated era.
 
 
 Compiling mochi_class and getting started
