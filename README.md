@@ -11,7 +11,7 @@ This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_c
 
   * $\alpha$-functions replaced by stable basis \{ $M_{\ast}^2$, $D_{\rm kin}$, $c_{\rm s}^2$ \}. Stability guaranteed form the start.
   * No need to hard-code basis input function parametrisations. The code can take general functions of time as input.
-  * Numerically stable quasi-static approximation connecting ($\mu$,$\gamma$)-parametrisation to the Horndeski $a\lpha$'s. 
+  * Numerically stable quasi-static approximation connecting ($\mu$, $\gamma$)-parametrisation to the Horndeski $\alpha$'s. 
   *
 
 
