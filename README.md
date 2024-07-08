@@ -94,7 +94,9 @@ the papers:
   * `hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System <https://arxiv.org/abs/1605.06102>`
   * `hi_class: Background Evolution, Initial Conditions and Approximation Schemes <https://arxiv.org/abs/1909.01828>`
   * `CLASS II: Approximation schemes <http://arxiv.org/abs/1104.2933>`
-  * `CLASS IV: Efficient implementation of non-cold relics <https://arxiv.org/abs/1104.2935>` (for example, when massive neutrinos are included)
+  * `CLASS IV: Efficient implementation of non-cold relics <https://arxiv.org/abs/1104.2935>` (when including non-cold relics, for example, massive neutrinos)
+  * `MGCAMB with massive neutrinos and dynamical dark energy <https://arxiv.org/abs/1901.05956>`
+  * `What can Cosmology tell us about Gravity? Constraining Horndeski with Sigma and Mu <https://arxiv.org/abs/1606.05339>`
 
 Support
 -------
