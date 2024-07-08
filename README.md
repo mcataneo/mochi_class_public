@@ -64,7 +64,7 @@ To use mochi_class from python, or ipython notebooks, or from the Monte
 Python parameter extraction code, you need to compile not only the
 code, but also its python wrapper. This can be done by typing just
 'make' instead of 'make class' (or for speeding up: 'make -j'). To ensure 
-a smooth experience, before installing class we recommend you first install 
+a smooth experience, before installing mochi_class we recommend you first install 
 its dependencies:
 
   * numpy <= 1.26.4
