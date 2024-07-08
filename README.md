@@ -56,7 +56,7 @@ one of them, and run with two input files, for instance:
 
     ./class test.ini cl_permille.pre
 
-The files *.pre are suppposed to specify the precision parameters for
+The files *.pre are supposed to specify the precision parameters for
 which you don't want to keep default values. If you find it more
 convenient, you can pass some (or all of) these precision parameter values in your *.ini
 file instead of an additional *.pre file.
