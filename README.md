@@ -35,7 +35,11 @@ https://github.com/lesgourg/class_public/wiki/Installation
 (in particular, for compiling on Mac >= 10.9 despite of the clang
 incompatibility with OpenMP).
 
-To test the code has been properly installed, type, for instance:
+To test the code has been properly installed, first create the output directory as
+
+    mkdir output
+
+Then type, for instance:
 
     ./class /inifiles/galileon.ini
 
