@@ -91,7 +91,7 @@ You are free to use mochi_class, provided that you cite the following paper in y
 
 Additionally, please cite the following works, without which mochi_class could not exist:
 
-  * `Inherently stable effective field theory for dark energy and modified gravity` (https://arxiv.org/abs/1810.05225)
+  * `Inherently stable effective field theory for dark energy and modified gravity` <https://arxiv.org/abs/1810.05225>
   * `Maximal freedom at minimum cost: linear large-scale structure in general modifications of gravity` (https://arxiv.org/abs/1404.3713)
   * `hi_class: Horndeski in the Cosmic Linear Anisotropy Solving System <https://arxiv.org/abs/1605.06102>`
   * `hi_class: Background Evolution, Initial Conditions and Approximation Schemes <https://arxiv.org/abs/1909.01828>`
