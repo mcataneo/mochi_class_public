@@ -71,7 +71,7 @@ its dependencies:
   * cython >= 3.x.y
   * setuptools <= 65.5.1
 
-To familiarise with the new mochi_class features we provide the example notebook `stable_params.ipynb`. It can be found in the `/notebooks` directory.
+To familiarise with the new mochi_class features, we provide the example notebook `stable_params.ipynb`. It can be found in the `/notebooks` directory.
 
 More details on the wrapper and its compilation are found on the wiki page (again slightly out-of-date)
 
