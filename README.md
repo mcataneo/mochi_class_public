@@ -9,10 +9,10 @@ Authors: Matteo Cataneo, Emilio Bellini
 
 This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_class_public/), itself a patch to the Einstein-Boltzmann solver CLASS (http://class-code.net). The new features include:
 
-  * $\alpha$-functions replaced by stable basis \{ $M_{\ast}^2$, $D_{\rm kin}$, $c_{\rm s}^2$ \}. Stability guaranteed form the start.
-  * No need to hard-code basis input function parametrisations. The code can take general functions of time as input.
+  * $\alpha$-functions replaced by stable basis \{ $M_{\ast}^2$, $D_{\rm kin}$, $c_{\rm s}^2$ \} to ensure stability from the start.
+  * No need for hard-coding of basis function parametrisations. The code can take general functions of time as input.
   * Numerically stable quasi-static approximation connecting ($\mu$, $\gamma$)-parametrisation to the Horndeski $\alpha$'s. 
-  *
+  * Additional stability test checking for mathematical (classical) instabilities.
 
 
 Compiling mochi_class and getting started
