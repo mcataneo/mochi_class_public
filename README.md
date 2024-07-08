@@ -85,12 +85,11 @@ https://github.com/lesgourg/class_public/wiki
 Using the code
 --------------
 
-You can use mochi_class freely, provided that in your publications you cite
-the paper: 
+You are free to use mochi_class, provided that you cite the following paper in your publications: 
 
   * `mochi_class: ... <arxiv link here>`
 
-and, please, also cite the following works without which mochi_class couldn't exist:
+Additionally, please cite the following works, without which mochi_class could not exist:
 
   * `Inherently stable effective field theory for dark energy and modified gravity <https://arxiv.org/abs/1810.05225>`
   * `Maximal freedom at minimum cost: linear large-scale structure in general modifications of gravity <https://arxiv.org/abs/1404.3713>`
