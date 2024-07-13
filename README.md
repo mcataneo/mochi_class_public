@@ -11,7 +11,7 @@ This code is an extension of the hi_class code (http://miguelzuma.github.io/hi_c
 
   * $\alpha$-functions replaced by stable basis \{ $M_{\ast}^2$, $D_{\rm kin}$, $c_{\rm s}^2$ \} to ensure stability from the start.
   * No need for hard-coding of basis function parametrisations. The code can take general functions of time as input, including the dark energy equation of state ($w_\phi$) or its normalised background energy-density ($\tilde\rho_\phi$).
-  * Numerically stable quasi-static approximation connecting ($\mu$, $\gamma$)-parametrisation to the Horndeski $\alpha$'s. 
+  * Accurate quasi-static approximation connecting ($\mu$, $\gamma$)-parametrisation to the Horndeski $\alpha$'s. 
   * Additional stability test checking for mathematical (classical) instabilities in the scalar field fluctuations.
   * GR approximation scheme. Modified gravity/dark energy activated at late times, deep in the matter dominated era.
 
