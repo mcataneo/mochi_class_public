@@ -87,7 +87,7 @@ Using the code
 
 You are free to use mochi_class, provided that you cite the following paper in your publications: 
 
-  * `mochi_class: ... <arxiv link here>`
+  * `mochi_class: Modelling Optimisation to Compute Horndeski In class` [(2407.xxxxx)](https://arxiv.org/abs/2407.xxxxx)
 
 Additionally, please cite the following works, without which mochi_class could not exist:
 
