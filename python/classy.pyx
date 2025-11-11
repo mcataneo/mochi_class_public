@@ -1405,6 +1405,18 @@ cdef class Class:
     def Omega_Lambda(self):
         return self.ba.Omega0_lambda
 
+    def Omega_fld(self):
+        return self.ba.Omega0_fld
+    
+    def Omega_scf(self):
+        return self.ba.Omega0_scf
+    
+    def Omega_smg(self):
+        return self.ba.Omega0_smg
+
+    def A_s(self):
+        return self.pm.A_s
+
     def Omega_g(self):
         return self.ba.Omega0_g
 
@@ -1942,6 +1954,38 @@ cdef class Class:
             Om_ncdm = 0.
 
         return Om_ncdm
+    
+    def Om_smg(self, z):
+        """
+        Omega_smg(z)
+
+        Return the dark energy density fraction (exactly, the ratio of quantities defined by Class as
+        index_bg_rho_smg and index_bg_rho_crit in the background module)
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        cdef int last_index #junk
+        cdef double * pvecback
+
+        if self.ba.has_smg == True:
+
+            pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+
+            if background_at_z(&self.ba,z,long_info,inter_normal,&last_index,pvecback)==_FAILURE_:
+                raise CosmoSevereError(self.ba.error_message)
+
+            Om_smg = pvecback[self.ba.index_bg_rho_smg]/pvecback[self.ba.index_bg_rho_crit]
+
+            free(pvecback)
+        
+        else:
+
+            Om_smg = 0.
+
+        return Om_smg
 
     def G_eff_back_smg(self, z):
         """
