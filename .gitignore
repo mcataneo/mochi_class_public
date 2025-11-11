@@ -6,12 +6,7 @@ class
 *.prof
 libclass.a
 *out
-*.gch
-python/classy.c
-python/*.pyc
-python/build/i
-ini_files
-.vscode/
+python/classy.cpp
 *.pyc
 python/build/
 *.dSYM

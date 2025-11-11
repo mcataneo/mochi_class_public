@@ -633,10 +633,9 @@ int background_solve_smg(
   	struct background_parameters_and_workspace bpaw;
 	double * pvec_stable_params_smg;
 	/* evolvers */
-	extern int evolver_rk();
-  	extern int evolver_ndf15();
-	int (*generic_evolver)();
-	generic_evolver = evolver_ndf15;
+	extern int evolver_rk(EVOLVER_PROTOTYPE);
+	extern int evolver_ndf15(EVOLVER_PROTOTYPE);
+	int (*generic_evolver)(EVOLVER_PROTOTYPE) = evolver_ndf15;
 	/* initial and final time for backward integration in stable_params */
 	double loga_final = log((1. - ppr->eps_bw_integration_braid)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.; // time used for initial conditions in backward integration
@@ -1314,10 +1313,9 @@ int background_solve_rho_smg(
 	/* parameters and workspace for the background_derivs function */
   	struct background_parameters_and_workspace bpaw;
 	/* evolvers */
-	extern int evolver_rk();
-  	extern int evolver_ndf15();
-	int (*generic_evolver)();
-	generic_evolver = evolver_ndf15;
+	extern int evolver_rk(EVOLVER_PROTOTYPE);
+	extern int evolver_ndf15(EVOLVER_PROTOTYPE);
+	int (*generic_evolver)(EVOLVER_PROTOTYPE) = evolver_ndf15;
 	/* initial and final time for backward integration in stable_params */
 	double loga_final = log((1. - ppr->eps_bw_integration_rho_smg)/(1+pba->z_gr_smg)); // deep in the matter-dominated era, all MG models considered are effectively GR there
 	double loga_ini = 0.; // time used for initial conditions in backward integration
