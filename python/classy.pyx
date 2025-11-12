@@ -164,6 +164,10 @@ cdef class Class:
     def Omega_fld(self):
       """Return the fractional fluid density today"""
       return CallableFloat(self.ba.Omega0_fld)
+    @property
+    def Omega_smg(self):
+      """Return the fractional effective dark energy density today"""
+      return CallableFloat(self.ba.Omega0_smg)
 
     # Other properties related to the background
     @property
@@ -3065,6 +3069,38 @@ cdef class Class:
             free(pvecback)
 
         return (Om_ncdm[0] if np.isscalar(z) else Om_ncdm)
+
+    def Om_smg(self, z): # Thanks to Benjamin Stölzner for implementing this function
+        """
+        Omega_smg(z)
+
+        Return the dark energy density fraction (exactly, the ratio of quantities defined by Class as
+        index_bg_rho_smg and index_bg_rho_crit in the background module)
+
+        Parameters
+        ----------
+        z : float
+                Desired redshift
+        """
+        cdef int last_index #junk
+        cdef double * pvecback
+
+        if self.ba.has_smg == True:
+
+            pvecback = <double*> calloc(self.ba.bg_size,sizeof(double))
+
+            if background_at_z(&self.ba,z,long_info,inter_normal,&last_index,pvecback)==_FAILURE_:
+                raise CosmoSevereError(self.ba.error_message)
+
+            Om_smg = pvecback[self.ba.index_bg_rho_smg]/pvecback[self.ba.index_bg_rho_crit]
+
+            free(pvecback)
+        
+        else:
+
+            Om_smg = 0.
+
+        return Om_smg
 
     def G_eff_back_smg(self, z):
         """
